@@ -16,6 +16,16 @@ function onSubmit(values, { setErrors }) {
     return authStore.login(username, password)
         .catch(error => setErrors({ apiError: error }));
 }
+
+const loginViaGoogle = async() => {
+    //   const { url } = await api.get('/OAuth/googleLogin').then(res => res.data);
+    //   window.location.href = url;
+      const authStore = useAuthStore();
+
+    return authStore.initGoogle();
+
+};
+
 </script>
 
 <template>
@@ -25,6 +35,10 @@ function onSubmit(values, { setErrors }) {
             Password: test
         </div>
         <h2>Login</h2>
+        <div>
+            <button class="grey" @click="loginViaGoogle()">Continue With Google</button>
+        </div>
+
         <Form @submit="onSubmit" :validation-schema="schema" v-slot="{ errors, isSubmitting }">
             <div class="form-group">
                 <label>Username</label>

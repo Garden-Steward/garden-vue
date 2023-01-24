@@ -11,10 +11,10 @@ export const useUsersStore = defineStore({
     }),
     actions: {
         async getAll() {
-            this.users = { loading: true };
-            fetchWrapper.get(baseUrl)
-                .then(users => this.users = users)
-                .catch(error => this.users = { error })
+            // this.users = { loading: true };
+            // fetchWrapper.get(baseUrl)
+            //     .then(users => this.users = users)
+            //     .catch(error => this.users = { error })
         }
     }
 });
