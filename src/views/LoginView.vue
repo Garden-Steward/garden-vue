@@ -30,13 +30,9 @@ const loginViaGoogle = async() => {
 
 <template>
     <div>
-        <div class="alert alert-info">
-            Username: test<br />
-            Password: test
-        </div>
-        <h2>Login</h2>
-        <div>
-            <button class="grey" @click="loginViaGoogle()">Continue With Google</button>
+        <h1 class="text-2xl pb-5 pt-2">Welcome Zevo Host</h1>
+        <div class="pb-5">
+            <button class="btn btn-secondary" @click="loginViaGoogle()">Continue With Google</button>
         </div>
 
         <Form @submit="onSubmit" :validation-schema="schema" v-slot="{ errors, isSubmitting }">
