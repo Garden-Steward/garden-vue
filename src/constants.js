@@ -1,3 +1,3 @@
 'use strict';
 
-export const localStorageTokenKey = '_zevoToken';
+export const localStorageTokenKey = '_stewToken';

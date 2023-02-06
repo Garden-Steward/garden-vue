@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { HomeView, LoginView } from '@/views';
+import { HomeView, LoginView, Garden } from '@/views';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
 export const router = createRouter({
@@ -13,6 +13,10 @@ export const router = createRouter({
         {
             path: '/oauth/google/callback',
             component: GoogleOAuth
+        },
+        {
+            path: '/gardens/:slug',
+            component: Garden
         }
     ]
 });
@@ -22,7 +26,7 @@ router.beforeEach(async (to) => {
     const publicPages = ['/login','/oauth/google/callback'];
     const authRequired = !publicPages.includes(to.path);
     const auth = useAuthStore();
-
+    console.log("before: ", auth);
     if (authRequired && !auth.user) {
         auth.returnUrl = to.fullPath;
         return '/login';

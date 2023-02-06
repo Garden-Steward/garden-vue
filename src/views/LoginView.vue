@@ -30,7 +30,7 @@ const loginViaGoogle = async() => {
 
 <template>
     <div>
-        <h1 class="text-2xl pb-5 pt-2">Welcome Zevo Host</h1>
+        <h1 class="text-2xl pb-5 pt-2">Welcome Steward</h1>
         <div class="pb-5">
             <button class="btn btn-secondary" @click="loginViaGoogle()">Continue With Google</button>
         </div>

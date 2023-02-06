@@ -1,2 +1,2 @@
 export * from './auth.store';
-export * from './vehicles.store';
+export * from './gardens.store';
