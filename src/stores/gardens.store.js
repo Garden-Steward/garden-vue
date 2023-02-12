@@ -19,8 +19,9 @@ export const useGardensStore = defineStore({
         },
         async getSlug(slug) {
             this.garden = { loading: true };
-            fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}`)
-                .then(res => this.garden = res.data[0])
+            // fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}`)
+            fetchWrapper.get(`${baseUrl}/${slug}/full`)
+                .then(res => this.garden = res.data)
                 .catch(error => this.garden = { error })
         }
     }
