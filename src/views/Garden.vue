@@ -34,7 +34,7 @@ export default {
   },
   methods: {
     checkLoginState() {
-      this.userStore.checkLoginState()
+      // this.userStore.checkLoginState()
     }
   }
 }
@@ -57,7 +57,7 @@ export default {
             </h3> 
             
             <li class="ml-10 m-3" v-for="day in volunteerDays" :key="day.id">
-              <VolunteerDayModal v-bind="day.attributes"/>
+              <VolunteerDayModal v-bind="day.attributes" :id="day.id"/>
             </li>
           </ul>
           <div v-if="volunteerDays.loading" class="spinner-border spinner-border-sm"></div>
@@ -65,7 +65,7 @@ export default {
 
             <VolunteerDayModal>
               <div class="p-4">
-                <div class="text-lg">Hello Modal World!</div>
+                <div class="text-lg">Create a new Volunteer Day</div>
               </div>
             </VolunteerDayModal>
 
