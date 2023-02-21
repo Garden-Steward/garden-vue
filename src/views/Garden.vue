@@ -64,8 +64,8 @@ export default {
           <div v-if="volunteerDays.error" class="text-danger">Error loading volunteer days: {{volunteerDays.error}}</div>
 
             <VolunteerDayModal>
-              <div class="p-4">
-                <div class="text-lg">Create a new Volunteer Day</div>
+              <div class="pb-3">
+                <div class="text-lg font-bold">Create a new Volunteer Day</div>
               </div>
             </VolunteerDayModal>
 

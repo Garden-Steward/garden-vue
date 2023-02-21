@@ -28,7 +28,6 @@ export const useVolunteerDaysStore = defineStore({
         },
         async update(id, data) {
             return fetchWrapper.put(`${baseUrl}/${id}`,{data: data})
-            // fetchWrapper.get(`${baseUrl}/${slug}/full`)
                 .then(res => {
                     this.volunteerDay = res.data;
                     const idx = this.volunteerDays.findIndex(v=> v.id == res.data.id);

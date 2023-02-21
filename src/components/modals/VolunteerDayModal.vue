@@ -1,11 +1,14 @@
 <script>
 import { computed } from "vue";
 import { useVolunteerDaysStore, useAlertStore } from '@/stores';
+import { format } from 'date-fns'
 
 export default {
   props: {
    title: String,
    blurb: String,
+   startTime: String,
+   date: Date,
    id: String
  },
  setup(props) {
@@ -15,7 +18,13 @@ export default {
   const topic = computed(()=> {
     return (props.id) ? "Edit Title:" : "Volunteer Day Title:"
   })
-  return {alertStore, volunteerDaysStore, topic};
+  const dateTime = computed(() => {
+    return new Date(`${props.date} ${props.startTime}`);
+  })
+  const prettyDay = computed(() => {
+    return format(new Date(props.date), 'PPP');
+  })
+  return {alertStore, volunteerDaysStore, topic, dateTime, prettyDay};
  },
   data() {
     return {
@@ -23,12 +32,16 @@ export default {
       form : {
         title: this.title,
         blurb: this.blurb,
+        dateTime: this.dateTime
       }
     }
   },
   methods: {
     async submit() {
       let message;
+      let date = this.form.dateTime.toISOString();
+      this.form.date = format(new Date(date), 'yyyy-MM-dd')
+      this.form.startTime = format (new Date(date), 'HH:mm:ss.SSS');
       if (this.id) {
           await this.volunteerDaysStore.update(this.id, this.form);
           message = 'Volunteer Day updated';
@@ -46,7 +59,7 @@ export default {
 <template>
 
   <div v-if="title">
-    <a @click="show = true">{{ title }}</a>
+    <a @click="show = true" class="hover:text-blue hover:opacity-75">{{ prettyDay }} // {{ title }}</a>
   </div>
 
   <button v-else type="button" class="px-6
@@ -71,20 +84,29 @@ export default {
   <!-- Render inside our `<div id="modals"></div>` in index.html -->
   <Teleport to="#modals">
     <!-- Show / hide the modal -->
-    <div v-if="show" class="">
+    <div v-if="show" class="w-xl">
       <!-- The backdrop -->
       <div class="fixed inset-0 bg-gray-900 opacity-40"></div>
 
-      <!-- Where the actual content goes -->
+
+      
+      <!-- *** START FORM *** -->
+
+
       <form @submit.prevent="submit">
 
       <div class="fixed inset-0 flex items-center justify-center">
-        <div class="bg-white text-black p-3">
+        <div class="bg-white text-black p-6 w-50">
           <slot></slot>
-          <p class="p-1">{{ topic }}</p>
+
+          <p class="pb-1">{{ topic }}</p>
           <input class="p-1 mb-5 rounded-md border" type="text" v-model="form.title" />
+          
           <p class="p-1">Blurb: {{ blurb }}</p>
-          <textarea v-model="form.blurb" class="form-control"></textarea>
+          <textarea v-model="form.blurb" class="form-control p-1 m-r-4"></textarea>
+          
+          <VueDatePicker v-model="form.dateTime"></VueDatePicker>
+
           <div
             class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
             <button type="button" class="px-6
