@@ -29,6 +29,9 @@ export default {
   data() {
     return {
       show: false,
+      copy: false,
+      volunteers: false,
+      error: false,
       form : {
         title: this.title,
         blurb: this.blurb,
@@ -42,6 +45,7 @@ export default {
       let date = this.form.dateTime.toISOString();
       this.form.date = format(new Date(date), 'yyyy-MM-dd')
       this.form.startTime = format (new Date(date), 'HH:mm:ss.SSS');
+      console.log('submitted', this.id)
       if (this.id) {
           await this.volunteerDaysStore.update(this.id, this.form);
           message = 'Volunteer Day updated';
@@ -51,6 +55,22 @@ export default {
           await this.volunteerDaysStore.register(this.form);
           message = 'Volunteer Day added';
       }
+    },
+    async testDay() {
+      this.volunteerDaysStore.testSms(this.id).then((smsTest)=>{
+        console.log("testDay: ", smsTest)
+        if (smsTest.copy) {
+          this.copy = smsTest.copy;
+        } else {
+          this.error = smsTest.error;
+        }
+      });
+    },
+    async sendSms() {
+      this.volunteerDaysStore.sendSms(this.id).then((smsTest)=>{
+        this.alertStore.success(`SMS Sent to ${smsTest.length} volunteers`);
+        this.show = false;
+      });
     }
   }
 }
@@ -58,8 +78,12 @@ export default {
 
 <template>
 
-  <div v-if="title">
-    <a @click="show = true" class="hover:text-blue hover:opacity-75">{{ prettyDay }} // {{ title }}</a>
+  <div v-if="title" class="border-r-4 border rounded p-4 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="show = true">
+    <a class="hover:text-blue ">
+      <span class="underline text-xl">{{ title }}</span>
+      <br />
+      {{ prettyDay }}
+    </a>
   </div>
 
   <button v-else type="button" class="px-6
@@ -143,7 +167,47 @@ export default {
               duration-150
               ease-in-out
               ml-1" type="submit">Save changes</button>
+
+              <span class="px-6
+              py-2.5
+              bg-slate-600
+              text-white
+              font-medium
+              text-xs
+              leading-tight
+              uppercase
+              rounded
+              shadow-md
+              transition
+              duration-150
+              active:bg-slate-800 active:shadow-lg
+              cursor-pointer
+              ease-in-out
+              ml-1" @click="testDay()">Test</span>
           </div>
+          <article v-if="copy">
+            <div class="mb-3">{{ copy }}</div>
+            <div>
+              <span class="px-6
+              py-2.5
+              bg-slate-200
+              text-black
+              font-medium
+              text-xs
+              leading-tight
+              uppercase
+              rounded
+              shadow-md
+              hover:bg-slate-400 hover:shadow-lg
+              focus:bg-slate-500 focus:shadow-lg focus:outline-none focus:ring-0
+              active:bg-slate-600 active:shadow-lg
+              transition
+              cursor-pointer
+              duration-150
+              ease-in-out" @click="sendSms()">Send SMS to Volunteers</span>
+            </div>
+          </article>
+          <div v-if="error" class="text-danger">Error loading volunteer days: {{error}}</div>
         </div>
       </div>
       </form>

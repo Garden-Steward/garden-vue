@@ -44,7 +44,23 @@ export const useVolunteerDaysStore = defineStore({
                 })
                 .catch(this.handleError);
             
-        }
+        },
+        async testSms(id) {
+            return fetchWrapper.get(`${baseUrl}/sms/${id}`)
+                .then(res => {
+                    console.log("test resp: ", res)
+                    return res;
+                })
+                .catch(this.handleError);
+        },
+        async sendSms(id) {
+            return fetchWrapper.post(`${baseUrl}/sms/${id}`)
+                .then(res => {
+                    console.log("test resp: ", res)
+                    return res;
+                })
+                .catch(this.handleError);
+        } 
     },
     getters: {
         gardenGetter(state) {

@@ -55,10 +55,11 @@ export default {
           <ul v-if="volunteerDays">
             <h3 class="text-2xl text-brown-800">Volunteer Days ({{ volunteerDays.length }})
             </h3> 
-            
-            <li class="ml-10 m-3" v-for="day in volunteerDays" :key="day.id">
-              <VolunteerDayModal v-bind="day.attributes" :id="day.id"/>
-            </li>
+            <div class="grid grid-cols-4 gap-4">
+              <div class="ml-10 m-3" v-for="day in volunteerDays" :key="day.id">
+                <VolunteerDayModal v-bind="day.attributes" :id="day.id"/>
+              </div>
+            </div>
           </ul>
           <div v-if="volunteerDays.loading" class="spinner-border spinner-border-sm"></div>
           <div v-if="volunteerDays.error" class="text-danger">Error loading volunteer days: {{volunteerDays.error}}</div>

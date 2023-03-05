@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { HomeView, LoginView, Garden } from '@/views';
+import { HomeView, LoginView, Garden, GardensView } from '@/views';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
 export const router = createRouter({
@@ -13,6 +13,10 @@ export const router = createRouter({
         {
             path: '/oauth/google/callback',
             component: GoogleOAuth
+        },
+        {
+            path: '/gardens',
+            component: GardensView
         },
         {
             path: '/gardens/:slug',
