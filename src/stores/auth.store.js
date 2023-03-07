@@ -35,7 +35,7 @@ export const useAuthStore = defineStore({
             router.push(this.returnUrl || '/');
         },
         async login(username, password) {
-            const {jwt, user} = await fetchWrapper.post(`${baseUrl}/auth/local`, { identifier: username, password });
+            const {jwt, user} = await fetchWrapper.post(`${baseUrl}/api/auth/local`, { identifier: username, password });
 
             console.log("login: ", user)
 
