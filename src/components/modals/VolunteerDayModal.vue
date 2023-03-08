@@ -8,8 +8,9 @@ export default {
    title: String,
    blurb: String,
    startTime: String,
-   date: Date,
-   id: String
+   date: String,
+   id: Number,
+   garden: Number
  },
  setup(props) {
   const volunteerDaysStore = useVolunteerDaysStore();  
@@ -42,6 +43,7 @@ export default {
   methods: {
     async submit() {
       let message;
+      this.copy = false;
       let date = this.form.dateTime.toISOString();
       this.form.date = format(new Date(date), 'yyyy-MM-dd')
       this.form.startTime = format (new Date(date), 'HH:mm:ss.SSS');
@@ -52,6 +54,7 @@ export default {
           this.show=false;
           this.alertStore.success(message);
       } else {
+          this.form.garden = this.garden
           await this.volunteerDaysStore.register(this.form);
           message = 'Volunteer Day added';
       }
@@ -148,7 +151,7 @@ export default {
               active:bg-purple-800 active:shadow-lg
               transition
               duration-150
-              ease-in-out" @click="show = false">Close</button>
+              ease-in-out" @click="()=> {show = false;copy= false}">Close</button>
 
             <button class="px-6
               py-2.5
