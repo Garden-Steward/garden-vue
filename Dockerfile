@@ -19,5 +19,5 @@ EXPOSE 5050
 
 RUN npm run build
 
-ENTRYPOINT ["sh", "/usr/src/app/docker-entrypoint.sh"]
+CMD ["npm" "run" "preview"]
 
