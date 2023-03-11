@@ -20,5 +20,5 @@ RUN echo "Node: " && node -v
 RUN echo "NPM: " && npm -v
 RUN npm run build
 
-ENTRYPOINT ["/usr/local/bin/npm", "preview"]
+ENTRYPOINT ["/usr/local/bin/npm", "run", "preview"]
 
