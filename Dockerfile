@@ -16,7 +16,8 @@ COPY --chown=node:node . .
 USER node
 
 EXPOSE 5050
-
+RUN echo "Node: " && node -v
+RUN echo "NPM: " && npm -v
 RUN npm run build
 
 CMD ["npm", "run preview"]
