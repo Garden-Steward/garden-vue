@@ -7,8 +7,8 @@ export default {
   props: {
    title: String,
    blurb: String,
-   startTime: String,
-   date: String,
+   endText: String,
+   startDatetime: String,
    id: Number,
    garden: Number
  },
@@ -17,15 +17,19 @@ export default {
   const alertStore = useAlertStore();  
   
   const topic = computed(()=> {
-    return (props.id) ? "Edit Title:" : "Volunteer Day Title:"
+    return (props.id) ? "Title:" : "Volunteer Day Title:"
   })
-  const dateTime = computed(() => {
-    return new Date(`${props.date} ${props.startTime}`);
+  const notification = computed(() => {
+    if (new Date(`${props.startDatetime}`) < new Date()) {
+      return "This Volunteer Day has already happened, no SMS will be auto-sent.";
+    } else {
+      return "SMS sends out 3 days before, and day of. Disabling stops SMS"
+    }
   })
   const prettyDay = computed(() => {
-    return format(new Date(props.date), 'PPP');
+    return format(new Date(props.startDatetime), 'PPP');
   })
-  return {alertStore, volunteerDaysStore, topic, dateTime, prettyDay};
+  return {alertStore, volunteerDaysStore, topic, notification, prettyDay};
  },
   data() {
     return {
@@ -35,8 +39,10 @@ export default {
       error: false,
       form : {
         title: this.title,
+        disabled: this.disabled,
         blurb: this.blurb,
-        dateTime: this.dateTime
+        endText: this.endText,
+        startDatetime: this.startDatetime
       }
     }
   },
@@ -44,17 +50,18 @@ export default {
     async submit() {
       let message;
       this.copy = false;
-      let date = this.form.dateTime.toISOString();
-      this.form.date = format(new Date(date), 'yyyy-MM-dd')
-      this.form.startTime = format (new Date(date), 'HH:mm:ss.SSS');
+      // let date = this.form.startDatetimeTime.toISOString();
+      // this.form.startDatetime = format(new Date(date), 'yyyy-MM-dd')
+      // this.form.startTime = format (new Date(date), 'HH:mm:ss.SSS');
       console.log('submitted', this.id)
+      this.show = false;
+      this.form.garden = this.garden
       if (this.id) {
           await this.volunteerDaysStore.update(this.id, this.form);
           message = 'Volunteer Day updated';
           this.show=false;
           this.alertStore.success(message);
       } else {
-          this.form.garden = this.garden
           await this.volunteerDaysStore.register(this.form);
           message = 'Volunteer Day added';
       }
@@ -127,32 +134,26 @@ export default {
           <slot></slot>
 
           <p class="pb-1">{{ topic }}</p>
-          <input class="p-1 mb-5 rounded-md border" type="text" v-model="form.title" />
+          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.title" />
           
-          <p class="p-1">Blurb: {{ blurb }}</p>
-          <textarea v-model="form.blurb" class="form-control p-1 m-r-4"></textarea>
+          <p class="p-1">Event Information:</p>
+          <textarea v-model="form.blurb" class="form-control p-1 m-r-4 mb-1"></textarea>
           
-          <VueDatePicker v-model="form.dateTime"></VueDatePicker>
+          <p class="p-1">Start Date & Time:</p>
+          <VueDatePicker v-model="form.startDatetime" class="mb-2"></VueDatePicker>
+
+          <p class="p-1">Ending Time ("around noon"):</p>
+          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.endText" placeholder="around..."/>
+          <br />
+          <label class="relative inline-flex items-center mb-3 cursor-pointer">
+            <input type="checkbox" value="" class="sr-only peer" v-model="form.disabled">
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Disabled</span>
+          </label>
+
 
           <div
             class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
-            <button type="button" class="px-6
-              py-2.5
-              bg-purple-600
-              text-white
-              font-medium
-              text-xs
-              leading-tight
-              uppercase
-              rounded
-              shadow-md
-              hover:bg-purple-700 hover:shadow-lg
-              focus:bg-purple-700 focus:shadow-lg focus:outline-none focus:ring-0
-              active:bg-purple-800 active:shadow-lg
-              transition
-              duration-150
-              ease-in-out" @click="()=> {show = false;copy= false}">Close</button>
-
             <button class="px-6
               py-2.5
               bg-blue-600
@@ -186,9 +187,12 @@ export default {
               active:bg-slate-800 active:shadow-lg
               cursor-pointer
               ease-in-out
-              ml-1" @click="testDay()">Test</span>
+              ml-1" @click="testDay()">Test SMS</span>
           </div>
+
           <article v-if="copy">
+            <p class="p-1 mb-2 mt-2 text-sm bg-yellow-200">{{ notification }}</p>
+
             <div class="mb-3">{{ copy }}</div>
             <div>
               <span class="px-6
@@ -207,10 +211,27 @@ export default {
               transition
               cursor-pointer
               duration-150
-              ease-in-out" @click="sendSms()">Send SMS to Volunteers</span>
+              ease-in-out" @click="sendSms()">Send Upcoming SMS NOW, knowing auto-send is setup</span>
             </div>
           </article>
           <div v-if="error" class="text-danger">Error loading volunteer days: {{error}}</div>
+          <div class="pr-4 justify-end flex flex-shrink-0 flex-wrap items-center">
+            <button type="button" class="px-6
+                py-2.5
+                text-red
+                font-medium
+                text-xs
+                leading-tight
+                uppercase
+                rounded
+                border-0
+                hover:hover:shadow-lg
+                focus:focus:shadow-lg focus:outline-none focus:ring-0
+                active:shadow-lg
+                transition
+                duration-150
+                ease-in-out" @click="()=> {show = false;copy= false}">Close</button>
+          </div>
         </div>
       </div>
       </form>

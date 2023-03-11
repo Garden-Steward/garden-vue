@@ -21,7 +21,7 @@ export const useVolunteerDaysStore = defineStore({
             const gardenStore = useGardensStore();
             console.log("gardenStore",gardenStore.garden)
             this.volunteerDays = { loading: true };
-            fetchWrapper.get(`${baseUrl}`)
+            fetchWrapper.get(`${baseUrl}?sort[0]=startDatetime%3Adesc`)
             // fetchWrapper.get(`${baseUrl}/${slug}/full`)
                 .then(res => this.volunteerDays = res.data)
                 .catch(error => this.volunteerDays = { error })
