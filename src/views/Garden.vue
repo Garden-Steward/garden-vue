@@ -16,7 +16,7 @@ export default {
     const volunteerDaysStore = useVolunteerDaysStore();  
     const route = useRoute()
     gardensStore.getSlug(route.params.slug)
-    volunteerDaysStore.getByGarden()
+    volunteerDaysStore.getByGarden(route.params.slug)
     const { garden } = storeToRefs(gardensStore);
     const { volunteerDays } = storeToRefs(volunteerDaysStore);
     console.log("volunteerdays: ", volunteerDays);

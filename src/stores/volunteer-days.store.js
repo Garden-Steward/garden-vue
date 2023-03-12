@@ -17,11 +17,11 @@ export const useVolunteerDaysStore = defineStore({
             alertStore.error(err);
             console.log("Volunteer Error: ", err)
         },
-        async getByGarden() {
+        async getByGarden(slug) {
             const gardenStore = useGardensStore();
             console.log("gardenStore",gardenStore.garden)
             this.volunteerDays = { loading: true };
-            fetchWrapper.get(`${baseUrl}?sort[0]=startDatetime%3Adesc`)
+            fetchWrapper.get(`${baseUrl}?filters[garden][slug][$eq]=${slug}`)
             // fetchWrapper.get(`${baseUrl}/${slug}/full`)
                 .then(res => this.volunteerDays = res.data)
                 .catch(error => this.volunteerDays = { error })
