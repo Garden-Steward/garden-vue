@@ -50,6 +50,11 @@ export const useAuthStore = defineStore({
             // redirect to previous url or default to home page
             router.push(this.returnUrl || '/');
         },
+        async forgot(email) {
+            console.log("reset pw: ", email)
+            const resp = await fetchWrapper.post(`${baseUrl}/api/auth/forgot-password`, { email });
+            return resp
+        },
         logout() {
             this.user = null;
             this.auth.accessToken = null

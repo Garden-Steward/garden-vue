@@ -35,6 +35,9 @@ export default {
   methods: {
     checkLoginState() {
       // this.userStore.checkLoginState()
+    },
+    clickVolunteer(volunteer) {
+      console.log('volunteer clicked', volunteer)
     }
   }
 }
@@ -49,7 +52,14 @@ export default {
             <h3 class="text-2xl text-brown-800">Volunteers ({{ garden.attributes.volunteers.data.length }})
             </h3> 
             
-            <li class="ml-10 m-3" v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">{{volunteer.attributes.firstName}} {{volunteer.attributes.lastName}}</li>
+            <div class="grid grid-cols-6 gap-6 ml-2">
+              <!-- <li class="ml-10 m-3" v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">{{volunteer.attributes.firstName}} {{volunteer.attributes.lastName}}</li> -->
+              <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id" class="m-2 border-r-4 border rounded p-2 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="clickVolunteer({volunteer})">
+                  <span class="underline text-m">{{ volunteer.attributes.firstName }}  {{volunteer.attributes.lastName}}</span>
+              </div>
+            </div>
+
+
           </ul>
 
           <ul v-if="volunteerDays">
