@@ -55,6 +55,26 @@ export const useAuthStore = defineStore({
             const resp = await fetchWrapper.post(`${baseUrl}/api/auth/forgot-password`, { email });
             return resp
         },
+        async setPassword(password, passwordConfirmation, code) {
+            const {jwt, user} = await fetchWrapper.post(`${baseUrl}/api/auth/reset-password`, { password, passwordConfirmation, code });
+
+            // update pinia state
+            // this.user = user;
+            // this.auth.status = 'logged_in';
+            // this.auth.accessToken = jwt;
+            // console.log("set pass", jwt)
+            // // store user details and jwt in local storage to keep user logged in between page refreshes
+            // localStorage.setItem('user', JSON.stringify(user));
+            // localStorage.setItem(localStorageTokenKey, jwt);
+            if (jwt && user ) {
+                setTimeout(() => { router.push('/') }, 4000);
+                return true;
+            } else {
+                return false;
+            }
+
+
+        },
         logout() {
             this.user = null;
             this.auth.accessToken = null

@@ -11,20 +11,12 @@ const schema = Yup.object().shape({
 
 function onSubmit(values, { setErrors }) {
     const authStore = useAuthStore();
+    console.log("starting login")
     const { username, password } = values;
 
     return authStore.login(username, password)
         .catch(error => setErrors({ apiError: error }));
 }
-
-const loginViaGoogle = async() => {
-    //   const { url } = await api.get('/OAuth/googleLogin').then(res => res.data);
-    //   window.location.href = url;
-      const authStore = useAuthStore();
-
-    return authStore.initGoogle();
-
-};
 
 </script>
 
