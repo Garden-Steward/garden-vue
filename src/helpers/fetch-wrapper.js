@@ -9,9 +9,10 @@ export const fetchWrapper = {
 
 function request(method) {
     return (url, body) => {
+        let header = authHeader(url);
         const requestOptions = {
             method,
-            headers: authHeader(url)
+            headers: header
         };
         if (body) {
             requestOptions.headers['Content-Type'] = 'application/json';
@@ -27,7 +28,7 @@ function authHeader(url) {
     // return auth header with jwt if user is logged in and request is to the api url
     const { auth, user } = useAuthStore();
     const isLoggedIn = !!auth?.accessToken && user;
-    console.log("auth header: ", auth, isLoggedIn, user);
+    // console.log("auth header: ", auth, auth.accessToken, isLoggedIn, user);
     const isApiUrl = url.startsWith(import.meta.env.VITE_API_URL);
     if (isLoggedIn && isApiUrl) {
         return { Authorization: `Bearer ${auth.accessToken}`};
