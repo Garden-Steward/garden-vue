@@ -46,7 +46,7 @@ export default {
 <template>
     <div>
         <h1 class="text-3xl font-bold mb-5">Hi {{user?.firstName}}!</h1>
-        <div class="table-auto" v-if="garden.id">
+        <div class="table-auto" v-if="garden.attributes">
           <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-blue-600">{{ garden.attributes.title }}</h1>
           <ul v-if="garden.attributes.volunteers.data.length">
             <h3 class="text-2xl text-brown-800">Volunteers ({{ garden.attributes.volunteers.data.length }})
