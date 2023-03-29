@@ -5,6 +5,7 @@ import { useRoute } from "vue-router";
 import { useAuthStore, useGardensStore, useVolunteerDaysStore } from '@/stores';
 
 import {VolunteerDayModal} from '@/components/modals'
+import { VolunteerDayTasks } from '@/components'
 
 export default {
   name: "GardenView",
@@ -30,7 +31,8 @@ export default {
     }
   },
   components: {
-    VolunteerDayModal
+    VolunteerDayModal,
+    VolunteerDayTasks
   },
   methods: {
     checkLoginState() {
@@ -65,9 +67,10 @@ export default {
           <ul v-if="volunteerDays">
             <h3 class="text-2xl text-brown-800">Volunteer Days ({{ volunteerDays.length }})
             </h3> 
-            <div class="grid grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 gap-4">
               <div class="ml-10 m-3" v-for="day in volunteerDays" :key="day.id">
                 <VolunteerDayModal v-bind="day.attributes" :id="day.id" :garden="garden.id"/>
+                <VolunteerDayTasks/>
               </div>
             </div>
           </ul>

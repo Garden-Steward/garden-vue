@@ -111,7 +111,7 @@ export default {
               transition
               duration-150
               ease-in-out" @click="show = true">
-              Create Volunteer Day
+              Create Task
             </button>
 
   <!-- Render inside our `<div id="modals"></div>` in index.html -->
