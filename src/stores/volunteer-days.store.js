@@ -21,17 +21,18 @@ export const useVolunteerDaysStore = defineStore({
             const gardenStore = useGardensStore();
             console.log("gardenStore",gardenStore.garden)
             this.volunteerDays = { loading: true };
-            fetchWrapper.get(`${baseUrl}?filters[garden][slug][$eq]=${slug}`)
+            fetchWrapper.get(`${baseUrl}/garden/${slug}`)
             // fetchWrapper.get(`${baseUrl}/${slug}/full`)
-                .then(res => this.volunteerDays = res.data)
+                .then(res => this.volunteerDays = res)
                 .catch(error => this.volunteerDays = { error })
         },
         async update(id, data) {
-            return fetchWrapper.put(`${baseUrl}/${id}`,{data: data})
+            return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
                 .then(res => {
-                    this.volunteerDay = res.data;
+                    console.log(res)
+                    this.volunteerDay = res.data.attributes;
                     const idx = this.volunteerDays.findIndex(v=> v.id == res.data.id);
-                    this.volunteerDays[idx] = res.data;
+                    this.volunteerDays[idx] = res.data.attributes;
                 })
                 .catch(this.handleError);
             

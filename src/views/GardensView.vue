@@ -22,11 +22,8 @@ const rowClick = (slug) => {
     <div>
         <h1 class="text-3xl font-bold mb-5">Hi {{user?.firstName}}!</h1>
         <h3>Gardens:</h3>
-        <!-- <ul >
-            <li v-for="garden in gardens" :key="garden.id">{{garden.make}} {{garden.model}}</li>
-        </ul> -->
+
         <div class="grid grid-cols-4 gap-4 ml-2" v-if="gardens">
-              <!-- <li class="ml-10 m-3" v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">{{volunteer.attributes.firstName}} {{volunteer.attributes.lastName}}</li> -->
               <div v-for="garden in gardens" :key="garden.id" 
               class="m-3 p-4 border-r-4 border rounded p-2 bg-slate-100 opacity-75 hover:opacity-100 cursor-pointer hover:bg-slate-300"  
               @click="rowClick(garden.attributes.slug)">

@@ -2,7 +2,6 @@
 import { computed } from "vue";
 import { useVolunteerDaysStore, useAlertStore } from '@/stores';
 import { format } from 'date-fns'
-// import { VolunteerDayTasks } from '@/components'
 
 export default {
   props: {
@@ -11,7 +10,9 @@ export default {
    endText: String,
    startDatetime: String,
    id: Number,
-   garden: Number
+   garden: Number,
+   interests: Array,
+   interest: String
  },
  setup(props) {
   const volunteerDaysStore = useVolunteerDaysStore();  
@@ -39,6 +40,7 @@ export default {
       volunteers: false,
       error: false,
       form : {
+        interest: this.interest,
         title: this.title,
         disabled: this.disabled,
         blurb: this.blurb,
@@ -53,6 +55,7 @@ export default {
       this.copy = false;
       this.show = false;
       this.form.garden = this.garden
+      // console.log("form submit: ", this.form, this.id)
       if (this.id) {
           await this.volunteerDaysStore.update(this.id, this.form);
           message = 'Volunteer Day updated';
@@ -120,9 +123,6 @@ export default {
     <div v-if="show" class="w-xl">
       <!-- The backdrop -->
       <div class="fixed inset-0 bg-gray-900 opacity-40"></div>
-
-
-      
       <!-- *** START FORM *** -->
 
 
@@ -132,13 +132,20 @@ export default {
         <div class="bg-white text-black p-6 w-50">
           <slot></slot>
 
-          <p class="pb-1">{{ topic }}</p>
+          <label class="pb-1 block">{{ topic }}</label>
           <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.title" />
+          <div>
+            <label class="pb-1 block">Send to group: </label>
+            <select v-model="form.interest" class="rounded-md border p-1 ml-1">
+              <option>Everyone</option>
+              <option v-for="interest in interests" :key="interest.id" :value="interest.tag">{{ interest.tag }}</option>
+            </select>
+          </div>
           
-          <p class="p-1">Event Information:</p>
+          <label class="p-1">Event Information:</label>
           <textarea v-model="form.blurb" class="form-control p-1 m-r-4 mb-1"></textarea>
           
-          <p class="p-1">Start Date & Time:</p>
+          <label class="p-1">Start Date & Time:</label>
           <VueDatePicker v-model="form.startDatetime" class="mb-2"></VueDatePicker>
 
           <p class="p-1">Ending Time ("around noon"):</p>
