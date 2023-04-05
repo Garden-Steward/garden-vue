@@ -13,7 +13,7 @@ let ugArr
 if (props.u_g_interests) {
   ugArr = props.u_g_interests.data.map((ugi)=> {
     if (ugi.attributes.interest.data && ugi.attributes.interest.data) {
-      return ugi.attributes.interest.data.id
+      return {interest: ugi.attributes.interest.data.id, id: ugi.id}
     }
   })
 }
@@ -28,7 +28,7 @@ const clickVolunteer = (volunteer) => {
     <div>
         <h2 class="hover:opacity-75 cursor-pointer"  @click="clickVolunteer({volunteer})">{{ firstName }} {{ lastName }}</h2>
         <div v-for="interest in interests" :key="interest.id" :value="interest.tag">
-          <VolunteerInterest v-bind="interest" :ugArr="ugArr"></VolunteerInterest>
+          <VolunteerInterest v-bind="interest" :ugArr="ugArr" :garden="props.garden" :user="props.id"></VolunteerInterest>
         </div>
         
     </div>

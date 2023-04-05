@@ -33,6 +33,13 @@ export const useUGInterestsStore = defineStore({
                 this.uginterests = res.data;
             })
             .catch(this.handleError);
+      },
+      async delete(id) {
+        return fetchWrapper.delete(`${baseUrl}/${id}`)
+            .then(res => {
+                console.log("delete: ", res)
+            })
+            .catch(this.handleError);
       }
     }
 

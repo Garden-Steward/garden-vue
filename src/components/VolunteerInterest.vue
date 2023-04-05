@@ -6,24 +6,23 @@ import { useUGInterestsStore } from '@/stores';
 
 const props = defineProps({
   id: String,
+  user: Number,
   tag: String,
-  ugArr: Array
+  ugArr: Array,
+  garden: Number
 })
 const ugInterests = useUGInterestsStore();  
 
-let ugBool = props.ugArr.find((ug)=>ug === props.id)
-ugBool = (ugBool) ? true : false
+let ugInfo = props.ugArr.find((ug)=>ug.interest === props.id)
+let ugBool = (ugInfo) ? true : false
 console.log("uGarr: ", props.ugArr, ugBool, props.id);
 const clickInterest = (evt) => {
   console.log('int clicked', evt.target, evt.target.name, evt.target.value, evt.target.id, )
   if (ugBool) {
-    console.log('delete')
+    ugInterests.delete(ugInfo.id)
   } else {
-    console.log('register')
-    // ugInterests.register({"user":props.id,"interest":evt.target.id, "garden":props.garden})
+    ugInterests.register({"user":props.user,"interest":evt.target.id, "garden":props.garden})
   }
-  // // let intr = props.u_g_interests.find((ugi)=> ugi.tag == interest.tag)
-  // // @TODO - if turn off delete, else register
 }
 
 </script>
