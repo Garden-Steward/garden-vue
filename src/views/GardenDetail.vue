@@ -6,6 +6,7 @@ import { useAuthStore, useGardensStore, useVolunteerDaysStore } from '@/stores';
 
 import {VolunteerDayModal} from '@/components/modals'
 import { VolunteerDayTasks } from '@/components'
+import Volunteer from '@/components/VolunteerDetail.vue'
 
 export default {
   name: "GardenView",
@@ -33,14 +34,12 @@ export default {
   },
   components: {
     VolunteerDayModal,
-    VolunteerDayTasks
+    VolunteerDayTasks,
+    Volunteer
   },
   methods: {
     checkLoginState() {
       // this.userStore.checkLoginState()
-    },
-    clickVolunteer(volunteer) {
-      console.log('volunteer clicked', volunteer)
     }
   }
 }
@@ -51,19 +50,16 @@ export default {
         <h1 class="text-3xl font-bold mb-5">Hi {{user?.firstName}}!</h1>
         <div class="table-auto" v-if="garden.attributes">
           <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-blue-600">{{ garden.attributes.title }}</h1>
-          <ul v-if="garden.attributes.volunteers.data.length">
+
+          <article v-if="garden.attributes.volunteers.data.length">
             <h3 class="text-2xl text-brown-800">Volunteers ({{ garden.attributes.volunteers.data.length }})
             </h3> 
-            
-            <div class="grid grid-cols-6 gap-6 ml-2">
-              <!-- <li class="ml-10 m-3" v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">{{volunteer.attributes.firstName}} {{volunteer.attributes.lastName}}</li> -->
-              <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id" class="m-2 border-r-4 border rounded p-2 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="clickVolunteer({volunteer})">
-                  <span class="underline text-m">{{ volunteer.attributes.firstName }}  {{volunteer.attributes.lastName}}</span>
+            <div class="grid grid-cols-4 gap-3 ml-2">
+              <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id" class="m-2 border-r-4 border rounded p-2 bg-slate-100">
+                  <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id"/>
               </div>
             </div>
-
-
-          </ul>
+          </article>
 
           <ul v-if="volunteerDays">
             <h3 class="text-2xl text-brown-800">Events ({{ volunteerDays.length }})
