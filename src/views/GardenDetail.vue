@@ -66,8 +66,10 @@ export default {
             </h3> 
             <div class="grid grid-cols-1 gap-4">
               <div class="ml-10 m-3" v-for="day in volunteerDays" :key="day.id">
-                <VolunteerDayModal v-bind="day" :id="day.id" :garden="garden.id" :interests="garden.attributes.interests"/>
-                <VolunteerDayTasks v-bind="day" :id="day.id" />
+                <div>
+                  <VolunteerDayModal v-bind="day" :id="day.id" :garden="garden.id" :interests="garden.attributes.interests"/>
+                  <VolunteerDayTasks v-bind="day" :garden="garden.id"/>
+                </div>
               </div>
             </div>
           </ul>

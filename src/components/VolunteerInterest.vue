@@ -1,21 +1,24 @@
 <script setup>
-import { ref, computed } from 'vue'
-
 import { useUGInterestsStore } from '@/stores';
 
 
 const props = defineProps({
-  id: String,
+  id: Number,
+  createdAt: String,
+  updatedAt: String,
+  publishedAt: String,
   user: Number,
   tag: String,
   ugArr: Array,
   garden: Number
+  
 })
 const ugInterests = useUGInterestsStore();  
 
 let ugInfo = props.ugArr.find((ug)=>ug.interest === props.id)
 let ugBool = (ugInfo) ? true : false
-console.log("uGarr: ", props.ugArr, ugBool, props.id);
+// Each checkbox get sent ugBool 
+// console.log("uGarr: ", props.ugArr, ugBool, props.id);
 const clickInterest = (evt) => {
   console.log('int clicked', evt.target, evt.target.name, evt.target.value, evt.target.id, )
   if (ugBool) {

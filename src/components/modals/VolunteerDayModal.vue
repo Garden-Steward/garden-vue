@@ -9,8 +9,14 @@ export default {
    blurb: String,
    endText: String,
    startDatetime: String,
+   createdAt: String,
+   updatedAt: String,
+   publishedAt: String,
+   daysJournal: String,
    id: Number,
    garden: Number,
+   garden_tasks: Array,
+   disabled: Boolean,
    interests: Array,
    interest: String
  },
@@ -87,8 +93,6 @@ export default {
 </script>
 
 <template>
-
-  <!-- <VolunteerDayTasks /> -->
 
   <div v-if="title" class="border-r-3 border rounded p-4 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="show = true">
     <a class="hover:text-blue ">

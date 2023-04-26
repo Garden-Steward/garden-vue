@@ -2,19 +2,22 @@
 import VolunteerInterest from '@/components/VolunteerInterest.vue'
 
 const props = defineProps({
-  id: String,
+  id: Number,
   garden: Number,
   firstName: String,
   lastName: String,
+  createdAt: String,
+  updatedAt: String,
+  publishedAt: String,
   interests: Array,
-  u_g_interests: Array
+  u_g_interests: Object
 })
 let ugArr 
-if (props.u_g_interests) {
-  ugArr = props.u_g_interests.data.map((ugi)=> {
-    if (ugi.attributes.interest.data && ugi.attributes.interest.data) {
+if (props.u_g_interests.data) {
+  // console.log("u_g_interests: ", props.u_g_interests.data, props.id)
+  ugArr = props.u_g_interests.data.filter((ugi)=> ugi.attributes.interest && ugi.attributes.garden.data.id == props.garden)
+  ugArr = ugArr.map((ugi)=> {
       return {interest: ugi.attributes.interest.data.id, id: ugi.id}
-    }
   })
 }
 
