@@ -46,6 +46,7 @@ export default {
       volunteers: false,
       error: false,
       form : {
+        id: this.id,
         interest: this.interest,
         title: this.title,
         disabled: this.disabled,
@@ -56,20 +57,17 @@ export default {
     }
   },
   methods: {
-    async submit() {
-      let message;
+    async saveDay(e) {
+      this.alertStore.clear();
       this.copy = false;
-      this.show = false;
       this.form.garden = this.garden
       // console.log("form submit: ", this.form, this.id)
-      if (this.id) {
+      if (this.form.id) {
           await this.volunteerDaysStore.update(this.id, this.form);
-          message = 'Volunteer Day updated';
-          this.show=false;
-          this.alertStore.success(message);
+          this.alertStore.success('Volunteer Day updated');
       } else {
-          await this.volunteerDaysStore.register(this.form);
-          message = 'Volunteer Day added';
+          // await this.volunteerDaysStore.register(this.form);
+          this.alertStore.success('Volunteer Day added');
       }
     },
     async testDay() {
@@ -77,6 +75,7 @@ export default {
         console.log("testDay: ", smsTest)
         if (smsTest.copy) {
           this.copy = smsTest.copy;
+          this.numVolunteers = smsTest.numVolunteers;
         } else {
           this.error = smsTest.error;
         }
@@ -87,6 +86,17 @@ export default {
         this.alertStore.success(`SMS Sent to ${smsTest.length} volunteers`);
         this.show = false;
       });
+    },
+    async closeUp() {
+      this.volunteerDaysStore.closeUpdate(this.id);
+      this.show = false;
+      this.copy= false;
+      this.alertStore.clear()
+    },
+    async showExisting(id) {
+      this.show = true;
+      this.form.id = id;
+      console.log(id);
     }
   }
 }
@@ -94,9 +104,9 @@ export default {
 
 <template>
 
-  <div v-if="title" class="border-r-3 border rounded p-4 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="show = true">
+  <div v-if="title" class="border-r-3 border rounded p-4 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="() => {showExisting(id)}">
     <a class="hover:text-blue ">
-      <span class="underline text-xl">{{ title }}</span>
+      <span class="underline text-xl">{{ title }} {{ id }}</span>
       <br />
       {{ prettyDay }}
     </a>
@@ -130,13 +140,14 @@ export default {
       <!-- *** START FORM *** -->
 
 
-      <form @submit.prevent="submit">
+      <form>
 
       <div class="fixed inset-0 flex items-center justify-center">
         <div class="bg-white text-black p-6 w-50">
           <slot></slot>
 
           <label class="pb-1 block">{{ topic }}</label>
+          <input type="hidden" v-model="form.id" />
           <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.title" />
           <div>
             <label class="pb-1 block">Send to group: </label>
@@ -164,7 +175,7 @@ export default {
 
           <div
             class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
-            <button class="px-6
+            <span class="px-6
               py-2.5
               bg-blue-600
               text-white
@@ -179,8 +190,9 @@ export default {
               active:bg-blue-800 active:shadow-lg
               transition
               duration-150
+              cursor-pointer
               ease-in-out
-              ml-1" type="submit">Save changes</button>
+              ml-1" @click="saveDay()">Save changes</span>
 
               <span class="px-6
               py-2.5
@@ -204,6 +216,7 @@ export default {
             <p class="p-1 mb-2 mt-2 text-sm bg-yellow-200">{{ notification }}</p>
 
             <div class="mb-3">{{ copy }}</div>
+            <div class="mb-3 font-bold">This will be sent to {{ numVolunteers }} people </div>
             <div>
               <span class="px-6
               py-2.5
@@ -240,7 +253,7 @@ export default {
                 active:shadow-lg
                 transition
                 duration-150
-                ease-in-out" @click="()=> {show = false;copy= false}">Close</button>
+                ease-in-out" @click="closeUp()">Close</button>
           </div>
         </div>
       </div>

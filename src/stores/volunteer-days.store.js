@@ -29,13 +29,15 @@ export const useVolunteerDaysStore = defineStore({
         async update(id, data) {
             return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
                 .then(res => {
-                    console.log(res)
                     this.volunteerDay = res.data.attributes;
-                    const idx = this.volunteerDays.findIndex(v=> v.id == res.data.id);
-                    this.volunteerDays[idx] = res.data.attributes;
                 })
                 .catch(this.handleError);
             
+        },
+        async closeUpdate(id) {
+            const idx = this.volunteerDays.findIndex(v=> v.id == id);
+            this.volunteerDays[idx].title = this.volunteerDay.title;
+
         },
         async register(data) {
             return fetchWrapper.post(`${baseUrl}`,{data:data})
