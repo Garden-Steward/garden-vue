@@ -66,7 +66,7 @@ export default {
           await this.volunteerDaysStore.update(this.id, this.form);
           this.alertStore.success('Volunteer Day updated');
       } else {
-          // await this.volunteerDaysStore.register(this.form);
+          await this.volunteerDaysStore.register(this.form);
           this.alertStore.success('Volunteer Day added');
       }
     },
