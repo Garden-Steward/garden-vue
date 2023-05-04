@@ -57,11 +57,10 @@ export default {
     }
   },
   methods: {
-    async saveDay(e) {
+    async saveDay() {
       this.alertStore.clear();
       this.copy = false;
       this.form.garden = this.garden
-      // console.log("form submit: ", this.form, this.id)
       if (this.form.id) {
           await this.volunteerDaysStore.update(this.id, this.form);
           this.alertStore.success('Volunteer Day updated');
@@ -72,7 +71,6 @@ export default {
     },
     async testDay() {
       this.volunteerDaysStore.testSms(this.id).then((smsTest)=>{
-        console.log("testDay: ", smsTest)
         if (smsTest.copy) {
           this.copy = smsTest.copy;
           this.numVolunteers = smsTest.numVolunteers;
@@ -106,7 +104,7 @@ export default {
 
   <div v-if="title" class="border-r-3 border rounded p-4 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="() => {showExisting(id)}">
     <a class="hover:text-blue ">
-      <span class="underline text-xl">{{ title }} {{ id }}</span>
+      <span class="underline text-xl">{{ title }}</span>
       <br />
       {{ prettyDay }}
     </a>
