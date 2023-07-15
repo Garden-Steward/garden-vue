@@ -21,8 +21,8 @@ export const useGardenTaskStore = defineStore({
             return fetchWrapper.put(`${baseUrl}/${id}`,{data: data})
                 .then(res => {
                     this.gardenTask = res.data;
-                    const idx = this.gardenTasks.findIndex(v=> v.id == res.data.id);
-                    this.gardenTasks[idx] = res.data;
+                    // const idx = this.gardenTasks.tasks.findIndex(v=> v.id == res.data.id);
+                    // this.gardenTasks.tasks[idx] = res.data;
                 })
                 .catch(this.handleError);
             
@@ -30,7 +30,7 @@ export const useGardenTaskStore = defineStore({
         async register(data) {
             return fetchWrapper.post(`${baseUrl}`,{data:data})
                 .then(res => {
-                    this.gardenTasks.push(res.data);
+                    // this.gardenTasks.tasks.push(res.data);
                     this.gardenTask = res.data;
                 })
                 .catch(this.handleError);

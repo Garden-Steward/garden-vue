@@ -21,7 +21,7 @@ const props = defineProps({
    type: String,
    garden_tasks: Array
  });
- console.log("garden tasks: ", props.endText, props.garden_tasks, props.garden)
+ console.log("garden tasks: ", props.endText, props.garden_tasks)
 </script>
 
 <template>
@@ -30,5 +30,5 @@ const props = defineProps({
       <GardenTask v-bind="task" :startDatetime="startDatetime" :garden="garden" :dayId="id" />
     </div>
   </div>
-  <GardenTask v-else :startDatetime="startDatetime" :garden="garden" :dayId="id" />
+  <GardenTask :startDatetime="startDatetime" :garden="garden" :dayId="id" />
 </template>

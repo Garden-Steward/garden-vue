@@ -77,6 +77,7 @@ export default {
           this.show=false;
           this.alertStore.success(message);
       } else {
+          this.form.status='INITIALIZED';
           await this.gardenTaskStore.register(this.form);
           message = 'Garden Task added';
       }
@@ -87,9 +88,9 @@ export default {
 
 <template>
 
-  <div v-if="task" class="border-r-3 border rounded p-4 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="show = true">
+  <div v-if="id" class=" bg-slate-100 hover:opacity-75 cursor-pointer"  @click="show = true">
     <a class="hover:text-blue ">
-      <span class="underline text-xl">title: {{ task.title }}</span>
+      Task: <span class="underline text-xl">{{ title }}</span> // status: {{ status }}
       <br />
     </a>
   </div>
