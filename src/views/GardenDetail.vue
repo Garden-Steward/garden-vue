@@ -62,10 +62,10 @@ export default {
           </article>
 
           <ul v-if="volunteerDays">
-            <h3 class="text-2xl text-brown-800">Events ({{ volunteerDays.length }})
+            <h3 class="text-2xl text-brown-800">Events ({{ volunteerDays.days.length }})
             </h3> 
             <div class="grid grid-cols-1 gap-4">
-              <div class="ml-10 m-3" v-for="day in volunteerDays" :key="day.id">
+              <div class="ml-10 m-3" v-for="day in volunteerDays.days" :key="day.id">
                 <div>
                   <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests"/>
                   <VolunteerDayTasks v-bind="day" :garden="garden.id"/>

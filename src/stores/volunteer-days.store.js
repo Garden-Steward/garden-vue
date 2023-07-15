@@ -23,7 +23,8 @@ export const useVolunteerDaysStore = defineStore({
             this.volunteerDays = { loading: true };
             fetchWrapper.get(`${baseUrl}/garden/${slug}`)
             // fetchWrapper.get(`${baseUrl}/${slug}/full`)
-                .then(res => this.volunteerDays = res)
+                .then(res => this.volunteerDays.days = res)
+                .then(this.volunteerDays = { loading: false })
                 .catch(error => this.volunteerDays = { error })
         },
         async update(id, data) {
@@ -35,14 +36,14 @@ export const useVolunteerDaysStore = defineStore({
             
         },
         async closeUpdate(id) {
-            const idx = this.volunteerDays.findIndex(v=> v.id == id);
-            this.volunteerDays[idx].title = this.volunteerDay.title;
+            const idx = this.volunteerDays.days.findIndex(v=> v.id == id);
+            this.volunteerDays.days[idx].title = this.volunteerDay.title;
 
         },
         async register(data) {
-            return fetchWrapper.post(`${baseUrl}`,{data:data})
+            return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
                 .then(res => {
-                    this.volunteerDays.push(res.data);
+                    this.volunteerDays.days.unshift(res.data.attributes);
                     this.volunteerDay = res.data;
                 })
                 .catch(this.handleError);

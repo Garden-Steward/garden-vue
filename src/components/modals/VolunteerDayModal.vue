@@ -67,6 +67,8 @@ export default {
       } else {
           await this.volunteerDaysStore.register(this.form);
           this.alertStore.success('Volunteer Day added');
+          this.show = false;
+          window.scrollTo(0,0);
       }
     },
     async testDay() {

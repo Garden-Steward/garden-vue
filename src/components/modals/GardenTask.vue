@@ -68,7 +68,8 @@ export default {
       let message;
       this.copy = false;
       this.show = false;
-      this.form.garden = this.garden
+      this.form.garden = this.garden;
+      this.form.volunteer_day = this.dayId;
       console.log(this.form, 'submitted')
       if (this.id) {
           await this.gardenTaskStore.update(this.id, this.form);
