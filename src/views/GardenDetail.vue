@@ -55,7 +55,7 @@ export default {
             <h3 class="text-2xl text-brown-800">Volunteers ({{ garden.attributes.volunteers.data.length }})
             </h3> 
             <div class="grid grid-cols-4 gap-3 ml-2">
-              <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id" class="m-2 border-r-4 border rounded p-2 bg-slate-100">
+              <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">
                   <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id"/>
               </div>
             </div>

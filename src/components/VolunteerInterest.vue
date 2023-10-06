@@ -35,5 +35,6 @@ const clickInterest = (evt) => {
             :id="props.id"
             v-model="ugBool"
             @click="(event) => clickInterest(event)">
-          <label class="text-sm p-1 ml-1" for="{{ props.tag }}">{{ props.tag }}</label>
+          <label class="text-sm p-1 ml-1" for={props.id}>{{ props.tag }}</label>
+          
 </template>
