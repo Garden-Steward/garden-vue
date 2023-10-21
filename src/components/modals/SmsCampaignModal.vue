@@ -1,43 +1,34 @@
 <script>
 import { computed } from "vue";
-import { useVolunteerDaysStore, useAlertStore } from '@/stores';
+import { useSMSCampaignStore, useAlertStore } from '@/stores';
 import { format } from 'date-fns'
 
 export default {
   props: {
-   title: String,
-   blurb: String,
-   endText: String,
-   startDatetime: String,
+   body: String,
    createdAt: String,
    updatedAt: String,
    publishedAt: String,
-   daysJournal: String,
    id: Number,
    garden: Number,
-   garden_tasks: Array,
-   disabled: Boolean,
-   interests: Array,
-   interest: String
+   sent: Array,
+   interests: Array
  },
  setup(props) {
-  const volunteerDaysStore = useVolunteerDaysStore();  
+  const smsCampaignStore = useSMSCampaignStore();  
   const alertStore = useAlertStore();  
-  
-  const topic = computed(()=> {
-    return (props.id) ? "Title:" : "Volunteer Day Title:"
+  console.log("interests: ", props.interests)
+ 
+  const sentCount = computed(() => {
+    return props.sent.length;
   })
-  const notification = computed(() => {
-    if (new Date(`${props.startDatetime}`) < new Date()) {
-      return "This Volunteer Day has already happened, no SMS will be auto-sent.";
-    } else {
-      return "SMS sends out 3 days before, and day of. Disabling stops SMS"
-    }
+ const prettyDay = computed(() => {
+    return format(new Date(props.createdAt), 'PPP');
   })
-  const prettyDay = computed(() => {
-    return format(new Date(props.startDatetime), 'PPP');
+ const bodyExcerpt = computed(() => {
+    return props.body?.slice(0,50);
   })
-  return {alertStore, volunteerDaysStore, topic, notification, prettyDay};
+  return {alertStore, smsCampaignStore, prettyDay, bodyExcerpt, sentCount};
  },
   data() {
     return {
@@ -47,32 +38,17 @@ export default {
       error: false,
       form : {
         id: this.id,
-        interest: this.interest,
-        title: this.title,
-        disabled: this.disabled,
-        blurb: this.blurb,
-        endText: this.endText,
-        startDatetime: this.startDatetime
+        garden: this.garden,
+        body: this.body,
       }
     }
   },
   methods: {
-    async saveDay() {
-      this.alertStore.clear();
-      this.copy = false;
-      this.form.garden = this.garden
-      if (this.form.id) {
-          await this.volunteerDaysStore.update(this.id, this.form);
-          this.alertStore.success('Volunteer Day updated');
-      } else {
-          await this.volunteerDaysStore.register(this.form);
-          this.alertStore.success('Volunteer Day added');
-          this.show = false;
-          window.scrollTo(0,0);
-      }
-    },
-    async testDay() {
-      this.volunteerDaysStore.testSms(this.id).then((smsTest)=>{
+    async testCampaign() {
+      console.log(this.form)
+      const testData = Object.assign(this.form, this.garden);
+      console.log(testData);
+      this.smsCampaignStore.testSms(testData).then((smsTest)=>{
         if (smsTest.copy) {
           this.copy = smsTest.copy;
           this.numVolunteers = smsTest.numVolunteers;
@@ -82,13 +58,13 @@ export default {
       });
     },
     async sendSms() {
-      this.volunteerDaysStore.sendSms(this.id).then((smsTest)=>{
+      this.smsCampaignStore.sendSms(this.form).then((smsTest)=>{
         this.alertStore.success(`SMS Sent to ${smsTest.length} volunteers`);
         this.show = false;
       });
     },
     async closeUp() {
-      this.volunteerDaysStore.closeUpdate(this.id);
+      this.smsCampaignStore.closeUpdate(this.id);
       this.show = false;
       this.copy= false;
       this.alertStore.clear()
@@ -104,15 +80,17 @@ export default {
 
 <template>
 
-  <div v-if="title" class="border-r-3 border rounded p-3 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="() => {showExisting(id)}">
+  <div v-if="bodyExcerpt" class="border-r-2 border rounded p-2 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="() => {showExisting(id)}">
     <a class="hover:text-blue ">
-      <span class="underline text-xl">{{ title }}</span>
+      <span class="underline text-lg">{{ prettyDay }}</span>
       <br />
-      {{ prettyDay }}
+      {{ bodyExcerpt }}
+      <br />Sent to {{ sentCount }} people
+      
     </a>
   </div>
 
-  <button v-else type="button" class="px-5
+  <button v-else type="button" class="px-6
               py-1.5
               bg-blue-600
               text-white
@@ -128,7 +106,7 @@ export default {
               transition
               duration-150
               ease-in-out" @click="show = true">
-              Create Volunteer Day
+              Create New SMS Campaign
             </button>
 
   <!-- Render inside our `<div id="modals"></div>` in index.html -->
@@ -146,9 +124,8 @@ export default {
         <div class="bg-white text-black p-6 w-50">
           <slot></slot>
 
-          <label class="pb-1 block">{{ topic }}</label>
           <input type="hidden" v-model="form.id" />
-          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.title" />
+          <input type="hidden" v-model="form.garden" />
           <div>
             <label class="pb-1 block">Send to group: </label>
             <select v-model="form.interest" class="rounded-md border p-1 ml-1">
@@ -157,22 +134,9 @@ export default {
             </select>
           </div>
           
-          <label class="p-1">Event Information:</label>
-          <textarea v-model="form.blurb" class="form-control p-1 m-r-4 mb-1"></textarea>
+          <label class="p-1">SMS Body:</label>
+          <textarea v-model="form.body" rows=5 class="form-control p-1 m-r-4 mb-1"></textarea>
           
-          <label class="p-1">Start Date & Time:</label>
-          <VueDatePicker v-model="form.startDatetime" class="mb-2"></VueDatePicker>
-
-          <p class="p-1">Ending Time ("around noon"):</p>
-          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.endText" placeholder="around..."/>
-          <br />
-          <label class="relative inline-flex items-center mb-3 cursor-pointer">
-            <input type="checkbox" value="" class="sr-only peer" v-model="form.disabled">
-            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Disabled</span>
-          </label>
-
-
           <div
             class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
             <span class="px-6
@@ -192,24 +156,10 @@ export default {
               duration-150
               cursor-pointer
               ease-in-out
-              ml-1" @click="saveDay()">Save changes</span>
-
-              <span class="px-6
-              py-2.5
-              bg-slate-600
-              text-white
-              font-medium
-              text-xs
-              leading-tight
-              uppercase
-              rounded
-              shadow-md
-              transition
-              duration-150
               active:bg-slate-800 active:shadow-lg
               cursor-pointer
               ease-in-out
-              ml-1" @click="testDay()">Test SMS</span>
+              ml-1" @click="testCampaign()">Test SMS</span>
           </div>
 
           <article v-if="copy">
@@ -234,10 +184,10 @@ export default {
               transition
               cursor-pointer
               duration-150
-              ease-in-out" @click="sendSms()">Send Upcoming SMS NOW, knowing auto-send is setup</span>
+              ease-in-out" @click="sendSms()">Send SMS NOW</span>
             </div>
           </article>
-          <div v-if="error" class="text-danger">Error loading volunteer days: {{error}}</div>
+          <div v-if="error" class="text-danger">Error loading SMS Campaigns: {{error}}</div>
           <div class="pr-4 justify-end flex flex-shrink-0 flex-wrap items-center">
             <button type="button" class="px-6
                 py-2.5
