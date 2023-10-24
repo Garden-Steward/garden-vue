@@ -25,10 +25,13 @@ export default {
  const prettyDay = computed(() => {
     return format(new Date(props.createdAt), 'PPP');
   })
+ const protect = computed(()=> {
+    return (props.id) ? 'disabled' : '';
+ })
  const bodyExcerpt = computed(() => {
     return props.body?.slice(0,50);
   })
-  return {alertStore, smsCampaignStore, prettyDay, bodyExcerpt, sentCount};
+  return {alertStore, smsCampaignStore, prettyDay, bodyExcerpt, sentCount, protect};
  },
   data() {
     return {
@@ -36,6 +39,7 @@ export default {
       copy: false,
       volunteers: false,
       error: false,
+      selected: 'Everyone',
       form : {
         id: this.id,
         garden: this.garden,
@@ -45,9 +49,7 @@ export default {
   },
   methods: {
     async testCampaign() {
-      console.log(this.form)
       const testData = Object.assign(this.form, this.garden);
-      console.log(testData);
       this.smsCampaignStore.testSms(testData).then((smsTest)=>{
         if (smsTest.copy) {
           this.copy = smsTest.copy;
@@ -81,13 +83,10 @@ export default {
 <template>
 
   <div v-if="bodyExcerpt" class="border-r-2 border rounded p-2 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="() => {showExisting(id)}">
-    <a class="hover:text-blue ">
       <span class="underline text-lg">{{ prettyDay }}</span>
       <br />
       {{ bodyExcerpt }}
       <br />Sent to {{ sentCount }} people
-      
-    </a>
   </div>
 
   <button v-else type="button" class="px-6
@@ -126,40 +125,46 @@ export default {
 
           <input type="hidden" v-model="form.id" />
           <input type="hidden" v-model="form.garden" />
-          <div>
-            <label class="pb-1 block">Send to group: </label>
-            <select v-model="form.interest" class="rounded-md border p-1 ml-1">
-              <option>Everyone</option>
-              <option v-for="interest in interests" :key="interest.id" :value="interest.tag">{{ interest.tag }}</option>
-            </select>
-          </div>
-          
-          <label class="p-1">SMS Body:</label>
-          <textarea v-model="form.body" rows=5 class="form-control p-1 m-r-4 mb-1"></textarea>
-          
-          <div
-            class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
-            <span class="px-6
-              py-2.5
-              bg-blue-600
-              text-white
-              font-medium
-              text-xs
-              leading-tight
-              uppercase
-              rounded
-              shadow-md
-              hover:bg-blue-700 hover:shadow-lg
-              focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
-              active:bg-blue-800 active:shadow-lg
-              transition
-              duration-150
-              cursor-pointer
-              ease-in-out
-              active:bg-slate-800 active:shadow-lg
-              cursor-pointer
-              ease-in-out
-              ml-1" @click="testCampaign()">Test SMS</span>
+          <div v-bind:class="{disabled: id}">
+            <div>
+              <label class="pb-1 block">Send to group: </label>
+              <select v-model="form.interest" class="rounded-md border p-1 ml-1">
+                <option>Everyone</option>
+                <option 
+                v-for="interest in interests" 
+                :key="interest.id" 
+                :selected="option == 'Volunteering'"
+                :value="interest.tag">{{ interest.tag }}</option>
+              </select>
+            </div>
+            
+            <label class="p-1">SMS Body:</label>
+            <textarea v-model="form.body" rows=5 class="form-control p-1 m-r-4 mb-1"></textarea>
+            
+            <div v-if="!id"
+              class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
+              <span class="px-6
+                py-2.5
+                bg-blue-600
+                text-white
+                font-medium
+                text-xs
+                leading-tight
+                uppercase
+                rounded
+                shadow-md
+                hover:bg-blue-700 hover:shadow-lg
+                focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
+                active:bg-blue-800 active:shadow-lg
+                transition
+                duration-150
+                cursor-pointer
+                ease-in-out
+                active:bg-slate-800 active:shadow-lg
+                cursor-pointer
+                ease-in-out
+                ml-1" @click="testCampaign()">Test SMS</span>
+            </div>
           </div>
 
           <article v-if="copy">

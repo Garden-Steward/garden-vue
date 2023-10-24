@@ -5,3 +5,11 @@ a {
 .app-container {
     min-height: 350px;
 }
+.disabled {
+    opacity: 0.5;
+}
+.disabled:after {
+    width: 100%;
+    height: 100%;
+    position: absolute; 
+}
