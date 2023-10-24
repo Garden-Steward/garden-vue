@@ -2,6 +2,8 @@
 import VolunteerInterest from '@/components/VolunteerInterest.vue'
 import { backendHelper } from '@/helpers';
 import { ref } from 'vue';
+import { format } from 'date-fns'
+
 const dropDown = ref(0);
 const props = defineProps({
   id: Number,
@@ -29,6 +31,8 @@ if (props.u_g_interests.data) {
   })
   console.log(ugArr)
 }
+const prettyDay = format(new Date(props.createdAt), 'PPP');
+
 
 const clickVolunteer = (volunteer) => {
   console.log('volunteer clicked', volunteer)
@@ -67,6 +71,10 @@ let displayName = (props.firstName || props.lastName) ? `${props.firstName} ${pr
     </div>
     <div v-show="dropDown" class="absolute mt-2 p-2 bg-white border rounded-lg shadow-lg">
       <h2 class="hover:opacity-75 cursor-pointer"  @click="clickVolunteer({id, email})"></h2>
+        <p><span class="font-semibold py-2">Registered:</span> {{ prettyDay }}</p>
+        <p><span class="font-semibold py-2">Email:</span> {{ email }}</p>
+        <p><span class="font-semibold py-2">Phone:</span> {{ phoneNumber }}</p>
+        <p><span class="font-semibold py-3">Interests:</span></p>
         <div v-for="interest in interests" :key="interest.id" :value="interest.tag">
           <VolunteerInterest v-bind="interest" :ugArr="ugArr" :garden="props.garden" :user="props.id"></VolunteerInterest>
         </div>
