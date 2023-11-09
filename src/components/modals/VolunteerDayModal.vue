@@ -218,7 +218,7 @@ export default {
             <div class="mb-3">{{ copy }}</div>
             <div class="mb-3 font-bold">This will be sent to {{ numVolunteers }} people </div>
             <div>
-              <span class="px-6
+              <button class="px-6
               py-2.5
               bg-slate-200
               text-black
@@ -234,7 +234,7 @@ export default {
               transition
               cursor-pointer
               duration-150
-              ease-in-out" @click="sendSms()">Send Upcoming SMS NOW, knowing auto-send is setup</span>
+              ease-in-out" @click="sendSms()">Send Upcoming SMS NOW, knowing auto-send is setup</button>
             </div>
           </article>
           <div v-if="error" class="text-danger">Error loading volunteer days: {{error}}</div>

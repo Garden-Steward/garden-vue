@@ -12,6 +12,8 @@ export default {
    id: Number,
    garden: Number,
    sent: Array,
+   confirmed: Array,
+   denied: Array,
    interests: Array
  },
  setup(props) {
@@ -59,7 +61,8 @@ export default {
         }
       });
     },
-    async sendSms() {
+    async sendSms(e) {
+      // HTMLSelectElement(e.target).addAttribute('disabled');
       this.smsCampaignStore.sendSms(this.form).then((smsTest)=>{
         this.alertStore.success(`SMS Sent to ${smsTest.length} volunteers`);
         this.show = false;
@@ -126,7 +129,7 @@ export default {
           <input type="hidden" v-model="form.id" />
           <input type="hidden" v-model="form.garden" />
           <div v-bind:class="{disabled: id}">
-            <div>
+            <div v-if="!id">
               <label class="pb-1 block">Send to group: </label>
               <select v-model="form.interest" class="rounded-md border p-1 ml-1">
                 <option>Everyone</option>
@@ -140,6 +143,15 @@ export default {
             
             <label class="p-1">SMS Body:</label>
             <textarea v-model="form.body" rows=5 class="form-control p-1 m-r-4 mb-1"></textarea>
+
+            <div v-if="confirmed?.length">
+            <h3>The following people confirmed to your RSVP request:</h3>
+            <ul>
+              <li v-for="conf in confirmed"
+              :key="conf.id"
+              class="pl-2">{{ conf.firstName }} {{ conf.firstName }}</li> 
+            </ul>
+            </div>
             
             <div v-if="!id"
               class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
@@ -173,7 +185,7 @@ export default {
             <div class="mb-3">{{ copy }}</div>
             <div class="mb-3 font-bold">This will be sent to {{ numVolunteers }} people </div>
             <div>
-              <span class="px-6
+              <button type="button" class="px-6
               py-2.5
               bg-slate-200
               text-black
@@ -189,7 +201,7 @@ export default {
               transition
               cursor-pointer
               duration-150
-              ease-in-out" @click="sendSms()">Send SMS NOW</span>
+              ease-in-out" @click="(e) => {sendSms(e)}">Send SMS NOW</button>
             </div>
           </article>
           <div v-if="error" class="text-danger">Error loading SMS Campaigns: {{error}}</div>
