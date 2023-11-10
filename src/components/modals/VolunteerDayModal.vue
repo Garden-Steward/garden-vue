@@ -25,7 +25,7 @@ export default {
   const alertStore = useAlertStore();  
   
   const topic = computed(()=> {
-    return (props.id) ? "Title:" : "Volunteer Day Title:"
+    return (props.id) ? "Title:" : "New Volunteer Day Title:"
   })
   const notification = computed(() => {
     if (new Date(`${props.startDatetime}`) < new Date()) {
@@ -68,8 +68,8 @@ export default {
           await this.volunteerDaysStore.register(this.form);
           this.alertStore.success('Volunteer Day added');
           this.show = false;
-          window.scrollTo(0,0);
       }
+      window.scrollTo(0,0);
     },
     async testDay() {
       this.volunteerDaysStore.testSms(this.id).then((smsTest)=>{

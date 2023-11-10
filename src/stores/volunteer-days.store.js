@@ -36,15 +36,18 @@ export const useVolunteerDaysStore = defineStore({
             
         },
         async closeUpdate(id) {
-            const idx = this.volunteerDays.days.findIndex(v=> v.id == id);
-            this.volunteerDays.days[idx].title = this.volunteerDay.title;
+            // const idx = this.volunteerDays.days.findIndex(v=> v.id == id);
+            // this.volunteerDays.days[idx].title = this.volunteerDay.title;
 
         },
         async register(data) {
+            // TODO get id back from the register 
             return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
                 .then(res => {
-                    this.volunteerDays.days.unshift(res.data.attributes);
-                    this.volunteerDay = res.data;
+                    let vday = res.data;
+                    this.volunteerDays.days.unshift(vday.attributes);
+                    this.volunteerDay = vday.attributes;
+                    this.volunteerDay.id = vday.id;
                 })
                 .catch(this.handleError);
             
