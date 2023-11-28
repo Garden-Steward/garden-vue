@@ -1,6 +1,9 @@
 <script>
 import { storeToRefs } from 'pinia';
 import { useRoute } from "vue-router";
+import { ref } from "vue";
+import { Vue3SlideUpDown } from "vue3-slide-up-down";
+
 
 import { useAuthStore, useGardensStore, useVolunteerDaysStore, useSMSCampaignStore } from '@/stores';
 
@@ -25,10 +28,11 @@ export default {
     const { garden } = storeToRefs(gardensStore);
     const { volunteerDays } = storeToRefs(volunteerDaysStore);
     const { smsCampaigns } = storeToRefs(campaignStore);
-    
+    const showVol = ref(false);
+
     console.log("smsCampaigns: ", smsCampaigns, garden);
     
-    return {user, garden, volunteerDays, smsCampaigns}
+    return {user, garden, volunteerDays, smsCampaigns, showVol}
   },
 
   data() {
@@ -40,11 +44,15 @@ export default {
     VolunteerDayModal,
     SmsCampaignModal,
     VolunteerDayTasks,
-    Volunteer
+    Volunteer,
+    Vue3SlideUpDown
   },
   methods: {
     checkLoginState() {
       // this.userStore.checkLoginState()
+    },
+    toggleShowVol() {
+      this.showVol = !this.showVol;
     }
   }
 }
@@ -54,16 +62,24 @@ export default {
     <div>
         <h1 class="text-3xl font-bold mb-5">Hi {{user?.firstName}}!</h1>
         <div class="table-auto" v-if="garden.attributes">
-          <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-blue-600">{{ garden.attributes.title }}</h1>
+          <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-blue-600 p-3">{{ garden.attributes.title }}</h1>
+          <p class="font-medium leading-tight text-l mt-0 mb-2 text-slate-600 p-4"><span class="underline">Welcome Text</span>: {{ garden.attributes.welcome_text }}</p>
 
           <article v-if="garden.attributes.volunteers.data.length">
-            <h3 class="text-2xl text-brown-800">Volunteers ({{ garden.attributes.volunteers.data.length }})
+            <h3 class="text-2xl text-brown-800 cursor-pointer p-4" @click="toggleShowVol">Volunteers ({{ garden.attributes.volunteers.data.length }})
+                <svg
+                  class="pl-2 w-6 h-6 fill-current inline-block mr-1"
+                  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path v-if="!showVol" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
+                </svg>
             </h3> 
-            <div class="grid grid-cols-4 gap-3 ml-2">
-              <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">
-                  <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id"/>
+            <Vue3SlideUpDown v-model="showVol">
+              <div class="grid grid-cols-4 gap-3 ml-2">
+                <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">
+                    <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id"/>
+                </div>
               </div>
-            </div>
+            </Vue3SlideUpDown>
           </article>
 
           <div class="flex">
