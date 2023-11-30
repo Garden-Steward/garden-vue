@@ -123,7 +123,7 @@ export default {
       <form>
 
       <div class="fixed inset-0 flex items-center justify-center">
-        <div class="bg-white text-black p-6 w-50">
+        <div class="bg-white text-black grid grid-cols-1 md:grid-cols-2 gap-2 p-3 m-3">
           <slot></slot>
 
           <input type="hidden" v-model="form.id" />

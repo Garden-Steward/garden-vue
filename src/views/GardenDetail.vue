@@ -29,10 +29,12 @@ export default {
     const { volunteerDays } = storeToRefs(volunteerDaysStore);
     const { smsCampaigns } = storeToRefs(campaignStore);
     const showVol = ref(false);
+    const showEvent = ref(true);
+    const showCamp = ref(true);
 
     console.log("smsCampaigns: ", smsCampaigns, garden);
     
-    return {user, garden, volunteerDays, smsCampaigns, showVol}
+    return {user, garden, volunteerDays, smsCampaigns, showVol, showEvent, showCamp}
   },
 
   data() {
@@ -53,8 +55,27 @@ export default {
     },
     toggleShowVol() {
       this.showVol = !this.showVol;
+    },
+    toggleShowEvent() {
+      this.showEvent = !this.showEvent;
+    },
+    toggleShowCamp() {
+      this.showCamp = !this.showCamp;
+    },
+    isMobile() {
+      if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        return true;
+      } else {
+        return false;
+      }
     }
-  }
+  },
+  created() {
+            if (this.isMobile()) {
+              this.showEvent = false;
+              this.showCamp = false;
+            }
+          }
 }
 </script>
 
@@ -62,8 +83,8 @@ export default {
     <div>
         <h1 class="text-3xl font-bold mb-5">Hi {{user?.firstName}}!</h1>
         <div class="table-auto" v-if="garden.attributes">
-          <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-blue-600 p-3">{{ garden.attributes.title }}</h1>
-          <p class="font-medium leading-tight text-l mt-0 mb-2 text-slate-600 p-4"><span class="underline">Welcome Text</span>: {{ garden.attributes.welcome_text }}</p>
+          <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-white-600 p-3">{{ garden.attributes.title }}</h1>
+          <p class="font-medium leading-tight text-l mt-0 mb-2 text-black p-4"><span class="f">Welcome Text</span>: {{ garden.attributes.welcome_text }}</p>
 
           <article v-if="garden.attributes.volunteers.data.length">
             <h3 class="text-2xl text-brown-800 cursor-pointer p-4" @click="toggleShowVol">Volunteers ({{ garden.attributes.volunteers.data.length }})
@@ -74,7 +95,7 @@ export default {
                 </svg>
             </h3> 
             <Vue3SlideUpDown v-model="showVol">
-              <div class="grid grid-cols-4 gap-3 ml-2">
+              <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-2">
                 <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">
                     <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id"/>
                 </div>
@@ -82,36 +103,47 @@ export default {
             </Vue3SlideUpDown>
           </article>
 
-          <div class="flex">
-            <div class="w-1/2 p-4">
+          <div class="container mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <!-- Left Column Content -->
-              <div class="bg-gray-200 p-2">
-                <h3 class="text-2xl text-brown-800">Events</h3>
+              <div class="bg-gray-200 p-2 mb-3">
                 <ul v-if="volunteerDays">
-                  <h3 class="text-l text-brown-800">Historic Events Count: ({{ volunteerDays.days.length }})
+                  <h3 class="text-2xl text-brown-800 p-1" @click="toggleShowEvent">Events ({{ volunteerDays.days.length }})
+                    <svg
+                      class="pl-2 w-6 h-6 fill-current inline-block mr-1"
+                      xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path v-if="!showEvent" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
+                    </svg>
+
                   </h3> 
                   <VolunteerDayModal :garden="garden.id" :interests="garden.attributes.interests">
                     <div class="pb-3">
                       <div class="text-lg font-bold">Create a new Event</div>
                     </div>
                   </VolunteerDayModal>
-
-                  <div class="grid grid-cols-1 gap-2">
-                    <div class="ml-10 m-2" v-for="day in volunteerDays.days" :key="day.id">
-                      <div>
-                        <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests"/>
-                        <VolunteerDayTasks v-bind="day" :garden="garden.id"/>
+                  <Vue3SlideUpDown v-model="showEvent">
+                    <div class="grid grid-cols-1 gap-2">
+                      <div class="ml-10 m-2" v-for="day in volunteerDays.days" :key="day.id">
+                        <div>
+                          <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests"/>
+                          <VolunteerDayTasks v-bind="day" :garden="garden.id"/>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </Vue3SlideUpDown>
                 </ul>
               </div>
-            </div>
-            <div class="w-1/2 p-4">
               <!-- Right Column Content -->
 
-              <div class="bg-gray-300 p-2">
-                <h3 class="text-2xl text-brown-800">SMS Campaigns ({{ smsCampaigns.length }})</h3>
+              <div class="bg-gray-300 p-2 mb-3">
+                <h3 class="text-2xl text-brown-800 p-1" @click="toggleShowCamp">SMS Campaigns ({{ smsCampaigns.length }})
+                  <svg
+                    class="pl-2 w-6 h-6 fill-current inline-block mr-1"
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path v-if="!showCamp" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
+                  </svg>
+
+                </h3>
                 <SmsCampaignModal :garden="garden.id" :interests="garden.attributes.interests">
                   <div class="pb-3">
                     <div class="text-lg font-bold">Create a new Group SMS</div>
@@ -120,14 +152,13 @@ export default {
 
                 <div v-if="smsCampaigns">
                   <div class="grid grid-cols-1 gap-2">
-                    <div class="ml-10 m-2" v-for="campaign in smsCampaigns" :key="campaign.id">
-                      <div>
-                        <!-- {{ campaign.createdAt }} // Sent to: {{ campaign.sent.length }} -->
-                        <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
-                      </div>
+                      <Vue3SlideUpDown v-model="showCamp">
+                        <div class="ml-10 m-2" v-for="campaign in smsCampaigns" :key="campaign.id">
+                            <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
+                        </div>
+                      </Vue3SlideUpDown>
                     </div>
                   </div>
-                </div>
               </div>
             </div>
           </div>

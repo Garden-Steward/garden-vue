@@ -4,7 +4,7 @@ import { RouterView } from 'vue-router';
 </script>
 
 <template>
-    <div class="app-container bg-light">
+    <div class="app-container">
         <Nav />
         <Alert />
         <div class="container pt-4 pb-4">

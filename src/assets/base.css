@@ -13,3 +13,6 @@ a {
     height: 100%;
     position: absolute; 
 }
+body {
+    background-color: #8aa37c;
+}
