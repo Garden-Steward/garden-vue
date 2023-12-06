@@ -11,6 +11,7 @@ import {VolunteerDayModal} from '@/components/modals'
 import {SmsCampaignModal} from '@/components/modals'
 import { VolunteerDayTasks } from '@/components'
 import Volunteer from '@/components/VolunteerDetail.vue'
+import ScheduleDays from '@/components/ScheduleDays.vue'
 
 export default {
   name: "GardenView",
@@ -47,8 +48,9 @@ export default {
     SmsCampaignModal,
     VolunteerDayTasks,
     Volunteer,
-    Vue3SlideUpDown
-  },
+    Vue3SlideUpDown,
+    ScheduleDays
+},
   methods: {
     checkLoginState() {
       // this.userStore.checkLoginState()
@@ -85,23 +87,27 @@ export default {
         <div class="table-auto" v-if="garden.attributes">
           <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-white-600 p-3">{{ garden.attributes.title }}</h1>
           <p class="font-medium leading-tight text-l mt-0 mb-2 text-black p-4"><span class="f">Welcome Text</span>: {{ garden.attributes.welcome_text }}</p>
-
-          <article v-if="garden.attributes.volunteers.data.length">
-            <h3 class="text-2xl text-brown-800 cursor-pointer p-4" @click="toggleShowVol">Volunteers ({{ garden.attributes.volunteers.data.length }})
-                <svg
-                  class="pl-2 w-6 h-6 fill-current inline-block mr-1"
-                  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path v-if="!showVol" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
-                </svg>
-            </h3> 
-            <Vue3SlideUpDown v-model="showVol">
-              <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">
-                    <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id"/>
+          <div class="container mx-auto mb-3">
+            <article v-if="garden.attributes.volunteers.data.length" class="bg-white p-6 rounded-lg shadow-md">
+              <h3 class="text-2xl font-bold cursor-pointer " @click="toggleShowVol">Volunteers ({{ garden.attributes.volunteers.data.length }})
+                  <svg
+                    class="pl-2 w-6 h-6 fill-current inline-block mr-1"
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path v-if="!showVol" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
+                  </svg>
+              </h3> 
+              <Vue3SlideUpDown v-model="showVol">
+                <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                  <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">
+                      <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id"/>
+                  </div>
                 </div>
-              </div>
-            </Vue3SlideUpDown>
-          </article>
+              </Vue3SlideUpDown>
+            </article>
+
+          </div>
+
+          <ScheduleDays :garden="garden.id" />
 
           <div class="container mx-auto">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
