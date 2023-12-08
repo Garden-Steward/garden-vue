@@ -34,8 +34,11 @@ const weekScheduler = useWeekSchedulerStore();
 weekScheduler.find(props.garden);
 
 const { weekscheduler } = storeToRefs(weekScheduler);
-console.log('schedulers: ', weekscheduler);
-
+const generateInitials = (user) => {
+  const name = user.attributes.username.split(' ');
+  const initials = name[0].charAt(0) + name[name.length-1].charAt(0);
+  return initials.toUpperCase();
+}
 </script>
 
 <template>
@@ -63,8 +66,8 @@ console.log('schedulers: ', weekscheduler);
             <div class="flex space-x-4">
               <!-- User Profile 1 -->
               <div class="flex items-center" v-for='volunteer of sched.attributes.backup_volunteers.data'>
-                <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
-                  <span class="text-white font-bold uppercase">U1</span>
+                <div :class="'bg-'+ volunteer.attributes.color +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center">
+                  <span class="text-white font-bold uppercase">{{ generateInitials(volunteer) }}</span>
                 </div>
                 <span class="ml-2">{{ volunteer.attributes.username }}</span>
               </div>
@@ -76,34 +79,6 @@ console.log('schedulers: ', weekscheduler);
                 </div>
                 <span class="ml-2">User 2</span>
               </div> -->
-              <!-- Add more user profiles as needed -->
-            </div>
-          </div>
-        </div>
-  
-        <!-- Wednesday Header -->
-        <div class="mb-4">
-          <h2 class="text-lg font-bold mb-2">Wednesday</h2>
-          <div class="bg-gray-100 p-4 rounded-md">
-            <h3 class="text-md font-semibold mb-2">Water the Garden</h3>
-  
-            <!-- User Profiles within Water the Garden task -->
-            <div class="flex space-x-4">
-              <!-- User Profile 3 -->
-              <div class="flex items-center">
-                <div class="h-10 w-10 rounded-full bg-yellow-500 flex items-center justify-center">
-                  <span class="text-white font-bold uppercase">U3</span>
-                </div>
-                <span class="ml-2">User 3</span>
-              </div>
-  
-              <!-- User Profile 4 -->
-              <div class="flex items-center">
-                <div class="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center">
-                  <span class="text-white font-bold uppercase">U4</span>
-                </div>
-                <span class="ml-2">User 4</span>
-              </div>
               <!-- Add more user profiles as needed -->
             </div>
           </div>
