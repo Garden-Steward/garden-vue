@@ -17,12 +17,13 @@ export const useWeekSchedulerStore = defineStore({
               .catch(error => this.weekscheduler = { error })
       },
       async update(id, data) {
+        console.log('updating', id, data)
         return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
             .then(res => {
                 console.log("scheduler update resp:", res)
-                this.weekscheduler = res.data.attributes;
-                const idx = this.weekscheduler.findIndex(v=> v.id == res.data.id);
-                this.weekscheduler[idx] = res.data.attributes;
+                const idx = this.weekscheduler.findIndex(ws=> ws.id == res.data.id);
+                console.log(idx)
+                this.weekscheduler[idx] = res.data;
             })
             .catch(this.handleError);
       },

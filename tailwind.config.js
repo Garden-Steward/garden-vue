@@ -30,7 +30,7 @@ module.exports = {
    plugins: [],
    safelist: [
     {
-      pattern: /bg-(red|green|blue|orange|fuchsia|emerald|violet|indigo|yellow|lime|slate)-(100|500|700)/, // You can display all the colors that you need
+      pattern: /bg-(red|green|blue|orange|purple|fuchsia|emerald|violet|indigo|yellow|lime|slate)-(100|500|700)/, // You can display all the colors that you need
     },
   ],
   }

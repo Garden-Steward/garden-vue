@@ -107,7 +107,7 @@ export default {
 
           </div>
 
-          <ScheduleDays :garden="garden.id" />
+          <ScheduleDays :garden="garden.id" :volunteers="garden.attributes.volunteers.data" />
 
           <div class="container mx-auto">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
