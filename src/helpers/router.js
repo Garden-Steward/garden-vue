@@ -25,6 +25,10 @@ export const router = createRouter({
         {
             path: '/gardens/:slug',
             component: Garden
+        },
+        {
+            path: '/i/:slug',
+            component: Garden
         }
     ]
 });

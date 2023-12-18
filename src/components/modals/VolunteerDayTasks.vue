@@ -21,7 +21,7 @@ const props = defineProps({
    type: String,
    garden_tasks: Array
  });
- console.log("garden tasks: ", props.endText, props.garden_tasks)
+//  console.log("garden tasks: ", props.endText, props.garden_tasks)
 </script>
 
 <template>

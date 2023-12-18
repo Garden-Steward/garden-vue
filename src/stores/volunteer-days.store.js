@@ -18,8 +18,8 @@ export const useVolunteerDaysStore = defineStore({
             console.log("Volunteer Error: ", err)
         },
         async getByGarden(slug) {
-            const gardenStore = useGardensStore();
-            console.log("gardenStore",gardenStore.garden)
+            // const gardenStore = useGardensStore();
+            // console.log("gardenStore",gardenStore.garden)
             this.volunteerDays = { loading: true };
             fetchWrapper.get(`${baseUrl}/garden/${slug}`)
             // fetchWrapper.get(`${baseUrl}/${slug}/full`)
@@ -71,7 +71,7 @@ export const useVolunteerDaysStore = defineStore({
     },
     getters: {
         gardenGetter(state) {
-            console.log("garden getter")
+            // console.log("garden getter")
             const gardenStore = useGardensStore();
             return state.localData + gardenStore.data
         }

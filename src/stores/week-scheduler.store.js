@@ -13,17 +13,18 @@ export const useWeekSchedulerStore = defineStore({
       async find(garden) {
           this.weekscheduler = { loading: true };
           fetchWrapper.get(`${baseUrl}?populate=*&filters[garden]=${garden}`)
-              .then(res => this.weekscheduler = res.data)
+              .then(res => this.weekscheduler = groupedSchedules(res.data))
               .catch(error => this.weekscheduler = { error })
       },
       async update(id, data) {
-        console.log('updating', id, data)
+        console.log('updating scheduler', id, data)
         return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
             .then(res => {
-                console.log("scheduler update resp:", res)
-                const idx = this.weekscheduler.findIndex(ws=> ws.id == res.data.id);
-                console.log(idx)
-                this.weekscheduler[idx] = res.data;
+                const day = res.data.attributes.day
+                const idx = this.weekscheduler[day].findIndex(ws=> ws.id == res.data.id);
+                this.weekscheduler[day][idx] = res.data.attributes;
+                this.weekscheduler[day][idx].id = res.data.id;
+                console.log("updated sched: ",this.weekscheduler)
             })
             .catch(this.handleError);
       },
@@ -44,3 +45,15 @@ export const useWeekSchedulerStore = defineStore({
     }
 
 });
+
+const groupedSchedules = (scheduleArr) => {
+    const grouped = {};
+    
+    // Loop through schedules and group by day
+    for (const wkS of scheduleArr) {
+      grouped[wkS.attributes.day] = grouped[wkS.attributes.day] ? grouped[wkS.attributes.day] : [];
+      wkS.attributes.id = wkS.id
+      grouped[wkS.attributes.day].push(wkS.attributes);
+    }
+    return grouped;
+  };

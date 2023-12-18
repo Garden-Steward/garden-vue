@@ -19,7 +19,6 @@ export default {
  setup(props) {
   const smsCampaignStore = useSMSCampaignStore();  
   const alertStore = useAlertStore();  
-  console.log("interests: ", props.interests)
  
   const sentCount = computed(() => {
     return props.sent.length;

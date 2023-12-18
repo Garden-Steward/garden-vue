@@ -21,10 +21,12 @@ const props = defineProps({
  });
 
 
-const weekScheduler = useWeekSchedulerStore();  
-weekScheduler.find(props.garden);
+const weekSchedulerStore = useWeekSchedulerStore();  
+weekSchedulerStore.find(props.garden);
 
-const { weekscheduler } = storeToRefs(weekScheduler);
+const { weekscheduler } = storeToRefs(weekSchedulerStore);
+console.log('weekscheduler', weekscheduler);
+let focusSchedule = null;
 const generateInitials = (user) => {
   const name = user.attributes.username.split(' ');
   const initials = name[0].charAt(0) + name[name.length-1].charAt(0);
@@ -38,33 +40,33 @@ const toggleEditMode = (day) => {
   } else {
     editMode.value = day; // Enter edit mode for the specified day
   }
-  console.log(editMode);
 }
-const toggleAddUserDropdown = () => {
-  console.log('vols: ',props.volunteers);
+const toggleAddUserDropdown = (day,id) => {
+  focusSchedule = id;
   showAddUserDropdown.value = !showAddUserDropdown.value;
 }
-const deleteUser = (userId) => {
-  console.log('delete user: ', userId)
+const deleteUser = (userId, schedId) => {
+  let addData = {"backup_volunteers": {"disconnect": [userId]}};
+
+  weekSchedulerStore.update(schedId, addData);
+
 }
 const addUserToSchedule = (user, schedId) => {
-  // Logic to add user to schedule
-  // ...
   console.log("adding user: ", user, schedId);
-  document.getElementById("userSearch").value = "";
+  // document.getElementById("userSearch").value = "";
   let addData = {"backup_volunteers": {"connect": [user.id]}};
 
-  weekScheduler.update(schedId, addData);
+  weekSchedulerStore.update(schedId, addData);
 
   showAddUserDropdown.value = false; // Hide dropdown after selecting a user
 }
 const filterUsers = () => {
-
   filteredUsers.value = props.volunteers.filter(user =>
     user.attributes.firstName?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     user.attributes.lastName?.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 }
+
 </script>
 
 <template>
@@ -82,64 +84,70 @@ const filterUsers = () => {
 
       <Vue3SlideUpDown v-model="showDays">
       
-        <!-- Sunday Header -->
-        <div class="mb-4" v-for='sched of weekscheduler'>
-          <h2 class="text-lg font-bold mb-2">{{ sched.attributes.day }}</h2>
-          <button @click="toggleEditMode(sched.attributes.day)" class="text-blue-500 flex items-right">
-            Edit
-          </button>
-          <div v-if="editMode == sched.attributes.day" class="bg-gray-100 p-4 rounded-md">
-            <h3 class="text-md font-semibold mb-2">{{ sched.attributes.recurring_task.data.attributes.title }}</h3>
-            <div class="flex space-x-4">
-              <div v-for='volunteer of sched.attributes.backup_volunteers.data' :key='volunteer.id' class="flex items-center">
-              
-                <!-- User Profile -->
-                <div :class="'bg-'+ volunteer.attributes.color +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center">
-                  <span class="text-white font-bold uppercase">{{ generateInitials(volunteer) }}</span>
+        <div class="mb-4" v-for="(daySchedules, day) in weekscheduler" :key="day">
+          <h2 class="text-lg font-bold mb-2 flex">{{ day }}
+            <span @click="toggleEditMode(day)" class="text-blue-500 text-sm flex items-right text-right flex ml-3 mt-1 cursor-pointer">
+            edit</span>
+          </h2>
+          <div v-if="editMode == day" class="bg-gray-100 mb-2 rounded-md">
+            <div v-for="sched in daySchedules" :key="sched.id">
+              <div class="bg-gray-100 p-4 rounded-md mb-2">
+                <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task.data.attributes.title }}</h3>
+                <div class="flex space-x-4">
+                  <div v-for='volunteer of sched.backup_volunteers.data' :key='volunteer.id' class="flex items-center">
+                  
+                    <!-- User Profile -->
+                    <div :class="'bg-'+ volunteer.attributes.color +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center">
+                      <span class="text-white font-bold uppercase">{{ generateInitials(volunteer) }}</span>
+                    </div>
+                    <span class="ml-2">{{ volunteer.attributes.username }}</span>
+    
+                    <!-- Negative icon to delete user -->
+                    <button @click="deleteUser(volunteer.id, sched.id)" class="ml-2 text-red-500">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M2 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4zm3 6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V10z" clip-rule="evenodd"/>
+                      </svg>
+                    </button>
+    
+                  </div>
+
+                  <button @click="toggleAddUserDropdown(sched.day, sched.id)" class="flex items-center mt-2 text-green-500">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd" d="M10 18a1 1 0 0 1-1-1v-6H3a1 1 0 1 1 0-2h6V3a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 0 1-1 1z"/>
+                    </svg>
+                    Add Volunteer
+                  </button>
                 </div>
-                <span class="ml-2">{{ volunteer.attributes.username }}</span>
+              </div>
+              <div v-if="showAddUserDropdown && sched.id == focusSchedule" ref="dropdown" class="absolute bg-gray-300 rounded-md p-2 w-120">
   
-                <!-- Negative icon to delete user -->
-                <button @click="deleteUser(volunteer.id)" class="ml-2 text-red-500">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd" d="M2 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4zm3 6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V10z" clip-rule="evenodd"/>
-                  </svg>
-                </button>
+                <input v-model="searchQuery" @input="filterUsers" placeholder="Search user..." class="w-full border-b focus:outline-none p-2" />
+  
+                <ul v-if="filteredUsers.length > 0" class="py-2">
+                  <li v-for="user in filteredUsers" :key="user.id" @click="addUserToSchedule(user,sched.id)" class="px-4 py-2 cursor-pointer hover:bg-gray-200">{{ user.attributes.firstName }} {{ user.attributes.lastName }}</li>
+                </ul>
+                <p v-else class="p-2">No matching users</p>
               </div>
             </div>
 
-            <!-- Plus icon to addUser method -->
-            <button @click="toggleAddUserDropdown(sched.attributes.day)" class="flex items-center mt-2 text-green-500">
-              <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" d="M10 18a1 1 0 0 1-1-1v-6H3a1 1 0 1 1 0-2h6V3a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 0 1-1 1z"/>
-              </svg>
-              Add Volunteer
-            </button>
-            <!-- Dropdown for addUser -->
-            <div v-if="showAddUserDropdown" class="absolute top-full left-0 mt-2 bg-white border rounded-md shadow-lg w-64">
-              <input v-model="searchQuery" id="userSearch" @input="filterUsers" placeholder="Search user..." class="w-full border-b focus:outline-none p-2" />
-
-              <ul v-if="filteredUsers.length > 0" class="py-2">
-                <li v-for="user in filteredUsers" :key="user.id" @click="addUserToSchedule(user,sched.id)" class="px-4 py-2 cursor-pointer hover:bg-gray-200">{{ user.attributes.firstName }} {{ user.attributes.lastName }}</li>
-              </ul>
-              <p v-else class="p-2">No matching users</p>
-            </div>
           </div>
 
           <div v-else>
     
-            <div class="bg-gray-100 p-4 rounded-md">
-              <h3 class="text-md font-semibold mb-2">{{ sched.attributes.recurring_task.data.attributes.title }}</h3>
-    
-              <div class="flex space-x-4">
-                <!-- User Profiles -->
-                <div class="flex items-center" v-for='volunteer of sched.attributes.backup_volunteers.data'>
-                  <div :class="'bg-'+ volunteer.attributes.color +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center">
-                    <span class="text-white font-bold uppercase">{{ generateInitials(volunteer) }}</span>
+            <div v-for="sched in daySchedules" :key="sched.id">
+              <div class="bg-gray-100 p-4 rounded-md mb-2">
+                <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task.data.attributes.title }}</h3>
+      
+                <div class="flex space-x-4">
+                  <div class="flex items-center" v-for='volunteer of sched.backup_volunteers.data' :key="volunteer.id">
+                    <div :class="'bg-'+ volunteer.attributes.color +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center">
+                      <span class="text-white font-bold uppercase">{{ generateInitials(volunteer) }}</span>
+                    </div>
+                    <span class="ml-2">{{ volunteer.attributes.username }}</span>
                   </div>
-                  <span class="ml-2">{{ volunteer.attributes.username }}</span>
                 </div>
               </div>
+            
             </div>
 
           </div>
@@ -149,3 +157,14 @@ const filterUsers = () => {
     </div>
   </div>
 </template>
+
+<style>
+/* ... (previous styles remain unchanged) ... */
+/* .absolute {
+  display: none;
+} */
+
+.relative:hover .absolute {
+  display: block;
+}
+</style>

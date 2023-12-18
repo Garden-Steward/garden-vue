@@ -11,6 +11,8 @@ export default {
    startDatetime: String,
    createdAt: String,
    updatedAt: String,
+   started_at: String,
+   completed_at: String,
    publishedAt: String,
    max_volunteers: Number,
    id: Number,

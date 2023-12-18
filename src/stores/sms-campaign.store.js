@@ -18,8 +18,7 @@ export const useSMSCampaignStore = defineStore({
             console.log("Volunteer Error: ", err)
         },
         async getByGarden(slug) {
-            const gardenStore = useGardensStore();
-            console.log("gardenStore",gardenStore.garden)
+            // const gardenStore = useGardensStore();
             this.smsCampaigns = { loading: true };
             fetchWrapper.get(`${baseUrl}/garden/${slug}`)
             // fetchWrapper.get(`${baseUrl}/${slug}/full`)

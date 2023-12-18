@@ -33,7 +33,7 @@ export default {
     const showEvent = ref(true);
     const showCamp = ref(true);
 
-    console.log("smsCampaigns: ", smsCampaigns, garden);
+    console.log("volunteerDays: ", volunteerDays, garden);
     
     return {user, garden, volunteerDays, smsCampaigns, showVol, showEvent, showCamp}
   },
@@ -88,7 +88,7 @@ export default {
           <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-white-600 p-3">{{ garden.attributes.title }}</h1>
           <p class="font-medium leading-tight text-l mt-0 mb-2 text-black p-4"><span class="f">Welcome Text</span>: {{ garden.attributes.welcome_text }}</p>
           <div class="container mx-auto mb-3">
-            <article v-if="garden.attributes.volunteers.data.length" class="bg-white p-6 rounded-lg shadow-md">
+            <article v-if="garden.attributes.volunteers?.data.length" class="bg-white p-6 rounded-lg shadow-md">
               <h3 class="text-2xl font-bold cursor-pointer " @click="toggleShowVol">Volunteers ({{ garden.attributes.volunteers.data.length }})
                   <svg
                     class="pl-2 w-6 h-6 fill-current inline-block mr-1"
@@ -114,7 +114,7 @@ export default {
               <!-- Left Column Content -->
               <div class="bg-gray-200 p-2 mb-3">
                 <ul v-if="volunteerDays">
-                  <h3 class="text-2xl text-brown-800 p-1" @click="toggleShowEvent">Events ({{ volunteerDays.days.length }})
+                  <h3 class="text-2xl text-brown-800 p-1" @click="toggleShowEvent">Events ({{ volunteerDays.days?.length }})
                     <svg
                       class="pl-2 w-6 h-6 fill-current inline-block mr-1"
                       xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
