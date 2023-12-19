@@ -9,8 +9,11 @@
         "deploy": "vite build && firebase deploy"
     },
     "dependencies": {
+        "@strapi-community/strapi-provider-upload-google-cloud-storage": "^4.10.5",
         "@vuepic/vue-datepicker": "^4.0.1",
         "date-fns": "^2.29.3",
+        "markdown-it": "^14.0.0",
+        "markdown-it-attrs": "^4.1.6",
         "pinia": "^2.0.13",
         "vee-validate": "^4.5.11",
         "vue": "^3.2.33",
