@@ -6,3 +6,4 @@ export * from './sms-campaign.store';
 export * from './garden-task.store';
 export * from './user-garden-interests.store';
 export * from './week-scheduler.store';
+export * from './instruction.store';
