@@ -16,7 +16,9 @@ const { instruction } = storeToRefs(instSTore);
 let renderedContent = '';
 
 watch(instruction, (newVal) => {
-  renderedContent = md.render(newVal.attributes.content);
+  if (newVal.attributes) {
+    renderedContent = md.render(newVal.attributes?.content);
+  }
 });
 
 console.log("instruction: ", instruction);
@@ -27,15 +29,15 @@ instSTore.findSlug(route.params.slug);
 <template>
     <div>
       <div class="max-w-4xl mx-auto px-6 py-12 bg-gray-100 rounded-lg">
-        <h1 class="text-3xl font-bold mb-6">{{ instruction.attributes.title }}</h1>
+        <h1 class="text-3xl font-bold mb-6">{{ instruction.attributes?.title }}</h1>
         <div v-html="renderedContent" class="text-left"></div>
         <!-- Conditional rendering of the agreement button -->
-        <div v-if="instruction.attributes.accept_required" class="mt-6">
+        <div v-if="instruction.attributes?.accept_required" class="mt-6">
           <button class="bg-green-700 hover:bg-green-900 text-white font-bold py-2 px-4 rounded">
-            Agree
+            Accept
           </button>
           <p class="text-sm mt-2">
-            I understand this task's requirements and I am capable.
+            I understand this task's requirements and I am capable. I accept this task.
           </p>
         </div>
       </div>
