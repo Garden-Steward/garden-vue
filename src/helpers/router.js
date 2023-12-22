@@ -35,10 +35,14 @@ export const router = createRouter({
 
 router.beforeEach(async (to) => {
     // redirect to login page if not logged in and trying to access a restricted page
-    const publicPages = ['/login','/oauth/google/callback', '/set-password', '/i/:slug'];
-    const authRequired = !publicPages.includes(to.path);
+    const publicPages = ['/login','/oauth/google/callback', '/set-password'];
+    let authRequired = !publicPages.includes(to.path);
+    let regexTest = new RegExp('/i/', 'g');
+    if (regexTest.test(to.path)) {
+        authRequired = false;
+    }
     const auth = useAuthStore();
-    console.log("before: ", auth);
+    console.log("before: ", auth, authRequired);
     if (authRequired && !auth.user) {
         auth.returnUrl = to.fullPath;
         return '/login';
