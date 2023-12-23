@@ -29,8 +29,10 @@ const acceptTask = (e) => {
   const urlParams = new URLSearchParams(window.location.search);
   const user = urlParams.get('u')
 
-  instSTore.approveTask({userId:user, slug:route.params.slug})
-  isApproved.value = true;
+  if (user) {
+    instSTore.approveTask({userId:user, slug:route.params.slug})
+    isApproved.value = true;
+  }
 
 }
 
