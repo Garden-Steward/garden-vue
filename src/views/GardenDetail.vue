@@ -151,9 +151,7 @@ export default {
 
                 </h3>
                 <SmsCampaignModal :garden="garden.id" :interests="garden.attributes.interests">
-                  <div class="pb-3">
                     <div class="text-lg font-bold">Create a new Group SMS</div>
-                  </div>
                 </SmsCampaignModal>
 
                 <div v-if="smsCampaigns">
