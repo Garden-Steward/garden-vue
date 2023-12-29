@@ -27,7 +27,7 @@ export default {
             return format(new Date(props.createdAt), 'PPP');
         });
         const protect = computed(() => {
-            return (props.id) ? 'disabled' : '';
+            return (props.id) ? 1 : 0;
         });
         const bodyExcerpt = computed(() => {
             return props.body?.slice(0, 50);
@@ -61,7 +61,7 @@ export default {
                 }
             });
         },
-        async sendSms(e) {
+        async sendSms() {
             // HTMLSelectElement(e.target).addAttribute('disabled');
             this.smsCampaignStore.sendSms(this.form).then((smsTest) => {
                 this.alertStore.success(`SMS Sent to ${smsTest.length} volunteers`);
@@ -129,7 +129,7 @@ export default {
 
           <input type="hidden" v-model="form.id" />
           <input type="hidden" v-model="form.garden" />
-          <div v-bind:class="{disabled: id}">
+          <div>
             <div v-if="!id">
               <label class="pb-1 block">Send to group: </label>
               <select v-model="form.interest" class="rounded-md border p-1 ml-1">
@@ -143,7 +143,7 @@ export default {
             </div>
             
             <label class="p-1">SMS Body:</label>
-            <textarea v-model="form.body" rows=5 class="form-control p-1 m-r-4 mb-1"></textarea>
+            <textarea v-model="form.body" rows=5 class="form-control p-1 m-r-4 mb-1" :disabled="protect == 1"></textarea>
 
             <div v-if="confirmed?.length">
             <h3>The following people confirmed to your RSVP request:</h3>
