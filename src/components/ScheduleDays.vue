@@ -4,6 +4,7 @@ import { Vue3SlideUpDown } from "vue3-slide-up-down";
 import { ref } from "vue";
 import { useWeekSchedulerStore } from '@/stores';
 import { storeToRefs } from 'pinia';
+import UserProfileDisplay from "./UserProfileDisplay.vue";
 
 const showDays = ref(false);
 const showAddUserDropdown = ref(false);
@@ -96,11 +97,7 @@ const filterUsers = () => {
                 <div class="flex space-x-4">
                   <div v-for='volunteer of sched.backup_volunteers.data' :key='volunteer.id' class="flex items-center">
                   
-                    <!-- User Profile -->
-                    <div :class="'bg-'+ volunteer.attributes.color +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center">
-                      <span class="text-white font-bold uppercase">{{ generateInitials(volunteer) }}</span>
-                    </div>
-                    <span class="ml-2">{{ volunteer.attributes.username }}</span>
+                    <UserProfileDisplay :volunteer="volunteer.attributes" />
     
                     <!-- Negative icon to delete user -->
                     <button @click="deleteUser(volunteer.id, sched.id)" class="ml-2 text-red-500">
@@ -140,10 +137,7 @@ const filterUsers = () => {
       
                 <div class="flex space-x-4">
                   <div class="flex items-center" v-for='volunteer of sched.backup_volunteers.data' :key="volunteer.id">
-                    <div :class="'bg-'+ volunteer.attributes.color +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center">
-                      <span class="text-white font-bold uppercase">{{ generateInitials(volunteer) }}</span>
-                    </div>
-                    <span class="ml-2">{{ volunteer.attributes.username }}</span>
+                    <UserProfileDisplay :volunteer="volunteer.attributes" />
                   </div>
                 </div>
               </div>

@@ -2,83 +2,85 @@
 import { computed } from "vue";
 import { useSMSCampaignStore, useAlertStore } from '@/stores';
 import { format } from 'date-fns'
+import UserProfileDisplay from "../UserProfileDisplay.vue";
 
 export default {
-  props: {
-   body: String,
-   createdAt: String,
-   updatedAt: String,
-   publishedAt: String,
-   id: Number,
-   garden: Number,
-   sent: Array,
-   confirmed: Array,
-   denied: Array,
-   interests: Array
- },
- setup(props) {
-  const smsCampaignStore = useSMSCampaignStore();  
-  const alertStore = useAlertStore();  
- 
-  const sentCount = computed(() => {
-    return props.sent.length;
-  })
- const prettyDay = computed(() => {
-    return format(new Date(props.createdAt), 'PPP');
-  })
- const protect = computed(()=> {
-    return (props.id) ? 'disabled' : '';
- })
- const bodyExcerpt = computed(() => {
-    return props.body?.slice(0,50);
-  })
-  return {alertStore, smsCampaignStore, prettyDay, bodyExcerpt, sentCount, protect};
- },
-  data() {
-    return {
-      show: false,
-      copy: false,
-      volunteers: false,
-      error: false,
-      selected: 'Everyone',
-      form : {
-        id: this.id,
-        garden: this.garden,
-        body: this.body,
-      }
-    }
-  },
-  methods: {
-    async testCampaign() {
-      const testData = Object.assign(this.form, this.garden);
-      this.smsCampaignStore.testSms(testData).then((smsTest)=>{
-        if (smsTest.copy) {
-          this.copy = smsTest.copy;
-          this.numVolunteers = smsTest.numVolunteers;
-        } else {
-          this.error = smsTest.error;
+    props: {
+        body: String,
+        createdAt: String,
+        updatedAt: String,
+        publishedAt: String,
+        id: Number,
+        garden: Number,
+        sent: Array,
+        confirmed: Array,
+        denied: Array,
+        interests: Array
+    },
+    setup(props) {
+        const smsCampaignStore = useSMSCampaignStore();
+        const alertStore = useAlertStore();
+        const sentCount = computed(() => {
+            return props.sent.length;
+        });
+        const prettyDay = computed(() => {
+            return format(new Date(props.createdAt), 'PPP');
+        });
+        const protect = computed(() => {
+            return (props.id) ? 'disabled' : '';
+        });
+        const bodyExcerpt = computed(() => {
+            return props.body?.slice(0, 50);
+        });
+        return { alertStore, smsCampaignStore, prettyDay, bodyExcerpt, sentCount, protect };
+    },
+    data() {
+        return {
+            show: false,
+            copy: false,
+            volunteers: false,
+            error: false,
+            selected: 'Everyone',
+            form: {
+                id: this.id,
+                garden: this.garden,
+                body: this.body,
+            }
+        };
+    },
+    methods: {
+        async testCampaign() {
+            const testData = Object.assign(this.form, this.garden);
+            this.smsCampaignStore.testSms(testData).then((smsTest) => {
+                if (smsTest.copy) {
+                    this.copy = smsTest.copy;
+                    this.numVolunteers = smsTest.numVolunteers;
+                }
+                else {
+                    this.error = smsTest.error;
+                }
+            });
+        },
+        async sendSms(e) {
+            // HTMLSelectElement(e.target).addAttribute('disabled');
+            this.smsCampaignStore.sendSms(this.form).then((smsTest) => {
+                this.alertStore.success(`SMS Sent to ${smsTest.length} volunteers`);
+                this.show = false;
+            });
+        },
+        async closeUp() {
+            this.smsCampaignStore.closeUpdate(this.id);
+            this.show = false;
+            this.copy = false;
+            this.alertStore.clear();
+        },
+        async showExisting(id) {
+            this.show = true;
+            this.form.id = id;
+            console.log(id);
         }
-      });
     },
-    async sendSms(e) {
-      // HTMLSelectElement(e.target).addAttribute('disabled');
-      this.smsCampaignStore.sendSms(this.form).then((smsTest)=>{
-        this.alertStore.success(`SMS Sent to ${smsTest.length} volunteers`);
-        this.show = false;
-      });
-    },
-    async closeUp() {
-      this.smsCampaignStore.closeUpdate(this.id);
-      this.show = false;
-      this.copy= false;
-      this.alertStore.clear()
-    },
-    async showExisting(id) {
-      this.show = true;
-      this.form.id = id;
-      console.log(id);
-    }
-  }
+    components: { UserProfileDisplay }
 }
 </script>
 
@@ -145,11 +147,11 @@ export default {
 
             <div v-if="confirmed?.length">
             <h3>The following people confirmed to your RSVP request:</h3>
-            <ul>
-              <li v-for="conf in confirmed"
-              :key="conf.id"
-              class="pl-2">{{ conf.firstName }} {{ conf.firstName }}</li> 
-            </ul>
+                <div v-for="conf in confirmed"
+                :key="conf.id"
+                class="flex items-center">
+                  <UserProfileDisplay :volunteer="conf" />
+                </div> 
             </div>
             
             <div v-if="!id"
