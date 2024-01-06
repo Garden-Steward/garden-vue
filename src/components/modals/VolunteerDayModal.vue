@@ -143,7 +143,7 @@ export default {
       <form>
 
       <div class="fixed inset-0 flex items-center justify-center">
-        <div class="bg-white text-black grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
+        <div class="bg-white text-black grid grid-cols-1 md:grid-cols-1 gap-2 p-3 md:w-1/2">
           <slot></slot>
 
           <label class="pb-1 block">{{ topic }}</label>

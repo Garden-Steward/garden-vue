@@ -124,7 +124,7 @@ export default {
       <form>
 
       <div class="fixed inset-0 flex items-center justify-center">
-        <div class="bg-white text-black grid grid-cols-1 w-50 gap-2 p-3 m-3">
+        <div class="bg-white text-black grid grid-cols-1 md:w-1/2 w-full gap-2 p-3 m-3">
           <slot></slot>
 
           <input type="hidden" v-model="form.id" />
