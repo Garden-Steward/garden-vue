@@ -94,9 +94,8 @@ const filterUsers = () => {
             <div v-for="sched in daySchedules" :key="sched.id">
               <div class="bg-gray-100 p-4 rounded-md mb-2">
                 <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task.data.attributes.title }}</h3>
-                <div class="flex space-x-4">
-                  <div v-for='volunteer of sched.backup_volunteers.data' :key='volunteer.id' class="flex items-center">
-                  
+                <div class="flex flex-wrap -mx-2">
+                  <div class="px-2 mb-2 flex" v-for='volunteer of sched.backup_volunteers.data' :key='volunteer.id'>
                     <UserProfileDisplay :volunteer="volunteer.attributes" />
     
                     <!-- Negative icon to delete user -->
@@ -135,8 +134,8 @@ const filterUsers = () => {
               <div class="bg-gray-100 p-4 rounded-md mb-2">
                 <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task.data.attributes.title }}</h3>
       
-                <div class="flex space-x-4">
-                  <div class="flex items-center" v-for='volunteer of sched.backup_volunteers.data' :key="volunteer.id">
+                <div class="flex flex-wrap -mx-2">
+                  <div class="px-2 mb-2 flex" v-for='volunteer of sched.backup_volunteers.data' :key="volunteer.id">
                     <UserProfileDisplay :volunteer="volunteer.attributes" />
                   </div>
                 </div>

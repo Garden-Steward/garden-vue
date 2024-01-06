@@ -161,7 +161,7 @@ export default {
           <textarea v-model="form.blurb" class="form-control p-1 m-r-4 mb-1"></textarea>
           
           <label class="p-1">Start Date & Time:</label>
-          <VueDatePicker v-model="form.startDatetime" class="mb-2"></VueDatePicker>
+          <VueDatePicker v-model="form.startDatetime" class="mb-2" week-start="0"></VueDatePicker>
 
           <p class="p-1">Ending Time ("around noon"):</p>
           <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.endText" placeholder="around..."/>
