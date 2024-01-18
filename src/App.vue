@@ -10,6 +10,7 @@ import { RouterView } from 'vue-router';
         <div class="container pt-4 pb-4">
             <RouterView />
         </div>
+    
     </div>
 </template>
 

@@ -21,7 +21,7 @@ export const instructionStore = defineStore({
       async findSlug(slug) {
         //   this.instructions = { loading: true };
           this.instruction = { loading: true };
-          fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}`)
+          fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[garden][populate]=organization`)
               .then(res => this.instruction = res.data[0])
               .catch(error => this.instruction = { error })
       },
