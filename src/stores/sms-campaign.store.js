@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers';
-import { useGardensStore, useAlertStore } from '@/stores';
+import { useAuthStore, useAlertStore } from '@/stores';
+
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/sms-campaigns`;
 
@@ -56,9 +57,11 @@ export const useSMSCampaignStore = defineStore({
                 .catch(this.handleError);
         },
         async sendSms(data) {
+            const { user } = useAuthStore();
+            data.sender = user.id
             return fetchWrapper.post(`${baseUrl}/sms/group`, data)
                 .then(res => {
-                    console.log("test resp: ", res)
+                    console.log("group sms resp: ", res)
                     return res;
                 })
                 .catch(this.handleError);

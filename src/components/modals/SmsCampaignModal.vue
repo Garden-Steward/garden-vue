@@ -13,6 +13,7 @@ export default {
         id: Number,
         garden: Number,
         sent: Array,
+        type: String,
         confirmed: Array,
         denied: Array,
         interests: Array
@@ -45,8 +46,17 @@ export default {
                 id: this.id,
                 garden: this.garden,
                 body: this.body,
+                type: this.type || 'basic', // default value
+                alert: false, // default value
             }
         };
+    },
+    watch: {
+        'form.type'(newValue) {
+            if (newValue === 'basic') {
+                this.form.alert = false;
+            }
+        },
     },
     methods: {
         async testCampaign() {
@@ -63,6 +73,11 @@ export default {
         },
         async sendSms() {
             // HTMLSelectElement(e.target).addAttribute('disabled');
+            this.show = false;
+            this.copy = false;
+            this.alertStore.clear();
+            window.scrollTo(0,0);
+
             this.smsCampaignStore.sendSms(this.form).then((smsTest) => {
                 this.alertStore.success(`SMS Sent to ${smsTest.length} volunteers`);
                 this.show = false;
@@ -140,10 +155,23 @@ export default {
                 :selected="option == 'Volunteering'"
                 :value="interest.tag">{{ interest.tag }}</option>
               </select>
+              <label class="pb-1 block">Campaign Type: </label>
+              <select v-model="form.type" class="rounded-md mt-2 border p-1 ml-1">
+                <option value="basic">Basic</option>
+                <option value="rsvp">RSVP</option>
+              </select>
             </div>
-            
+            <div v-if="id">
+              <p>Type: <strong>{{ type }}</strong></p>
+              <p>Reached: {{ sentCount }} people</p>
+            </div>
             <label class="p-1">SMS Body:</label>
-            <textarea v-model="form.body" rows=5 class="form-control p-1 m-r-4 mb-1" :disabled="protect == 1"></textarea>
+            <textarea v-model="form.body" rows=5 class="form-control p-1 m-r-4 mb-1"  :disabled="protect == 1"></textarea>
+
+            <div v-if="form.type === 'rsvp' && !id">
+                <label for="alert-switch">Sign up for alerts? </label> &nbsp;
+                <input type="checkbox" id="alert-switch" v-model="form.alert"> Yes
+            </div>
 
             <div v-if="confirmed?.length">
             <h3>The following people confirmed to your RSVP request:</h3>
@@ -168,11 +196,6 @@ export default {
                 shadow-md
                 hover:bg-blue-700 hover:shadow-lg
                 focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
-                active:bg-blue-800 active:shadow-lg
-                transition
-                duration-150
-                cursor-pointer
-                ease-in-out
                 active:bg-slate-800 active:shadow-lg
                 cursor-pointer
                 ease-in-out
@@ -181,9 +204,11 @@ export default {
           </div>
 
           <article v-if="copy">
-            <p class="p-1 mb-2 mt-2 text-sm bg-yellow-200">{{ notification }}</p>
+            <div v-if="notification">
+              <p class="p-1 mb-2 mt-2 text-sm bg-yellow-200">{{ notification }}</p>
+            </div>
 
-            <div class="mb-3">{{ copy }}</div>
+            <div class="mb-3"><pre style='font-family: "Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;'>{{ copy }}</pre></div>
             <div class="mb-3 font-bold">This will be sent to {{ numVolunteers }} people </div>
             <div>
               <button type="button" class="px-6

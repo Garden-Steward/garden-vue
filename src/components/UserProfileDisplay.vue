@@ -10,6 +10,8 @@ const generateInitials = (user) => {
   return initials.toUpperCase();
 }
 
+const userBubbleColor = props.volunteer.color ? props.volunteer.color : 'green'
+
 </script>
 
 <template>
@@ -17,7 +19,7 @@ const generateInitials = (user) => {
       <!-- Flex container with wrapping enabled -->
       <div class="flex flex-wrap items-center justify-start">
         <!-- User Profile -->
-        <div :class="'bg-'+ props.volunteer.color +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center mr-2 mb-2">
+        <div :class="'bg-'+ userBubbleColor +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center mr-2 mb-2">
           <span class="text-white font-bold uppercase">{{ generateInitials(props.volunteer) }}</span>
         </div>
         <span class="ml-2 mb-2">{{ props.volunteer.username }}</span>
