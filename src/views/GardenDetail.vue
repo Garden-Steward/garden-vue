@@ -5,7 +5,7 @@ import { ref } from "vue";
 import { Vue3SlideUpDown } from "vue3-slide-up-down";
 
 
-import { useAuthStore, useGardensStore, useVolunteerDaysStore, useSMSCampaignStore } from '@/stores';
+import { useAuthStore, useGardensStore, useVolunteerDaysStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore } from '@/stores';
 
 import {VolunteerDayModal} from '@/components/modals'
 import {SmsCampaignModal} from '@/components/modals'
@@ -22,6 +22,7 @@ export default {
     const gardensStore = useGardensStore();  
     const volunteerDaysStore = useVolunteerDaysStore();  
     const campaignStore = useSMSCampaignStore();  
+    const interestStore = useUGInterestsStore();  
     const route = useRoute()
     gardensStore.getSlug(route.params.slug)
     volunteerDaysStore.getByGarden(route.params.slug)
@@ -32,10 +33,21 @@ export default {
     const showVol = ref(false);
     const showEvent = ref(true);
     const showCamp = ref(true);
+    
+    const clearTemp = () => {
+      const gardenObject = garden.value;
+
+      interestStore.cleartemp(gardenObject.id).then((resp) => {
+        console.log(resp);
+        const alertStore = useAlertStore();
+        alertStore.success( 'All Temporary Interests have been cleared.');
+      })
+    };
+
 
     console.log("volunteerDays: ", volunteerDays, garden);
     
-    return {user, garden, volunteerDays, smsCampaigns, showVol, showEvent, showCamp}
+    return {user, garden, volunteerDays, smsCampaigns, showVol, showEvent, showCamp, clearTemp}
   },
 
   data() {
@@ -97,7 +109,8 @@ export default {
                   </svg>
               </h3> 
               <Vue3SlideUpDown v-model="showVol">
-                <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-2 relative">
+                  <a @click="clearTemp" class="absolute top-0 right-0">Clear Temps</a>
                   <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">
                       <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id"/>
                   </div>

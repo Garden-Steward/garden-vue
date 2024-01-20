@@ -34,6 +34,10 @@ export const useUGInterestsStore = defineStore({
             })
             .catch(this.handleError);
       },
+      async cleartemp(gardenId) {
+        return fetchWrapper.post(`${baseUrl}/cleartemp?populate=*`,{gardenId})
+            .catch(this.handleError);
+      },
       async delete(id) {
         return fetchWrapper.delete(`${baseUrl}/${id}`)
             .then(res => {

@@ -44,17 +44,17 @@ instSTore.findSlug(route.params.slug);
 <template>
     <div>
       <div class="max-w-4xl mx-auto px-6 py-12 bg-gray-100 rounded-lg">
-        <h1 class="text-3xl font-bold mb-6">{{ instruction.attributes?.title }}</h1>
+        <h1 class="text-3xl font-bold mb-6">{{ instruction?.attributes?.title }}</h1>
         <div v-html="renderedContent" class="text-left"></div>
         <!-- Conditional rendering of the agreement button -->
-        <div v-if="instruction.attributes?.accept_required" class="mt-6">
+        <div v-if="instruction?.attributes?.accept_required" class="mt-6">
           <button :class="{ 'bg-gray-500': isApproved, 'bg-green-700 hover:bg-green-900': !isApproved }" class="text-white font-bold py-2 px-4 rounded" @click="acceptTask" :disabled="isApproved">
-            {{ isApproved ? 'Submitted' : instruction.attributes?.affirm_button_title }}
+            {{ isApproved ? 'Submitted' : instruction?.attributes?.affirm_button_title }}
           </button>
           <p class="text-sm mt-2">
             {{ isApproved ? 
               'Alright! Thank you for being involved.'
-              : instruction.attributes?.affirm_explain }}
+              : instruction?.attributes?.affirm_explain }}
           </p>
         </div>
       </div>
@@ -62,9 +62,9 @@ instSTore.findSlug(route.params.slug);
       <div v-if="instruction.error" class="text-danger">Error loading instruction: {{instruction.error}}</div>
       <!-- Add this at the bottom of your template -->
       <div class="text-center py-4 text-white">
-        <strong>{{ instruction.attributes?.garden?.data.attributes?.title }}</strong> is brought to you by 
-        <a :href="instruction.attributes.garden?.data.attributes?.organization?.data.attributes.url" target="_blank" class="text-slate-800 underline hover:text-yellow-100 visited:text-yellow-3c00">
-          <strong>{{ instruction.attributes.garden?.data.attributes?.organization?.data.attributes.title }}</strong>
+        <strong>{{ instruction?.attributes?.garden?.data.attributes?.title }}</strong> is brought to you by 
+        <a :href="instruction?.attributes?.garden?.data.attributes?.organization?.data?.attributes.url" target="_blank" class="text-slate-800 underline hover:text-yellow-100 visited:text-yellow-3c00">
+          <strong>{{ instruction?.attributes?.garden?.data.attributes?.organization?.data?.attributes.title }}</strong>
         </a>
       </div>
     </div>

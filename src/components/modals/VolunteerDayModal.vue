@@ -31,7 +31,7 @@ export default {
     if (new Date(`${props.startDatetime}`) < new Date()) {
       return "This Volunteer Day has already happened, no SMS will be auto-sent.";
     } else {
-      return "SMS sends out 3 days before, and day of. Disabling stops SMS"
+      return "SMS sends out 1 week prior and 1 day prior to the event. Disabling stops SMS"
     }
   })
   const prettyDay = computed(() => {
