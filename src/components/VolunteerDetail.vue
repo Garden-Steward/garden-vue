@@ -1,10 +1,12 @@
 <script setup>
 import VolunteerInterest from '@/components/VolunteerInterest.vue'
 import { backendHelper } from '@/helpers';
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { format } from 'date-fns'
 
 const dropDown = ref(0);
+let root = ref(null);
+
 const props = defineProps({
   id: Number,
   garden: Number,
@@ -18,10 +20,9 @@ const props = defineProps({
   interests: Array,
   u_g_interests: Object
 })
-// let isDropdownOpen = false;
+
 let ugArr, basicUgArr
 if (props.u_g_interests.data) {
-  // console.log("u_g_interests: ", props.u_g_interests.data, props.id)
   ugArr = props.u_g_interests.data.filter((ugi)=> ugi.attributes.interest && ugi.attributes.garden.data.id == props.garden)
   basicUgArr = ugArr.map((ugi)=> {
       return ugi.attributes.interest.data.id
@@ -33,7 +34,6 @@ if (props.u_g_interests.data) {
 }
 const prettyDay = format(new Date(props.createdAt), 'PPP');
 
-
 const clickVolunteer = (volunteer) => {
   console.log('volunteer clicked', volunteer)
 }
@@ -44,14 +44,32 @@ const requestRegistration = (id) => {
   });
 }
 const toggleDropdown = () => {
-      dropDown.value = !dropDown.value;
+  if (dropDown.value == false) {
+    setTimeout(()=> {
+      dropDown.value = true;
+    }, 200);
+  }
 }
 let displayName = (props.firstName || props.lastName) ? `${props.firstName} ${props.lastName}` : props.phoneNumber;
+const handleClickOutside = (event) => {
+    if (!root?.value?.$el?.contains(event.target) && dropDown.value == true) {
+      dropDown.value = false;
+    }
+  };
+
+onMounted(() => {
+
+  window.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleClickOutside);
+});
 
 </script>
 
 <template>
-  <div class="m-2 border-r-4 border rounded bg-slate-100">
+  <div ref="root" class="m-2 border-r-4 border rounded bg-slate-100">
     <div @click="toggleDropdown" class="cursor-pointer p-3">
       <div class="flex items-center justify-between">
         <div class="flex-1 pr-4">
