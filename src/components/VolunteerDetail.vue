@@ -1,8 +1,9 @@
 <script setup>
 import VolunteerInterest from '@/components/VolunteerInterest.vue'
 import { backendHelper } from '@/helpers';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref } from 'vue';
 import { format } from 'date-fns'
+import { vOnClickOutside } from '@vueuse/components'
 
 const dropDown = ref(0);
 let root = ref(null);
@@ -44,27 +45,13 @@ const requestRegistration = (id) => {
   });
 }
 const toggleDropdown = () => {
-  if (dropDown.value == false) {
-    setTimeout(()=> {
-      dropDown.value = true;
-    }, 200);
-  }
+  dropDown.value = !dropDown.value
 }
 let displayName = (props.firstName || props.lastName) ? `${props.firstName} ${props.lastName}` : props.phoneNumber;
-const handleClickOutside = (event) => {
-    if (!root?.value?.$el?.contains(event.target) && dropDown.value == true) {
-      dropDown.value = false;
-    }
-  };
 
-onMounted(() => {
-
-  window.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('click', handleClickOutside);
-});
+function closeModal() {
+  dropDown.value = false
+}
 
 </script>
 
@@ -87,8 +74,9 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-    <div v-show="dropDown" class="absolute mt-2 p-2 bg-white border rounded-lg shadow-lg">
+    <div v-show="dropDown" class="absolute mt-2 p-2 bg-white border rounded-lg shadow-lg" >
       <h2 class="hover:opacity-75 cursor-pointer"  @click="clickVolunteer({id, email})"></h2>
+      <div v-on-click-outside="closeModal">
         <p><span class="font-semibold py-2">Registered:</span> {{ prettyDay }}</p>
         <p><span class="font-semibold py-2">Email:</span> {{ email }}</p>
         <p><span class="font-semibold py-2">Phone:</span> {{ phoneNumber }}</p>
@@ -99,6 +87,7 @@ onUnmounted(() => {
         <div v-if="email =='test@test.com'">
           <button @click="requestRegistration({id})" class='bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-black py-1 px-3 border border-blue-500 hover:border-transparent rounded' href="#">Request Complete Registration</button>
         </div>
+      </div>
     </div>
         
   </div>

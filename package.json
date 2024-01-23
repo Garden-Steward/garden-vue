@@ -11,6 +11,8 @@
     "dependencies": {
         "@strapi-community/strapi-provider-upload-google-cloud-storage": "^4.10.5",
         "@vuepic/vue-datepicker": "^4.0.1",
+        "@vueuse/components": "^10.7.2",
+        "@vueuse/core": "^10.7.2",
         "date-fns": "^2.29.3",
         "markdown-it": "^14.0.0",
         "markdown-it-attrs": "^4.1.6",
