@@ -16,7 +16,8 @@ export default {
         type: String,
         confirmed: Array,
         denied: Array,
-        interests: Array
+        interests: Array,
+        alert: Boolean,
     },
     setup(props) {
         const smsCampaignStore = useSMSCampaignStore();
@@ -45,9 +46,10 @@ export default {
             form: {
                 id: this.id,
                 garden: this.garden,
+                interest: 'Everyone',
                 body: this.body,
                 type: this.type || 'basic', // default value
-                alert: false, // default value
+                alert: this.alert || false, // default value
             }
         };
     },
@@ -151,8 +153,7 @@ export default {
                 <option>Everyone</option>
                 <option 
                 v-for="interest in interests" 
-                :key="interest.id" 
-                :selected="option == 'Volunteering'"
+                :key="interest.id"
                 :value="interest.tag">{{ interest.tag }}</option>
               </select>
               <label class="pb-1 block">Campaign Type: </label>
