@@ -34,7 +34,19 @@ export default {
         const bodyExcerpt = computed(() => {
             return props.body?.slice(0, 50);
         });
-        return { alertStore, smsCampaignStore, prettyDay, bodyExcerpt, sentCount, protect };
+        const copyRSVPNumbers = async () => {
+            // Ensure there's no trailing comma by not adding a comma after the last phone number
+            const phoneNumbers = props.confirmed.map(conf => conf.phoneNumber).join(',');
+            try {
+                if(phoneNumbers.length > 0) {
+                    await navigator.clipboard.writeText(phoneNumbers);
+                    alert('RSVP phone numbers copied to clipboard!');
+                }
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+            }
+        };
+        return { alertStore, smsCampaignStore, prettyDay, bodyExcerpt, sentCount, protect, copyRSVPNumbers };
     },
     data() {
         return {
@@ -181,6 +193,7 @@ export default {
                 class="flex items-center">
                   <UserProfileDisplay :volunteer="conf" />
                 </div> 
+                <button @click="copyRSVPNumbers" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">Copy RSVPs #</button>
             </div>
             
             <div v-if="!id"
