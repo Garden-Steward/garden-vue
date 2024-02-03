@@ -11,9 +11,10 @@ export const useGardensStore = defineStore({
         garden: {}
     }),
     actions: {
-        async getAll() {
+        async getAll(userId) {
             this.gardens = { loading: true };
-            fetchWrapper.get(`${baseUrl}`)
+            // console.log('store: ', gardens);
+            fetchWrapper.get(`${baseUrl}?filters[volunteers]=${userId}`)
                 .then(res => this.gardens = res.data)
                 .catch(error => this.gardens = { error })
         },
