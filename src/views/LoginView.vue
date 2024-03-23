@@ -47,6 +47,11 @@ function onSubmit(values, { setErrors }) {
         </Form>
         <div><a href="set-password" class="hover:underline text-green-700 hover:text-green-900">Set Password</a></div>
     </div>
+<div class="mt-6 text-center p-4 bg-yellow-200 rounded-lg">
+    <a href="/apply" class="hover:underline text-lg text-green-700 hover:text-green-900">
+        We are currently accepting new gardens! Apply here!
+    </a>
+</div>
 </template>
 
 <style>

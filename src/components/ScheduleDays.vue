@@ -1,7 +1,7 @@
 <script setup>
 
 import { Vue3SlideUpDown } from "vue3-slide-up-down";
-import { ref } from "vue";
+import { ref } from 'vue';
 import { useWeekSchedulerStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import UserProfileDisplay from "./UserProfileDisplay.vue";
@@ -17,22 +17,18 @@ const toggleShow = () => {
 
 const props = defineProps({
    id: Number,
-   garden: Number,
+   garden: Object,
+   user: Object,
+   editor: Boolean,
    volunteers: Array,
  });
-
-
+//  const editor = garden.data.managers
 const weekSchedulerStore = useWeekSchedulerStore();  
-weekSchedulerStore.find(props.garden);
+weekSchedulerStore.find(props.garden.id);
 
 const { weekscheduler } = storeToRefs(weekSchedulerStore);
-console.log('weekscheduler', weekscheduler);
+
 let focusSchedule = null;
-const generateInitials = (user) => {
-  const name = user.attributes.username.split(' ');
-  const initials = name[0].charAt(0) + name[name.length-1].charAt(0);
-  return initials.toUpperCase();
-}
 const editMode = ref(null);
 
 const toggleEditMode = (day) => {
@@ -87,7 +83,7 @@ const filterUsers = () => {
       
         <div class="mb-4" v-for="(daySchedules, day) in weekscheduler" :key="day">
           <h2 class="text-lg font-bold mb-2 flex">{{ day }}
-            <span @click="toggleEditMode(day)" class="text-blue-500 text-sm flex items-right text-right flex ml-3 mt-1 cursor-pointer">
+            <span v-if="editor" @click="toggleEditMode(day)" class="text-blue-500 text-sm flex items-right text-right flex ml-3 mt-1 cursor-pointer">
             edit</span>
           </h2>
           <div v-if="editMode == day" class="bg-gray-100 mb-2 rounded-md">

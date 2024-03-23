@@ -63,7 +63,7 @@ export const useVolunteerDaysStore = defineStore({
         async sendSms(id) {
             return fetchWrapper.post(`${baseUrl}/sms/${id}`)
                 .then(res => {
-                    console.log("test resp: ", res)
+                    console.log("send resp: ", res)
                     return res;
                 })
                 .catch(this.handleError);

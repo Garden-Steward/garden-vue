@@ -15,7 +15,7 @@ module.exports = {
         fuchsia: colors.fuchsia,
         indigo: colors.indigo,
         violet: colors.violet,
-        'bg-custom-light': '#f7f1e3',
+        'custom-light': '#f7f1e3',
         // Add more custom colors here as needed
       },
       fontFamily: {

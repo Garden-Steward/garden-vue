@@ -10,6 +10,7 @@ export default {
         createdAt: String,
         updatedAt: String,
         publishedAt: String,
+        editor: Boolean,
         id: Number,
         garden: Number,
         sent: Array,
@@ -122,7 +123,7 @@ export default {
       <br />Sent to {{ sentCount }} people
   </div>
 
-  <button v-else type="button" class="px-6
+  <button v-else-if="this.editor" type="button" class="px-6
               py-1.5
               bg-blue-600
               text-white

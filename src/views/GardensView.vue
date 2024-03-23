@@ -11,7 +11,6 @@ const { user } = storeToRefs(authStore);
 const gardensStore = useGardensStore();
 const { gardens } = storeToRefs(gardensStore);
 // console.log("gardens: ", gardens);
-console.log("user: ", user.id, user.value, user.value.id)
 gardensStore.getAll(user.value.id);
 const rowClick = (slug) => {
     window.location=`/gardens/${slug}`
@@ -26,10 +25,11 @@ const rowClick = (slug) => {
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2" v-if="gardens">
               <div v-for="garden in gardens" :key="garden.id" 
-              class="m-3 p-4 border-r-4 border rounded p-2 bg-slate-100 opacity-75 hover:opacity-100 cursor-pointer hover:bg-slate-300"  
+              class="m-3 p-4 border-r-4 border rounded p-2 bg-yellow-200 hover:opacity-70 cursor-pointer hover:bg-yellow-300"  
               @click="rowClick(garden.attributes.slug)">
                   <span class="underline text-xl">{{ garden.attributes.title }}</span>
-                  <p class="text-m">{{ garden.attributes.blurb }}</p>
+                  <p class="text-m mb-2">{{ garden.attributes.blurb }}</p>
+                  <p class="text-m">Managers: {{ garden.attributes.managers.data.length }}</p>
               </div>
             </div>
 

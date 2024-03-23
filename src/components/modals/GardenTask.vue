@@ -91,14 +91,14 @@ export default {
 <template>
 
   <div v-if="id" class=" bg-slate-100 hover:opacity-75 cursor-pointer"  @click="show = true">
-    <a class="hover:text-blue ">
-      Task: <span class="underline text-xl">{{ title }}</span> // status: {{ status }}
+    <a class="hover:text-blue p-3">
+      <span class="underline text-lg">{{ title }}</span> // status: {{ status }}
       <br />
     </a>
   </div>
   <div v-else>
     <button v-if="createTask" type="button" class="px-6 mt-2
-                py-2.5
+                p-2.5
                 bg-slate-600
                 text-white
                 font-medium

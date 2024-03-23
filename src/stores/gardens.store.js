@@ -14,7 +14,7 @@ export const useGardensStore = defineStore({
         async getAll(userId) {
             this.gardens = { loading: true };
             // console.log('store: ', gardens);
-            fetchWrapper.get(`${baseUrl}?filters[volunteers]=${userId}`)
+            fetchWrapper.get(`${baseUrl}?filters[volunteers]=${userId}&populate=managers`)
                 .then(res => this.gardens = res.data)
                 .catch(error => this.gardens = { error })
         },
@@ -22,7 +22,9 @@ export const useGardensStore = defineStore({
             this.garden = { loading: true };
             // fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}`)
             fetchWrapper.get(`${baseUrl}/${slug}/full`)
-                .then(res => this.garden = res.data)
+                .then(res => {
+                    this.garden = res.data
+                })
                 .catch(error => this.garden = { error })
         }
     }

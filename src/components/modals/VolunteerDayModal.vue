@@ -1,105 +1,110 @@
-<script>
-import { computed } from "vue";
+<script setup>
+import { computed, ref, watch } from 'vue';
 import { useVolunteerDaysStore, useAlertStore } from '@/stores';
-import { format } from 'date-fns'
+import { format } from 'date-fns';
+import { defineProps } from 'vue';
 
-export default {
-  props: {
-   title: String,
-   blurb: String,
-   endText: String,
-   startDatetime: String,
-   createdAt: String,
-   updatedAt: String,
-   publishedAt: String,
-   daysJournal: String,
-   id: Number,
-   garden: Number,
-   garden_tasks: Array,
-   disabled: Boolean,
-   interests: Array,
-   interest: String
- },
- setup(props) {
-  const volunteerDaysStore = useVolunteerDaysStore();  
-  const alertStore = useAlertStore();  
-  
-  const topic = computed(()=> {
-    return (props.id) ? "Title:" : "New Volunteer Day Title:"
-  })
-  const notification = computed(() => {
-    if (new Date(`${props.startDatetime}`) < new Date()) {
-      return "This Volunteer Day has already happened, no SMS will be auto-sent.";
-    } else {
-      return "SMS sends out 1 week prior and 1 day prior to the event. Disabling stops SMS"
-    }
-  })
-  const prettyDay = computed(() => {
-    return format(new Date(props.startDatetime), 'PPP');
-  })
-  return {alertStore, volunteerDaysStore, topic, notification, prettyDay};
- },
-  data() {
-    return {
-      show: false,
-      copy: false,
-      volunteers: false,
-      error: false,
-      form : {
-        id: this.id,
-        interest: this.interest,
-        title: this.title,
-        disabled: this.disabled,
-        blurb: this.blurb,
-        endText: this.endText,
-        startDatetime: this.startDatetime
-      }
-    }
-  },
-  methods: {
-    async saveDay() {
-      this.alertStore.clear();
-      this.copy = false;
-      this.form.garden = this.garden
-      if (this.form.id) {
-          await this.volunteerDaysStore.update(this.id, this.form);
-          this.alertStore.success('Volunteer Day updated');
-      } else {
-          await this.volunteerDaysStore.register(this.form);
-          this.alertStore.success('Volunteer Day added');
-          this.show = false;
-      }
-      window.scrollTo(0,0);
-    },
-    async testDay() {
-      this.volunteerDaysStore.testSms(this.id).then((smsTest)=>{
+const props = defineProps({
+  title: String,
+  blurb: String,
+  endText: String,
+  startDatetime: String,
+  createdAt: String,
+  updatedAt: String,
+  publishedAt: String,
+  daysJournal: String,
+  id: Number,
+  garden: Number,
+  garden_tasks: Array,
+  disabled: Boolean,
+  interests: Array,
+  interest: String,
+  editor: Boolean
+});
+
+const volunteerDaysStore = useVolunteerDaysStore();  
+const alertStore = useAlertStore();  
+
+const topic = computed(() => {
+  return props.id ? "Title:" : "New Volunteer Day Title:";
+});
+
+const notification = computed(() => {
+  if (new Date(`${props.startDatetime}`) < new Date()) {
+    return "This Volunteer Day has already happened, no SMS will be auto-sent.";
+  } else {
+    return "SMS sends out 1 week prior and 1 day prior to the event. Disabling stops SMS";
+  }
+});
+
+const prettyDay = computed(() => {
+  return format(new Date(props.startDatetime), 'PPP');
+});
+
+const show = ref(false);
+const copy = ref(false);
+// const volunteers = ref(false);
+const error = ref(false);
+const numVolunteers = ref(0);
+const form = ref({
+  id: props.id,
+  interest: props.interest,
+  title: props.title,
+  disabled: props.disabled,
+  blurb: props.blurb,
+  endText: props.endText,
+  startDatetime: props.startDatetime
+});
+
+async function saveDay() {
+  alertStore.clear();
+  copy.value = false;
+  form.value.garden = props.garden;
+  if (form.value.id) {
+    await volunteerDaysStore.update(props.id, form.value);
+    alertStore.success('Volunteer Day updated');
+  } else {
+    await volunteerDaysStore.register(form.value);
+    alertStore.success('Volunteer Day added');
+    show.value = false;
+  }
+  window.scrollTo(0,0);
+}
+const testDay = async() => {
+  console.log('saveDay');
+  // await volunteerDaysStore.testSms(form.value.id);
+  volunteerDaysStore.testSms(form.value.id).then((smsTest)=>{
         if (smsTest.copy) {
-          this.copy = smsTest.copy;
-          this.numVolunteers = smsTest.numVolunteers;
+          copy.value = smsTest.copy;
+          numVolunteers.value = smsTest.numVolunteers;
         } else {
-          this.error = smsTest.error;
+          error.value = smsTest.error;
         }
       });
-    },
-    async sendSms() {
-      this.volunteerDaysStore.sendSms(this.id).then((smsTest)=>{
-        this.alertStore.success(`SMS Sent to ${smsTest.length} volunteers`);
-        this.show = false;
-      });
-    },
-    async closeUp() {
-      this.volunteerDaysStore.closeUpdate(this.id);
-      this.show = false;
-      this.copy= false;
-      this.alertStore.clear()
-    },
-    async showExisting(id) {
-      this.show = true;
-      this.form.id = id;
-      console.log(id);
-    }
-  }
 }
+const sendSms = async() => {
+  console.log('sending sms')
+  volunteerDaysStore.sendSms(form.value.id).then((smsResp)=>{
+      console.log('smsResp: ', smsResp);
+      alertStore.success('SMS sent to ' + smsResp.length + ' people');
+      show.value = false;
+      window.scrollTo(0,0);
+  });
+}
+
+const closeUp = () => {show.value = false;}
+const showExisting = (id) => {
+            show.value = true;
+            form.value.id = id;
+            console.log(id);
+        };
+
+let showCreateButton;
+
+watch(() => props.editor, (newVal, oldVal) => {
+  showCreateButton = computed(() => !props.title && newVal);
+});
+
 </script>
 
 <template>
@@ -112,7 +117,7 @@ export default {
     </a>
   </div>
 
-  <button v-else type="button" class="px-5
+  <button v-if="showCreateButton" type="button" class="px-5
               py-1.5
               bg-blue-600
               text-white
@@ -127,7 +132,9 @@ export default {
               active:bg-blue-800 active:shadow-lg
               transition
               duration-150
-              ease-in-out" @click="show = true">
+              ease-in-out" 
+
+              @click="show = true">
               Create Volunteer Day
             </button>
 
@@ -143,38 +150,38 @@ export default {
       <form>
 
       <div class="fixed inset-0 flex items-center justify-center">
-        <div class="bg-white text-black grid grid-cols-1 md:grid-cols-1 gap-2 p-3 md:w-1/2">
+        <div class="bg-white text-black grid grid-cols-1 gap-2 p-3 w-full md:w-1/2 sm:m-1 m-3 rounded-md">
           <slot></slot>
 
           <label class="pb-1 block">{{ topic }}</label>
           <input type="hidden" v-model="form.id" />
-          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.title" />
+          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.title" :disabled="!props.editor"/>
           <div>
             <label class="pb-1 block">Send to group: </label>
-            <select v-model="form.interest" class="rounded-md border p-1 ml-1">
+            <select v-model="form.interest" class="rounded-md border p-1 ml-1" :disabled="!props.editor">
               <option>Everyone</option>
               <option v-for="interest in interests" :key="interest.id" :value="interest.tag">{{ interest.tag }}</option>
             </select>
           </div>
           
           <label class="p-1">Event Information:</label>
-          <textarea v-model="form.blurb" class="form-control p-1 m-r-4 mb-1"></textarea>
+          <textarea v-model="form.blurb" class="form-control p-1 m-r-4 mb-1" :disabled="!props.editor"></textarea>
           
           <label class="p-1">Start Date & Time:</label>
-          <VueDatePicker v-model="form.startDatetime" class="mb-2" week-start="0"></VueDatePicker>
+          <VueDatePicker v-model="form.startDatetime" class="mb-2" week-start="0" :disabled="!props.editor"></VueDatePicker>
 
           <p class="p-1">Ending Time ("around noon"):</p>
-          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.endText" placeholder="around..."/>
+          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.endText" placeholder="around..." :disabled="!props.editor"/>
           <br />
           <label class="relative inline-flex items-center mb-3 cursor-pointer">
-            <input type="checkbox" value="" class="sr-only peer" v-model="form.disabled">
+            <input type="checkbox" value="" class="sr-only peer" v-model="form.disabled" :disabled="!props.editor">
             <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
             <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Disabled</span>
           </label>
 
 
           <div
-            class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
+            class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md" v-if="props.editor">
             <span class="px-6
               py-2.5
               bg-blue-600

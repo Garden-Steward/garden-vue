@@ -1,6 +1,6 @@
 <script setup>
 import { useUGInterestsStore } from '@/stores';
-
+import { ref } from 'vue';
 
 const props = defineProps({
   id: Number,
@@ -10,31 +10,32 @@ const props = defineProps({
   user: Number,
   tag: String,
   ugArr: Array,
-  garden: Number
-  
+  garden: Number,
+  editor: Boolean
 })
 const ugInterests = useUGInterestsStore();  
 
 let ugInfo = props.ugArr.find((ug)=>ug.interest === props.id)
-let ugBool = (ugInfo) ? true : false
-// Each checkbox get sent ugBool 
+let ugBool = ref(ugInfo ? true : false)
+const ignoreElRef = ref()
 // console.log("uGarr: ", props.ugArr, ugBool, props.id);
-const clickInterest = (evt) => {
-  console.log('int clicked', evt.target, evt.target.name, evt.target.value, evt.target.id, )
-  if (ugBool) {
-    ugInterests.delete(ugInfo.id)
+const toggleInterest = () => {
+  ugBool.value = !ugBool.value;
+  if (ugBool.value) {
+    ugInterests.register({"user":props.user,"interest":props.id, "garden":props.garden})
   } else {
-    ugInterests.register({"user":props.user,"interest":evt.target.id, "garden":props.garden})
+    ugInterests.delete(ugInfo.id)
   }
 }
-
 </script>
 
 <template>
           <input type="checkbox" 
             :id="props.id"
             v-model="ugBool"
-            @click="(event) => clickInterest(event)">
-          <label class="text-sm p-1 ml-1" for={props.id}>{{ props.tag }}</label>
+            @click="toggleInterest"
+            :disabled="!props.editor">
+          <label class="text-sm p-1 ml-1" :for="props.id" @click="toggleInterest" ref="ignoreElRef">{{ props.tag }}</label>
+          
           
 </template>

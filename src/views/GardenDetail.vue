@@ -1,95 +1,68 @@
-<script>
+<script setup>
+import { onUpdated, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useRoute } from "vue-router";
-import { ref } from "vue";
-import { Vue3SlideUpDown } from "vue3-slide-up-down";
-
-
 import { useAuthStore, useGardensStore, useVolunteerDaysStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore } from '@/stores';
+import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
+import SmsCampaignModal from '@/components/modals/SmsCampaignModal.vue';
+import VolunteerDayTasks from '@/components/modals/VolunteerDayTasks.vue';
+import Volunteer from '@/components/VolunteerDetail.vue';
+import ScheduleDays from '@/components/ScheduleDays.vue';
+import { Vue3SlideUpDown } from 'vue3-slide-up-down';
 
-import {VolunteerDayModal} from '@/components/modals'
-import {SmsCampaignModal} from '@/components/modals'
-import { VolunteerDayTasks } from '@/components'
-import Volunteer from '@/components/VolunteerDetail.vue'
-import ScheduleDays from '@/components/ScheduleDays.vue'
+const authStore = useAuthStore();
+const gardensStore = useGardensStore();
+const volunteerDaysStore = useVolunteerDaysStore();
+const campaignStore = useSMSCampaignStore();
+const interestStore = useUGInterestsStore();
+const alertStore = useAlertStore();
+const route = useRoute();
 
-export default {
-  name: "GardenView",
-  setup() {
-    // initialize the store
-    const authStore = useAuthStore();
-    const { user } = storeToRefs(authStore);
-    const gardensStore = useGardensStore();  
-    const volunteerDaysStore = useVolunteerDaysStore();  
-    const campaignStore = useSMSCampaignStore();  
-    const interestStore = useUGInterestsStore();  
-    const route = useRoute()
-    gardensStore.getSlug(route.params.slug)
-    volunteerDaysStore.getByGarden(route.params.slug)
-    campaignStore.getByGarden(route.params.slug)
-    const { garden } = storeToRefs(gardensStore);
-    const { volunteerDays } = storeToRefs(volunteerDaysStore);
-    const { smsCampaigns } = storeToRefs(campaignStore);
-    const showVol = ref(false);
-    const showEvent = ref(true);
-    const showCamp = ref(true);
-    
-    const clearTemp = () => {
-      const gardenObject = garden.value;
+const { user } = storeToRefs(authStore);
+const { garden } = storeToRefs(gardensStore);
+const { volunteerDays } = storeToRefs(volunteerDaysStore);
+const { smsCampaigns } = storeToRefs(campaignStore);
 
-      interestStore.cleartemp(gardenObject.id).then((resp) => {
-        console.log(resp);
-        const alertStore = useAlertStore();
-        alertStore.success( 'All Temporary Interests have been cleared.');
-      })
-    };
+gardensStore.getSlug(route.params.slug);
+volunteerDaysStore.getByGarden(route.params.slug);
+campaignStore.getByGarden(route.params.slug);
 
+const showVol = ref(false);
+const showEvent = ref(true);
+const showCamp = ref(true);
+let editor = ref(false);
 
-    console.log("volunteerDays: ", volunteerDays, garden);
-    
-    return {user, garden, volunteerDays, smsCampaigns, showVol, showEvent, showCamp, clearTemp}
-  },
+onUpdated(() => {
+  editor.value = garden.value.loading !== true && garden.value.attributes.managers.data.some(manager => manager.id === user.value.id);
+  console.log('editor updated, ', editor.value);
+});
 
-  data() {
-    return {
-      showModal: true
-    }
-  },
-  components: {
-    VolunteerDayModal,
-    SmsCampaignModal,
-    VolunteerDayTasks,
-    Volunteer,
-    Vue3SlideUpDown,
-    ScheduleDays
-},
-  methods: {
-    checkLoginState() {
-      // this.userStore.checkLoginState()
-    },
-    toggleShowVol() {
-      this.showVol = !this.showVol;
-    },
-    toggleShowEvent() {
-      this.showEvent = !this.showEvent;
-    },
-    toggleShowCamp() {
-      this.showCamp = !this.showCamp;
-    },
-    isMobile() {
-      if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-  },
-  created() {
-            if (this.isMobile()) {
-              this.showEvent = false;
-              this.showCamp = false;
-            }
-          }
+const clearTemp = async () => {
+  const gardenObject = garden.value;
+  const resp = await interestStore.cleartemp(gardenObject.id);
+  console.log(resp);
+  alertStore.success('All Temporary Interests have been cleared.');
+};
+
+const toggleShowVol = () => {
+  showVol.value = !showVol.value;
+};
+
+const toggleShowEvent = () => {
+  showEvent.value = !showEvent.value;
+};
+
+const toggleShowCamp = () => {
+  showCamp.value = !showCamp.value;
+};
+
+const isMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+if (isMobile()) {
+  showEvent.value = false;
+  showCamp.value = false;
 }
 </script>
 
@@ -112,7 +85,7 @@ export default {
                 <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-2 relative">
                   <a @click="clearTemp" class="absolute top-0 right-0">Clear Temps</a>
                   <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">
-                      <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id"/>
+                      <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id" :editor="editor"/>
                   </div>
                 </div>
               </Vue3SlideUpDown>
@@ -120,7 +93,7 @@ export default {
 
           </div>
 
-          <ScheduleDays :garden="garden.id" :volunteers="garden.attributes.volunteers.data" />
+          <ScheduleDays :garden="garden" :volunteers="garden.attributes.volunteers.data" :editor="editor"/>
 
           <div class="container mx-auto">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -135,17 +108,14 @@ export default {
                     </svg>
 
                   </h3> 
-                  <VolunteerDayModal :garden="garden.id" :interests="garden.attributes.interests">
-                    <div class="pb-3">
-                      <div class="text-lg font-bold">Create a new Event</div>
-                    </div>
+                  <VolunteerDayModal :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" >
                   </VolunteerDayModal>
                   <Vue3SlideUpDown v-model="showEvent">
                     <div class="grid grid-cols-1 gap-2">
                       <div class="ml-10 m-2" v-for="day in volunteerDays.days" :key="day.id">
                         <div>
-                          <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests"/>
-                          <VolunteerDayTasks v-bind="day" :garden="garden.id"/>
+                          <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" :key="garden.id"/>
+                          <VolunteerDayTasks v-bind="day" :garden="garden.id" :editor="editor"/>
                         </div>
                       </div>
                     </div>
@@ -163,14 +133,14 @@ export default {
                   </svg>
 
                 </h3>
-                <SmsCampaignModal :garden="garden.id" :interests="garden.attributes.interests">
+                <SmsCampaignModal :garden="garden.id" :interests="garden.attributes.interests" :editor="editor">
                     <div class="text-lg font-bold">Create a new Group SMS</div>
                 </SmsCampaignModal>
 
-                <div v-if="smsCampaigns">
+                <div v-if="smsCampaigns?.length">
                   <div class="grid grid-cols-1 gap-2">
                       <Vue3SlideUpDown v-model="showCamp">
-                        <div class="ml-10 m-2" v-for="campaign in smsCampaigns" :key="campaign.id">
+                        <div class="ml-10 m-2" v-for="(campaign, index) in smsCampaigns.slice(0, 20)" :key="campaign.id">
                             <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
                         </div>
                       </Vue3SlideUpDown>
@@ -193,5 +163,15 @@ export default {
 
 </template>
 
-
-
+<script>
+export default {
+  components: {
+    VolunteerDayModal,
+    SmsCampaignModal,
+    VolunteerDayTasks,
+    Volunteer,
+    Vue3SlideUpDown,
+    ScheduleDays
+  }
+};
+</script>
