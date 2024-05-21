@@ -16,6 +16,8 @@ module.exports = {
         indigo: colors.indigo,
         violet: colors.violet,
         'custom-light': '#f7f1e3',
+        'primary': '#8aa37c',
+        'custom-green': '#8aa37c',
         // Add more custom colors here as needed
       },
       fontFamily: {

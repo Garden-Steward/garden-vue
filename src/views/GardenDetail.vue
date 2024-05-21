@@ -67,7 +67,7 @@ if (isMobile()) {
 </script>
 
 <template>
-    <div>
+    <div class="bg-custom-light p-5 rounded-lg mx-auto">
         <h1 class="text-3xl font-bold mb-5">Hi {{user?.firstName}}!</h1>
         <div class="table-auto" v-if="garden.attributes">
           <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-white-600 p-3">{{ garden.attributes.title }}</h1>

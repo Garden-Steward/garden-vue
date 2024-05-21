@@ -19,15 +19,15 @@ const rowClick = (slug) => {
 </script>
 
 <template>
-    <div>
-        <h1 class="text-3xl font-bold mb-5">Hi {{user?.firstName}}!</h1>
-        <h3>Gardens:</h3>
+    <div class="bg-custom-light p-5 rounded-lg mx-auto">
+        <h1 class="text-lg font-bold mb-5">Hi {{user?.firstName}}!</h1>
+        <h3 class="text-3xl font-bold mb-5">Manage a Garden:</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2" v-if="gardens">
               <div v-for="garden in gardens" :key="garden.id" 
-              class="m-3 p-4 border-r-4 border rounded p-2 bg-yellow-200 hover:opacity-70 cursor-pointer hover:bg-yellow-300"  
+              class="m-3 p-4 border-r-4 border rounded p-2 bg-white hover:opacity-70 cursor-pointer hover:bg-yellow-300"  
               @click="rowClick(garden.attributes.slug)">
-                  <span class="underline text-xl">{{ garden.attributes.title }}</span>
+                  <span class="text-xl font-bold">{{ garden.attributes.title }}</span>
                   <p class="text-m mb-2">{{ garden.attributes.blurb }}</p>
                   <p class="text-m">Managers: {{ garden.attributes.managers.data.length }}</p>
               </div>

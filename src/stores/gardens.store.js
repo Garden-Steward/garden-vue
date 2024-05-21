@@ -22,9 +22,7 @@ export const useGardensStore = defineStore({
             this.garden = { loading: true };
             // fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}`)
             fetchWrapper.get(`${baseUrl}/${slug}/full`)
-                .then(res => {
-                    this.garden = res.data
-                })
+                .then(res => this.garden = res.data)
                 .catch(error => this.garden = { error })
         }
     }

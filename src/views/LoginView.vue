@@ -26,6 +26,14 @@ function onSubmit(values, { setErrors }) {
             <img class="stew-logo mx-auto" src="https://storage.googleapis.com/cdn.sacshiki.com/assets/garden_steward/hotlink-ok/garden_steward_logo_peach_sq_350.jpg" alt="Steward Logo">
         </div>
 
+        <div class="text-lg mt-6 max-w-md w-full mx-auto mt-8 mb-4">
+          Garden Steward helps manage volunteer days and weekly tasks for community garden projects. Apply for your garden to be managed by Garden Steward. Applications are approved on a case by case basis. (Sliding Scale - BIPOC welcome)
+          <p><a href="/apply" class="hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
+              Apply Now
+          </a></p>
+      </div>
+
+      <h3 class="text-xl mt-10 mb-3">Garden Steward Login:</h3>
         <Form @submit="onSubmit" :validation-schema="schema" v-slot="{ errors, isSubmitting }">
             <div class="form-group">
                 <label class="text-green-900">Email</label>
@@ -38,7 +46,7 @@ function onSubmit(values, { setErrors }) {
                 <div class="invalid-feedback">{{errors.password}}</div>
             </div>            
             <div class="form-group">
-                <button class="btn btn-primary bg-green-800" :disabled="isSubmitting">
+                <button class="hover:underline text-slate-50 btn btn-primary bg-custom-green hover:bg-custom-green border-white" :disabled="isSubmitting">
                     <span v-show="isSubmitting" class="spinner-border spinner-border-sm mr-1"></span>
                     Login
                 </button>
@@ -47,11 +55,6 @@ function onSubmit(values, { setErrors }) {
         </Form>
         <div><a href="set-password" class="hover:underline text-green-700 hover:text-green-900">Set Password</a></div>
     </div>
-<div class="mt-6 text-center p-4 bg-yellow-200 rounded-lg">
-    <a href="/apply" class="hover:underline text-lg text-green-700 hover:text-green-900">
-        We are currently accepting new gardens! Apply here!
-    </a>
-</div>
 </template>
 
 <style>
