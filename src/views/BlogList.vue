@@ -22,7 +22,9 @@ let heroImage = function(blog) {
   <div class="flex flex-col md:flex-row stew">
     <div class="flex-1">
       <div class="px-8 py-4"> <!-- Increased padding for more spacing around the content -->
-        <h1 class="text-3xl font-bold mb-4 font-roboto">Blog Posts</h1>
+        <h1 class="text-3xl font-bold mb-4 font-roboto">Welcome to the Garden Steward Blog</h1>
+        <p class="text-md mb-4 font-roboto">Hi there, I'm Cameron and I'm the founder of Garden Steward, and co-founder and catalyst of the Oakland Urban Farming Project. I'm on a mission to create abundance through urban gardens. I'm in the process of writing a book to help more people understand the impact having publically accessible gardens can have on people's lives. I'm also developing an app to help manage the garden projects so anyone, anywhere will easily be able to contribute and manage gardens in their community.</p>
+        <h2 class="text-xl mb-4 font-roboto">Latest Blog Posts</h2>
         <div class="space-y-8"> <!-- Increased vertical spacing between blog posts -->
           <div v-for="blog in blogs" :key="blog.id" class="flex flex-col md:flex-row mx-auto bg-custom-light rounded-lg shadow-md overflow-hidden md:max-w-4xl border-white border hover:bg-custom-lighter"> <!-- Adjusted hover opacity -->
             <a :href="`/blog/${blog.attributes.slug}`" class="md:flex no-underline hover:no-underline"> <!-- Ensured no underlining on hover -->
