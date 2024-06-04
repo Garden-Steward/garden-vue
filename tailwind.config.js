@@ -16,6 +16,7 @@ module.exports = {
         indigo: colors.indigo,
         violet: colors.violet,
         'custom-light': '#f7f1e3',
+        'custom-lighter': '#f3ece0', // Lighter version of custom-light
         'primary': '#8aa37c',
         'custom-green': '#8aa37c',
         'custom-peach': '#F9E2D1',

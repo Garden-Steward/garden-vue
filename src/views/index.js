@@ -7,3 +7,4 @@ export { default as GardenApplyForm } from './GardenApplyForm.vue';
 export { default as SetPassword } from './SetPassword.vue';
 export { default as InstructionPublic } from './InstructionPublicView.vue';
 export { default as BlogList } from './BlogList.vue';
+export { default as BlogDetail } from './BlogDetail.vue';

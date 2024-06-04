@@ -1,0 +1,72 @@
+import { defineStore } from 'pinia';
+import { fetchWrapper } from '@/helpers';
+import { useAlertStore } from '@/stores';
+
+const baseUrl = `${import.meta.env.VITE_API_URL}/api/blogs`;
+
+export const useBlogStore = defineStore({
+    id: 'blogs',
+    state: () => ({
+        blogs: [],
+        blog: {}
+    }),
+    actions: {
+        handleError(err) {
+            const alertStore = useAlertStore();
+            alertStore.error(err);
+            console.log("Blog Error: ", err);
+        },
+        async fetchAll() {
+            this.blogs = { loading: true };
+            fetchWrapper.get(`${baseUrl}?populate=*`)
+                .then(res => this.blogs = res.data)
+                .catch(error => {
+                    this.blogs = { error };
+                    this.handleError(error);
+                })
+                .finally(() => this.blogs.loading = false);
+        },
+        async findSlug(slug) {
+            this.blog = { loading: true };
+            fetchWrapper.get(`${baseUrl}?populate=*&filters[slug][$eq]=${slug}`)
+                .then(res => this.blog = res.data[0])
+                .catch(error => {
+                    this.blogs = { error };
+                    this.handleError(error);
+                })
+                .finally(() => this.blogs.loading = false);
+        },
+        async fetchById(id) {
+            this.blog = { loading: true };
+            fetchWrapper.get(`${baseUrl}/${id}`)
+                .then(res => this.blog = res.data)
+                .catch(error => {
+                    this.blog = { error };
+                    this.handleError(error);
+                })
+                .finally(() => this.blog.loading = false);
+        },
+        async create(data) {
+            return fetchWrapper.post(`${baseUrl}`, { data: data })
+                .then(res => {
+                    this.blogs.unshift(res.data);
+                    this.blog = res.data;
+                })
+                .catch(this.handleError);
+        },
+        async update(id, data) {
+            return fetchWrapper.put(`${baseUrl}/${id}`, { data: data })
+                .then(res => {
+                    this.blog = res.data;
+                })
+                .catch(this.handleError);
+        },
+        async delete(id) {
+            return fetchWrapper.delete(`${baseUrl}/${id}`)
+                .then(() => {
+                    this.blogs = this.blogs.filter(blog => blog.id !== id);
+                })
+                .catch(this.handleError);
+        }
+    }
+});

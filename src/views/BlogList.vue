@@ -1,43 +1,46 @@
 <script setup>
-import { ref } from 'vue';
+import { storeToRefs } from 'pinia';
 
-// Example blog data, replace with actual data fetching logic
-const blogs = ref([
-  { id: 1, title: "Garden Tips", hero: "https://picsum.photos/600/300", excerpt: "Learn the best garden tips for this season.", slug: "garden-tips" },
-  { id: 2, title: "Community Gardening", hero: "https://picsum.photos/600/302", excerpt: "How community gardening improves neighborhoods.", slug: "community-gardening" },
-  { id: 3, title: "Sustainable Practices", hero: "https://picsum.photos/600/301", excerpt: "Adopt sustainable practices in your gardening.", slug: "sustainable-practices" }
-]);
+import { useBlogStore } from '@/stores';
 
-// Example topics for sidebar
-const topics = ref(["Gardening", "Community", "Sustainability", "Seasonal Tips"]);
+const blogStore = useBlogStore();
+const baseUrl = `${import.meta.env.VITE_API_URL}`;
+
+const { blogs } = storeToRefs(blogStore);
+blogStore.fetchAll();
+
+let heroImage = function(blog) {
+  if (import.meta.env.VITE_API_URL == 'http://localhost:1337') {
+    return `${baseUrl}${blog.attributes.hero.data.attributes?.url}`;
+  } else {
+    return blog.attributes.hero.data.attributes?.url;
+  }
+}
 </script>
 
 <template>
   <div class="flex flex-col md:flex-row stew">
     <div class="flex-1">
-
-      <div class="p-4">
-        <h1 class="text-2xl font-bold mb-4">Blog Posts</h1>
-        <div class="space-y-4">
-          <div v-for="blog in blogs" :key="blog.id" class="max-w-xl mx-auto bg-white rounded-lg shadow-md overflow-hidden md:max-w-2xl">
-            <a :href="`/blog/${blog.slug}`">
-              <img class="h-48 w-full object-cover" :src="blog.hero" :alt="blog.title">
-              <div class="p-4">
-                <h2 class="text-lg font-semibold text-gray-800">{{ blog.title }}</h2>
-                <p class="text-gray-600">{{ blog.excerpt }}</p>
+      <div class="px-8 py-4"> <!-- Increased padding for more spacing around the content -->
+        <h1 class="text-3xl font-bold mb-4 font-roboto">Blog Posts</h1>
+        <div class="space-y-8"> <!-- Increased vertical spacing between blog posts -->
+          <div v-for="blog in blogs" :key="blog.id" class="flex flex-col md:flex-row mx-auto bg-custom-light rounded-lg shadow-md overflow-hidden md:max-w-4xl border-white border hover:bg-custom-lighter"> <!-- Adjusted hover opacity -->
+            <a :href="`/blog/${blog.attributes.slug}`" class="md:flex no-underline hover:no-underline"> <!-- Ensured no underlining on hover -->
+              <img class="h-64 w-full lg:w-64 md:w-48 object-cover" :src="heroImage(blog)" :alt="blog.attributes.title"> <!-- Increased height of the image -->
+              <div class="p-6 flex-1 relative"> <!-- Increased padding inside each blog post for better spacing -->
+                <div class="relative inline-block">
+                  <div class="absolute -bottom-2 -left-2 bg-custom-green rounded border border-custom-green" style="width: calc(100% + 4px); height: calc(100% + 4px); z-index: 1;"></div>
+                  <div class="bg-white text-gray-800 px-2 py-2 inline-block rounded border border-gray-800 position-relative" style="z-index: 2;">
+                    {{ blog.attributes.category.data.attributes.title }}
+                  </div>
+                </div>
+                <h2 class="text-2xl font-semibold py-3 mt-2">{{ blog.attributes.title }}</h2>
+                <p class="text-gray-600 text-lg">{{ blog.attributes.excerpt }}</p>
               </div>
             </a>
           </div>
         </div>
       </div>
-    </div>
-    <div class="w-full md:w-64 bg-white p-4">
-      <h2 class="font-bold text-xl mb-4">Topics</h2>
-      <ul>
-        <li v-for="topic in topics" :key="topic" class="mb-2">
-          <a href="#" class="text-blue-500 hover:text-blue-600">{{ topic }}</a>
-        </li>
-      </ul>
     </div>
   </div>
 </template>
