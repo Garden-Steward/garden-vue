@@ -2,6 +2,7 @@
 
 const props = defineProps({
   volunteer: Object,
+  showEmail: Boolean
 });
 
 const generateInitials = (user) => {
@@ -22,7 +23,7 @@ const userBubbleColor = props.volunteer.color ? props.volunteer.color : 'green'
         <div :class="'bg-'+ userBubbleColor +'-500'" class="h-10 w-10 rounded-full flex items-center justify-center mr-2 mb-2">
           <span class="text-white font-bold uppercase">{{ generateInitials(props.volunteer) }}</span>
         </div>
-        <span class="ml-2 mb-2">{{ props.volunteer.username }}</span>
+        <span class="ml-2 mb-2" v-if="props.showEmail">{{ props.volunteer.username }}</span>
       </div>
 
 </template>
