@@ -18,6 +18,7 @@ module.exports = {
         'custom-light': '#f7f1e3',
         'primary': '#8aa37c',
         'custom-green': '#8aa37c',
+        'custom-peach': '#F9E2D1',
         // Add more custom colors here as needed
       },
       fontFamily: {

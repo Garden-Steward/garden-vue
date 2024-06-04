@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { HomeView, LoginView, Garden, GardensView, SetPassword, InstructionPublic, GardenApplyForm, HelpView } from '@/views';
+import { HomeView, LoginView, Garden, GardensView, SetPassword, InstructionPublic, GardenApplyForm, HelpView, BlogList } from '@/views';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
 export const router = createRouter({
@@ -37,15 +37,19 @@ export const router = createRouter({
         {
             path: '/i/:slug',
             component: InstructionPublic
+        },
+        {
+            path: '/blog',
+            component: BlogList
         }
     ]
 });
 
 router.beforeEach(async (to) => {
     // redirect to login page if not logged in and trying to access a restricted page
-    const publicPages = ['/login','/oauth/google/callback', '/set-password', '/apply', '/help'];
+    const publicPages = ['/login', '/oauth/google/callback', '/set-password', '/apply', '/help', '/blog'];
     let authRequired = !publicPages.includes(to.path);
-    let regexTest = new RegExp('/i/', 'g');
+    let regexTest = new RegExp('/i/|/blog/', 'g');
     if (regexTest.test(to.path)) {
         authRequired = false;
     }

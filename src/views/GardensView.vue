@@ -1,7 +1,5 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-// import { router } from '@/helpers';
-import { ref } from "vue";
 
 import { useAuthStore, useGardensStore } from '@/stores';
 
@@ -10,11 +8,9 @@ const { user } = storeToRefs(authStore);
 
 const gardensStore = useGardensStore();
 const { gardens } = storeToRefs(gardensStore);
-// console.log("gardens: ", gardens);
 gardensStore.getAll(user.value.id);
 const rowClick = (slug) => {
     window.location=`/gardens/${slug}`
-    // router.push(`/gardens/${slug}`);
 }
 </script>
 
