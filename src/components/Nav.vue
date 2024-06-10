@@ -25,7 +25,7 @@ const toggleMobileMenu = async () => {
 
 <template>
     <nav class="navbar navbar-expand navbar-light bg-custom-light">
-        <div class="navbar-nav d-flex justify-content-center w-100">
+        <div class="navbar-nav d-flex justify-content-center w-100 mb-1">
             <!-- Mobile Menu Button -->
             <button class="mobile-menu-button" @click="toggleMobileMenu">
                 <span class="bar"></span>
@@ -49,7 +49,7 @@ const toggleMobileMenu = async () => {
 				<span class="bottom"></span>
 			</button>
             <router-link to="/" class="nav-item nav-link image">
-                <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7 pr-10 mt-1">
+                <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7 mt-1">
             </router-link>
 
             <div class="web-nav">
@@ -65,7 +65,7 @@ const toggleMobileMenu = async () => {
                 </div>
             </div>
             <div v-if="authStore.user" class="profile-container">
-                <UserProfileDisplay :volunteer="authStore.user" :show-email="false" @click="toggleProfileOptions" class="relative cursor-pointer"/>
+                <UserProfileDisplay :volunteer="authStore.user" :show-email="false" @click="toggleProfileOptions" class="relative cursor-pointer profile-menu-button"/>
                 <transition name="fade">
                     <div v-if="showProfileOptions" class="profile-menu bg-custom-light p-2">
                         <button @click="authStore.logout()" class="btn btn-link nav-item nav-link">Logout</button>
@@ -83,8 +83,10 @@ const toggleMobileMenu = async () => {
     color: #fff;
 }
 .profile-container {
-    position: relative; /* This makes it the reference for absolute positioning of children */
-    margin: 5px 0px 0px 0px;
+    position: absolute; /* Position the profile container absolutely within the navbar */
+    top: 0; /* Align to the top of the navbar */
+    right: 0; /* Align to the right of the navbar */
+    margin: 10px; /* Optional: add some margin */
 }
 .profile-menu {
     position: absolute;
@@ -124,6 +126,10 @@ const toggleMobileMenu = async () => {
     flex-direction: column;
     z-index: 1000;
     color: #fff; /* Ensures all text is white */
+}
+
+.navbar {
+    position: relative; /* Ensure the navbar is the reference for absolute positioning */
 }
 
 .navbar-nav {
