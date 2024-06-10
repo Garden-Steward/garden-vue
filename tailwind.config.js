@@ -19,6 +19,7 @@ module.exports = {
         'custom-lighter': '#f3ece0', // Lighter version of custom-light
         'primary': '#8aa37c',
         'custom-green': '#8aa37c',
+        'darker-green': '#6c8a6a', // Slightly darker version of custom-green
         'custom-peach': '#F9E2D1',
         // Add more custom colors here as needed
       },
@@ -38,7 +39,7 @@ module.exports = {
    plugins: [],
    safelist: [
     {
-      pattern: /bg-(red|green|blue|orange|purple|fuchsia|emerald|violet|indigo|yellow|lime|slate|bg-custom-light)-(100|500|700)/, // You can display all the colors that you need
+      pattern: /bg-(red|green|blue|orange|purple|fuchsia|emerald|violet|indigo|yellow|lime|slate|bg-custom-light|bg-custom-green)-(100|500|700)/, // You can display all the colors that you need
     },
   ],
   }
