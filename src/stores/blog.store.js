@@ -18,7 +18,7 @@ export const useBlogStore = defineStore({
         },
         async fetchAll() {
             this.blogs = { loading: true };
-            fetchWrapper.get(`${baseUrl}?populate=*`)
+            fetchWrapper.get(`${baseUrl}?populate=*&sort[0]=createdAt:desc`)
                 .then(res => this.blogs = res.data)
                 .catch(error => {
                     this.blogs = { error };

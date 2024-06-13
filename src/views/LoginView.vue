@@ -81,4 +81,9 @@ function onSubmit(values, { setErrors }) {
   .color-green {
     color:#f7f1e3;
   }
+@media (max-width: 640px) {
+  .stew {
+    padding: 0;
+  }
+}
 </style>

@@ -48,13 +48,13 @@ blogStore.findSlug(route.params.slug);
       </div>
 
       <div class="flex-1 flex items-center justify-center my-3">
-        <h1 class="text-4xl font-bold text-black">{{ blog?.attributes?.title }}</h1>
+        <h1 class="text-3xl sm:text-4xl font-bold text-black">{{ blog?.attributes?.title }}</h1>
       </div>
 
       <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }">
         <div class="flex-1"></div>
       </div>
-      <div class="flex-1 max-w-4xl mx-auto px-6 py-12 rounded-lg">
+      <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 sm:py-12 py-2 rounded-lg">
         <div class="blog-content">
             <StrapiBlocks :content="blog?.attributes?.content" :modifiers="modifiers" :blocks="blocks" />
         </div>
