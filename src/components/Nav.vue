@@ -25,6 +25,10 @@ const toggleMobileMenu = async () => {
 
 <template>
     <nav class="navbar navbar-expand navbar-light bg-custom-light">
+        <router-link to="/" class="logo-image hidden sm:block">
+                <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7 mt-1">
+        </router-link>
+
         <div class="navbar-nav d-flex justify-content-center w-100 mb-1">
             <!-- Mobile Menu Button -->
             <button class="mobile-menu-button" @click="toggleMobileMenu">
@@ -48,7 +52,7 @@ const toggleMobileMenu = async () => {
 				<span class="mid"></span>
 				<span class="bottom"></span>
 			</button>
-            <router-link to="/" class="nav-item nav-link image">
+            <router-link to="/" class="nav-item image sm:hidden">
                 <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7 mt-1">
             </router-link>
 
@@ -59,7 +63,7 @@ const toggleMobileMenu = async () => {
                     </div>
                     <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
                     <router-link v-show="!authStore.user" to="/help" class="nav-item nav-link">Help</router-link>
-                    <router-link v-show="!authStore.user" to="/apply" class="nav-item nav-link">Apply</router-link>
+                    <router-link to="/apply" class="nav-item nav-link">Apply</router-link>
                     <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link">Login</router-link>
     
                 </div>
@@ -129,11 +133,24 @@ const toggleMobileMenu = async () => {
 }
 
 .navbar {
+    display: flex; /* Ensures the navbar is a flex container */
+    justify-content: center; /* Center the items in the navbar */
+    align-items: center; /* Aligns items vertically */
     position: relative; /* Ensure the navbar is the reference for absolute positioning */
 }
 
+.logo-image {
+    position: absolute; /* Position the logo absolutely within the navbar */
+    left: 15px; /* Adjust this value to position the logo as needed */
+    top: 4; /* Align to the top of the navbar */
+    z-index: 1; /* Ensure it's above other content */
+}
+
 .navbar-nav {
-    justify-content: space-between; /* Adjusts the space distribution */
+    width: 100%; /* Takes up the full width of the navbar */
+    display: flex;
+    justify-content: center; /* Centers the navigation links */
+    align-items: center; /* Aligns items vertically */
 }
 
 .nav-item.nav-link {
@@ -146,16 +163,11 @@ const toggleMobileMenu = async () => {
 .mobile-menu .nav-item.nav-link.image {
     margin:0px 0px 0px 30px;
 }
-.nav-item.nav-link.image {
+.logo-image {
     margin: 0px;
     padding-bottom: 0px;
 }
 
-/* Center the logo specifically */
-.nav-item.nav-link img {
-    display: block; /* Makes the image a block element to center it */
-    margin: 0 auto; /* Auto margin for horizontal centering */
-}
 
 .nav-link, .mobile-menu .nav-item {
     color: #fff; /* Ensures text is white */
@@ -186,5 +198,11 @@ const toggleMobileMenu = async () => {
     .web-nav {
         display: none;
     }
+    /* Center the logo specifically */
+    .nav-item img {
+        display: block; /* Makes the image a block element to center it */
+        margin: 0 auto; /* Auto margin for horizontal centering */
+    }
+
 }
 </style>
