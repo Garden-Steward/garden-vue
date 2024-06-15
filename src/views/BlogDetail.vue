@@ -17,11 +17,12 @@ watch(blog, (newVal) => {
     // renderedContent = md.render(newVal.attributes?.content);
   }
 });
+
 let heroImage = function(blog) {
-  if (import.meta.env.VITE_API_URL == 'http://localhost:1337') {
-    return `${baseUrl}${blog.attributes?.hero.data.attributes?.url}`;
+  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.attributes.hero.data.attributes?.url.includes('googleapis.com')) {
+    return `${baseUrl}${blog.attributes.hero.data.attributes?.url}`;
   } else {
-    return blog.attributes?.hero.data.attributes?.url;  
+    return blog.attributes.hero.data.attributes?.url;
   }
 }
 
@@ -51,7 +52,7 @@ blogStore.findSlug(route.params.slug);
         <h1 class="text-3xl sm:text-4xl font-bold text-black">{{ blog?.attributes?.title }}</h1>
       </div>
 
-      <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }">
+      <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.attributes.hero_display">
         <div class="flex-1"></div>
       </div>
       <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 sm:py-12 py-2 rounded-lg">

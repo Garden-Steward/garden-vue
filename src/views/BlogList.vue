@@ -16,7 +16,7 @@ blogStore.fetchAll().then(() => {
 });
 
 let heroImage = function(blog) {
-  if (import.meta.env.VITE_API_URL == 'http://localhost:1337') {
+  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.attributes.hero.data.attributes?.url.includes('googleapis.com')) {
     return `${baseUrl}${blog.attributes.hero.data.attributes?.url}`;
   } else {
     return blog.attributes.hero.data.attributes?.url;
