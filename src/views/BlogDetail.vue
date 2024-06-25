@@ -1,6 +1,6 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { watch, ref } from 'vue';
+import { watch } from 'vue';
 import { useRoute, RouterLink } from "vue-router";
 import { StrapiBlocks } from 'vue-strapi-blocks-renderer';
 
@@ -50,14 +50,19 @@ watch(blog, (blog) => {
       <div class="category-wrapper">
         <div class="category-container">
           <div class="bg-white text-gray-800 px-2 py-2 inline-block rounded border border-gray-800 position-relative" style="z-index: 2;">
-            {{ blog?.category?.title }}
+            <div>
+              {{ blog?.category?.title }}
+            </div>
           </div>
           <div class="decorative-div bg-custom-green border border-custom-green border border-custom-green -bottom-2 -left-2"></div>
         </div>
       </div>
 
-      <div class="flex-1 flex items-center justify-center my-3">
+      <div class="flex-1 flex flex-col items-center justify-center my-3">
         <h1 class="text-3xl sm:text-4xl font-bold text-black">{{ blog?.title }}</h1>
+        <h2 class="text-xl text-gray-600 mt-2">
+          {{ blog?.subtitle }}
+        </h2>
       </div>
 
       <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
