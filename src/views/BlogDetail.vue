@@ -1,63 +1,91 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { watch } from 'vue';
-import { useRoute } from "vue-router";
+import { watch, ref } from 'vue';
+import { useRoute, RouterLink } from "vue-router";
 import { StrapiBlocks } from 'vue-strapi-blocks-renderer';
 
 import { useBlogStore } from '@/stores';
 
 const blogStore = useBlogStore();
-const route = useRoute()
+const route = useRoute();
 const { blog } = storeToRefs(blogStore);
 const baseUrl = `${import.meta.env.VITE_API_URL}`;
 
-watch(blog, (newVal) => {
-  console.log(blog)
-  if (newVal.attributes) {
-    // renderedContent = md.render(newVal.attributes?.content);
-  }
-});
-
 let heroImage = function(blog) {
-  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.attributes.hero.data.attributes?.url.includes('googleapis.com')) {
-    return `${baseUrl}${blog.attributes.hero.data.attributes?.url}`;
+  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.hero?.url.includes('googleapis.com')) {
+    return `${baseUrl}${blog.hero?.url}`;
   } else {
-    return blog.attributes.hero.data.attributes?.url;
+    return blog.hero?.url;
   }
 }
 
+// Watch for changes in the route parameters
+watch(() => route.params.slug, (newSlug) => {
+  blogStore.findSlug(newSlug);
+  window.scrollTo(0, 0);
+});
 
+// Initial call to load the blog post
 blogStore.findSlug(route.params.slug);
+
+// Reactive properties for button links
+let latestBlogId = blog?._id;
+
+// Watch for changes in the blog object
+watch(blog, (blog) => {
+  latestBlogId = blog?.id || null;
+}, { deep: true });
+
 </script>
 
 <template>
     <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
 
       <div class="back-to-blog">
-        <router-link to="/blog">
+        <RouterLink to="/blog">
           <span class="arrow">&#8592;</span> Back to Blog
-        </router-link>
+        </RouterLink>
       </div>
 
       <div class="category-wrapper">
         <div class="category-container">
           <div class="bg-white text-gray-800 px-2 py-2 inline-block rounded border border-gray-800 position-relative" style="z-index: 2;">
-            {{ blog?.attributes?.category.data.attributes?.title }}
+            {{ blog?.category?.title }}
           </div>
-          <div class="decorative-div bg-custom-green border border-custom-green -bottom-2 -left-2"></div>
+          <div class="decorative-div bg-custom-green border border-custom-green border border-custom-green -bottom-2 -left-2"></div>
         </div>
       </div>
 
       <div class="flex-1 flex items-center justify-center my-3">
-        <h1 class="text-3xl sm:text-4xl font-bold text-black">{{ blog?.attributes?.title }}</h1>
+        <h1 class="text-3xl sm:text-4xl font-bold text-black">{{ blog?.title }}</h1>
       </div>
 
-      <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.attributes.hero_display">
+      <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
         <div class="flex-1"></div>
       </div>
       <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 sm:py-12 py-2 rounded-lg">
         <div class="blog-content">
-            <StrapiBlocks :content="blog?.attributes?.content" :modifiers="modifiers" :blocks="blocks" />
+            <StrapiBlocks :content="blog?.content" :modifiers="modifiers" :blocks="blocks" />
+        </div>
+      </div>
+      <div class="flex justify-between mt-6">
+        <a v-if="blog?.prev_blog_post" :href="blog?.prev_blog_post" :key="latestBlogId" class="btn btn-primary bg-custom-green border border-custom-green">
+          Previous
+        </a>
+        <div v-else class="btn btn-primary bg-custom-green border border-custom-green invisible">
+          Previous
+        </div>
+        <a v-if="blog?.random_post" :href="blog?.random_post" :key="latestBlogId" class="btn btn-secondary bg-custom-green border border-custom-green">
+          Random
+        </a>
+        <div v-else class="btn btn-secondary bg-custom-green border border-custom-green invisible">
+          Random
+        </div>
+        <a v-if="blog?.next_blog_post" :href="blog?.next_blog_post" :key="latestBlogId" class="btn btn-primary bg-custom-green border border-custom-green">
+          Next
+        </a>
+        <div v-else class="btn btn-primary bg-custom-green border border-custom-green invisible">
+          Next
         </div>
       </div>
       <div v-if="blog.loading" class="flex justify-center items-center">

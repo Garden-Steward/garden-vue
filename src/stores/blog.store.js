@@ -27,9 +27,10 @@ export const useBlogStore = defineStore({
                 .finally(() => this.blogs.loading = false);
         },
         async findSlug(slug) {
+            // ?populate=*&filters[slug][$eq]=${slug}
             this.blog = { loading: true };
-            fetchWrapper.get(`${baseUrl}?populate=*&filters[slug][$eq]=${slug}`)
-                .then(res => this.blog = res.data[0])
+            fetchWrapper.get(`${baseUrl}/${slug}/full`)
+                .then(res => this.blog = res)
                 .catch(error => {
                     this.blogs = { error };
                     this.handleError(error);

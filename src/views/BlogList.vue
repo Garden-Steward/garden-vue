@@ -30,7 +30,6 @@ let heroImage = function(blog) {
       <div class="px-4 py-2 md:px-8 md:py-4"> <!-- Conditional padding for non-mobile screens -->
         <h1 class="text-2xl font-bold mb-4 font-roboto sm:text-3xl">Welcome to the Garden Steward Blog</h1>
         <p class="text-md mb-4 font-roboto">Hi there, I'm Cameron and I'm the founder of Garden Steward, and co-founder of the Oakland Urban Farming Project. I'm on a mission to create abundance through urban gardens. I'm developing an app to help manage the garden projects so anyone, anywhere will easily be able to contribute and manage gardens in their community.</p>
-        <h2 class="text-xl mb-4 font-roboto">Latest Blog Posts</h2>
       </div>
       <div class="flex justify-center items-center">
         <!-- Loading spinner -->
