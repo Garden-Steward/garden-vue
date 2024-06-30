@@ -1,6 +1,6 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { watch } from 'vue';
+import { watch, computed } from 'vue';
 import { useRoute, RouterLink } from "vue-router";
 import { StrapiBlocks } from 'vue-strapi-blocks-renderer';
 
@@ -35,6 +35,13 @@ let latestBlogId = blog?._id;
 watch(blog, (blog) => {
   latestBlogId = blog?.id || null;
 }, { deep: true });
+
+// Computed property to format the publishedAt date
+const formattedDate = computed(() => {
+  if (!blog.value?.publishedAt) return '';
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(blog.value.publishedAt).toLocaleDateString(undefined, options);
+});
 
 </script>
 
@@ -73,6 +80,15 @@ watch(blog, (blog) => {
             <StrapiBlocks :content="blog?.content" :modifiers="modifiers" :blocks="blocks" />
         </div>
       </div>
+
+      <!-- Display the length of the content and the formatted date -->
+      <div class="text-center text-gray-600 mt-5">
+        <hr class="border-gray-800">
+        <div class="text-left mb-3">
+          {{ formattedDate }}
+        </div>
+      </div>
+
       <div class="flex justify-between mt-6">
         <a v-if="blog?.prev_blog_post" :href="blog?.prev_blog_post" :key="latestBlogId" class="btn btn-primary bg-custom-green border border-custom-green">
           Previous

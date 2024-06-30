@@ -22,6 +22,10 @@ let heroImage = function(blog) {
     return blog.attributes.hero.data.attributes?.url;
   }
 }
+
+const truncateExcerpt = (excerpt) => {
+    return `${excerpt.substring(0, 150)}...`;
+};
 </script>
 
 <template>
@@ -49,7 +53,8 @@ let heroImage = function(blog) {
                   </div>
                 </div>
                 <h2 class="text-2xl font-semibold py-3 mt-2">{{ blog.attributes.title }}</h2>
-                <p class="text-gray-600 text-lg">{{ blog.attributes.excerpt }}</p>
+                <p class="text-gray-600 text-lg">{{ truncateExcerpt(blog.attributes.excerpt) }}</p>
+                <p class="text-gray-600 text-lg">Continue Reading</p>
               </div>
             </a>
           </div>
