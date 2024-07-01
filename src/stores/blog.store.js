@@ -32,7 +32,9 @@ export const useBlogStore = defineStore({
             fetchWrapper.get(`${baseUrl}/${slug}/full`)
                 .then(res => {
                     this.blog = res;
-                    this.blog.video = JSON.parse(res.oembed.replace(/'/g, '"'));
+                    if (res.oembed) {
+                        this.blog.video = JSON.parse(res.oembed.replace(/'/g, '"'));
+                    }
                     console.log(this.blog);
                 })
                 .catch(error => {
