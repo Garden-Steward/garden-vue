@@ -43,8 +43,10 @@ const truncateExcerpt = (excerpt) => {
         <!-- Blog posts -->
         <div v-else class="space-y-8"> <!-- Increased vertical spacing between blog posts -->
           <div v-for="blog in blogs" :key="blog.id" class="flex flex-col md:flex-row mx-auto bg-custom-light rounded-lg shadow-md overflow-hidden md:max-w-4xl border-white border hover:bg-custom-lighter"> <!-- Adjusted hover opacity -->
-            <a :href="`/blog/${blog.attributes.slug}`" class="md:flex no-underline hover:no-underline"> <!-- Ensured no underlining on hover -->
-              <img class="h-64 w-full lg:w-64 md:w-48 object-cover" :src="heroImage(blog)" :alt="blog.attributes.title"> <!-- Increased height of the image -->
+
+            <a :href="`/blog/${blog.attributes.slug}`" class="md:flex no-underline hover:no-underline" > <!-- Ensured no underlining on hover -->
+
+              <img class="h-64 w-full lg:w-64 md:w-48 object-cover" :src="heroImage(blog)" :alt="blog.attributes.title"  v-if="blog.attributes.hero?.data"> 
               <div class="p-6 flex-1 relative"> <!-- Conditional padding inside each blog post for non-mobile screens -->
                 <div class="relative inline-block">
                   <div class="absolute -bottom-2 -left-2 bg-custom-green rounded border border-custom-green" style="width: calc(100% + 4px); height: calc(100% + 4px); z-index: 1;"></div>

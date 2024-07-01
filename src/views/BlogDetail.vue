@@ -33,12 +33,14 @@ let latestBlogId = blog?._id;
 
 // Watch for changes in the blog object
 watch(blog, (blog) => {
+  console.log(blog);
   latestBlogId = blog?.id || null;
 }, { deep: true });
 
 // Computed property to format the publishedAt date
 const formattedDate = computed(() => {
   if (!blog.value?.publishedAt) return '';
+  console.log(blog)
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
   return new Date(blog.value.publishedAt).toLocaleDateString(undefined, options);
 });
@@ -72,12 +74,16 @@ const formattedDate = computed(() => {
         </h2>
       </div>
 
-      <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
+      <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display && blog.hero?.data">
         <div class="flex-1"></div>
       </div>
       <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 sm:py-12 py-2 rounded-lg">
         <div class="blog-content">
             <StrapiBlocks :content="blog?.content" :modifiers="modifiers" :blocks="blocks" />
+        </div>
+        <div v-if="blog?.video">
+          {{ blog.video }}
+          <div v-html="blog.video?.html"></div>
         </div>
       </div>
 

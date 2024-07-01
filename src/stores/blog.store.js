@@ -30,7 +30,11 @@ export const useBlogStore = defineStore({
             // ?populate=*&filters[slug][$eq]=${slug}
             this.blog = { loading: true };
             fetchWrapper.get(`${baseUrl}/${slug}/full`)
-                .then(res => this.blog = res)
+                .then(res => {
+                    this.blog = res;
+                    this.blog.video = JSON.parse(res.oembed.replace(/'/g, '"'));
+                    console.log(this.blog);
+                })
                 .catch(error => {
                     this.blogs = { error };
                     this.handleError(error);
