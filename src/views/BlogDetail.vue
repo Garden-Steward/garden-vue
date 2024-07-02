@@ -12,6 +12,7 @@ const { blog } = storeToRefs(blogStore);
 const baseUrl = `${import.meta.env.VITE_API_URL}`;
 
 let heroImage = function(blog) {
+  console.log('hero', blog.hero)
   if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.hero?.url.includes('googleapis.com')) {
     return `${baseUrl}${blog.hero?.url}`;
   } else {
@@ -20,7 +21,6 @@ let heroImage = function(blog) {
 }
 
 let authorImage = function(blog) {
-  console.log("imagine makeing: ",blog);
   if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.author?.profilePhoto?.url.includes('googleapis.com')) {
     return `${baseUrl}${blog.author?.profilePhoto?.formats?.medium?.url}`;
   } else {
@@ -83,7 +83,7 @@ const formattedDate = computed(() => {
         </h2>
       </div>
 
-      <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display && blog.hero?.data">
+      <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
         <div class="flex-1"></div>
       </div>
       <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 sm:py-12 py-2 rounded-lg">
