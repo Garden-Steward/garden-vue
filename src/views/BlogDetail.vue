@@ -19,6 +19,15 @@ let heroImage = function(blog) {
   }
 }
 
+let authorImage = function(blog) {
+  console.log("imagine makeing: ",blog);
+  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.author?.profilePhoto?.url.includes('googleapis.com')) {
+    return `${baseUrl}${blog.author?.profilePhoto?.formats?.medium?.url}`;
+  } else {
+    return blog.author?.profilePhoto?.formats?.medium?.url;
+  }
+}
+
 // Watch for changes in the route parameters
 watch(() => route.params.slug, (newSlug) => {
   blogStore.findSlug(newSlug);
@@ -81,9 +90,8 @@ const formattedDate = computed(() => {
         <div class="blog-content">
             <StrapiBlocks :content="blog?.content" :modifiers="modifiers" :blocks="blocks" />
         </div>
-        <div v-if="blog?.video">
-          {{ blog.video }}
-          <div v-html="blog.video?.html"></div>
+        <div v-if="blog?.video" class="w-full h-full">
+          <div v-html="blog.iframe" class="w-full min-h-[300px]"></div>
         </div>
       </div>
 
@@ -92,6 +100,16 @@ const formattedDate = computed(() => {
         <hr class="border-gray-800">
         <div class="text-left mb-3">
           {{ formattedDate }}
+        </div>
+      </div>
+      <div class="about-the-author mt-6 mb-3 ml-auto author-sink"> 
+        <div class="flex items-center m-1">
+          <img :src="authorImage(blog)" alt="Author Image" class="w-20 h-20 rounded-full mr-4">
+          <div class="flex-1">
+            <h3 class="text-md text-gray-600">Garden Steward Author</h3>
+            <h4 class="text-lg text-gray-800  mb-2">{{ blog?.author?.firstName }} {{ blog?.author?.lastName }}</h4>
+            <p class="text-gray-600">{{ blog?.author?.bio }}</p>
+          </div>
         </div>
       </div>
 
@@ -124,7 +142,7 @@ const formattedDate = computed(() => {
 
 <style>
 .blog-content p {
-    margin-top: 20px; /* Adjust the value as needed */
+    margin-top: 8px; /* Adjust the value as needed */
     font-size: 1.1rem;
     line-height: 1.7;
 }
@@ -153,7 +171,11 @@ const formattedDate = computed(() => {
     border-radius: 5px;
     z-index: 1;
 }
-
+iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+}
 .back-to-blog {
     margin: 20px 0;
     padding-left: 10px;
@@ -173,5 +195,13 @@ const formattedDate = computed(() => {
 
 .back-to-blog a:hover {
     text-decoration: underline;
+}
+
+.author-sink {
+  margin-top: -20px;
+  padding: 20px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 </style>

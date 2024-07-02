@@ -35,7 +35,10 @@ export const useBlogStore = defineStore({
                     if (res.oembed) {
                         this.blog.video = JSON.parse(res.oembed.replace(/'/g, '"'));
                     }
-                    console.log(this.blog);
+                    this.blog.iframe = this.blog.video?.rawData.html;
+                    if (this.blog.iframe) {
+                        this.blog.iframe = this.blog.iframe.replace(/width="\d+"/, '').replace(/height="\d+"/, '');
+                    }
                 })
                 .catch(error => {
                     this.blogs = { error };
