@@ -12,7 +12,7 @@ const props = defineProps({
   createdAt: String,
   updatedAt: String,
   publishedAt: String,
-  daysJournal: String,
+  content: String,
   id: Number,
   garden: Number,
   garden_tasks: Array,

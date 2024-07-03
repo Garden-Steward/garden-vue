@@ -1,33 +1,61 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 
-import { useAuthStore, useGardensStore } from '@/stores';
+import { useAuthStore, useGardensStore, useVolunteerDaysStore } from '@/stores';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 const gardensStore = useGardensStore();
 const { gardens } = storeToRefs(gardensStore);
+const volunteerDaysStore = useVolunteerDaysStore();
+const { volunteerDays } = storeToRefs(volunteerDaysStore);
 gardensStore.getAll(user.value.id);
+volunteerDaysStore.getUserVolunteerDays();
+
 const rowClick = (slug) => {
     window.location=`/gardens/${slug}`
+}
+
+const displayDate = (date) => {
+    return new Date(date).toLocaleDateString();
+}
+
+const volunteerDayClick = (id) => {
+    window.location=`/d/${id}`
 }
 </script>
 
 <template>
     <div class="bg-custom-light p-5 rounded-lg mx-auto">
         <h1 class="text-lg font-bold mb-5">Hi {{user?.firstName}}!</h1>
-        <h3 class="text-3xl font-bold mb-5">Manage a Garden:</h3>
+        <h3 class="text-3xl font-bold mb-5">Garden Projects:</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2" v-if="gardens">
               <div v-for="garden in gardens" :key="garden.id" 
               class="m-3 p-4 border-r-4 border rounded p-2 bg-white hover:opacity-70 cursor-pointer hover:bg-yellow-300"  
               @click="rowClick(garden.attributes.slug)">
-                  <span class="text-xl font-bold">{{ garden.attributes.title }}</span>
-                  <p class="text-m mb-2">{{ garden.attributes.blurb }}</p>
-                  <p class="text-m">Managers: {{ garden.attributes.managers.data.length }}</p>
+                  <span class="text-xl font-bold">{{ garden.attributes?.title }}</span>
+                  <p class="text-m mb-2">{{ garden.attributes?.blurb }}</p>
+                  <p class="text-m">Managers: {{ garden.attributes?.managers?.data?.length }}</p>
               </div>
+              <a class="m-3 p-4 border-r-4 border rounded p-2 bg-white hover:opacity-70 cursor-pointer hover:bg-yellow-300 hover:no-underline"  
+              href="/apply">
+                  <span class="text-5xl font-bold">+</span>
+                  <p class="text-m mb-2">Apply for a new garden</p>
+            </a>
+        </div>
+
+        <h3 class="text-3xl font-bold mb-5" v-if="volunteerDays.days.length">Upcoming Events:</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2" v-if="volunteerDays.days.length">
+            <div v-for="day in volunteerDays.days" :key="day.id" 
+            class="m-3 p-4 border-r-4 border rounded p-2 bg-white hover:opacity-70 cursor-pointer hover:bg-yellow-300"  
+            @click="volunteerDayClick(day.id)">
+                <span class="text-xl font-bold">{{ day.title }}</span>
+                <p class="text-m mb-2">{{ day.blurb }}</p>
+                <p class="text-m">{{ displayDate(day.startDatetime) }}</p>
             </div>
+        </div>
 
         <!-- <table class="table-auto" v-if="gardens.length">
             <thead>

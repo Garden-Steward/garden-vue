@@ -23,8 +23,10 @@ let heroImage = function(blog) {
 let authorImage = function(blog) {
   if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.author?.profilePhoto?.url.includes('googleapis.com')) {
     return `${baseUrl}${blog.author?.profilePhoto?.formats?.medium?.url}`;
-  } else {
+  } else if (blog.author?.profilePhoto) {
     return blog.author?.profilePhoto?.formats?.medium?.url;
+  } else {
+    return 'https://storage.googleapis.com/steward_upload/uploads/medium_bobble_head_fe053501c3/medium_bobble_head_fe053501c3.png';
   }
 }
 

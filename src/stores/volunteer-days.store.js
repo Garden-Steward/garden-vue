@@ -17,6 +17,11 @@ export const useVolunteerDaysStore = defineStore({
             alertStore.error(err);
             console.log("Volunteer Error: ", err)
         },
+        async getUserVolunteerDays() {
+            return fetchWrapper.get(`${baseUrl}/user`)
+                .then(res => this.volunteerDays.days = res)
+                .catch(this.handleError);
+        },
         async getByGarden(slug) {
             // const gardenStore = useGardensStore();
             // console.log("gardenStore",gardenStore.garden)
