@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { useVolunteerDaysStore, useAlertStore } from '@/stores';
+import { useEventStore, useAlertStore } from '@/stores';
 import { format } from 'date-fns';
 import { defineProps } from 'vue';
 
@@ -22,7 +22,7 @@ const props = defineProps({
   editor: Boolean
 });
 
-const volunteerDaysStore = useVolunteerDaysStore();  
+const eventStore = useEventStore();  
 const alertStore = useAlertStore();  
 
 const topic = computed(() => {
@@ -61,10 +61,10 @@ async function saveDay() {
   copy.value = false;
   form.value.garden = props.garden;
   if (form.value.id) {
-    await volunteerDaysStore.update(props.id, form.value);
+    await eventStore.update(props.id, form.value);
     alertStore.success('Volunteer Day updated');
   } else {
-    await volunteerDaysStore.register(form.value);
+    await eventStore.register(form.value);
     alertStore.success('Volunteer Day added');
     show.value = false;
   }
@@ -73,7 +73,7 @@ async function saveDay() {
 const testDay = async() => {
   console.log('saveDay');
   // await volunteerDaysStore.testSms(form.value.id);
-  volunteerDaysStore.testSms(form.value.id).then((smsTest)=>{
+  eventStore.testSms(form.value.id).then((smsTest)=>{
         if (smsTest.copy) {
           copy.value = smsTest.copy;
           numVolunteers.value = smsTest.numVolunteers;
@@ -84,7 +84,7 @@ const testDay = async() => {
 }
 const sendSms = async() => {
   console.log('sending sms')
-  volunteerDaysStore.sendSms(form.value.id).then((smsResp)=>{
+  eventStore.sendSms(form.value.id).then((smsResp)=>{
       console.log('smsResp: ', smsResp);
       alertStore.success('SMS sent to ' + smsResp.length + ' people');
       show.value = false;

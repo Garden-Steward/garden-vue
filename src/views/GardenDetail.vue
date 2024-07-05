@@ -2,7 +2,7 @@
 import { onUpdated, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useAuthStore, useGardensStore, useVolunteerDaysStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore } from '@/stores';
+import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore } from '@/stores';
 import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
 import SmsCampaignModal from '@/components/modals/SmsCampaignModal.vue';
 import VolunteerDayTasks from '@/components/modals/VolunteerDayTasks.vue';
@@ -12,7 +12,7 @@ import { Vue3SlideUpDown } from 'vue3-slide-up-down';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
-const volunteerDaysStore = useVolunteerDaysStore();
+const eventStore = useEventStore();
 const campaignStore = useSMSCampaignStore();
 const interestStore = useUGInterestsStore();
 const alertStore = useAlertStore();
@@ -20,11 +20,11 @@ const route = useRoute();
 
 const { user } = storeToRefs(authStore);
 const { garden } = storeToRefs(gardensStore);
-const { volunteerDays } = storeToRefs(volunteerDaysStore);
+const { volunteerDays } = storeToRefs(eventStore);
 const { smsCampaigns } = storeToRefs(campaignStore);
 
 gardensStore.getSlug(route.params.slug);
-volunteerDaysStore.getByGarden(route.params.slug);
+eventStore.getByGarden(route.params.slug);
 campaignStore.getByGarden(route.params.slug);
 
 const showVol = ref(false);

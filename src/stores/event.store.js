@@ -5,11 +5,12 @@ import { useGardensStore, useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
 
-export const useVolunteerDaysStore = defineStore({
-    id: 'volunteerDays',
+export const useEventStore = defineStore({
+    id: 'event',
     state: () => ({
         volunteerDays: {},
-        volunteerDay: {}
+        volunteerDay: {},
+        event: {}
     }),
     actions: {
         handleError(err) {
@@ -17,9 +18,15 @@ export const useVolunteerDaysStore = defineStore({
             alertStore.error(err);
             console.log("Volunteer Error: ", err)
         },
-        async getUserVolunteerDays() {
+        async getUserEvents() {
             return fetchWrapper.get(`${baseUrl}/user`)
                 .then(res => this.volunteerDays.days = res)
+                .catch(this.handleError);
+        },
+        async findById(id) {
+            this.event = { loading: true };
+            return fetchWrapper.get(`${baseUrl}/${id}?populate=garden`)
+                .then(res => this.event = res.data)
                 .catch(this.handleError);
         },
         async getByGarden(slug) {
