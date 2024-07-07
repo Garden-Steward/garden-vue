@@ -57,7 +57,7 @@ router.beforeEach(async (to) => {
     // redirect to login page if not logged in and trying to access a restricted page
     const publicPages = ['/login', '/oauth/google/callback', '/set-password', '/apply', '/help', '/blog'];
     let authRequired = !publicPages.includes(to.path);
-    let regexTest = new RegExp('/i/|/blog/', 'g');
+    let regexTest = new RegExp('/i/|/blog/|/d/', 'g');
     if (regexTest.test(to.path)) {
         authRequired = false;
     }
