@@ -25,7 +25,7 @@ export const useEventStore = defineStore({
         },
         async findById(id) {
             this.event = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?populate=garden`)
+            return fetchWrapper.get(`${baseUrl}/${id}?populate=garden&populate=confirmed`)
                 .then(res => this.event = res.data)
                 .catch(this.handleError);
         },
@@ -47,7 +47,14 @@ export const useEventStore = defineStore({
                 .catch(this.handleError);
             
         },
-        async closeUpdate(id) {
+        async rsvpEvent(data) {
+            return fetchWrapper.post(`${baseUrl}/rsvp/${data.id}`,{data: data})
+                .then(res => {
+                    this.event = res.data;
+                })
+                .catch(this.handleError);
+        },
+        async closeUpdate() {
             // const idx = this.volunteerDays.days.findIndex(v=> v.id == id);
             // this.volunteerDays.days[idx].title = this.volunteerDay.title;
 

@@ -5,33 +5,35 @@ import { useRoute } from "vue-router";
 import MarkdownIt from 'markdown-it';
 import markdownItAttrs from 'markdown-it-attrs';
 
-import { useEventStore  } from '@/stores';
+import { useEventStore, useAuthStore  } from '@/stores';
 const md = new MarkdownIt().use(markdownItAttrs);
 
 
 import { watch } from 'vue';
 
 const eventStore = useEventStore();
+const { user } = useAuthStore();
+
 const route = useRoute()
 const { event } = storeToRefs(eventStore);
 let renderedContent = '';
-const isApproved = ref(false);
+const isRSVPed = ref(false);
 
 
 watch(event, (newVal) => {
-  if (newVal.attributes) {
+  if (newVal.content) {
     renderedContent = md.render(newVal.attributes?.content);
+  }
+  if (newVal.attributes?.confirmed) {
+    isRSVPed.value = newVal.attributes?.confirmed.data.some(item => item.id === user?.id);
   }
 });
 
 const rsvpEvent = (e) => {
   console.log(e);
-  const urlParams = new URLSearchParams(window.location.search);
-  const user = urlParams.get('u')
 
   if (user) {
-    eventStore.approveTask({userId:user, slug:route.params.slug})
-    isApproved.value = true;
+    eventStore.rsvpEvent({userId:user.id, id:route.params.id})
   }
 
 }
@@ -54,6 +56,7 @@ eventStore.findById(route.params.id);
 <template>
     <div>
       <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
+        <img src="https://storage.googleapis.com/steward_upload/uploads/garden_volunteers_feb24_2c9697c88b/garden_volunteers_feb24_2c9697c88b.jpg" alt="Hero Image" class="w-full h-auto mb-6 rounded-lg">
         <h1 class="text-3xl font-bold mb-6">{{ event?.attributes?.title }}</h1>
         <h4 class="text-lg font-bold mb-6">{{ processDate(event?.attributes?.startDatetime) }}</h4>
         <div v-if="event?.attributes?.blurb" class="text-left">
@@ -62,6 +65,16 @@ eventStore.findById(route.params.id);
         <div class="text-left" v-if="event?.attributes?.content">
             <div v-html="renderedContent"></div>
         </div>
+        <div v-if="user?.id" class="text-left mt-5">
+            <div>Hello {{ user?.firstName }} {{ user?.lastName }}</div>
+            <p>Would you like to RSVP for this event?</p>
+            <button :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer" @click="rsvpEvent" :disabled="isRSVPed">
+                RSVP
+            </button>
+            <p v-if="isRSVPed">Thank you for RSVPing!</p>
+        </div>
+
+
         <!-- Conditional rendering of the agreement button -->
         <div v-if="event?.attributes?.accept_required" class="mt-6">
           <button :class="{ 'bg-gray-500': isApproved, 'bg-green-700 hover:bg-green-900': !isApproved }" class="text-white font-bold py-2 px-4 rounded" @click="rsvpEvent" :disabled="isApproved">
