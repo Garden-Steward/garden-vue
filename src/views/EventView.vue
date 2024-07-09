@@ -21,7 +21,7 @@ const isRSVPed = ref(false);
 
 
 watch(event, (newVal) => {
-  if (newVal.content) {
+  if (newVal.attributes?.content) {
     renderedContent = md.render(newVal.attributes?.content);
   }
   if (newVal.attributes?.confirmed) {
@@ -54,12 +54,13 @@ eventStore.findById(route.params.id);
 </script>
 
 <template>
-    <div>
+    <div id="event-view">
       <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
         <img src="https://storage.googleapis.com/steward_upload/uploads/garden_volunteers_feb24_2c9697c88b/garden_volunteers_feb24_2c9697c88b.jpg" alt="Hero Image" class="w-full h-auto mb-6 rounded-lg">
         <h1 class="text-3xl font-bold mb-6">{{ event?.attributes?.title }}</h1>
         <h4 class="text-lg font-bold mb-6">{{ processDate(event?.attributes?.startDatetime) }}</h4>
-        <div v-if="event?.attributes?.blurb" class="text-left">
+        <div v-if="event?.attributes?.blurb" class="text-left brief-box">
+            <h4>Brief:</h4>
             <div v-html="event?.attributes?.blurb"></div>
         </div>
         <div class="text-left" v-if="event?.attributes?.content">
@@ -95,3 +96,21 @@ eventStore.findById(route.params.id);
       </div>
     </div>
 </template>
+
+<style>
+#event-view a {
+  text-decoration: underline;
+}
+
+/* Add this CSS for the brief box */
+.brief-box {
+  background-color: #FFDAB9; /* Peach color */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+h4 {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+</style>

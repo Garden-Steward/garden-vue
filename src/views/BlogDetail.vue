@@ -148,6 +148,9 @@ const formattedDate = computed(() => {
     font-size: 1.1rem;
     line-height: 1.7;
 }
+.blog-content a {
+  text-decoration: underline;
+}
 .decorative-line-center {
     display: flex;
     justify-content: center;
