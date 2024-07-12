@@ -1,6 +1,6 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { watch, computed } from 'vue';
+import { watch, computed, onMounted, nextTick } from 'vue';
 import { useRoute, RouterLink } from "vue-router";
 import { StrapiBlocks } from 'vue-strapi-blocks-renderer';
 
@@ -56,6 +56,34 @@ const formattedDate = computed(() => {
   return new Date(blog.value.publishedAt).toLocaleDateString(undefined, options);
 });
 
+// Function to process images
+const processImages = async () => {
+  await nextTick();
+  const images = document.querySelectorAll('img');
+  images.forEach(img => {
+    if (img.alt.includes('float-right')) {
+      img.classList.add('float-right');
+    }
+    if (img.alt.includes('float-left')) {
+      img.classList.add('float-left');
+    }
+    if (img.alt.includes('w300')) {
+      img.classList.add('w300');
+    }
+  });
+};
+
+// Watch for changes in the blog content and process images
+watch(blog, async (newBlog) => {
+  if (newBlog?.content) {
+    await processImages();
+  }
+}, { deep: true });
+
+onMounted(async () => {
+  await processImages();
+});
+
 </script>
 
 <template>
@@ -105,13 +133,11 @@ const formattedDate = computed(() => {
         </div>
       </div>
       <div class="about-the-author mt-6 mb-3 ml-auto author-sink"> 
-        <div class="flex items-center m-1">
-          <img :src="authorImage(blog)" alt="Author Image" class="w-20 h-20 rounded-full mr-4">
-          <div class="flex-1">
-            <h3 class="text-md text-gray-600">Garden Steward Author</h3>
-            <h4 class="text-lg text-gray-800  mb-2">{{ blog?.author?.firstName }} {{ blog?.author?.lastName }}</h4>
-            <p class="text-gray-600">{{ blog?.author?.bio }}</p>
-          </div>
+        <img :src="authorImage(blog)" alt="Author Image" class="author-image w-20 h-20 rounded-full mr-4">
+        <div>
+            <h3 class="author-title">Garden Steward Author</h3>
+            <h4 class="author-name">{{ blog?.author?.firstName }} {{ blog?.author?.lastName }}</h4>
+            <p class="author-bio">{{ blog?.author?.bio }}</p>
         </div>
       </div>
 
@@ -150,6 +176,11 @@ const formattedDate = computed(() => {
 }
 .blog-content a {
   text-decoration: underline;
+}
+.blog-content::after {
+    content: "";
+    display: table;
+    clear: both;
 }
 .decorative-line-center {
     display: flex;
@@ -205,8 +236,36 @@ iframe {
 .author-sink {
   margin-top: -20px;
   padding: 20px;
-  background-color: #f8f8f8;
+  background-color: #FFDAB9; /* Peach color */
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.author-image {
+  float: left;
+  margin-right: 15px;
+}
+
+.author-title {
+  font-size: 0.875rem; /* Smaller font size */
+  line-height: 1.2; /* Smaller line spacing */
+  color: #4a5568; /* Dark gray color */
+}
+
+.author-name {
+  font-size: 1rem; /* Smaller font size */
+  line-height: 1.2; /* Smaller line spacing */
+  color: #2d3748; /* Darker gray color */
+  margin-bottom: 0.5rem; /* Adjust margin as needed */
+}
+
+.author-bio {
+  font-size: 0.875rem; /* Smaller font size */
+  line-height: 1.4; /* Smaller line spacing */
+  color: #4a5568; /* Dark gray color */
+}
+.w300 {
+  width: 300px;
+  margin: 15px;
 }
 </style>
