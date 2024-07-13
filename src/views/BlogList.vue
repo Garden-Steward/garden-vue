@@ -1,6 +1,6 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 import { useBlogStore } from '@/stores';
 
@@ -8,15 +8,17 @@ const blogStore = useBlogStore();
 const baseUrl = `${import.meta.env.VITE_API_URL}`;
 
 const { blogs } = storeToRefs(blogStore);
-const isLoading = ref(true);  // Add this line
+const isLoading = ref(true);
 
-blogStore.fetchAll().then(() => {
-  console.log('got blogs: ', blogs)
-  isLoading.value = false;  // Set loading to false once data is fetched
+blogStore.fetchAll();
+
+watch(blogs, (newBlogs) => {
+  if (newBlogs.length > 0) {
+    isLoading.value = false;
+  }
 });
 
 let heroImage = function(blog) {
-
   if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.attributes.hero.data.attributes?.url.includes('googleapis.com')) {
     return `${baseUrl}${blog.attributes.hero.data.attributes?.url}`;
   } else {
@@ -49,15 +51,15 @@ const truncateExcerpt = (excerpt) => {
 
               <img class="h-64 w-full lg:w-64 md:w-48 object-cover" :src="heroImage(blog)" :alt="blog.attributes.title"  v-if="blog.attributes?.hero?.data" /> 
               <div class="p-6 flex-1 relative"> <!-- Conditional padding inside each blog post for non-mobile screens -->
-                <div class="relative inline-block">
+                <div class="relative inline-block" v-if="blog?.attributes?.category?.data">
                   <div class="absolute -bottom-2 -left-2 bg-custom-green rounded border border-custom-green" style="width: calc(100% + 4px); height: calc(100% + 4px); z-index: 1;"></div>
-                  <div class="bg-white text-gray-800 px-2 py-2 inline-block rounded border border-gray-800 position-relative" style="z-index: 2;">
-                    {{ blog?.attributes?.category?.data.attributes.title }}
+                  <div class="bg-white text-gray-800 px-2 py-2 inline-block rounded border border-gray-800 position-relative" style="z-index: 2;" >
+                    {{ blog?.attributes?.category?.data?.attributes?.title }}
                   </div>
                 </div>
                 <h2 class="text-2xl font-semibold py-3 mt-2">{{ blog.attributes?.title }}</h2>
                 <p class="text-gray-600 text-lg mt-1">{{ truncateExcerpt(blog.attributes?.excerpt) }}</p>
-                <p class="text-gray-6000 text-lg">Continue Reading</p>
+                <p class="text-gray-600 text-lg">Continue Reading</p>
               </div>
             </a>
           </div>
@@ -87,4 +89,3 @@ const truncateExcerpt = (excerpt) => {
   100% { transform: rotate(360deg); }
 }
 </style>
-
