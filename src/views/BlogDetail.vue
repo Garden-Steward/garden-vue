@@ -42,11 +42,6 @@ blogStore.findSlug(route.params.slug);
 // Reactive properties for button links
 let latestBlogId = blog?._id;
 
-// Watch for changes in the blog object
-watch(blog, (blog) => {
-  console.log(blog);
-  latestBlogId = blog?.id || null;
-}, { deep: true });
 
 // Computed property to format the publishedAt date
 const formattedDate = computed(() => {
@@ -78,6 +73,7 @@ watch(blog, async (newBlog) => {
   if (newBlog?.content) {
     await processImages();
   }
+  latestBlogId = newBlog?.id || null;
 }, { deep: true });
 
 onMounted(async () => {
@@ -95,33 +91,35 @@ onMounted(async () => {
         </RouterLink>
       </div>
 
-      <div class="category-wrapper">
-        <div class="category-container">
-          <div class="bg-white text-gray-800 px-2 py-2 inline-block rounded border border-gray-800 position-relative" style="z-index: 2;">
-            <div>
-              {{ blog?.category?.title }}
+      <div v-if="!blog.loading">
+        <div class="category-wrapper">
+          <div class="category-container">
+            <div class="bg-white text-gray-800 px-2 py-2 inline-block rounded border border-gray-800 position-relative" style="z-index: 2;">
+              <div>
+                {{ blog?.category?.title }}
+              </div>
             </div>
+            <div class="decorative-div bg-custom-green border border-custom-green border border-custom-green -bottom-2 -left-2"></div>
           </div>
-          <div class="decorative-div bg-custom-green border border-custom-green border border-custom-green -bottom-2 -left-2"></div>
         </div>
-      </div>
 
-      <div class="flex-1 flex flex-col items-center justify-center my-3">
-        <h1 class="text-3xl sm:text-4xl font-bold text-black">{{ blog?.title }}</h1>
-        <h2 class="text-xl text-gray-600 mt-2">
-          {{ blog?.subtitle }}
-        </h2>
-      </div>
-
-      <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
-        <div class="flex-1"></div>
-      </div>
-      <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 sm:py-12 py-2 rounded-lg">
-        <div class="blog-content">
-            <StrapiBlocks :content="blog?.content" :modifiers="modifiers" :blocks="blocks" />
+        <div class="flex-1 flex flex-col items-center justify-center my-3">
+          <h1 class="text-3xl sm:text-4xl font-bold text-black">{{ blog?.title }}</h1>
+          <h2 class="text-xl text-gray-600 mt-2">
+            {{ blog?.subtitle }}
+          </h2>
         </div>
-        <div v-if="blog?.video" class="w-full h-full">
-          <div v-html="blog.iframe" class="w-full min-h-[300px]"></div>
+
+        <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
+          <div class="flex-1"></div>
+        </div>
+        <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 sm:py-12 py-2 rounded-lg">
+          <div class="blog-content">
+              <StrapiBlocks :content="blog?.content" :modifiers="modifiers" :blocks="blocks" />
+          </div>
+          <div v-if="blog?.video" class="w-full h-full">
+            <div v-html="blog.iframe" class="w-full min-h-[300px]"></div>
+          </div>
         </div>
       </div>
 
@@ -267,5 +265,10 @@ iframe {
 .w300 {
   width: 300px;
   margin: 15px;
+}
+ul li {
+  margin-left: 30px;
+  padding-left: 10px;
+  list-style-type: circle;
 }
 </style>
