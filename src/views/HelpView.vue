@@ -2,9 +2,11 @@
 import { ref } from 'vue';
 
 const faqs = ref([
-    { question: "How do I use Garden Steward?", answer: "Garden Steward is an SMS app for managing communal gardens. For most users all you need to do is sign up to a garden, and Garden Steward will send you reminders of volunteer days. Garden Steward also manages tasks for the garden, if you're ever confused you can respond: OPTIONS.", open: false },
+    { question: "What is Garden Steward?", answer: "Garden Steward is an SMS app for managing communal gardens. We're looking to make it easier to create publically accessible gardens, with abundant and foragable plants. We're currently accepting applications for new gardens and volunteers to help build out the app.", open: true },
+    { question: "How do I use Garden Steward?", answer: "Once you're associated with a garden, and have gone through the SMS registration, all you need to do is wait for the volunteer day reminders. You can RSVP by responding YES to any of the volunteer days.", open: false },
     { question: "Do I need to reply in ALL CAPS?", answer: "No! Garden Steward is case insensitive. We use caps to be clear what commands are accepted. So if you reply 'yes' or 'no' you will be understood.", open: false },
-    { question: "How do I sign up to a garden?", answer: "You can sign up to a garden by messaging Garden Steward with the garden name. If the garden is not already in your account, Garden Steward will add it for you. The last garden name you SMS will be your 'Active Garden'", open: false },
+    { question: "How do I sign up to a garden?", answer: "You can sign up to a garden by messaging Garden Steward with the garden name. If the garden is not already in your account, Garden Steward will add it for you.", open: false },
+    { question: "What if I'm a member of multiple gardens?", answer: "You can switch back and forth by messaging Garden Steward with the garden name. The last garden name you SMS will be your 'Active Garden'", open: false },
     { question: "I want to STOP receiving texts", answer: "You can do that by messaging Garden Steward with STOP. Our app will remove you from all gardens and our SMS partner Twilio will make sure you no longer receive texts from our app even if we try.", open: false },
     { question: "I have been assigned a task I can't do", answer: "That's fine! NO, and SKIP are the most popular options. With NO you will get a list of other volunteers you can then reassign the task to. If you feel the task doesn't need to be done, you can reply SKIP.", open: false },
     { question: "I'm about to go on Vacation", answer: "We're excited about it! Garden Steward will pause your account from receiving tasks, just message VACATION. When you return, just message Garden Steward with BACK.", open: false }
@@ -20,7 +22,7 @@ const toggle = (index) => {
     <div class="max-w-xl w-full mx-auto mt-8 stew">
         <h1 class="text-2xl pb-5 pt-2 text-center uppercase font-roboto">using garden steward</h1>
         <div v-for="(item, index) in faqs" :key="index" class="faq-item">
-            <h2 class="faq-question py-4" @click="toggle(index)">
+            <h2 class="faq-question py-4 mb-0" @click="toggle(index)">
                 {{ item.question }}
                 <span :class="{'caret-down caret': !item.open, 'caret-up caret': item.open}"></span>
             </h2>
