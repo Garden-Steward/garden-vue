@@ -2,27 +2,14 @@
 import { storeToRefs } from 'pinia';
 import { ref } from 'vue';
 import { useRoute } from "vue-router";
-import MarkdownIt from 'markdown-it';
-import markdownItAttrs from 'markdown-it-attrs';
+import { StrapiBlocks } from 'vue-strapi-blocks-renderer';
 
 import { instructionStore  } from '@/stores';
-const md = new MarkdownIt().use(markdownItAttrs);
-
-
-import { watch } from 'vue';
 
 const instSTore = instructionStore();
 const route = useRoute()
 const { instruction } = storeToRefs(instSTore);
-let renderedContent = '';
 const isApproved = ref(false);
-
-
-watch(instruction, (newVal) => {
-  if (newVal.attributes) {
-    renderedContent = md.render(newVal.attributes?.content);
-  }
-});
 
 const acceptTask = (e) => {
   console.log(e);
@@ -45,7 +32,7 @@ instSTore.findSlug(route.params.slug);
     <div>
       <div class="max-w-4xl mx-auto px-6 py-12 bg-gray-100 rounded-lg">
         <h1 class="text-3xl font-bold mb-6">{{ instruction?.attributes?.title }}</h1>
-        <div v-html="renderedContent" class="text-left"></div>
+        <StrapiBlocks :content="instruction?.attributes?.content" :modifiers="modifiers" :blocks="blocks" class="text-left"/>
         <!-- Conditional rendering of the agreement button -->
         <div v-if="instruction?.attributes?.accept_required" class="mt-6">
           <button :class="{ 'bg-gray-500': isApproved, 'bg-green-700 hover:bg-green-900': !isApproved }" class="text-white font-bold py-2 px-4 rounded" @click="acceptTask" :disabled="isApproved">

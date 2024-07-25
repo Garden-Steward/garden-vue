@@ -262,13 +262,4 @@ iframe {
   line-height: 1.4; /* Smaller line spacing */
   color: #4a5568; /* Dark gray color */
 }
-.w300 {
-  width: 300px;
-  margin: 15px;
-}
-ul li {
-  margin-left: 30px;
-  padding-left: 10px;
-  list-style-type: circle;
-}
 </style>

@@ -16,3 +16,20 @@ a {
 body {
     background-color: #8aa37c;
 }
+.w300 {
+    width: 300px;
+    margin: 15px;
+  }
+ul li {
+    margin-left: 30px;
+    padding-left: 10px;
+    list-style-type: circle;
+}
+ol li {
+    margin-left: 30px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    list-style-type: decimal;
+}
+  
