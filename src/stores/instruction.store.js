@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers';
+import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/instructions`;
 
@@ -11,6 +12,11 @@ export const instructionStore = defineStore({
         instruction: {}
     }),
     actions: {
+      handleError(err) {
+        const alertStore = useAlertStore();
+        alertStore.error(err);
+        console.log("Instruction Error: ", err);
+      },
       async find() {
         //   this.instruction = { loading: true };
           this.instructions = { loading: true };
@@ -38,7 +44,11 @@ export const instructionStore = defineStore({
       async approveTask(data) {
         return fetchWrapper.post(`${baseUrl}/approve?populate=*`,{data: data})
             .then(res => {
-              console.log(res.data);
+              console.log("approve is back: ", res);
+              if (!res.success) {
+                this.handleError(res.message);
+              }
+              return res;
                 // this.instructions = res.data;
             })
             .catch(this.handleError);

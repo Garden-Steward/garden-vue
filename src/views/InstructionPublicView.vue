@@ -10,18 +10,38 @@ const instSTore = instructionStore();
 const route = useRoute()
 const { instruction } = storeToRefs(instSTore);
 const isApproved = ref(false);
+const showModal = ref(false);
+const phoneNumber = ref('');
+const phoneError = ref('');
 
-const acceptTask = (e) => {
+const acceptTask = async (e) => {
   console.log(e);
   const urlParams = new URLSearchParams(window.location.search);
   const user = urlParams.get('u')
 
   if (user) {
-    instSTore.approveTask({userId:user, slug:route.params.slug})
-    isApproved.value = true;
+    const {success} = await instSTore.approveTask({userId:user, slug:route.params.slug})
+    isApproved.value = success;
+    window.scrollTo(0, 0);
+  } else {
+    showModal.value = true;
   }
-
 }
+
+const closeModal = () => {
+  showModal.value = false;
+};
+
+const submitPhoneNumber = async () => {
+  if (phoneNumber.value && /^\d+$/.test(phoneNumber.value)) {
+    const {success} = await instSTore.approveTask({phoneNumber: phoneNumber.value, slug: route.params.slug});
+    isApproved.value = success;
+    window.scrollTo(0, 0);
+    closeModal();
+  } else {
+    phoneError.value = 'Please enter a valid phone number (digits only)';
+  }
+};
 
 console.log("instruction: ", instruction);
 
@@ -30,7 +50,7 @@ instSTore.findSlug(route.params.slug);
 
 <template>
     <div>
-      <div class="max-w-4xl mx-auto px-6 py-12 bg-gray-100 rounded-lg">
+      <div class="max-w-4xl mx-auto px-6 py-12 bg-gray-100 rounded-lg" v-if="!instruction.loading && !instruction.error">
         <h1 class="text-3xl font-bold mb-6">{{ instruction?.attributes?.title }}</h1>
         <StrapiBlocks :content="instruction?.attributes?.content" :modifiers="modifiers" :blocks="blocks" class="text-left"/>
         <!-- Conditional rendering of the agreement button -->
@@ -53,6 +73,24 @@ instSTore.findSlug(route.params.slug);
         <a :href="instruction?.attributes?.garden?.data.attributes?.organization?.data?.attributes.url" target="_blank" class="text-slate-800 underline hover:text-yellow-100 visited:text-yellow-3c00">
           <strong>{{ instruction?.attributes?.garden?.data.attributes?.organization?.data?.attributes.title }}</strong>
         </a>
+      </div>
+      
+      <!-- Modal -->
+      <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+          <h2 class="text-xl font-bold mb-4">Enter Your Phone Number</h2>
+          <input 
+            v-model="phoneNumber" 
+            type="tel" 
+            placeholder="Phone number" 
+            class="w-full p-2 border border-gray-300 rounded mb-2"
+          >
+          <p v-if="phoneError" class="text-red-500 text-sm mb-2">{{ phoneError }}</p>
+          <div class="flex justify-end">
+            <button @click="closeModal" class="mr-2 px-4 py-2 bg-gray-200 rounded">Cancel</button>
+            <button @click="submitPhoneNumber" class="px-4 py-2 bg-green-500 text-white rounded">Submit</button>
+          </div>
+        </div>
       </div>
     </div>
 </template>
