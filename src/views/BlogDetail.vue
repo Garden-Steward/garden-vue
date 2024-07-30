@@ -1,10 +1,11 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { watch, computed, onMounted, nextTick } from 'vue';
+import { watch, computed, onMounted } from 'vue';
 import { useRoute, RouterLink } from "vue-router";
 import { StrapiBlocks } from 'vue-strapi-blocks-renderer';
 
 import { useBlogStore } from '@/stores';
+import { ArticleUtils } from '@/helpers/article-utils';
 
 const blogStore = useBlogStore();
 const route = useRoute();
@@ -42,7 +43,6 @@ blogStore.findSlug(route.params.slug);
 // Reactive properties for button links
 let latestBlogId = blog?._id;
 
-
 // Computed property to format the publishedAt date
 const formattedDate = computed(() => {
   if (!blog.value?.publishedAt) return '';
@@ -51,33 +51,16 @@ const formattedDate = computed(() => {
   return new Date(blog.value.publishedAt).toLocaleDateString(undefined, options);
 });
 
-// Function to process images
-const processImages = async () => {
-  await nextTick();
-  const images = document.querySelectorAll('img');
-  images.forEach(img => {
-    if (img.alt.includes('float-right')) {
-      img.classList.add('float-right');
-    }
-    if (img.alt.includes('float-left')) {
-      img.classList.add('float-left');
-    }
-    if (img.alt.includes('w300')) {
-      img.classList.add('w300');
-    }
-  });
-};
-
 // Watch for changes in the blog content and process images
 watch(blog, async (newBlog) => {
   if (newBlog?.content) {
-    await processImages();
+    await ArticleUtils.processImages();
   }
   latestBlogId = newBlog?.id || null;
 }, { deep: true });
 
 onMounted(async () => {
-  await processImages();
+  await ArticleUtils.processImages();
 });
 
 </script>

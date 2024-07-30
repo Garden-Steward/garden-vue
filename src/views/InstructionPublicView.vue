@@ -1,8 +1,9 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute } from "vue-router";
 import { StrapiBlocks } from 'vue-strapi-blocks-renderer';
+import { ArticleUtils } from '@/helpers/article-utils';
 
 import { instructionStore  } from '@/stores';
 
@@ -14,8 +15,7 @@ const showModal = ref(false);
 const phoneNumber = ref('');
 const phoneError = ref('');
 
-const acceptTask = async (e) => {
-  console.log(e);
+const acceptTask = async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const user = urlParams.get('u')
 
@@ -42,6 +42,17 @@ const submitPhoneNumber = async () => {
     phoneError.value = 'Please enter a valid phone number (digits only)';
   }
 };
+
+watch(instruction, async (newInstruction) => {
+  console.log('newInstruction: ', newInstruction);
+  if (newInstruction?.attributes?.content) {
+    await ArticleUtils.processImages();
+  }
+}, { deep: true });
+
+onMounted(async () => {
+  await ArticleUtils.processImages();
+});
 
 console.log("instruction: ", instruction);
 
