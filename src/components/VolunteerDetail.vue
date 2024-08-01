@@ -1,12 +1,12 @@
 <script setup>
 import VolunteerInterest from '@/components/VolunteerInterest.vue'
-import { backendHelper } from '@/helpers';
-import { ref } from 'vue';
+import { ref, computed, defineOptions } from 'vue';
 import { format } from 'date-fns'
 import { vOnClickOutside } from '@vueuse/components'
+import { backendHelper } from '@/helpers';
 
-const dropDown = ref(0);
-let root = ref(null);
+// const dropDown = ref(0);
+// let root = ref(null);
 
 const props = defineProps({
   id: Number,
@@ -18,10 +18,16 @@ const props = defineProps({
   createdAt: String,
   updatedAt: String,
   publishedAt: String,
+  provider: String,
+  bio: String,
+  color: String,
+  paused: Boolean,
   interests: Array,
   u_g_interests: Object,
   editor: Boolean
 })
+defineOptions({ inheritAttrs: false })
+
 
 let ugArr, basicUgArr
 if (props.u_g_interests.data) {
@@ -34,68 +40,84 @@ if (props.u_g_interests.data) {
   })
   console.log(ugArr)
 }
-const prettyDay = format(new Date(props.createdAt), 'PPP');
+const prettyDay = format(new Date(props.createdAt), 'yyyy-MM-dd');
+const displayName = computed(() => (props.firstName || props.lastName) ? `${props.firstName} ${props.lastName}` : props.phoneNumber);
 
-const clickVolunteer = (volunteer) => {
-  console.log('volunteer clicked', volunteer)
-}
-const requestRegistration = (id) => {
-  console.log('request reg clicked', id)
-  backendHelper.requestRegistration(id).then((res)=> {
-    console.log("vd resp: ", res);
-  });
-}
-const toggleDropdown = () => {
-  dropDown.value = !dropDown.value
-}
-let displayName = (props.firstName || props.lastName) ? `${props.firstName} ${props.lastName}` : props.phoneNumber;
+const interestTags = computed(() => {
+  return props.interests
+    .filter(interest => basicUgArr && basicUgArr.find(ug => ug == interest.id))
+    .map(interest => interest.tag)
+    .join(', ');
+});
+
+const isExpanded = ref(false);
+const toggleExpand = () => {
+  isExpanded.value = !isExpanded.value;
+};
+
 const ignoreElRef = ref()
 const onClickOutsideHandler = [
   (ev) => {
-    console.log(ev)
     if (ev.target.nodeName != 'LABEL' && ev.target.nodeName != 'INPUT') {
-      dropDown.value = false
+      // isExpanded.value = false;
     }
   },
   { ignore: [ignoreElRef] },
 ]
 
+const requestRegistration = (id) => {
+  backendHelper.requestRegistration(id).then((res)=> {
+    console.log("vd resp: ", res);
+  });
+}
+// const toggleDropdown = () => {
+//   dropDown.value = !dropDown.value
+// }
+
 </script>
 
 <template>
-  <div ref="root" class="m-2 border-r-4 border rounded bg-slate-100">
-    <div @click="toggleDropdown" class="cursor-pointer p-3">
-      <div class="flex items-center justify-between">
-        <div class="flex-1 pr-4">
-          <span>{{ displayName }}</span>
-          <div><span v-for="interest in interests" :key="interest.id" :value="interest.tag">
-            {{ basicUgArr && basicUgArr.find(ug => ug == interest.id) ? interest.tag.charAt(0) : '' }}
-          </span></div>
-        </div>
-        <div class="cursor-pointer">
-          <svg
-            class="pl-2 w-6 h-6 fill-current inline-block mr-1"
-            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-            <path v-if="!dropDown" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
-          </svg>
-        </div>
+
+    <tr 
+      class="tr-class"
+      @click="toggleExpand"
+    >
+      <td class="td-class">{{ displayName }}</td>
+      <td class="td-class">{{ prettyDay }}</td>
+      <td class="td-class">{{ interestTags }}</td>
+</tr>
+
+    <div 
+      v-show="isExpanded"
+      v-on-click-outside="onClickOutsideHandler"
+      class="p-4 bg-white border-t"
+    >
+      <p><span class="font-semibold">Email:</span> {{ email }}</p>
+      <p><span class="font-semibold">Phone:</span> {{ phoneNumber }}</p>
+      <p><span class="font-semibold">Interests:</span></p>
+      <div v-for="interest in interests" :key="interest.id">
+        <VolunteerInterest 
+          v-bind="interest" 
+          :ugArr="ugArr" 
+          :garden="props.garden" 
+          :user="props.id" 
+          :editor="editor"
+          ref="ignoreElRef"
+        ></VolunteerInterest>
+      </div>
+      <div v-if="email =='test@test.com'">
+        <button @click="requestRegistration({id})" class="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-black py-1 px-3 border border-blue-500 hover:border-transparent rounded">
+          Request Complete Registration
+        </button>
       </div>
     </div>
-    <div v-show="dropDown" class="absolute mt-2 p-2 bg-white border rounded-lg shadow-lg" >
-      <h2 class="hover:opacity-75 cursor-pointer"  @click="clickVolunteer({id, email})"></h2>
-      <div v-on-click-outside="onClickOutsideHandler">
-        <p><span class="font-semibold py-2">Registered:</span> {{ prettyDay }}</p>
-        <p><span class="font-semibold py-2">Email:</span> {{ email }}</p>
-        <p><span class="font-semibold py-2">Phone:</span> {{ phoneNumber }}</p>
-        <p><span class="font-semibold py-3">Interests:</span></p>
-        <div v-for="interest in interests" :key="interest.id" :value="interest.tag">
-          <VolunteerInterest v-bind="interest" :ugArr="ugArr" :garden="props.garden" :user="props.id" :editor="editor" ref="ignoreElRef"></VolunteerInterest>
-        </div>
-        <div v-if="email =='test@test.com'">
-          <button @click="requestRegistration({id})" class='bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-black py-1 px-3 border border-blue-500 hover:border-transparent rounded' href="#">Request Complete Registration</button>
-        </div>
-      </div>
-    </div>
-        
-  </div>
 </template>
+
+<style scoped>
+  .td-class {
+    @apply px-4 py-3 bg-custom-light border-green-800 first:rounded-t-lg last:rounded-b-lg sm:first:rounded-t-none sm:last:rounded-b-none sm:first:rounded-tl-lg sm:first:rounded-bl-lg sm:last:rounded-tr-lg sm:last:rounded-br-lg cursor-pointer border-b border-b-green-800
+  }
+  .tr-class {
+    @apply flex flex-col mb-4 sm:table-row
+  }
+</style>

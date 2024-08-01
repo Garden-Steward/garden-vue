@@ -1,5 +1,5 @@
 <script setup>
-import { onUpdated, ref } from 'vue';
+import { onUpdated, ref, computed, defineOptions } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore } from '@/stores';
@@ -26,6 +26,7 @@ const { smsCampaigns } = storeToRefs(campaignStore);
 gardensStore.getSlug(route.params.slug);
 eventStore.getByGarden(route.params.slug);
 campaignStore.getByGarden(route.params.slug);
+defineOptions({ inheritAttrs: false })
 
 const showVol = ref(false);
 const showEvent = ref(true);
@@ -64,10 +65,37 @@ if (isMobile()) {
   showEvent.value = false;
   showCamp.value = false;
 }
+
+const sortField = ref('createdAt');
+const sortOrder = ref('desc');
+
+const toggleSortOrder = (field) => {
+  if (sortField.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortField.value = field;
+    sortOrder.value = 'asc';
+  }
+};
+
+const sortedVolunteers = computed(() => {
+  if (!garden.value.attributes.volunteers?.data) return [];
+  return [...garden.value.attributes.volunteers.data].sort((a, b) => {
+    if (sortField.value === 'name') {
+      const nameA = `${a.attributes.firstName} ${a.attributes.lastName}`.toLowerCase();
+      const nameB = `${b.attributes.firstName} ${b.attributes.lastName}`.toLowerCase();
+      return sortOrder.value === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    } else {
+      const dateA = new Date(a.attributes.createdAt);
+      const dateB = new Date(b.attributes.createdAt);
+      return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA;
+    }
+  });
+});
 </script>
 
 <template>
-    <div class="bg-custom-light p-5 rounded-lg mx-auto">
+    <div class="bg-custom-light rounded-lg mx-auto p-1 sm:p-5">
         <h1 class="text-3xl font-bold mb-5">Hi {{user?.firstName}}!</h1>
         <div class="table-auto" v-if="garden.attributes">
           <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-white-600 p-3">{{ garden.attributes.title }}</h1>
@@ -82,11 +110,28 @@ if (isMobile()) {
                   </svg>
               </h3> 
               <Vue3SlideUpDown v-model="showVol">
-                <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-2 relative">
+                <div class="relative">
                   <a @click="clearTemp" class="absolute top-0 right-0">Clear Temps</a>
-                  <div v-for="volunteer in garden.attributes.volunteers.data" :key="volunteer.id">
-                      <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id" :editor="editor"/>
-                  </div>
+                  <table class="w-full">
+                    <thead>
+                      <tr class="tr-class">
+                        <th class="text-left">
+                          <a @click="toggleSortOrder('name')" class="cursor-pointer">
+                            Name {{ sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
+                          </a>
+                        </th>
+                        <th class="text-left">
+                          <a @click="toggleSortOrder('createdAt')" class="cursor-pointer">
+                            Registered {{ sortField === 'createdAt' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
+                          </a>
+                        </th>
+                        <th class="text-left">Interests</th>
+                      </tr>
+                    </thead>
+                      <tbody v-for="volunteer in sortedVolunteers" :key="volunteer.id">
+                          <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id" :editor="editor"/>
+                      </tbody>
+                  </table>
                 </div>
               </Vue3SlideUpDown>
             </article>
@@ -158,7 +203,6 @@ if (isMobile()) {
         </div>
         <div v-if="garden.loading" class="spinner-border spinner-border-sm"></div>
         <div v-if="garden.error" class="text-danger">Error loading gardens: {{garden.error}}</div>
-
     </div>
 
 </template>
@@ -175,3 +219,9 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+  .tr-class {
+    @apply flex flex-col mb-4 sm:table-row
+  }
+</style>
