@@ -16,10 +16,22 @@ watch(events, (newEvents) => {
   console.log("newEvents", events)
   if (newEvents.length > 0) {
     isLoading.value = false;
+  } else {
+    isLoading.value = false;
+    this.error = "No events found"
   }
 });
 const displayDate = (date) => {
-    return new Date(date).toLocaleDateString();
+    let cleanDate = new Date(date).toLocaleDateString();
+    const options = { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true };
+    const formattedDate = new Date(date).toLocaleString('en-US', options);
+    
+    // Add ordinal suffix to the day
+    const day = new Date(date).getDate();
+    const ordinalSuffix = ['th', 'st', 'nd', 'rd'][(day % 10 > 3) ? 0 : (day % 100 - day % 10 != 10) * (day % 10)];
+    
+    cleanDate = formattedDate.replace(/(\d+)/, `$1${ordinalSuffix}`);
+    return cleanDate;
 }
 const volunteerDayClick = (id) => {
     window.location=`/d/${id}`
@@ -70,7 +82,7 @@ const pastEvents = computed(() => {
                    @click="volunteerDayClick(day.id)">
                 <span class="text-xl font-bold">{{ day.title }}</span>
                 <p class="text-m mb-2">{{ day.blurb }}</p>
-                <p class="text-m">{{ displayDate(day.startDatetime) }}</p>
+                <p class="text-m inline-block bg-peach-100 text-peach-800 rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
               </div>
             </div>
           </div>
@@ -83,9 +95,12 @@ const pastEvents = computed(() => {
                    @click="volunteerDayClick(day.id)">
                 <span class="text-xl font-bold">{{ day.title }}</span>
                 <p class="text-m mb-2">{{ day.blurb }}</p>
-                <p class="text-m">{{ displayDate(day.startDatetime) }}</p>
+                <p class="text-m inline-block bg-peach-100 text-peach-800 rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
               </div>
             </div>
+          </div>
+          <div v-if="error">
+            <p class="text-m">{{ error }}</p>
           </div>
         </div>
       </div>
@@ -112,5 +127,13 @@ const pastEvents = computed(() => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.bg-peach-100 {
+  background-color: #FFDAB9;
+}
+
+.text-peach-800 {
+  color: #8B4513;
 }
 </style>
