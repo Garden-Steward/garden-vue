@@ -42,6 +42,7 @@ const toggleMobileMenu = async () => {
                 <router-link to="/" class="nav-item nav-link" @click="toggleMobileMenu">Home</router-link>
                 <router-link to="/gardens" class="nav-item nav-link" v-show="authStore.user" @click="toggleMobileMenu">Gardens</router-link>
                 <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
+                <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
                 <router-link to="/help" class="nav-item nav-link" @click="toggleMobileMenu">Help</router-link>
                 <router-link to="/apply" class="nav-item nav-link" @click="toggleMobileMenu">Apply</router-link>
                 <router-link to="/login" class="nav-item nav-link" v-show="!authStore.user" @click="toggleMobileMenu">Login</router-link>
@@ -62,6 +63,7 @@ const toggleMobileMenu = async () => {
                         <router-link to="/gardens" class="nav-item nav-link">Gardens</router-link>            
                     </div>
                     <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
+                    <router-link to="/events" class="nav-item nav-link">Events</router-link>
                     <router-link v-show="!authStore.user" to="/help" class="nav-item nav-link">Help</router-link>
                     <router-link to="/apply" class="nav-item nav-link">Apply</router-link>
                     <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link">Login</router-link>
@@ -114,13 +116,13 @@ const toggleMobileMenu = async () => {
     cursor: pointer;
     position: absolute; /* Position it relative to its nearest positioned ancestor */
     left: 15px; /* Align to the far left */
-    top: 20px; /* Adjust this value based on your header's height */
+    top: 15px; /* Adjust this value based on your header's height */
     z-index: 1050; /* Ensure it's above other content */
 }
 
 .mobile-menu {
     position: fixed;
-    top: 65px; /* Adjust this value to the height of your header */
+    top: 50px; /* Adjust this value to the height of your header */
     left: 0;
     width: 250px; /* Ensure it spans the full width */
     height: calc(100% - 65px); /* Adjust based on your header height */

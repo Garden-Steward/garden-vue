@@ -10,7 +10,8 @@ export const useEventStore = defineStore({
     state: () => ({
         volunteerDays: {},
         volunteerDay: {},
-        event: {}
+        event: {},
+        events: {}
     }),
     actions: {
         handleError(err) {
@@ -23,6 +24,12 @@ export const useEventStore = defineStore({
                 .then(res => this.volunteerDays.days = res)
                 .catch(this.handleError);
         },
+        async fetchPublic() {
+            this.events = { loading: true };
+            fetchWrapper.get(`${baseUrl}/public`)
+                .then(res => this.events = res)
+                .catch(this.handleError);
+    },
         async findById(id) {
             this.event = { loading: true };
             return fetchWrapper.get(`${baseUrl}/${id}?populate=garden&populate=confirmed`)
@@ -30,11 +37,8 @@ export const useEventStore = defineStore({
                 .catch(this.handleError);
         },
         async getByGarden(slug) {
-            // const gardenStore = useGardensStore();
-            // console.log("gardenStore",gardenStore.garden)
             this.volunteerDays = { loading: true };
             fetchWrapper.get(`${baseUrl}/garden/${slug}`)
-            // fetchWrapper.get(`${baseUrl}/${slug}/full`)
                 .then(res => this.volunteerDays.days = res)
                 .then(this.volunteerDays = { loading: false })
                 .catch(error => this.volunteerDays = { error })

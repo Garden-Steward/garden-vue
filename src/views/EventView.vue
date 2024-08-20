@@ -19,6 +19,11 @@ const { event } = storeToRefs(eventStore);
 let renderedContent = '';
 const isRSVPed = ref(false);
 
+const images = [
+  "https://storage.googleapis.com/steward_upload/uploads/20240818_101336_dd55c7a910/20240818_101336_dd55c7a910.jpg",
+  "https://storage.googleapis.com/steward_upload/uploads/garden_volunteers_feb24_2c9697c88b/garden_volunteers_feb24_2c9697c88b.jpg",
+  "https://storage.googleapis.com/steward_upload/uploads/Screenshot_2024_08_20_at_7_23_46_AM_82aa7ed2a6/Screenshot_2024_08_20_at_7_23_46_AM_82aa7ed2a6.png"
+];
 
 watch(event, (newVal) => {
   if (newVal.attributes?.content) {
@@ -56,7 +61,7 @@ eventStore.findById(route.params.id);
 <template>
     <div id="event-view">
       <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
-        <img src="https://storage.googleapis.com/steward_upload/uploads/garden_volunteers_feb24_2c9697c88b/garden_volunteers_feb24_2c9697c88b.jpg" alt="Hero Image" class="w-full h-auto mb-6 rounded-lg">
+        <img id="randomImage" alt="Random Hero Image" class="w-full h-auto mb-6 rounded-lg" :src="images[Math.floor(Math.random() * images.length)]">
         <h1 class="text-3xl font-bold mb-6">{{ event?.attributes?.title }}</h1>
         <h4 class="text-lg font-bold mb-6">{{ processDate(event?.attributes?.startDatetime) }}</h4>
         <div v-if="event?.attributes?.blurb" class="text-left brief-box">
