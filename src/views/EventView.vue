@@ -61,11 +61,12 @@ eventStore.findById(route.params.id);
 <template>
     <div id="event-view">
       <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
-        <img id="randomImage" alt="Random Hero Image" class="w-full h-auto mb-6 rounded-lg" :src="images[Math.floor(Math.random() * images.length)]">
+        <div v-if="!event?.attributes?.content">
+          <img id="randomImage" alt="Random Hero Image" class="w-full h-auto mb-6 rounded-lg" :src="images[Math.floor(Math.random() * images.length)]">
+        </div>
         <h1 class="text-3xl font-bold mb-6">{{ event?.attributes?.title }}</h1>
         <h4 class="text-lg font-bold mb-6">{{ processDate(event?.attributes?.startDatetime) }}</h4>
         <div v-if="event?.attributes?.blurb" class="text-left brief-box">
-            <h4>Brief:</h4>
             <div v-html="event?.attributes?.blurb"></div>
         </div>
         <div class="text-left" v-if="event?.attributes?.content">
