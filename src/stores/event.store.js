@@ -18,6 +18,7 @@ export const useEventStore = defineStore({
             const alertStore = useAlertStore();  
             alertStore.error(err);
             console.log("Volunteer Error: ", err)
+            throw err;
         },
         async getUserEvents() {
             return fetchWrapper.get(`${baseUrl}/user`)

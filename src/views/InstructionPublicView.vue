@@ -22,7 +22,6 @@ const acceptTask = async () => {
   if (user) {
     const {success} = await instSTore.approveTask({userId:user, slug:route.params.slug})
     isApproved.value = success;
-    window.scrollTo(0, 0);
   } else {
     showModal.value = true;
   }
