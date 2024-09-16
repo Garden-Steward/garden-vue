@@ -27,7 +27,7 @@ function onSubmit(values, { setErrors }) {
         </div>
 
         <div class="text-lg mt-6 max-w-md w-full mx-auto mt-8 mb-4">
-          Garden Steward is a decentralized, cooperative community project building SMS-first open-source software for volunteer events, and task management for watering and harvesting. We have been collaborating and growing with the Oakland Urban Farming Project, OUFP since 2022. If you want to join you can apply to create your own (decentralized) Garden Steward instance, or just use the one we run.
+          Garden Steward is a community-driven, open-source project developing SMS-based software for managing volunteer events, watering schedules, and harvest coordination. Since 2022, we've partnered with the Oakland Urban Farming Project (OUFP) to foster urban agriculture. Join us by either setting up your own decentralized Garden Steward instance or participating in our existing network. Our cooperative approach empowers local communities to cultivate sustainable urban green spaces efficiently.
           <p><a href="/apply" class="hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
               Apply Now
           </a></p>
