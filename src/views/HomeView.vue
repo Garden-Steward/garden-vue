@@ -16,6 +16,9 @@ gardensStore.getAll(user.value.id);
 <template>
     <div class="bg-custom-light p-5 rounded-lg md:w-1/2 mx-auto">
         <h1 class="text-2xl">Welcome to Garden Steward!</h1>
+        <div class="text-lg mt-6 max-w-md w-full mx-auto mt-8 mb-4">
+          Garden Steward is a decentralized, cooperative community project building SMS-first open-source software for volunteer events, and task management for watering and harvesting. We have been collaborating and growing with the Oakland Urban Farming Project, OUFP since 2022. If you want to join you can apply to create your own (decentralized) Garden Steward instance, or just use the one we run.
+        </div>
         <p class="text-lg mt-5">Thank you for helping out with your garden! This app is currently in <strong>Beta</strong> so feedback is encouraged. Feedback & Support email: <a href="mailto:cameron@oufp.org" class="underline mb-10">cameron@oufp.org</a> - screenshots helpful</p>
         <p class="text-md mb-5 mt-5">Hi there {{ user.firstName }} {{ user.lastName }}!</p>
         <p class="text-md mb-2">Bio: {{ user.bio? user.bio : 'No bio yet' }}</p>

@@ -27,7 +27,7 @@ function onSubmit(values, { setErrors }) {
         </div>
 
         <div class="text-lg mt-6 max-w-md w-full mx-auto mt-8 mb-4">
-          Garden Steward helps manage volunteer days and weekly tasks for community garden projects. Apply for your garden to be managed by Garden Steward. Applications are approved on a case by case basis. (Sliding Scale - BIPOC welcome)
+          Garden Steward is a decentralized, cooperative community project building SMS-first open-source software for volunteer events, and task management for watering and harvesting. We have been collaborating and growing with the Oakland Urban Farming Project, OUFP since 2022. If you want to join you can apply to create your own (decentralized) Garden Steward instance, or just use the one we run.
           <p><a href="/apply" class="hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
               Apply Now
           </a></p>
