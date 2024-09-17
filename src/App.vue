@@ -1,6 +1,7 @@
 <script setup>
 import { Nav, Alert } from '@/components';
 import { RouterView } from 'vue-router';
+import '@fortawesome/fontawesome-free/css/all.css'
 </script>
 
 <template>

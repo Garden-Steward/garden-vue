@@ -9,6 +9,7 @@
         "deploy": "vite build && firebase deploy"
     },
     "dependencies": {
+        "@fortawesome/fontawesome-free": "^6.6.0",
         "@strapi-community/strapi-provider-upload-google-cloud-storage": "^4.10.5",
         "@tiptap/pm": "^2.6.6",
         "@tiptap/starter-kit": "^2.6.6",
@@ -20,6 +21,7 @@
         "markdown-it": "^14.0.0",
         "markdown-it-attrs": "^4.1.6",
         "pinia": "^2.0.13",
+        "tiptap-markdown": "^0.8.10",
         "vcards-js": "^2.10.0",
         "vee-validate": "^4.5.11",
         "vue": "^3.2.33",
