@@ -124,17 +124,18 @@ const handleKeyPress = (event) => {
             <div v-html="renderedContent"></div>
         </div>
         <div v-if="user?.id" class="text-left mt-5">
-            <div>Hello {{ user?.firstName }} {{ user?.lastName }}</div>
-            <p>Would you like to RSVP for this event?</p>
+            <div v-if="!isRSVPed" style="font-size: 1.2rem; font-weight: bold;" class="mb-2">Hello {{ user?.firstName }} {{ user?.lastName }}
+              <p>Would you like to RSVP for this event?</p>
+            </div>
             <button :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer" @click="rsvpEvent" :disabled="isRSVPed">
               {{ isRSVPed ? 'RSVP Initiated' : 'RSVP' }}
             </button>
-            <p v-if="isRSVPed">Thank you for RSVPing!</p>
+            <p v-if="isRSVPed">Thank you for RSVPing {{ user?.firstName }} {{ user?.lastName }}!</p>
         </div>
 
 
         <!-- Conditional rendering of the agreement button -->
-        <div class="mt-6">
+        <div v-else class="mt-6">
           <button :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="text-white font-bold py-2 px-4 rounded" @click="rsvpEvent" :disabled="isRSVPed">
             {{ isRSVPed ? 'RSVP Initiated' : 'RSVP' }}
           </button>

@@ -109,12 +109,31 @@ watch(() => props.editor, (newVal, oldVal) => {
 
 <template>
 
-  <div v-if="title" class="border-r-3 border rounded p-3 bg-slate-100 hover:opacity-75 cursor-pointer"  @click="() => {showExisting(id)}">
-    <a class="hover:text-blue ">
-      <span class="underline text-xl">{{ title }}</span>
+  <div v-if="title" class="border-r-3 border rounded p-3 bg-slate-100 cursor-pointer">
+    <a>
+      <span class="underline text-lg">{{ title }}</span>
       <br />
-      {{ prettyDay }}
+      <span class="text-sm">{{ prettyDay }}</span>
+      <br />
+      <span class="text-sm">{{ new Date(startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</span>
     </a>
+    <div class="flex justify-end mt-2">
+      <button
+        @click.stop="showExisting(id)"
+        class="bg-custom-peach hover:bg-custom-peach/80 text-black font-bold py-1 px-3 rounded mr-2 text-xs"
+      >
+        {{ new Date(startDatetime) < new Date() ? 'View SMS' : 'Edit SMS' }}
+      </button>
+      <button
+        @click.stop="$router.push(`/event/edit/${id}`)"
+        class="bg-custom-green hover:bg-custom-green/80 text-white font-bold py-1 px-3 rounded text-xs"
+      >
+        Manage Event
+      </button>
+    </div>
+    <div class="mt-2 text-right">
+      <a :href="`/d/${id}`" class="text-blue-600 hover:underline text-xs">View Page</a>
+    </div>
   </div>
 
   <button v-if="showCreateButton" type="button" class="px-5

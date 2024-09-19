@@ -69,6 +69,7 @@
 import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from 'tiptap-markdown'
 import { Editor, EditorContent } from '@tiptap/vue-3'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 
 export default {
   components: {
@@ -84,50 +85,41 @@ export default {
 
   emits: ['update:modelValue'],
 
-  data() {
-    return {
-      editor: null,
-    }
-  },
+  setup(props, { emit }) {
+    const editor = ref(null)
 
-  watch: {
-    modelValue(value) {
-      // HTML
-      const isSame = this.editor.getHTML() === value
-
-      // JSON
-      // const isSame = JSON.stringify(this.editor.getJSON()) === JSON.stringify(value)
-
-      if (isSame) {
-        return
-      }
-      console.log('markdown: ', this.editor.storage.markdown.getMarkdown())
-
-      this.editor.commands.setContent(value, false)
-    },
-  },
-
-  mounted() {
-    this.editor = new Editor({
-      extensions: [
-        StarterKit,
-        Markdown,
-      ],
-      content: this.modelValue,
-      onUpdate: () => {
-        // HTML
-        this.$emit('update:modelValue', this.editor.storage.markdown.getMarkdown())
-
-        // JSON
-        // this.$emit('update:modelValue', this.editor.getJSON())
-      },
+    onMounted(() => {
+      editor.value = new Editor({
+        extensions: [
+          StarterKit,
+          Markdown,
+        ],
+        content: props.modelValue,
+        onUpdate: ({ editor }) => {
+          emit('update:modelValue', editor.storage.markdown.getMarkdown())
+        },
+        editorProps: {
+          attributes: {
+            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+          },
+        },
+      })
     })
-  },
 
-  beforeUnmount() {
-    this.editor.destroy()
+    watch(() => props.modelValue, (newValue) => {
+      if (editor.value && newValue !== editor.value.storage.markdown.getMarkdown()) {
+        editor.value.commands.setContent(newValue, false)
+      }
+    })
+
+    onBeforeUnmount(() => {
+      if (editor.value) {
+        editor.value.destroy()
+      }
+    })
+
+    return { editor }
   },
-  
 }
 </script>
 

@@ -2,12 +2,13 @@
 import { storeToRefs } from 'pinia';
 import { ref, watch } from 'vue';
 import { useRoute } from "vue-router";
-import { useEventStore } from '@/stores';
+import { useEventStore, useAlertStore } from '@/stores';
 import Tiptap from '@/components/Tiptap.vue'
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue'
+
 const eventStore = useEventStore();
+const alertStore = useAlertStore();
 const route = useRoute()
-// const baseUrl = `${import.meta.env.VITE_API_URL}`;
 
 const { event } = storeToRefs(eventStore);
 const isLoading = ref(true);
@@ -22,18 +23,15 @@ watch(event, async (newEvent) => {
   isLoading.value = false;
 }, { deep: true });
 
-// const truncateExcerpt = (excerpt) => {
-//     return `${excerpt?.substring(0, 150)}...`;
-// };
-
 const saveEvent = async () => {
   try {
     console.log('event: ', event.value.attributes.content);
     await eventStore.update(route.params.id, event.value.attributes);
-    // alert('Event saved successfully!');
+    alertStore.success('Event saved successfully!');
+    window.scrollTo(0, 0);
   } catch (error) {
     console.error('Error saving event:', error);
-    alert('Failed to save event. Please try again.');
+    alertStore.error('Failed to save event. Please try again.');
   }
 };
 </script>
@@ -49,6 +47,10 @@ const saveEvent = async () => {
           </div>
         </div>
         <div v-else>
+          <!-- Add this line to display the alert messages -->
+          <div v-if="alertStore.alert" :class="['alert', `alert-${alertStore.alert.type}`]">
+            {{ alertStore.alert.message }}
+          </div>
           <div class="stew">
             <h2 class="text-xl font-bold mb-3">
               {{ event.attributes.confirmed.data && event.attributes.confirmed.data.length > 0 ? 'Volunteers RSVPd' : 'No one has RSVP\'d to this event yet' }}
@@ -59,8 +61,8 @@ const saveEvent = async () => {
               </div>
             </ul>
           </div>
-          <button @click="$router.push(`/d/${event.id}`)" class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded">
-            View Volunteer Page
+          <button @click="$router.push(`/d/${event.id}`)" class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded mx-auto">
+            Public Event Page
           </button>
           <hr class="my-4" />
           <p class="text-md mb-4 font-roboto">Customize your Event Page.</p>
@@ -75,7 +77,7 @@ const saveEvent = async () => {
               :content="event.attributes.content"
               @update:content="(newContent) => event.attributes.content = newContent"
             />
-            <button @click="saveEvent" class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded">Save Event</button>
+            <button @click="saveEvent" class="bg-custom-peach hover:bg-custom-green-dark text-black font-bold py-2 px-4 border-2 border-black m-4 rounded-md">Save Event</button>
           </div>
         </div>
       </div>
