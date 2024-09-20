@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "carbide-bongo-261620"
-  }
+    "default": "garden-steward",
+    "garden-steward-primary": "garden-steward"
+  },
+  "targets": {},
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
 }

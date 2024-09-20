@@ -11,6 +11,7 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
-    ]
+    ],
+    "projectId": "garden-steward"
   }
 }
