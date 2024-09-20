@@ -21,19 +21,16 @@ function onSubmit(values, { setErrors }) {
 </script>
 
 <template>
-    <div class="max-w-md w-full mx-auto mt-8 stew">
+    <div class="max-w-md w-full mx-auto mt-8 stew bg-custom-light rounded-md p-5">
         <div class="stew-logo-wrapper">
             <img class="stew-logo mx-auto" src="https://storage.googleapis.com/cdn.sacshiki.com/assets/garden_steward/hotlink-ok/garden_steward_logo_peach_sq_350.jpg" alt="Steward Logo">
         </div>
 
-        <div class="text-lg mt-6 max-w-md w-full mx-auto mt-8 mb-4">
-          Garden Steward is a community-driven, open-source project developing SMS-based software for managing volunteer events, watering schedules, and harvest coordination. Since 2022, we've partnered with the Oakland Urban Farming Project (OUFP) to foster urban agriculture. Join us by either setting up your own decentralized Garden Steward instance or participating in our existing network. Our cooperative approach empowers local communities to cultivate sustainable urban green spaces efficiently.
-          <p><a href="/apply" class="hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
-              Apply Now
-          </a></p>
+        <div class="text-lg mt-6 max-w-md w-full mx-auto mt-8 mb-4 ">
+          <p>Garden Steward is a community-driven, open-source project developing SMS-first software for managing volunteer events, watering schedules, and harvest coordination. </p>
       </div>
 
-      <h3 class="text-xl mt-10 mb-3">Garden Steward Login:</h3>
+      <h3 class="text-xl mt-10 mb-3">Login:</h3>
         <Form @submit="onSubmit" :validation-schema="schema" v-slot="{ errors, isSubmitting }">
             <div class="form-group">
                 <label class="text-green-900">Email</label>

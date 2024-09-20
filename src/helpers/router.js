@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { HomeView, 
-    LoginView, Garden, GardensView, SetPassword, 
+import { PublicHomeView, HomeView, LoginView, Garden, GardensView, SetPassword, 
     InstructionPublic, GardenApplyForm, HelpView, 
     BlogList, BlogDetail, EventView, EventsList } from '@/views';
 import { EventEditor } from '@/views/admin';
@@ -12,7 +11,8 @@ export const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     linkActiveClass: 'active',
     routes: [
-        { path: '/', component: HomeView },
+        { path: '/', component: PublicHomeView },
+        { path: '/home', component: HomeView },
         { path: '/login', component: LoginView },
         {
             path: '/oauth/google/callback',
@@ -23,7 +23,7 @@ export const router = createRouter({
             component: GardensView
         },
         {
-            path: '/apply',
+            path: '/join',
             component: GardenApplyForm
         },
         {
@@ -67,7 +67,7 @@ export const router = createRouter({
 
 router.beforeEach(async (to) => {
     // redirect to login page if not logged in and trying to access a restricted page
-    const publicPages = ['/login', '/oauth/google/callback', '/set-password', '/apply', '/help', '/blog', '/events'];
+    const publicPages = ['/login', '/oauth/google/callback', '/set-password', '/', '/help', '/blog', '/events', '/join'];
     let authRequired = !publicPages.includes(to.path);
     let regexTest = new RegExp('/i/|/blog/|/d/', 'g');
     if (regexTest.test(to.path)) {

@@ -41,10 +41,10 @@ const toggleMobileMenu = async () => {
             <div ref="mobileMenu" v-show="isMobileMenuOpen" class="mobile-menu bg-darker-green text-white">
                 <router-link to="/" class="nav-item nav-link" @click="toggleMobileMenu">Home</router-link>
                 <router-link to="/gardens" class="nav-item nav-link" v-show="authStore.user" @click="toggleMobileMenu">Gardens</router-link>
-                <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
                 <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
+                <router-link to="/join" class="nav-item nav-link" @click="toggleMobileMenu">Join</router-link>
+                <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
                 <router-link to="/help" class="nav-item nav-link" @click="toggleMobileMenu">Help</router-link>
-                <router-link to="/apply" class="nav-item nav-link" @click="toggleMobileMenu">Apply</router-link>
                 <router-link to="/login" class="nav-item nav-link" v-show="!authStore.user" @click="toggleMobileMenu">Login</router-link>
             </div>
 
@@ -62,10 +62,10 @@ const toggleMobileMenu = async () => {
                     <div v-show="authStore.user">
                         <router-link to="/gardens" class="nav-item nav-link">Gardens</router-link>            
                     </div>
-                    <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
+                    <router-link to="/join" class="nav-item nav-link">Join</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
+                    <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
                     <router-link v-show="!authStore.user" to="/help" class="nav-item nav-link">Help</router-link>
-                    <router-link to="/apply" class="nav-item nav-link">Apply</router-link>
                     <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link">Login</router-link>
     
                 </div>

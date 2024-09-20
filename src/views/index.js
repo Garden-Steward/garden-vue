@@ -10,3 +10,4 @@ export { default as InstructionPublic } from './InstructionPublicView.vue';
 export { default as BlogList } from './BlogList.vue';
 export { default as BlogDetail } from './BlogDetail.vue';
 export { default as EventsList } from './EventsList.vue';
+export { default as PublicHomeView } from './PublicHomeView.vue';
