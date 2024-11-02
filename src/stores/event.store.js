@@ -33,7 +33,7 @@ export const useEventStore = defineStore({
     },
         async findById(id) {
             this.event = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?populate=garden&populate=confirmed`)
+            return fetchWrapper.get(`${baseUrl}/${id}?populate=garden&populate=confirmed&populate=hero_image`)
                 .then(res => this.event = res.data)
                 .catch(this.handleError);
         },
@@ -45,12 +45,17 @@ export const useEventStore = defineStore({
                 .catch(error => this.volunteerDays = { error })
         },
         async update(id, data) {
-            return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
+            if (data.hero_image?.data?.id) {
+                data.hero_image = {
+                    id: data.hero_image.data.id
+                };
+            }
+
+            return fetchWrapper.put(`${baseUrl}/${id}?populate=*`, { data: data })
                 .then(res => {
                     this.volunteerDay = res.data.attributes;
                 })
                 .catch(this.handleError);
-            
         },
         async rsvpEvent(data) {
             return fetchWrapper.post(`${baseUrl}/rsvp/${data.id}`,{data: data})
@@ -91,7 +96,28 @@ export const useEventStore = defineStore({
                     return res;
                 })
                 .catch(this.handleError);
-        } 
+        },
+        async uploadImage(formData, eventId) {
+            return fetchWrapper.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData)
+                .then(async res => {
+                    const uploadedFile = Array.isArray(res) ? res[0] : res;
+                    
+                    // If volunteerDayId is provided, update the record with the new image
+                    if (eventId) {
+                        await this.update(eventId, {
+                            hero_image: {
+                                id: uploadedFile.id
+                            }
+                        });
+                    }
+
+                    return {
+                        url: uploadedFile.url,
+                        id: uploadedFile.id
+                    };
+                })
+                .catch(this.handleError);
+        }
     },
     getters: {
         gardenGetter(state) {

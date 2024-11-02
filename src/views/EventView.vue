@@ -112,7 +112,11 @@ const handleKeyPress = (event) => {
 <template>
     <div id="event-view">
       <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
-        <div v-if="!event?.attributes?.content">
+
+        <div v-if="event?.attributes?.hero_image?.data?.attributes?.url">
+          <img id="randomImage" alt="Hero Image" class="w-full h-auto mb-6 rounded-lg" :src="event?.attributes?.hero_image?.data?.attributes?.url">
+        </div>
+        <div v-else>
           <img id="randomImage" alt="Random Hero Image" class="w-full h-auto mb-6 rounded-lg" :src="randomImage">
         </div>
         <h1 class="text-3xl font-bold mb-6">{{ event?.attributes?.title }}</h1>

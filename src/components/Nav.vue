@@ -53,8 +53,8 @@ const toggleMobileMenu = async () => {
 				<span class="mid"></span>
 				<span class="bottom"></span>
 			</button>
-            <router-link to="/" class="nav-item image sm:hidden">
-                <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7 mt-1">
+            <router-link to="/" class="nav-item image sm:hidden mobile-logo">
+                <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7">
             </router-link>
 
             <div class="web-nav">
@@ -139,6 +139,8 @@ const toggleMobileMenu = async () => {
     justify-content: center; /* Center the items in the navbar */
     align-items: center; /* Aligns items vertically */
     position: relative; /* Ensure the navbar is the reference for absolute positioning */
+    min-height: 60px; /* Add minimum height to prevent collapse */
+    padding: 0.5rem 1rem; /* Add consistent padding */
 }
 
 .logo-image {
@@ -206,5 +208,26 @@ const toggleMobileMenu = async () => {
         margin: 0 auto; /* Auto margin for horizontal centering */
     }
 
+    /* Update mobile logo positioning */
+    .mobile-logo {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1;
+    }
+
+    /* Update mobile specific styles */
+    .navbar {
+        justify-content: center;
+        padding: 0.5rem 1rem;
+    }
+
+    /* Ensure mobile menu button doesn't interfere with centering */
+    .mobile-menu-button {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
 }
 </style>

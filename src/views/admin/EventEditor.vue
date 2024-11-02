@@ -10,6 +10,8 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import { format } from 'date-fns';
 import Switch from '@/components/form/Switch.vue';
 import TextInput from '@/components/form/TextInput.vue';
+import ImageUpload from '@/components/form/ImageUpload.vue';
+import DropDown from '@/components/form/DropDown.vue';
 
 const eventStore = useEventStore();
 const alertStore = useAlertStore();
@@ -37,28 +39,68 @@ watch(event, async (newEvent) => {
 
 const saveEvent = async () => {
   try {
-    console.log('event: ', event.value.attributes.content);
-    await eventStore.update(route.params.id, event.value.attributes);
-    alertStore.success('Event saved successfully!');
-    window.scrollTo(0, 0);
+    // Create a copy of the attributes to modify
+    const eventData = { ...event.value.attributes }
+    
+    // Format hero_image correctly if it exists
+    if (eventData.hero_image?.id) {
+      eventData.hero_image = {
+        id: eventData.hero_image.id
+      }
+    }
+    
+    await eventStore.update(route.params.id, eventData)
+    alertStore.success('Event saved successfully!')
+    window.scrollTo(0, 0)
   } catch (error) {
-    console.error('Error saving event:', error);
-    alertStore.error('Failed to save event. Please try again.');
+    console.error('Error saving event:', error)
+    alertStore.error('Failed to save event. Please try again.')
   }
-};
+}
 
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row font-roboto bg-custom-light max-w-screen-xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16"> <!-- Updated padding classes -->
+  <div class="flex flex-col font-roboto bg-custom-light max-w-screen-xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
     <div class="flex-1">
-      <div class="px-2 py-2 md:px-8 md:py-4"> <!-- Adjusted padding for mobile -->
-        <h1 class="text-2xl font-bold mb-4 font-roboto sm:text-3xl">Event Manager</h1>
+      <div class="px-2 py-2 md:px-8 md:py-4">
+        <!-- Header section -->
+        <div class="flex justify-between items-start mb-4">
+          <h1 class="text-2xl font-bold font-roboto sm:text-3xl">Event Manager</h1>
+          
+          <!-- Accessibility dropdown -->
+          <div class="flex flex-col">
+            <span class="text-sm font-semibold mb-1">Event Access:</span>
+            <div class="w-48">
+              <DropDown
+                v-model="event.attributes.accessibility"
+                :options="[ 
+                  { value: 'Public', label: 'Public' },
+                  { value: 'Garden Members', label: 'Garden Members' },
+                  { value: 'Invite Only', label: 'Invite Only' }
+                ]"
+                placeholder="Select accessibility"
+                size="sm"
+                :disabled="true"
+              >
+                <template #prefix-disabled>
+                  <div class="px-2 flex items-center">
+                    <i class="fas fa-lock"></i>
+                  </div>
+                </template>
+              </DropDown>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading spinner -->
         <div v-if="isLoading">
           <div class="spinner-border" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
         </div>
+
+        <!-- Rest of the content -->
         <div v-else>
           <!-- Add this line to display the alert messages -->
           <div v-if="alertStore.alert" :class="['alert', `alert-${alertStore.alert.type}`]">
@@ -77,31 +119,21 @@ const saveEvent = async () => {
           <button @click="$router.push(`/d/${event.id}`)" class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded mx-auto">
             Public Event Page
           </button>
+          <h1 class="text-md mb-4 mt-20 font-roboto">Event Editor.</h1>
           <hr class="my-4" />
-          <p class="text-md mb-4 font-roboto">Customize your Event Page.</p>
-
           <div>
-            <div class="flex items-center mb-2 relative">
-              <label for="accessibility" class="mr-2">Accessibility</label>
-              <div class="group relative">
-                <span class="tooltip-icon cursor-pointer">ⓘ</span>
-                <div class="tooltip-text">
-                  Who will be able to see this event?
-                </div>
-              </div>
+            <div class="flex items-left mb-2 relative">
+              <label for="title" class="block align-left">Title</label>
+              <TextInput
+                v-model="event.attributes.title" 
+                placeholder="Volunteer Day!" 
+                class="w-1/2"
+                size="lg"
+              />
             </div>
-            <select id="accessibility" v-model="event.attributes.accessibility" class="w-full p-2 border border-gray-300 rounded mb-4">
-              <option value="Public">Public</option>
-              <option value="Garden Members">Garden Members</option>
-              <option value="Invite Only">Invite Only</option>
-            </select>
+            <label for="heroImage">Hero Image</label>
+            <ImageUpload v-model="event.attributes.hero_image" placeholder="Upload hero image" :eventId="event.id" />
 
-            <label for="title">Title</label>
-            <TextInput
-              v-model="event.attributes.title" 
-              placeholder="Volunteer Day!" 
-              class="w-full"
-            />
             
             <!-- Two-column layout for date/time and ending time -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
