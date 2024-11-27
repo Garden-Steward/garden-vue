@@ -19,6 +19,7 @@ const route = useRoute()
 
 const { event } = storeToRefs(eventStore);
 const isLoading = ref(true);
+const isVolunteersOpen = ref(false);
 
 eventStore.findById(route.params.id);
 
@@ -107,14 +108,29 @@ const saveEvent = async () => {
             {{ alertStore.alert.message }}
           </div>
           <div class="stew">
-            <h2 class="text-xl font-bold mb-3">
-              {{ event.attributes.confirmed.data && event.attributes.confirmed.data.length > 0 ? 'Volunteers RSVPd' : 'No one has RSVP\'d to this event yet' }}
-            </h2>
-            <ul v-if="event.attributes.confirmed.data && event.attributes.confirmed.data.length > 0" class="list-disc pl-5">
-              <div v-for="volunteer in event.attributes.confirmed.data" :key="volunteer.id" class="mb-2">
-                <UserProfileDisplay :volunteer="volunteer.attributes" :showName="true" />
+            <button 
+              @click="isVolunteersOpen = !isVolunteersOpen"
+              class="w-full flex justify-between items-center text-xl font-bold mb-3 hover:bg-gray-100 p-2 rounded"
+            >
+              <span>
+                Volunteers RSVPd 
+                ({{ event.attributes.confirmed.data?.length || 0 }})
+              </span>
+              <i 
+                :class="['fas', isVolunteersOpen ? 'fa-caret-up' : 'fa-caret-down']"
+              ></i>
+            </button>
+            
+            <div v-show="isVolunteersOpen" class="transition-all duration-300">
+              <div v-if="!event.attributes.confirmed.data?.length" class="pl-5">
+                No one has RSVP'd to this event yet
               </div>
-            </ul>
+              <ul v-else class="list-disc pl-5">
+                <div v-for="volunteer in event.attributes.confirmed.data" :key="volunteer.id" class="mb-2">
+                  <UserProfileDisplay :volunteer="volunteer.attributes" :showName="true" />
+                </div>
+              </ul>
+            </div>
           </div>
           <button @click="$router.push(`/d/${event.id}`)" class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded mx-auto">
             Public Event Page
@@ -306,5 +322,15 @@ select {
   .max-w-screen-xl {
     max-width: 75%;
   }
+}
+
+/* Add these new styles */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-300 {
+  transition-duration: 300ms;
 }
 </style>

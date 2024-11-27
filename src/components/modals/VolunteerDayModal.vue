@@ -169,7 +169,7 @@ watch(() => props.editor, (newVal, oldVal) => {
       <form>
 
       <div class="fixed inset-0 flex items-center justify-center">
-        <div class="bg-white text-black grid grid-cols-1 gap-2 p-3 w-full md:w-1/2 sm:m-1 m-3 rounded-md">
+        <div class="dark:bg-[#d2bc9b] bg-white text-black grid grid-cols-1 gap-2 p-3 w-full md:w-1/2 sm:m-1 m-3 rounded-md">
           <slot></slot>
 
           <label class="pb-1 block">{{ topic }}</label>
@@ -194,8 +194,8 @@ watch(() => props.editor, (newVal, oldVal) => {
           <br />
           <label class="relative inline-flex items-center mb-3 cursor-pointer">
             <input type="checkbox" value="" class="sr-only peer" v-model="form.disabled" :disabled="!props.editor">
-            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Disabled</span>
+            <div class="w-11 h-6 bg-blue-600 dark:bg-blue-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 peer-checked:bg-gray-800 dark:peer-checked:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
+            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-200">{{ form.disabled ? 'Auto-Send Disabled' : 'Auto-Send Enabled' }}</span>
           </label>
 
 
