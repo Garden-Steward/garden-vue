@@ -19,7 +19,8 @@ const props = defineProps({
   disabled: Boolean,
   interests: Array,
   interest: String,
-  editor: Boolean
+  editor: Boolean,
+  smsLink: Boolean,
 });
 
 const eventStore = useEventStore();  
@@ -109,9 +110,9 @@ watch(() => props.editor, (newVal, oldVal) => {
 
 <template>
 
-  <div v-if="title" class="border-r-3 border rounded p-3 bg-slate-100 cursor-pointer">
-    <a>
-      <span class="underline text-lg">{{ title }}</span>
+  <div v-if="title" class="border-r-3 border rounded p-2 bg-slate-100 hover:bg-slate-200 cursor-pointer transition-colors">
+    <a @click.stop="$router.push(`/event/edit/${id}`)" class="block no-underline hover:no-underline">
+      <span class="text-md font-semibold">{{ title }}</span>
       <br />
       <span class="text-sm">{{ prettyDay }}</span>
       <br />
@@ -122,17 +123,15 @@ watch(() => props.editor, (newVal, oldVal) => {
         @click.stop="showExisting(id)"
         class="bg-custom-peach hover:bg-custom-peach/80 text-black font-bold py-1 px-3 rounded mr-2 text-xs"
       >
-        {{ new Date(startDatetime) < new Date() ? 'View SMS' : 'Edit SMS' }}
+        Quick Edit
       </button>
       <button
-        @click.stop="$router.push(`/event/edit/${id}`)"
-        class="bg-custom-green hover:bg-custom-green/80 text-white font-bold py-1 px-3 rounded text-xs"
+        v-if="smsLink"
+        @click.stop="$router.push(`/d/${id}`)"
+        class="text-blue-600 hover:underline text-xs"
       >
-        Manage Event
+        View Page
       </button>
-    </div>
-    <div class="mt-2 text-right">
-      <a :href="`/d/${id}`" class="text-blue-600 hover:underline text-xs">View Page</a>
     </div>
   </div>
 
@@ -195,7 +194,7 @@ watch(() => props.editor, (newVal, oldVal) => {
           <label class="relative inline-flex items-center mb-3 cursor-pointer">
             <input type="checkbox" value="" class="sr-only peer" v-model="form.disabled" :disabled="!props.editor">
             <div class="w-11 h-6 bg-blue-600 dark:bg-blue-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 peer-checked:bg-gray-800 dark:peer-checked:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
-            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-200">{{ form.disabled ? 'Auto-Send Disabled' : 'Auto-Send Enabled' }}</span>
+            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-800">{{ form.disabled ? 'Auto-Send Disabled' : 'Auto-Send Enabled' }}</span>
           </label>
 
 

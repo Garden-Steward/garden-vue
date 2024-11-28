@@ -65,31 +65,50 @@ const saveEvent = async () => {
   <div class="flex flex-col font-roboto bg-custom-light max-w-screen-xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
     <div class="flex-1">
       <div class="px-2 py-2 md:px-8 md:py-4">
+        <!-- Back link -->
+        <router-link 
+          :to="`/gardens/${event?.attributes?.garden?.data?.attributes?.slug}`"
+          class="inline-flex items-center text-custom-green hover:text-custom-green-dark mb-4"
+        >
+          <i class="fas fa-arrow-left mr-2"></i>
+          Back to Garden
+        </router-link>
+
         <!-- Header section -->
         <div class="flex justify-between items-start mb-4">
           <h1 class="text-2xl font-bold font-roboto sm:text-3xl">Event Manager</h1>
           
-          <!-- Accessibility dropdown -->
-          <div class="flex flex-col">
-            <span class="text-sm font-semibold mb-1">Event Access:</span>
-            <div class="w-48">
-              <DropDown
-                v-model="event.attributes.accessibility"
-                :options="[ 
-                  { value: 'Public', label: 'Public' },
-                  { value: 'Garden Members', label: 'Garden Members' },
-                  { value: 'Invite Only', label: 'Invite Only' }
-                ]"
-                placeholder="Select accessibility"
-                size="sm"
-                :disabled="true"
-              >
-                <template #prefix-disabled>
-                  <div class="px-2 flex items-center">
-                    <i class="fas fa-lock"></i>
-                  </div>
-                </template>
-              </DropDown>
+          <!-- Header buttons and access controls -->
+          <div class="flex items-start gap-4">
+            <button 
+              @click="$router.push(`/d/${event.id}`)" 
+              class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 mt-4 px-4 rounded"
+            >
+              Public Event Page
+            </button>
+            
+            <!-- Accessibility dropdown -->
+            <div class="flex flex-col">
+              <span class="text-sm font-semibold mb-1">Event Access:</span>
+              <div class="w-48">
+                <DropDown
+                  v-model="event.attributes.accessibility"
+                  :options="[ 
+                    { value: 'Public', label: 'Public' },
+                    { value: 'Garden Members', label: 'Garden Members' },
+                    { value: 'Invite Only', label: 'Invite Only' }
+                  ]"
+                  placeholder="Select accessibility"
+                  size="sm"
+                  :disabled="true"
+                >
+                  <template #prefix-disabled>
+                    <div class="px-2 flex items-center">
+                      <i class="fas fa-lock"></i>
+                    </div>
+                  </template>
+                </DropDown>
+              </div>
             </div>
           </div>
         </div>
@@ -132,9 +151,6 @@ const saveEvent = async () => {
               </ul>
             </div>
           </div>
-          <button @click="$router.push(`/d/${event.id}`)" class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded mx-auto">
-            Public Event Page
-          </button>
           <h1 class="text-md mb-4 mt-20 font-roboto">Event Editor.</h1>
           <hr class="my-4" />
           <div>
@@ -144,7 +160,7 @@ const saveEvent = async () => {
                 v-model="event.attributes.title" 
                 placeholder="Volunteer Day!" 
                 class="w-1/2"
-                size="lg"
+                size="md"
               />
             </div>
             <label for="heroImage">Hero Image</label>
