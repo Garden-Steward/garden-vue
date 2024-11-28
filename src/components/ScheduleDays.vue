@@ -89,10 +89,10 @@ const filterUsers = () => {
           <div v-if="editMode == day" class="bg-gray-100 mb-2 rounded-md">
             <div v-for="sched in daySchedules" :key="sched.id">
               <div class="bg-gray-100 p-4 rounded-md mb-2">
-                <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task.data.attributes.title }}</h3>
+                <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task?.data?.attributes?.title }}</h3>
                 <div class="flex flex-wrap -mx-2">
-                  <div class="px-2 mb-2 flex" v-for='volunteer of sched.backup_volunteers.data' :key='volunteer.id'>
-                    <UserProfileDisplay :volunteer="volunteer.attributes" />
+                  <div class="px-2 mb-2 flex" v-for='volunteer of sched.backup_volunteers?.data || []' :key='volunteer?.id'>
+                    <UserProfileDisplay v-if="volunteer?.attributes" :volunteer="volunteer.attributes" />
     
                     <!-- Negative icon to delete user -->
                     <button @click="deleteUser(volunteer.id, sched.id)" class="ml-2 text-red-500">
@@ -128,11 +128,11 @@ const filterUsers = () => {
     
             <div v-for="sched in daySchedules" :key="sched.id">
               <div class="bg-gray-100 p-4 rounded-md mb-2">
-                <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task.data.attributes.title }}</h3>
+                <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task?.data?.attributes?.title }}</h3>
       
                 <div class="flex flex-wrap -mx-2">
-                  <div class="px-2 mb-2 flex" v-for='volunteer of sched.backup_volunteers.data' :key="volunteer.id">
-                    <UserProfileDisplay :volunteer="volunteer.attributes" />
+                  <div class="px-2 mb-2 flex" v-for='volunteer of sched.backup_volunteers?.data || []' :key="volunteer?.id">
+                    <UserProfileDisplay v-if="volunteer?.attributes" :volunteer="volunteer.attributes" />
                   </div>
                 </div>
               </div>

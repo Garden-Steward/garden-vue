@@ -120,17 +120,17 @@ watch(() => props.editor, (newVal, oldVal) => {
     </a>
     <div class="flex justify-end mt-2">
       <button
+        v-if="smsLink"
+        @click.stop="$router.push(`/d/${id}`)"
+        class="bg-custom-green hover:bg-custom-green/80 text-white text-xs py-1 px-3 rounded mr-2"
+      >
+        Public Page
+      </button>
+      <button
         @click.stop="showExisting(id)"
         class="bg-custom-peach hover:bg-custom-peach/80 text-black font-bold py-1 px-3 rounded mr-2 text-xs"
       >
         Quick Edit
-      </button>
-      <button
-        v-if="smsLink"
-        @click.stop="$router.push(`/d/${id}`)"
-        class="text-blue-600 hover:underline text-xs"
-      >
-        View Page
       </button>
     </div>
   </div>
