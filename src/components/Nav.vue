@@ -24,7 +24,7 @@ const toggleMobileMenu = async () => {
 </script>
 
 <template>
-    <nav class="navbar navbar-expand navbar-light bg-custom-light">
+    <nav class="navbar navbar-expand navbar-light bg-custom-light w-full max-w-full overflow-x-hidden">
         <router-link to="/" class="logo-image hidden sm:block">
                 <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7 mt-1">
         </router-link>
@@ -141,6 +141,9 @@ const toggleMobileMenu = async () => {
     position: relative; /* Ensure the navbar is the reference for absolute positioning */
     min-height: 60px; /* Add minimum height to prevent collapse */
     padding: 0.5rem 1rem; /* Add consistent padding */
+    width: 100%;
+    max-width: 100vw; /* Ensure navbar doesn't exceed viewport width */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .logo-image {

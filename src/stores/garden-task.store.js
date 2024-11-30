@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers';
 import { useAlertStore } from '@/stores';
+import { useEventStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks`;
 
@@ -18,23 +19,65 @@ export const useGardenTaskStore = defineStore({
             console.log("Garden Task Error: ", err)
         },
         async update(id, data) {
-            return fetchWrapper.put(`${baseUrl}/${id}`,{data: data})
-                .then(res => {
-                    this.gardenTask = res.data;
-                    // const idx = this.gardenTasks.tasks.findIndex(v=> v.id == res.data.id);
-                    // this.gardenTasks.tasks[idx] = res.data;
+            if (data.primary_image?.id) {
+                data.primary_image = {
+                    id: data.primary_image.id
+                };
+            }
+            
+            return fetchWrapper.put(`${baseUrl}/${id}?populate=primary_image`, { data: data })
+                .then(response => {
+                    if (response?.data?.attributes) {
+                        if (response.data.attributes.primary_image?.data) {
+                            const imageData = response.data.attributes.primary_image.data;
+                            response.data.attributes.primary_image = {
+                                ...imageData.attributes,
+                                id: imageData.id
+                            };
+                        }
+                        return response.data.attributes;
+                    }
+                    return response;
                 })
                 .catch(this.handleError);
-            
         },
         async register(data) {
-            return fetchWrapper.post(`${baseUrl}`,{data:data})
-                .then(res => {
-                    // this.gardenTasks.tasks.push(res.data);
-                    this.gardenTask = res.data;
+            if (data.primary_image?.id) {
+                data.primary_image = {
+                    id: data.primary_image.id
+                };
+            }
+
+            return fetchWrapper.post(`${baseUrl}?populate=primary_image`, { data: data })
+                .then(response => {
+                    if (response?.data?.attributes) {
+                        if (response.data.attributes.primary_image?.data) {
+                            const imageData = response.data.attributes.primary_image.data;
+                            response.data.attributes.primary_image = {
+                                ...imageData.attributes,
+                                id: imageData.id
+                            };
+                        }
+                        return response.data.attributes;
+                    }
+                    return response;
                 })
                 .catch(this.handleError);
-            
+        },
+        async uploadImage(formData) {
+            return fetchWrapper.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData)
+                .then(res => {
+                    const uploadedFile = Array.isArray(res) ? res[0] : res;
+                    return {
+                        url: uploadedFile.url,
+                        id: uploadedFile.id
+                    };
+                })
+                .catch(error => {
+                    const alertStore = useAlertStore();
+                    alertStore.error('Failed to upload image');
+                    throw error;
+                });
         },
     }
   });

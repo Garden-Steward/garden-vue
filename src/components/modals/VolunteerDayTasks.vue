@@ -26,11 +26,13 @@ defineProps({
 </script>
 
 <template>
-  <div v-if="garden_tasks.length">
-    <h3 class="text-lg">Tasks for this Volunteer Day:</h3>
-    <div v-for="task in garden_tasks" :key="task.id" class="m-3">
+  <div v-if="garden_tasks?.length">
+    <h3 class="text-lg">Prepare for the day:</h3>
+    <div v-for="task in garden_tasks" :key="task.id" class="ml-3 mt-3">
       <GardenTask v-bind="task" :startDatetime="startDatetime" :garden="garden" :dayId="id" />
     </div>
   </div>
-  <GardenTask :startDatetime="startDatetime" :garden="garden" :dayId="id" />
+  <div class="clear-both mb-4">
+    <GardenTask :startDatetime="startDatetime" :garden="garden" :dayId="id" />
+  </div>
 </template>
