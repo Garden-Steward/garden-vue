@@ -144,6 +144,15 @@ const filterUsers = () => {
         </div>
       </Vue3SlideUpDown>
     </div>
+    <!-- Add this new link section -->
+    <div class="text-center mt-4">
+      <router-link 
+        :to="`/admin/gardens/${props.garden.id}/messages`" 
+        class="text-blue-600 hover:text-blue-800 font-medium"
+      >
+        View Task Messages
+      </router-link>
+    </div>
   </div>
 </template>
 

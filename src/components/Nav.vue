@@ -24,6 +24,16 @@ const toggleMobileMenu = async () => {
 </script>
 
 <template>
+    <!-- Profile menu outside navbar -->
+    <transition name="fade">
+        <div v-if="showProfileOptions" class="profile-menu bg-custom-light p-2">
+            <button @click="() => { authStore.logout(); showProfileOptions = false; }" 
+                    class="btn btn-link nav-item nav-link">
+                Logout
+            </button>
+        </div>
+    </transition>
+
     <nav class="navbar navbar-expand navbar-light bg-custom-light w-full max-w-full overflow-x-hidden">
         <router-link to="/" class="logo-image hidden sm:block">
                 <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7 mt-1">
@@ -71,12 +81,13 @@ const toggleMobileMenu = async () => {
                 </div>
             </div>
             <div v-if="authStore.user" class="profile-container">
-                <UserProfileDisplay :volunteer="authStore.user" :show-email="false" @click="toggleProfileOptions" class="relative cursor-pointer profile-menu-button"/>
-                <transition name="fade">
-                    <div v-if="showProfileOptions" class="profile-menu bg-custom-light p-2">
-                        <button @click="authStore.logout()" class="btn btn-link nav-item nav-link">Logout</button>
-                    </div>
-                </transition>
+                <UserProfileDisplay 
+                    :volunteer="authStore.user" 
+                    :show-email="false" 
+                    :disable-tooltip="true"
+                    @click="toggleProfileOptions" 
+                    class="relative cursor-pointer profile-menu-button"
+                />
             </div>
 
         </div>  
@@ -89,20 +100,33 @@ const toggleMobileMenu = async () => {
     color: #fff;
 }
 .profile-container {
-    position: absolute; /* Position the profile container absolutely within the navbar */
-    top: 0; /* Align to the top of the navbar */
-    right: 0; /* Align to the right of the navbar */
-    margin: 10px; /* Optional: add some margin */
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    z-index: 1500;
 }
 .profile-menu {
-    position: absolute;
-    top: 100%; /* Position directly below the UserProfileDisplay */
-    right: 0; /* Aligns the left edge of the dropdown with the left edge of the UserProfileDisplay */
-    width: max-content; /* Adjust width to fit the content */
+    position: fixed;
+    top: 60px;
+    right: 15px;
+    min-width: 150px;
+    background: white;
     border: 1px solid #8aa37c;
-    border-top: none;
-    border-radius: 0 0px 5px 5px;
-    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 99999;
+}
+.profile-menu .nav-link {
+    color: #333;
+    margin: 0;
+    padding: 8px 16px;
+    display: block;
+}
+.profile-menu .nav-link:hover {
+    background-color: #f5f5f5;
 }
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s;
@@ -144,6 +168,7 @@ const toggleMobileMenu = async () => {
     width: 100%;
     max-width: 100vw; /* Ensure navbar doesn't exceed viewport width */
     overflow-x: hidden; /* Prevent horizontal scrolling */
+    z-index: 9999;
 }
 
 .logo-image {

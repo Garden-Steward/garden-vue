@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, Garden, GardensView, SetPassword, 
     InstructionPublic, GardenApplyForm, HelpView, 
     BlogList, BlogDetail, EventView, EventsList } from '@/views';
-import { EventEditor } from '@/views/admin';
+import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
 export const router = createRouter({
@@ -53,6 +53,10 @@ export const router = createRouter({
         {
             path: '/event/edit/:id',
             component: EventEditor
+        },
+        {
+            path: '/admin/gardens/:id/messages',
+            component: TaskMessages
         },
         {
             path: '/blog',

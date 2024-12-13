@@ -17,4 +17,15 @@ import '@fortawesome/fontawesome-free/css/all.css'
 
 <style>
 @import '@/assets/base.css';
+
+.app-container {
+    position: relative;
+    z-index: 1;
+}
+
+.container {
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+}
 </style>

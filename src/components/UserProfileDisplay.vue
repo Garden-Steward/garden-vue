@@ -4,7 +4,8 @@ import { computed, ref, onBeforeUnmount } from 'vue';
 const props = defineProps({
   volunteer: Object,
   showEmail: Boolean,
-  showName: Boolean
+  showName: Boolean,
+  disableTooltip: Boolean
 });
 
 const isTooltipVisible = ref(false);
@@ -12,6 +13,7 @@ const isHovering = ref(false);
 let tooltipTimeout = null;
 
 const showTooltip = () => {
+  if (props.disableTooltip) return;
   isTooltipVisible.value = true;
   if (tooltipTimeout) clearTimeout(tooltipTimeout);
   tooltipTimeout = setTimeout(() => {
@@ -22,10 +24,12 @@ const showTooltip = () => {
 };
 
 const handleMouseEnter = () => {
+  if (props.disableTooltip) return;
   isHovering.value = true;
 };
 
 const handleMouseLeave = () => {
+  if (props.disableTooltip) return;
   isHovering.value = false;
   if (tooltipTimeout) clearTimeout(tooltipTimeout);
   isTooltipVisible.value = false;
@@ -62,13 +66,14 @@ const userBubbleColor = computed(() => {
     >
       <div 
         :class="`bg-${userBubbleColor}-500`"
-        class="h-10 w-10 rounded-full flex items-center justify-center cursor-help relative z-10"
+        class="h-10 w-10 rounded-full flex items-center justify-center cursor-pointer relative z-10"
         @click="showTooltip"
       >
         <span class="text-white font-bold uppercase">{{ generateInitials(props.volunteer) }}</span>
       </div>
-      <!-- Tooltip -->
+      <!-- Tooltip - Only show if not disabled -->
       <div 
+        v-if="!disableTooltip"
         class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 text-sm text-white bg-gray-900 rounded-lg whitespace-nowrap transition-opacity duration-300 z-20"
         :class="{
           'invisible opacity-0': !isTooltipVisible && !isHovering,
@@ -76,7 +81,6 @@ const userBubbleColor = computed(() => {
         }"
       >
         {{ fullName }}
-        <!-- Tooltip Arrow -->
         <div class="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900"></div>
       </div>
     </div>
