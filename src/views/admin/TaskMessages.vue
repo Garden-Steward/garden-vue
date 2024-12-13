@@ -16,31 +16,35 @@ onMounted(async () => {
 });
 
 const groupedMessages = computed(() => {
-  const groups = {};
-  
-  if (!taskMessages.value) return groups;
-  
+  if (!taskMessages.value) return [];
+
+  // First, group messages by task
+  const groups = new Map();
   taskMessages.value.forEach(message => {
     const taskId = message.garden_task?.id || 'no-task';
-    const taskTitle = message.garden_task?.title || 'Messages without task';
-    const user = message.garden_task?.volunteers[0]?.username || 'Anonymous';
     
-    if (!groups[taskId]) {
-      groups[taskId] = {
-        taskTitle,
-        user,
+    if (!groups.has(taskId)) {
+      groups.set(taskId, {
+        taskId,
+        taskTitle: message.garden_task?.title || 'Messages without task',
+        user: message.garden_task?.volunteers[0]?.username || 'Anonymous',
         messages: []
-      };
+      });
     }
-    groups[taskId].messages.push(message);
+    groups.get(taskId).messages.push(message);
   });
+
+  // Convert to array and sort by task ID (highest to lowest)
+  const sortedGroups = Array.from(groups.values())
+    .sort((a, b) => {
+      if (a.taskId === 'no-task') return 1;
+      if (b.taskId === 'no-task') return -1;
+      return parseInt(b.taskId) - parseInt(a.taskId);
+    });
+
+  console.log('Sorted group IDs:', sortedGroups.map(g => g.taskId));
   
-  // Sort messages by datetime within each group
-  Object.values(groups).forEach(group => {
-    group.messages.sort((b, a) => new Date(b.createdAt) - new Date(a.createdAt));
-  });
-  
-  return groups;
+  return sortedGroups;
 });
 
 const toggleTask = (taskId) => {
@@ -98,17 +102,20 @@ const getStatusColor = (status) => {
     </div>
 
     <div v-else class="space-y-6">
-      <div v-for="(group, taskId) in groupedMessages" :key="taskId" class="bg-white rounded-lg shadow p-4">
+      <div v-for="group in groupedMessages" :key="group.taskId" class="bg-white rounded-lg shadow p-4">
         <div 
           class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded-lg"
-          @click="toggleTask(taskId)"
+          @click="toggleTask(group.taskId)"
         >
           <div class="flex-1">
             <div class="flex items-center gap-2">
               <h2 class="text-xl font-semibold">{{ group.taskTitle }}</h2>
-              <span v-if="taskId !== 'no-task'" 
+              <span v-if="group.taskId !== 'no-task'" 
                     :class="[getStatusColor(group.messages[0]?.garden_task?.status), 'px-2 py-1 rounded-full text-xs']">
                 {{ group.messages[0]?.garden_task?.status || 'UNKNOWN' }}
+              </span>
+              <span class="text-sm text-gray-500">
+                ({{ group.messages.length }} message{{ group.messages.length === 1 ? '' : 's' }})
               </span>
             </div>
             <div class="text-sm text-gray-500 mt-1 space-y-1">
@@ -121,12 +128,12 @@ const getStatusColor = (status) => {
             xmlns="http://www.w3.org/2000/svg" 
             viewBox="0 0 20 20"
           >
-            <path v-if="!openTasks[taskId]" d="M10 3l-7 9h14l-7-9z" />
+            <path v-if="!openTasks[group.taskId]" d="M10 3l-7 9h14l-7-9z" />
             <path v-else d="M10 17l-7-9h14z" />
           </svg>
         </div>
         
-        <Vue3SlideUpDown v-model="openTasks[taskId]">
+        <Vue3SlideUpDown v-model="openTasks[group.taskId]">
           <div class="space-y-4">
             <div v-for="message in group.messages" :key="message.id" 
                  class="border-b last:border-b-0 pb-4 last:pb-0 hover:bg-gray-50">
