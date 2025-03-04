@@ -45,7 +45,7 @@ jobs:
         VITE_API_URL: ${{ secrets.VITE_API_URL }}
       run: |
         set -e
-        vite build && firebase deploy --only hosting:garden-steward --project garden-steward
+        npm run build && firebase deploy --only hosting:garden-steward --project garden-steward
       
     - name: Log Deployment Success
       run: echo "Deployment to Firebase Hosting was successful!"
