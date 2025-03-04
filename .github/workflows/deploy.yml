@@ -38,7 +38,7 @@ jobs:
         project_id: ${{ github.ref == 'refs/heads/main' && 'garden-steward' || 'garden-steward' }}
 
     - name: Install Firebase CLI
-      run: yarn install -g firebase-tools
+      run: npm install -g firebase-tools
 
     - name: Deploy to Firebase Hosting
       env:
