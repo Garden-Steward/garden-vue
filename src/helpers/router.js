@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, Garden, GardensView, SetPassword, 
     InstructionPublic, GardenApplyForm, HelpView, 
-    BlogList, BlogDetail, EventView, EventsList } from '@/views';
+    BlogList, BlogDetail, EventView, EventsList, MapView } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
@@ -65,6 +65,10 @@ export const router = createRouter({
         {
             path: '/blog/:slug',
             component: BlogDetail
+        },
+        {
+            path: '/map',
+            component: MapView
         }
     ]
 });

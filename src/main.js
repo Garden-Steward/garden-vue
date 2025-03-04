@@ -5,6 +5,7 @@ import App from './App.vue';
 import { router } from './helpers';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css'
+import 'leaflet/dist/leaflet.css';
 
 import './style.css'
 

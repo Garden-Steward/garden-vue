@@ -9,3 +9,4 @@ export * from './user-garden-interests.store';
 export * from './week-scheduler.store';
 export * from './instruction.store';
 export * from './messages.store';
+export * from './location-tracking.store';

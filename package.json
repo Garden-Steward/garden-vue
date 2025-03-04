@@ -19,6 +19,7 @@
         "@vueuse/components": "^10.7.2",
         "@vueuse/core": "^10.7.2",
         "date-fns": "^2.29.3",
+        "leaflet": "^1.9.4",
         "markdown-it": "^14.0.0",
         "markdown-it-attrs": "^4.1.6",
         "pinia": "^2.0.13",
