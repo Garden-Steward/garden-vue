@@ -25,6 +25,7 @@ onMounted(() => {
   // Add a marker to the map
   props.locationTrackings.forEach(locationTracking => {
     L.marker([locationTracking.latitude, locationTracking.longitude]).addTo(map)
+      .bindTooltip(locationTracking.label)
       .bindPopup(`<div class="popup-content text-center">
                     ${locationTracking.label}<br />
                     <img src="${locationTracking.small_image}" alt="Plant Image" class="popup-image">
