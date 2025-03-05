@@ -13,11 +13,13 @@ export const useLocationTrackingStore = defineStore({
         async fetchAll() {
             this.locationTrackings = { loading: true };
             try {
-                const response = await fetchWrapper.get(`${baseUrl}?populate=plant&populate=plant_image`);
+                const response = await fetchWrapper.get(`${baseUrl}?populate=plant&populate=plant_image&populate=user`);
                 this.locationTrackings = response.data.map(item => ({
                     id: item.id,
                     ...item.attributes,
-                    small_image: item.attributes.plant_image?.data?.attributes?.formats?.small?.url
+                    thumbnail: item.attributes.plant_image?.data?.attributes?.formats?.thumbnail?.url,
+                    small_image: item.attributes.plant_image?.data?.attributes?.formats?.small?.url,
+                    user: item.attributes.user?.data?.attributes?.username
                 }));
             } catch (error) {
                 this.locationTrackings = { error };
