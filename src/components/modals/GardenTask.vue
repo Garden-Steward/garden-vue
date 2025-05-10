@@ -50,6 +50,9 @@ const form = ref({
   primary_image: props.primary_image || null,
 });
 
+// Store the initial form state for dirty checking
+const initialForm = ref({ ...form.value });
+
 const showCreateButton = computed(() => {
   console.log('Editor status:', props.editor);
   console.log('Has ID:', !!props.id);
@@ -100,6 +103,7 @@ watch(() => props.primary_image, (newVal) => {
   }
 });
 
+// Watch for changes to props.task and update initialForm
 watch(() => props.task, (newVal) => {
   if (newVal) {
     form.value = {
@@ -109,13 +113,31 @@ watch(() => props.task, (newVal) => {
     if (newVal.primary_image?.formats?.medium) {
       imagePreview.value = newVal.primary_image.formats.medium.url;
     }
+    initialForm.value = { ...form.value };
   }
 }, { deep: true });
 
 // Add computed property for filtered volunteers
 const filteredVolunteers = computed(() => {
-  if (!props.volunteers?.data) return [];
-  return props.volunteers.data.filter(volunteer => volunteer?.attributes);
+  // If volunteers is an array, return it as-is (legacy support)
+  if (Array.isArray(props.volunteers)) {
+    return props.volunteers.filter(volunteer => volunteer?.attributes);
+  }
+  // If volunteers is an object with a data array, return that
+  if (props.volunteers?.data && Array.isArray(props.volunteers.data)) {
+    return props.volunteers.data.filter(volunteer => volunteer?.attributes);
+  }
+  return [];
+});
+
+// Computed property to check if the form is dirty
+const isDirty = computed(() => {
+  return Object.keys(form.value).some(key => {
+    if (typeof form.value[key] === 'object') {
+      return JSON.stringify(form.value[key]) !== JSON.stringify(initialForm.value[key]);
+    }
+    return form.value[key] !== initialForm.value[key];
+  }) || !!imageFile.value;
 });
 
 // Methods
@@ -163,6 +185,9 @@ const submit = async () => {
     
     show.value = false;
     alertStore.success(message);
+    // Update initialForm after successful submit
+    initialForm.value = { ...form.value };
+    imageFile.value = null;
   } catch (error) {
     console.error('Error submitting task:', error);
     alertStore.error('Failed to save task');
@@ -193,20 +218,45 @@ const takePicture = async () => {
     alert('Unable to access camera. Please check permissions or use file upload instead.');
   }
 };
+
+const primaryImageUrl = computed(() => {
+  // Preview of new image (if a new file is selected)
+  if (imagePreview.value) {
+    return imagePreview.value;
+  }
+  // Uploaded or edited image
+  if (form.value.primary_image?.formats?.medium?.url) {
+    return form.value.primary_image.formats.medium.url;
+  }
+  // Loaded from API
+  if (form.value.primary_image?.data?.attributes?.formats?.medium?.url) {
+    return form.value.primary_image.data.attributes.formats.medium.url;
+  }
+  return null;
+});
 </script>
 
 <template>
   <div v-if="id" class="bg-slate-100 hover:opacity-75 cursor-pointer rounded-lg p-2 pr-0 mb-3" @click="show = true">
     <a class="hover:text-blue">
-      <div class="grid grid-cols-12 gap-4 items-center">
-        <!-- Name and Category Column -->
-        <div class="col-span-4">
-          <div class="text-lg font-medium">{{ form.title }}</div>
-          <div class="text-gray-600">{{ form.type }}</div>
+      <div class="flex flex-col md:grid md:grid-cols-12 md:gap-4 items-center w-full">
+        <!-- Header: Title and Status -->
+        <div class="flex w-full items-center justify-between md:col-span-4 md:block">
+          <div class="text-lg font-medium w-full">{{ form.title }}</div>
+          <span 
+            :class="{
+              'bg-peach-100 text-peach-800': form.status === 'INITIALIZED',
+              'bg-gray-100 text-gray-800': form.status !== 'INITIALIZED'
+            }"
+            class="px-3 py-1 rounded-full text-sm font-medium ml-2 md:ml-0 md:mt-2 md:float-right"
+          >
+            {{ form.status === 'INITIALIZED' ? 'Ready' : form.status }}
+          </span>
         </div>
-
-        <!-- Volunteers Column -->
-        <div class="col-span-6">
+        <!-- Category -->
+        <div class="text-gray-600 w-full md:col-span-4 md:block md:mt-1">{{ form.type }}</div>
+        <!-- User Profiles: Desktop only -->
+        <div class="hidden md:block md:col-span-4">
           <div v-if="filteredVolunteers.length" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <UserProfileDisplay 
               v-for="volunteer in filteredVolunteers" 
@@ -215,18 +265,15 @@ const takePicture = async () => {
             />
           </div>
         </div>
-
-        <!-- Status Column -->
-        <div class="col-span-2 text-right">
-          <span 
-            :class="{
-              'bg-peach-100 text-peach-800': form.status === 'INITIALIZED',
-              'bg-gray-100 text-gray-800': form.status !== 'INITIALIZED'
-            }"
-            class="px-3 py-1 rounded-full text-sm font-medium"
-          >
-            {{ form.status === 'INITIALIZED' ? 'Ready' : form.status }}
-          </span>
+        <!-- User Profiles: Mobile only, at bottom -->
+        <div class="block md:hidden w-full mt-2">
+          <div v-if="filteredVolunteers.length" class="flex flex-wrap gap-2">
+            <UserProfileDisplay 
+              v-for="volunteer in filteredVolunteers" 
+              :key="volunteer.id"
+              :volunteer="volunteer.attributes"
+            />
+          </div>
         </div>
       </div>
     </a>
@@ -300,7 +347,7 @@ const takePicture = async () => {
             </div>
           </div>
           
-          <p class="p-1">Task Description:</p>
+          <p class="p-1 mb-0 mt-0">Explain the task more:</p>
           <textarea v-model="form.overview" class="form-control p-1 m-r-4 mb-1"></textarea>
 
           <div class="flex flex-col space-y-2 mb-4">
@@ -308,8 +355,8 @@ const takePicture = async () => {
             
             <!-- Show existing image if available -->
             <img 
-              v-if="form.primary_image?.formats?.medium" 
-              :src="form.primary_image.formats.medium.url" 
+              v-if="primaryImageUrl" 
+              :src="primaryImageUrl" 
               class="mt-2 max-w-xs rounded-lg shadow-md" 
               alt="Current image"
             />
@@ -327,7 +374,7 @@ const takePicture = async () => {
                 <svg class="h-5 w-5 mr-2 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                {{ form.primary_image ? 'Change Photo' : 'Upload Photo' }}
+                {{ form.primary_image?.data ? 'Change Photo' : 'Upload Photo' }}
                 <input 
                   type="file" 
                   class="hidden" 
@@ -350,41 +397,38 @@ const takePicture = async () => {
             </div>
           </div>
 
-          <p class="p-1 text-lg">Project Category:</p>
+          <p class="p-1 pb-0 text-md text-gray-700 mb-0">What kind of task?:</p>
           <select v-model="form.type" class="rounded-md border p-1 ml-1 text-lg">
             <option class="text-lg py-1">General</option>
-            <option class="text-lg py-1">Water</option>
+            <option class="text-lg py-1">Watering</option>
             <option class="text-lg py-1">Weeding</option>
             <option class="text-lg py-1">Planting</option>
-            <option class="text-lg py-1">Harvest</option>
+            <option class="text-lg py-1">Harvesting</option>
           </select>
 
           <div
             class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
-            <button class="px-6
-              py-2.5
-              bg-blue-600
-              text-white
-              font-medium
-              text-xs
-              leading-tight
-              uppercase
-              rounded
-              shadow-md
-              hover:bg-blue-700 hover:shadow-lg
-              focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
-              active:bg-blue-800 active:shadow-lg
-              transition
-              duration-150
-              ease-in-out
-              ml-1" type="submit">{{ submitText }}</button>
-          </div>
-
-
-          <div v-if="error" class="text-danger">Error loading garden task: {{error}}</div>
-          <div class="pr-4 justify-end flex flex-shrink-0 flex-wrap items-center">
-            <button type="button" class="px-6
+            <div v-if="error" class="text-danger">Error loading garden task: {{error}}</div>
+            <div class="pr-4 flex flex-row-reverse flex-shrink-0 flex-wrap items-center gap-2 justify-end">
+              <button v-if="isDirty" class="px-6
                 py-2.5
+                bg-blue-600
+                text-white
+                font-medium
+                text-xs
+                leading-tight
+                uppercase
+                rounded
+                shadow-md
+                hover:bg-blue-700 hover:shadow-lg
+                focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
+                active:bg-blue-800 active:shadow-lg
+                transition
+                duration-150
+                ease-in-out" type="submit">{{ submitText }}</button>
+              <button type="button" class="px-5
+                py-2.5
+                m-0
                 text-red
                 font-medium
                 text-xs
@@ -398,6 +442,7 @@ const takePicture = async () => {
                 transition
                 duration-150
                 ease-in-out" @click="()=> {show = false;copy= false}">Close</button>
+            </div>
           </div>
         </div>
       </div>

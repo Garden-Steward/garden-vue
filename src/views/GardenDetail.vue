@@ -33,6 +33,7 @@ defineOptions({ inheritAttrs: false })
 const showVol = ref(false);
 const showEvent = ref(true);
 const showCamp = ref(true);
+const showTasks = ref(true);
 let editor = ref(false);
 
 const isEditor = computed(() => {
@@ -73,6 +74,10 @@ const toggleShowCamp = () => {
   showCamp.value = !showCamp.value;
 };
 
+const toggleShowTasks = () => {
+  showTasks.value = !showTasks.value;
+};
+
 const isMobile = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
@@ -80,6 +85,7 @@ const isMobile = () => {
 if (isMobile()) {
   showEvent.value = false;
   showCamp.value = false;
+  showTasks.value = false;
 }
 
 const sortField = ref('createdAt');
@@ -167,7 +173,6 @@ const sortedVolunteers = computed(() => {
                       xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                       <path v-if="!showEvent" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
                     </svg>
-
                   </h3> 
                   <button v-if="editor" type="button" class="px-5
                     py-1.5
@@ -204,7 +209,6 @@ const sortedVolunteers = computed(() => {
                 </ul>
               </div>
               <!-- Right Column Content -->
-
               <div class="bg-gray-300 p-2 mb-3">
                 <h3 class="text-2xl text-brown-800 p-1" @click="toggleShowCamp">SMS Campaigns ({{ smsCampaigns.length }})
                   <svg
@@ -212,7 +216,6 @@ const sortedVolunteers = computed(() => {
                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                     <path v-if="!showCamp" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
                   </svg>
-
                 </h3>
                 <SmsCampaignModal :garden="garden.id" :interests="garden.attributes.interests" :editor="editor">
                     <div class="text-lg font-bold">Create a new Group SMS</div>
@@ -221,16 +224,26 @@ const sortedVolunteers = computed(() => {
                 <div v-if="smsCampaigns?.length">
                   <div class="grid grid-cols-1 gap-2">
                       <Vue3SlideUpDown v-model="showCamp">
-                        <div class="ml-10 m-2" v-for="(campaign, index) in smsCampaigns.slice(0, 20)" :key="campaign.id">
+                        <div class="ml-10 m-2" v-for="campaign in smsCampaigns.slice(0, 20)" :key="campaign.id">
                             <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
                         </div>
                       </Vue3SlideUpDown>
                     </div>
                   </div>
               </div>
-              <div class="col-span-2">
+            </div>
+            <!-- Garden Task List moved outside the grid -->
+            <div class="mt-4 bg-gray-200 p-2 mb-3">
+              <h3 class="text-2xl text-brown-800 p-1" @click="toggleShowTasks">Garden Tasks
+                <svg
+                  class="pl-2 w-6 h-6 fill-current inline-block mr-1"
+                  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path v-if="!showTasks" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
+                </svg>
+              </h3>
+              <Vue3SlideUpDown v-model="showTasks">
                 <GardenTaskList :garden="garden" :editor="editor" />
-              </div>
+              </Vue3SlideUpDown>
             </div>
           </div>
 
