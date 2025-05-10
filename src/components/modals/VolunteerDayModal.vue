@@ -2,7 +2,9 @@
 import { computed, ref, watch } from 'vue';
 import { useEventStore, useAlertStore } from '@/stores';
 import { format } from 'date-fns';
-import { defineProps } from 'vue';
+import { defineProps, defineEmits } from 'vue';
+
+const emit = defineEmits(['update:show']);
 
 const props = defineProps({
   title: String,
@@ -21,6 +23,12 @@ const props = defineProps({
   interest: String,
   editor: Boolean,
   smsLink: Boolean,
+  show: {
+    type: Boolean,
+    default: false
+  },
+  slug: String,
+  accessibility: String
 });
 
 const eventStore = useEventStore();  
@@ -42,7 +50,7 @@ const prettyDay = computed(() => {
   return format(new Date(props.startDatetime), 'PPP');
 });
 
-const show = ref(false);
+const isVisible = ref(props.show);
 const copy = ref(false);
 // const volunteers = ref(false);
 const error = ref(false);
@@ -57,6 +65,16 @@ const form = ref({
   startDatetime: props.startDatetime
 });
 
+// Watch for changes to the show prop
+watch(() => props.show, (newVal) => {
+  isVisible.value = newVal;
+});
+
+// Watch for changes to isVisible and emit updates
+watch(isVisible, (newVal) => {
+  emit('update:show', newVal);
+});
+
 async function saveDay() {
   alertStore.clear();
   copy.value = false;
@@ -67,7 +85,7 @@ async function saveDay() {
   } else {
     await eventStore.register(form.value);
     alertStore.success('Volunteer Day added');
-    show.value = false;
+    isVisible.value = false;
   }
   window.scrollTo(0,0);
 }
@@ -88,23 +106,17 @@ const sendSms = async() => {
   eventStore.sendSms(form.value.id).then((smsResp)=>{
       console.log('smsResp: ', smsResp);
       alertStore.success('SMS sent to ' + smsResp.length + ' people');
-      show.value = false;
+      isVisible.value = false;
       window.scrollTo(0,0);
   });
 }
 
-const closeUp = () => {show.value = false;}
+const closeUp = () => {isVisible.value = false;}
 const showExisting = (id) => {
-            show.value = true;
+            isVisible.value = true;
             form.value.id = id;
             console.log(id);
         };
-
-let showCreateButton;
-
-watch(() => props.editor, (newVal, oldVal) => {
-  showCreateButton = computed(() => !props.title && newVal);
-});
 
 </script>
 
@@ -135,31 +147,10 @@ watch(() => props.editor, (newVal, oldVal) => {
     </div>
   </div>
 
-  <button v-if="showCreateButton" type="button" class="px-5
-              py-1.5
-              bg-blue-600
-              text-white
-              font-medium
-              text-xs
-              leading-tight
-              uppercase
-              rounded
-              shadow-md
-              hover:bg-blue-700 hover:shadow-lg
-              focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
-              active:bg-blue-800 active:shadow-lg
-              transition
-              duration-150
-              ease-in-out" 
-
-              @click="show = true">
-              Create Volunteer Day
-            </button>
-
   <!-- Render inside our `<div id="modals"></div>` in index.html -->
   <Teleport to="#modals">
     <!-- Show / hide the modal -->
-    <div v-if="show" class="w-xl">
+    <div v-if="isVisible" class="w-xl">
       <!-- The backdrop -->
       <div class="fixed inset-0 bg-gray-900 opacity-40"></div>
       <!-- *** START FORM *** -->

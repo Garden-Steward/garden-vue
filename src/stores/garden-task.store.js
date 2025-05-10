@@ -10,13 +10,20 @@ export const useGardenTaskStore = defineStore({
     id: 'gardenTasks',
     state: () => ({
         gardenTasks: {},
-        gardenTask: {}
+        gardenTask: {},
+        recurringTasks: []
     }),
     actions: {
         handleError(err) {
             const alertStore = useAlertStore();  
             alertStore.error(err);
             console.log("Garden Task Error: ", err)
+        },
+        async getGardenTasks(gardenId) {
+            return fetchWrapper.get(`${baseUrl}?populate=primary_image&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished&populate[0]=volunteers`)
+                .then(response => {
+                    this.gardenTasks = response.data;
+                })
         },
         async update(id, data) {
             if (data.primary_image?.id) {
@@ -79,5 +86,11 @@ export const useGardenTaskStore = defineStore({
                     throw error;
                 });
         },
+        async getRecurringTasks() {
+            return fetchWrapper.get(`${baseUrl}/recurring-tasks`)
+                .then(response => {
+                    this.recurringTasks = response.data;
+                })
+        }
     }
   });

@@ -1,209 +1,239 @@
-<script>
-import { computed } from "vue";
+<script setup>
+import { computed, ref, watch } from "vue";
 import { useGardenTaskStore, useAlertStore } from '@/stores';
+import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
 // import { bool } from "yup";
 
-export default {
-  props: {
-   title: String,
-   blurb: String,
-   endText: String,
-   startDatetime: String,
-   createdAt: String,
-   updatedAt: String,
-   started_at: String,
-   completed_at: String,
-   publishedAt: String,
-   max_volunteers: Number,
-   id: Number,
-   garden: Number,
-   dayId: Number,
-   interests: Array,
-   interest: String,
-   task: Object,
-   status: String,
-   overview: String,
-   type: String,
-   primary_image: Object,
- },
- setup(props) {
-  const gardenTaskStore = useGardenTaskStore();  
-  const alertStore = useAlertStore();  
-  const createTask = computed(()=> {
-    if (new Date(`${props.startDatetime}`) < new Date()) {
-      return false
-    } else {
-      return true
-    }
-  })
-  const topic = computed(()=> {
-    return (props.id) ? "Edit Title:" : "Garden Task Title:"
-  })
-  const submitText = computed(()=> {
-    return (props.id) ? "Update Task" : "Create Task"
-  })
-  const notification = computed(() => {
-    if (props.status !== 'INITIALIZED') {
-      return "This Garden task has already happened, no SMS will be auto-sent.";
-    } else {
-      return "SMS sends out 3 days before, and day of. Disabling stops SMS"
-    }
-  })
-  return {alertStore, gardenTaskStore, topic, notification, createTask, submitText};
- },
-  data() {
-    return {
-      show: false,
-      copy: false,
-      volunteers: false,
-      error: false,
-      form: {
-        title: this.title || '',
-        type: this.type || '',
-        overview: this.overview || '',
-        max_volunteers: this.max_volunteers || '',
-        status: this.status || '',
-        primary_image: this.primary_image || null,
-      },
-      imagePreview: null,
-      imageFile: null,
-    }
-  },
-  watch: {
-    title(newVal) {
-      this.form.title = newVal;
-    },
-    type(newVal) {
-      this.form.type = newVal;
-    },
-    overview(newVal) {
-      this.form.overview = newVal;
-    },
-    max_volunteers(newVal) {
-      this.form.max_volunteers = newVal;
-    },
-    status(newVal) {
-      this.form.status = newVal;
-    },
-    primary_image(newVal) {
-      if (newVal) {
-        this.form.primary_image = newVal;
-        this.imagePreview = newVal.formats?.medium?.url;
-      }
-    },
-    task: {
-      handler(newVal) {
-        if (newVal) {
-          this.form = {
-            ...this.form,
-            primary_image: newVal.primary_image || null,
-          };
-          if (newVal.primary_image?.formats?.medium) {
-            this.imagePreview = newVal.primary_image.formats.medium.url;
-          }
-        }
-      },
-      deep: true
-    }
-  },
-  methods: {
-    async submit() {
-      let message;
-      this.copy = false;
-      this.show = false;
-      this.form.garden = this.garden;
-      this.form.volunteer_day = this.dayId;
-      
-      try {
-        // Handle image upload first if there's a new image
-        if (this.imageFile) {
-          const formData = new FormData();
-          formData.append('files', this.imageFile);
-          
-          const uploadedImage = await this.gardenTaskStore.uploadImage(formData);
-          if (uploadedImage?.id) {
-            this.form.primary_image = {
-              id: uploadedImage.id
-            };
-          }
-        } else if (this.form.primary_image?.id) {
-          // Ensure existing image is properly formatted
-          this.form.primary_image = {
-            id: this.form.primary_image.id
-          };
-        }
-
-        // Then proceed with task creation/update
-        if (this.id) {
-          const updatedTask = await this.gardenTaskStore.update(this.id, this.form);
-          message = 'Garden Task updated';
-          if (updatedTask) {
-            this.form = { ...this.form, ...updatedTask };
-          }
-        } else {
-          this.form.status = 'INITIALIZED';
-          const newTask = await this.gardenTaskStore.register(this.form);
-          message = 'Garden Task added';
-          if (newTask) {
-            this.form = { ...this.form, ...newTask };
-          }
-        }
-        
-        this.show = false;
-        this.alertStore.success(message);
-      } catch (error) {
-        console.error('Error submitting task:', error);
-        this.alertStore.error('Failed to save task');
-      }
-    },
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        this.imageFile = file;
-        this.imagePreview = URL.createObjectURL(file);
-      }
-    },
-    async takePicture() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        // Here you would typically open a modal/dialog with the camera stream
-        // For this example, we'll just use the file input as a fallback
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.capture = 'environment';
-        input.onchange = (e) => this.handleFileUpload(e);
-        input.click();
-      } catch (err) {
-        console.error('Error accessing camera:', err);
-        alert('Unable to access camera. Please check permissions or use file upload instead.');
-      }
-    },
+const props = defineProps({
+  title: String,
+  blurb: String,
+  endText: String,
+  startDatetime: String,
+  createdAt: String,
+  updatedAt: String,
+  started_at: String,
+  completed_at: String,
+  publishedAt: String,
+  max_volunteers: Number,
+  volunteers: Array,
+  id: Number,
+  garden: Number,
+  dayId: Number,
+  interests: Array,
+  interest: String,
+  task: Object,
+  status: String,
+  overview: String,
+  type: String,
+  primary_image: Object,
+  editor: {
+    type: Boolean,
+    default: false
   }
-}
+});
+
+const gardenTaskStore = useGardenTaskStore();
+const alertStore = useAlertStore();
+
+const show = ref(false);
+const copy = ref(false);
+const error = ref(false);
+const imagePreview = ref(null);
+const imageFile = ref(null);
+
+const form = ref({
+  title: props.title || '',
+  type: props.type || '',
+  overview: props.overview || '',
+  max_volunteers: props.max_volunteers || null,
+  status: props.status || '',
+  primary_image: props.primary_image || null,
+});
+
+const showCreateButton = computed(() => {
+  console.log('Editor status:', props.editor);
+  console.log('Has ID:', !!props.id);
+  return props.editor === true && !props.id;
+});
+
+watch(() => props.editor, (newVal) => {
+  console.log('Editor prop changed:', newVal);
+});
+
+const topic = computed(() => {
+  return (props.id) ? "Edit Title:" : "Garden Task Title:";
+});
+
+const submitText = computed(() => {
+  return (props.id) ? "Update Task" : "Create Task";
+});
+
+// Watch handlers
+watch(() => props.title, (newVal) => {
+  form.value.title = newVal;
+});
+
+watch(() => props.type, (newVal) => {
+  form.value.type = newVal;
+});
+
+watch(() => props.overview, (newVal) => {
+  form.value.overview = newVal;
+});
+
+watch(() => props.max_volunteers, (newVal) => {
+  form.value.max_volunteers = newVal;
+});
+
+watch(() => props.volunteers, (newVal) => {
+  form.value.volunteers = newVal;
+});
+
+watch(() => props.status, (newVal) => {
+  form.value.status = newVal;
+});
+
+watch(() => props.primary_image, (newVal) => {
+  if (newVal) {
+    form.value.primary_image = newVal;
+    imagePreview.value = newVal.formats?.medium?.url;
+  }
+});
+
+watch(() => props.task, (newVal) => {
+  if (newVal) {
+    form.value = {
+      ...form.value,
+      primary_image: newVal.primary_image || null,
+    };
+    if (newVal.primary_image?.formats?.medium) {
+      imagePreview.value = newVal.primary_image.formats.medium.url;
+    }
+  }
+}, { deep: true });
+
+// Add computed property for filtered volunteers
+const filteredVolunteers = computed(() => {
+  if (!props.volunteers?.data) return [];
+  return props.volunteers.data.filter(volunteer => volunteer?.attributes);
+});
+
+// Methods
+const submit = async () => {
+  let message;
+  copy.value = false;
+  show.value = false;
+  form.value.garden = props.garden;
+  form.value.volunteer_day = props.dayId;
+  
+  try {
+    // Handle image upload first if there's a new image
+    if (imageFile.value) {
+      const formData = new FormData();
+      formData.append('files', imageFile.value);
+      
+      const uploadedImage = await gardenTaskStore.uploadImage(formData);
+      if (uploadedImage?.id) {
+        form.value.primary_image = {
+          id: uploadedImage.id
+        };
+      }
+    } else if (form.value.primary_image?.id) {
+      // Ensure existing image is properly formatted
+      form.value.primary_image = {
+        id: form.value.primary_image.id
+      };
+    }
+
+    // Then proceed with task creation/update
+    if (props.id) {
+      const updatedTask = await gardenTaskStore.update(props.id, form.value);
+      message = 'Garden Task updated';
+      if (updatedTask) {
+        form.value = { ...form.value, ...updatedTask };
+      }
+    } else {
+      form.value.status = 'INITIALIZED';
+      const newTask = await gardenTaskStore.register(form.value);
+      message = 'Garden Task added';
+      if (newTask) {
+        form.value = { ...form.value, ...newTask };
+      }
+    }
+    
+    show.value = false;
+    alertStore.success(message);
+  } catch (error) {
+    console.error('Error submitting task:', error);
+    alertStore.error('Failed to save task');
+  }
+};
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    imageFile.value = file;
+    imagePreview.value = URL.createObjectURL(file);
+  }
+};
+
+const takePicture = async () => {
+  try {
+    await navigator.mediaDevices.getUserMedia({ video: true });
+    // Here you would typically open a modal/dialog with the camera stream
+    // For this example, we'll just use the file input as a fallback
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = (e) => handleFileUpload(e);
+    input.click();
+  } catch (err) {
+    console.error('Error accessing camera:', err);
+    alert('Unable to access camera. Please check permissions or use file upload instead.');
+  }
+};
 </script>
 
 <template>
   <div v-if="id" class="bg-slate-100 hover:opacity-75 cursor-pointer rounded-lg p-2 pr-0 mb-3" @click="show = true">
     <a class="hover:text-blue">
-      <div class="flex justify-between items-center">
-        <span class="text-lg font-medium">{{ form.title }}</span>
-        <span 
-          :class="{
-            'bg-peach-100 text-peach-800': form.status === 'INITIALIZED',
-            'bg-gray-100 text-gray-800': form.status !== 'INITIALIZED'
-          }"
-          class="px-3 pr-0 py-1 rounded-full text-sm font-medium"
-        >
-          {{ form.status === 'INITIALIZED' ? 'Ready' : form.status }}
-        </span>
+      <div class="grid grid-cols-12 gap-4 items-center">
+        <!-- Name and Category Column -->
+        <div class="col-span-4">
+          <div class="text-lg font-medium">{{ form.title }}</div>
+          <div class="text-gray-600">{{ form.type }}</div>
+        </div>
+
+        <!-- Volunteers Column -->
+        <div class="col-span-6">
+          <div v-if="filteredVolunteers.length" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <UserProfileDisplay 
+              v-for="volunteer in filteredVolunteers" 
+              :key="volunteer.id"
+              :volunteer="volunteer.attributes"
+            />
+          </div>
+        </div>
+
+        <!-- Status Column -->
+        <div class="col-span-2 text-right">
+          <span 
+            :class="{
+              'bg-peach-100 text-peach-800': form.status === 'INITIALIZED',
+              'bg-gray-100 text-gray-800': form.status !== 'INITIALIZED'
+            }"
+            class="px-3 py-1 rounded-full text-sm font-medium"
+          >
+            {{ form.status === 'INITIALIZED' ? 'Ready' : form.status }}
+          </span>
+        </div>
       </div>
-      <div class="text-gray-600 mt-1">{{ form.type }}</div>
     </a>
   </div>
   
-  <div v-else>
-    <button v-if="createTask" type="button" class="px-6
+  <div v-else-if="showCreateButton">
+    <button type="button" class="px-6
                 p-2.5
                 bg-slate-600
                 text-white
@@ -239,7 +269,7 @@ export default {
 
       <form @submit.prevent="submit">
 
-      <div class="fixed inset-0 flex items-center justify-center overflow-x-hidden overflow-y-auto py-6">
+      <div class="fixed inset-0 flex items-center justify-start overflow-x-hidden overflow-y-auto py-6">
         <div class="bg-white text-black grid grid-cols-1 md:w-1/2 w-[90%] gap-2 p-3 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto">
           <slot></slot>
 

@@ -48,10 +48,8 @@ const deleteUser = (userId, schedId) => {
   weekSchedulerStore.update(schedId, addData);
 
 }
-const addUserToSchedule = (user, schedId) => {
-  console.log("adding user: ", user, schedId);
-  // document.getElementById("userSearch").value = "";
-  let addData = {"backup_volunteers": {"connect": [user.id]}};
+const addUserToSchedule = (volunteer, schedId) => {
+  let addData = {"backup_volunteers": {"connect": [volunteer.id]}};
 
   weekSchedulerStore.update(schedId, addData);
 
@@ -116,7 +114,7 @@ const filterUsers = () => {
                 <input v-model="searchQuery" @input="filterUsers" placeholder="Search user..." class="w-full border-b focus:outline-none p-2" />
   
                 <ul v-if="filteredUsers.length > 0" class="py-2">
-                  <li v-for="user in filteredUsers" :key="user.id" @click="addUserToSchedule(user,sched.id)" class="px-4 py-2 cursor-pointer hover:bg-gray-200">{{ user.attributes.firstName }} {{ user.attributes.lastName }}</li>
+                  <li v-for="volunteer in filteredUsers" :key="volunteer.id" @click="addUserToSchedule(volunteer,sched.id)" class="px-4 py-2 cursor-pointer hover:bg-gray-200">{{ volunteer.attributes.firstName }} {{ volunteer.attributes.lastName }}</li>
                 </ul>
                 <p v-else class="p-2">No matching users</p>
               </div>

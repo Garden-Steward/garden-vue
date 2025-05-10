@@ -20,7 +20,10 @@ defineProps({
    overview: String,
    type: String,
    garden_tasks: Array,
-   editor: Boolean
+   editor: Boolean,
+   slug: String,
+   accessibility: String,
+   smsLink: Boolean
  });
 //  console.log("garden tasks: ", endText, garden_tasks)
 </script>
@@ -29,10 +32,10 @@ defineProps({
   <div v-if="garden_tasks?.length">
     <h3 class="text-lg">Prepare for the day:</h3>
     <div v-for="task in garden_tasks" :key="task.id" class="ml-3 mt-3">
-      <GardenTask v-bind="task" :startDatetime="startDatetime" :garden="garden" :dayId="id" />
+      <!-- <GardenTask v-bind="task" :startDatetime="startDatetime" :garden="garden" :dayId="id" :editor="editor" /> -->
     </div>
   </div>
   <div class="clear-both mb-4">
-    <GardenTask :startDatetime="startDatetime" :garden="garden" :dayId="id" />
+    <!-- <GardenTask :startDatetime="startDatetime" :garden="garden" :dayId="id" :editor="editor" /> -->
   </div>
 </template>
