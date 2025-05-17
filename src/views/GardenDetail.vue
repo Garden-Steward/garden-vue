@@ -33,7 +33,7 @@ defineOptions({ inheritAttrs: false })
 const showVol = ref(false);
 const showEvent = ref(true);
 const showCamp = ref(true);
-const showTasks = ref(true);
+const showTasks = ref(false);
 let editor = ref(false);
 
 const isEditor = computed(() => {
@@ -47,6 +47,12 @@ watch(isEditor, (newValue) => {
   editor.value = newValue;
   console.log('editor status updated:', editor.value);
 });
+
+watch(() => garden.value, (newGarden) => {
+  if (!newGarden.loading && newGarden.id) {
+    gardenTaskStore.getRecurringTasks(newGarden.id);
+  }
+}, { immediate: true });
 
 onMounted(() => {
   editor.value = garden.value.loading !== true && garden.value.attributes.managers.data.some(manager => manager.id === user?.value?.id);
@@ -163,6 +169,22 @@ const sortedVolunteers = computed(() => {
           <ScheduleDays :garden="garden" :volunteers="garden.attributes.volunteers.data" :editor="editor"/>
 
           <div class="container mx-auto">
+                        <!-- Garden Task List moved outside the grid -->
+                        <div class="mt-4 bg-purple-50 p-2 md:px-6 md:py-6 mb-3 rounded-lg border border-purple-100">
+              <h3 class="text-2xl text-purple-800 p-1 font-semibold" @click="toggleShowTasks">Garden Tasks
+                <svg
+                  class="pl-2 w-6 h-6 fill-current inline-block mr-1 text-purple-600"
+                  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path v-if="!showTasks" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
+                </svg>
+              </h3>
+              <Vue3SlideUpDown v-model="showTasks">
+                <GardenTaskList :garden="garden" :editor="editor" />
+              </Vue3SlideUpDown>
+            </div>
+          </div>
+
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <!-- Left Column Content -->
               <div class="bg-gray-200 p-2 mb-3">
@@ -232,21 +254,6 @@ const sortedVolunteers = computed(() => {
                   </div>
               </div>
             </div>
-            <!-- Garden Task List moved outside the grid -->
-            <div class="mt-4 bg-gray-200 p-2 mb-3">
-              <h3 class="text-2xl text-brown-800 p-1" @click="toggleShowTasks">Garden Tasks
-                <svg
-                  class="pl-2 w-6 h-6 fill-current inline-block mr-1"
-                  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path v-if="!showTasks" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
-                </svg>
-              </h3>
-              <Vue3SlideUpDown v-model="showTasks">
-                <GardenTaskList :garden="garden" :editor="editor" />
-              </Vue3SlideUpDown>
-            </div>
-          </div>
-
           <div v-if="volunteerDays.loading" class="spinner-border spinner-border-sm"></div>
           <div v-if="volunteerDays.error" class="text-danger">Error loading volunteer days: {{volunteerDays.error}}</div>
           <div v-if="smsCampaigns.loading" class="spinner-border spinner-border-sm"></div>

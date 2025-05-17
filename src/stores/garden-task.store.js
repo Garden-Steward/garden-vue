@@ -2,9 +2,9 @@ import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers';
 import { useAlertStore } from '@/stores';
-import { useEventStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks`;
+const recurringUrl = `${import.meta.env.VITE_API_URL}/api/recurring-tasks`;
 
 export const useGardenTaskStore = defineStore({
     id: 'gardenTasks',
@@ -20,10 +20,20 @@ export const useGardenTaskStore = defineStore({
             console.log("Garden Task Error: ", err)
         },
         async getGardenTasks(gardenId) {
-            return fetchWrapper.get(`${baseUrl}?populate=primary_image&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished&populate[0]=volunteers`)
+            return fetchWrapper.get(`${baseUrl}?populate=primary_image&populate[recurring_task][populate][0]=instruction&populate=volunteers&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished`)
                 .then(response => {
-                    this.gardenTasks = response.data;
+                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(task => {
+                        if (task.attributes?.volunteers?.data) {
+                            task.attributes.volunteers = task.attributes.volunteers.data;
+                        } else if (!task.attributes?.volunteers) {
+                            task.attributes.volunteers = [];
+                        }
+                        return task;
+                    });
+                    this.gardenTasks = tasks;
+                    return tasks;
                 })
+                .catch(this.handleError);
         },
         async update(id, data) {
             if (data.primary_image?.id) {
@@ -65,6 +75,7 @@ export const useGardenTaskStore = defineStore({
                                 id: imageData.id
                             };
                         }
+                        this.gardenTasks.push(response.data);
                         return response.data.attributes;
                     }
                     return response;
@@ -86,11 +97,31 @@ export const useGardenTaskStore = defineStore({
                     throw error;
                 });
         },
-        async getRecurringTasks() {
-            return fetchWrapper.get(`${baseUrl}/recurring-tasks`)
+        async getRecurringTasks(gardenId) {
+            return fetchWrapper.get(`${recurringUrl}?populate=*&filters[garden][id][$eq]=${gardenId}`)
                 .then(response => {
                     this.recurringTasks = response.data;
                 })
+        },
+        async delete(id) {
+            // First get the task to check its status
+            const task = this.gardenTasks.find(t => t.id === id);
+            if (!task) {
+                throw new Error('Task not found');
+            }
+
+            // Only allow deletion if status is INITIALIZED
+            if (task.attributes.status !== 'INITIALIZED') {
+                throw new Error('Cannot delete task: Only tasks with INITIALIZED status can be deleted');
+            }
+
+            return fetchWrapper.delete(`${baseUrl}/${id}`)
+                .then(() => {
+                    // Remove the task from the store
+                    this.gardenTasks = this.gardenTasks.filter(t => t.id !== id);
+                    return true;
+                })
+                .catch(this.handleError);
         }
     }
   });

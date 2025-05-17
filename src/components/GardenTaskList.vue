@@ -27,19 +27,30 @@ onMounted(() => {
 
 watch(() => props.garden?.id, (newId) => {
   if (newId) {
+    console.log("Fetching tasks for garden:", newId);
     gardenTaskStore.getGardenTasks(newId);
   }
-});
+}, { immediate: true });
 
 const tasks = computed(() => {
-  console.log("gardenTasks: ", gardenTasks.value)
-  return gardenTasks.value || [];
+  console.log("gardenTasks value:", gardenTasks.value);
+  if (!gardenTasks.value) return [];
+  return Array.isArray(gardenTasks.value) ? gardenTasks.value : [];
 });
 </script>
 
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-md mb-4">
-    <h3 class="text-2xl font-bold mb-4">Available Tasks</h3>
+  <div class="bg-purple-100 p-1 md:p-6 rounded-lg shadow-md mb-4">
+    
+    <!-- Headers for desktop -->
+    <div v-if="tasks.length" class="hidden md:grid md:grid-cols-12 md:gap-4 mb-2">
+      <div class="col-span-4"></div>
+      <div class="col-span-4"></div>
+      <div class="col-span-4 flex justify-between text-sm text-gray-600">
+        <span>Status</span>
+        <span>Category</span>
+      </div>
+    </div>
     
     <div v-if="tasks.length" class="space-y-4">
       <div v-for="task in tasks" :key="task.id" class="ml-3">
