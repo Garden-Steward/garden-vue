@@ -20,7 +20,7 @@ export const useGardenTaskStore = defineStore({
             console.log("Garden Task Error: ", err)
         },
         async getGardenTasks(gardenId) {
-            return fetchWrapper.get(`${baseUrl}?populate=primary_image&populate[recurring_task][populate][0]=instruction&populate=volunteers&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished`)
+            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=recurring_task.instruction&populate[3]=primary_image&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished`)
                 .then(response => {
                     const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(task => {
                         if (task.attributes?.volunteers?.data) {

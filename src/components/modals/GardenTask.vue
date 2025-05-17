@@ -28,6 +28,10 @@ const props = defineProps({
   type: String,
   primary_image: Object,
   recurring_task: Object,
+  complete_once: {
+    type: Boolean,
+    default: false
+  },
   editor: {
     type: Boolean,
     default: false
@@ -442,7 +446,7 @@ const handleDelete = async () => {
           <div class="mb-4">
             <FormToggle
               v-model="form.is_group_task"
-              label="Multiple Volunteer task"
+              label="Show Group Task Settings"
             />
           </div>
 
