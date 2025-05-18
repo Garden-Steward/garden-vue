@@ -186,7 +186,10 @@ function prepopulateFromRecurring(recurringTask) {
   form.value.title = attrs.title || '';
   form.value.type = attrs.type || '';
   form.value.overview = attrs.overview || '';
+  form.value.max_volunteers = attrs.max_volunteers || null;
   form.value.recurring_task = recurringTask.id;
+  form.value.complete_once = attrs.complete_once || false;
+  form.value.primary_image = attrs.primary_image || null;
   selectedRecurringTask.value = recurringTask;
   // You can add more fields if needed
 }

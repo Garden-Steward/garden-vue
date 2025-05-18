@@ -169,9 +169,10 @@ const sortedVolunteers = computed(() => {
           <ScheduleDays :garden="garden" :volunteers="garden.attributes.volunteers.data" :editor="editor"/>
 
           <div class="container mx-auto">
-                        <!-- Garden Task List moved outside the grid -->
-                        <div class="mt-4 bg-purple-50 p-2 md:px-6 md:py-6 mb-3 rounded-lg border border-purple-100">
-              <h3 class="text-2xl text-purple-800 p-1 font-semibold" @click="toggleShowTasks">Garden Tasks
+            <!-- Garden Task List moved outside the grid -->
+            <div class="mt-4 bg-purple-50 p-2 md:px-6 md:py-6 mb-3 rounded-lg border border-purple-100">
+              <h3 class="text-2xl text-purple-800 p-1 font-semibold cursor-pointer" @click="toggleShowTasks">
+                Garden Tasks
                 <svg
                   class="pl-2 w-6 h-6 fill-current inline-block mr-1 text-purple-600"
                   xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useGardenTaskStore } from '@/stores';
 import GardenTask from '@/components/modals/GardenTask.vue';
@@ -18,13 +18,7 @@ const props = defineProps({
 const gardenTaskStore = useGardenTaskStore();
 const { gardenTasks } = storeToRefs(gardenTaskStore);
 
-// Fetch tasks when component mounts or garden changes
-onMounted(() => {
-  if (props.garden?.id) {
-    gardenTaskStore.getGardenTasks(props.garden.id);
-  }
-});
-
+// Fetch tasks when garden changes
 watch(() => props.garden?.id, (newId) => {
   if (newId) {
     console.log("Fetching tasks for garden:", newId);
@@ -40,7 +34,7 @@ const tasks = computed(() => {
 </script>
 
 <template>
-  <div class="bg-purple-100 p-1 md:p-6 rounded-lg shadow-md mb-4">
+  <div class="bg-purple-100 p-1 md:p-6 rounded-lg shadow-md mb-4 cursor-pointer">
     
     <!-- Headers for desktop -->
     <div v-if="tasks.length" class="hidden md:grid md:grid-cols-12 md:gap-4 mb-2">

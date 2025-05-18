@@ -17,7 +17,6 @@ export const useWeekSchedulerStore = defineStore({
               .catch(error => this.weekscheduler = { error })
       },
       async update(id, data) {
-        console.log('updating scheduler', id, data)
         return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
             .then(res => {
                 const day = res.data.attributes.day
