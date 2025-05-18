@@ -534,10 +534,10 @@ const handleDelete = async () => {
           <p class="p-1 pb-0 text-md text-gray-700 mb-0">What kind of task?:</p>
           <select v-model="form.type" class="rounded-md border p-1 ml-1 text-lg">
             <option class="text-lg py-1">General</option>
-            <option class="text-lg py-1">Watering</option>
+            <option class="text-lg py-1">Water</option>
             <option class="text-lg py-1">Weeding</option>
             <option class="text-lg py-1">Planting</option>
-            <option class="text-lg py-1">Harvesting</option>
+            <option class="text-lg py-1">Harvest</option>
           </select>
 
           <div
