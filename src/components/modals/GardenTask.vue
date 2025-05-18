@@ -200,7 +200,6 @@ const submit = async () => {
   show.value = false;
   form.value.garden = props.garden;
   form.value.volunteer_day = props.dayId;
-  
   try {
     // Handle image upload first if there's a new image
     if (imageFile.value) {
@@ -213,13 +212,12 @@ const submit = async () => {
           id: uploadedImage.id
         };
       }
-    } else if (form.value.primary_image?.id) {
+    } else if (form.value.primary_image) {
       // Ensure existing image is properly formatted
       form.value.primary_image = {
-        id: form.value.primary_image.id
+        id: form.value.primary_image?.id || form.value.primary_image.data.id
       };
     }
-
     // Then proceed with task creation/update
     if (props.id) {
       const updatedTask = await gardenTaskStore.update(props.id, form.value);
