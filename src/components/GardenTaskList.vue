@@ -29,7 +29,11 @@ watch(() => props.garden?.id, (newId) => {
 const tasks = computed(() => {
   console.log("gardenTasks value:", gardenTasks.value);
   if (!gardenTasks.value) return [];
-  return Array.isArray(gardenTasks.value) ? gardenTasks.value : [];
+  const allTasks = Array.isArray(gardenTasks.value) ? gardenTasks.value : [];
+  return allTasks.filter(task => {
+    const status = task.attributes?.status;
+    return status !== 'ABANDONED' && status !== 'SKIPPED';
+  });
 });
 </script>
 
