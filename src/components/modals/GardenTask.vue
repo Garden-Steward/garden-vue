@@ -212,10 +212,10 @@ const submit = async () => {
           id: uploadedImage.id
         };
       }
-    } else if (form.value.primary_image) {
+    } else if (form.value.primary_image?.id || form.value.primary_image?.data?.id) {
       // Ensure existing image is properly formatted
       form.value.primary_image = {
-        id: form.value.primary_image?.id || form.value.primary_image.data.id
+        id: form.value.primary_image?.id || form.value.primary_image.data?.id
       };
     }
     // Then proceed with task creation/update
