@@ -79,34 +79,32 @@ const filterUsers = () => {
 
       <Vue3SlideUpDown v-model="showDays">
       
-        <div class="mb-4" v-for="(daySchedules, day) in weekscheduler" :key="day">
-          <h2 class="text-lg font-bold mb-2 flex">{{ day }}
+        <div class="mb-4" v-for="day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" :key="day">
+          <h2 class="text-lg font-bold mb-1 flex">{{ day }}
             <span v-if="editor" @click="toggleEditMode(day)" class="text-blue-500 text-sm flex items-right text-right flex ml-3 mt-1 cursor-pointer">
             edit</span>
           </h2>
-          <div v-if="editMode == day" class="bg-gray-100 mb-2 rounded-md">
-            <div v-for="sched in daySchedules" :key="sched.id">
-              <div class="bg-gray-100 p-4 rounded-md mb-2">
-                <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task?.data?.attributes?.title }}</h3>
-                <div class="flex flex-wrap -mx-2">
-                  <div class="px-2 mb-2 flex" v-for='volunteer of sched.backup_volunteers?.data || []' :key='volunteer?.id'>
-                    <UserProfileDisplay v-if="volunteer?.attributes" :volunteer="volunteer.attributes" />
-    
-                    <!-- Negative icon to delete user -->
-                    <button @click="deleteUser(volunteer.id, sched.id)" class="ml-2 text-red-500">
-                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" d="M2 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4zm3 6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V10z" clip-rule="evenodd"/>
+          <div v-if="editMode == day" class="bg-gray-100 mb-1 rounded-md">
+            <div v-for="sched in (weekscheduler[day] || [])" :key="sched.id">
+              <div v-if="sched.recurring_task?.data?.attributes?.scheduler_type !== 'No Schedule'" class="bg-gray-100 p-2 pl-4 rounded-md mb-1">
+                <div class="flex flex-col md:flex-row md:items-center">
+                  <h3 class="text-sm font-semibold mb-1 md:mb-0 md:w-1/4">{{ sched.recurring_task?.data?.attributes?.title }}</h3>
+                  <div class="flex flex-wrap md:w-3/4 md:pl-2">
+                    <div v-for='volunteer of sched.backup_volunteers?.data || []' :key='volunteer?.id' class="flex items-center mr-1">
+                      <UserProfileDisplay v-if="volunteer?.attributes" :volunteer="volunteer.attributes" />
+                      <button v-if="editMode === day" @click="deleteUser(volunteer.id, sched.id)" class="ml-1 text-red-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                          <path fill-rule="evenodd" d="M2 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4zm3 6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V10z" clip-rule="evenodd"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <button v-if="editMode === day" @click="toggleAddUserDropdown(sched.day, sched.id)" class="flex items-center text-green-500">
+                      <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M10 18a1 1 0 0 1-1-1v-6H3a1 1 0 1 1 0-2h6V3a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 0 1-1 1z"/>
                       </svg>
+                      Add
                     </button>
-    
                   </div>
-
-                  <button @click="toggleAddUserDropdown(sched.day, sched.id)" class="flex items-center mt-2 text-green-500">
-                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                      <path fill-rule="evenodd" d="M10 18a1 1 0 0 1-1-1v-6H3a1 1 0 1 1 0-2h6V3a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 0 1-1 1z"/>
-                    </svg>
-                    Add Volunteer
-                  </button>
                 </div>
               </div>
               <div v-if="showAddUserDropdown && sched.id == focusSchedule" ref="dropdown" class="absolute bg-gray-300 rounded-md p-2 w-120">
@@ -123,20 +121,23 @@ const filterUsers = () => {
           </div>
 
           <div v-else>
-    
-            <div v-for="sched in daySchedules" :key="sched.id">
-              <div class="bg-gray-100 p-4 rounded-md mb-2">
-                <h3 class="text-md font-semibold mb-2">{{ sched.recurring_task?.data?.attributes?.title }}</h3>
-      
-                <div class="flex flex-wrap -mx-2">
-                  <div class="px-2 mb-2 flex" v-for='volunteer of sched.backup_volunteers?.data || []' :key="volunteer?.id">
-                    <UserProfileDisplay v-if="volunteer?.attributes" :volunteer="volunteer.attributes" />
+            <div v-if="weekscheduler[day] && weekscheduler[day].length > 0">
+              <div v-for="sched in weekscheduler[day]" :key="sched.id">
+                <div v-if="sched.recurring_task?.data?.attributes?.scheduler_type !== 'No Schedule'" class="bg-gray-100 p-2 pl-4 rounded-md mb-1">
+                  <div class="flex flex-col md:flex-row md:items-center">
+                    <h3 class="text-sm font-semibold mb-1 md:mb-0 md:w-1/4">{{ sched.recurring_task?.data?.attributes?.title }}</h3>
+                    <div class="flex flex-wrap md:w-3/4 md:pl-2">
+                      <div v-for='volunteer of sched.backup_volunteers?.data || []' :key="volunteer?.id" class="flex items-center mr-1">
+                        <UserProfileDisplay v-if="volunteer?.attributes" :volunteer="volunteer.attributes" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            
             </div>
-
+            <div v-else class="bg-gray-100 p-2 pl-4 rounded-md mb-1">
+              <p class="text-gray-500 italic text-sm">No tasks scheduled for this day</p>
+            </div>
           </div>
 
         </div>
