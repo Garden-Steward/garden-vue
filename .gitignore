@@ -6,16 +6,27 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+firebase-debug.log
 
+# Dependencies
 node_modules
-.DS_Store
+
+# Build outputs
 dist
 dist-ssr
 coverage
-*.local
 
-/cypress/videos/
-/cypress/screenshots/
+# Environment variables
+*.local
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # Editor directories and files
 .vscode/*
@@ -27,4 +38,6 @@ coverage
 *.sln
 *.sw?
 
-.env.production
+# Testing
+/cypress/videos/
+/cypress/screenshots/

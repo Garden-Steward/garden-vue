@@ -1,6 +1,6 @@
 {
-    "name": "vue-3-pinia-jwt-authentication-example",
-    "version": "0.0.0",
+    "name": "garden-steward-vue",
+    "version": "1.0.0",
     "scripts": {
         "dev": "vite",
         "dev:prod": "vite --mode production",
