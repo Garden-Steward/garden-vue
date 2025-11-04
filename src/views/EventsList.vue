@@ -9,6 +9,7 @@ const eventStore = useEventStore();
 
 const { events } = storeToRefs(eventStore);
 const isLoading = ref(true);
+const error = ref(null);
 
 eventStore.fetchPublic();
 
@@ -16,9 +17,10 @@ watch(events, (newEvents) => {
   console.log("newEvents", events)
   if (newEvents.length > 0) {
     isLoading.value = false;
+    error.value = null;
   } else {
     isLoading.value = false;
-    this.error = "No events found"
+    error.value = "No events found"
   }
 });
 const displayDate = (date) => {
