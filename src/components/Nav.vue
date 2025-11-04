@@ -35,7 +35,7 @@ const toggleMobileMenu = async () => {
     </transition>
 
     <nav class="navbar navbar-expand navbar-light bg-custom-light w-full max-w-full overflow-x-hidden">
-        <router-link to="/" class="logo-image hidden sm:block">
+        <router-link to="/" class="logo-image desktop-logo">
                 <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7 mt-1">
         </router-link>
 
@@ -54,6 +54,7 @@ const toggleMobileMenu = async () => {
                 <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
                 <router-link to="/join" class="nav-item nav-link" @click="toggleMobileMenu">Join</router-link>
                 <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
+                <router-link to="/contribute" class="nav-item nav-link" @click="toggleMobileMenu">Contribute</router-link>
                 <router-link to="/help" class="nav-item nav-link" @click="toggleMobileMenu">Help</router-link>
                 <router-link to="/login" class="nav-item nav-link" v-show="!authStore.user" @click="toggleMobileMenu">Login</router-link>
             </div>
@@ -63,7 +64,7 @@ const toggleMobileMenu = async () => {
 				<span class="mid"></span>
 				<span class="bottom"></span>
 			</button>
-            <router-link to="/" class="nav-item image sm:hidden mobile-logo">
+            <router-link to="/" class="nav-item image mobile-logo">
                 <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7">
             </router-link>
 
@@ -75,6 +76,7 @@ const toggleMobileMenu = async () => {
                     <router-link to="/join" class="nav-item nav-link">Join</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
                     <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
+                    <router-link to="/contribute" class="nav-item nav-link">Contribute</router-link>
                     <router-link v-show="!authStore.user" to="/help" class="nav-item nav-link">Help</router-link>
                     <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link">Login</router-link>
     
@@ -223,7 +225,20 @@ const toggleMobileMenu = async () => {
     color: #fff !important; /* Keeps the text color white, as previously defined */
     border-bottom: 0px;
 }
-@media (max-width: 768px) {
+
+/* Mobile logo - hidden by default, shown in media query */
+.mobile-logo {
+    display: none;
+}
+
+/* Hide desktop logo and show mobile logo when hamburger menu appears */
+@media (max-width: 868px) {
+    .desktop-logo {
+        display: none;
+    }
+    .mobile-logo {
+        display: block;
+    }
     .mobile-menu-button {
         display: block;
     }
@@ -256,6 +271,19 @@ const toggleMobileMenu = async () => {
         left: 1rem;
         top: 50%;
         transform: translateY(-50%);
+    }
+}
+
+/* Show desktop logo and hide mobile logo above the breakpoint */
+@media (min-width: 869px) {
+    .desktop-logo {
+        display: block;
+    }
+    .mobile-logo {
+        display: none;
+    }
+    .mobile-menu-button {
+        display: none;
     }
 }
 </style>

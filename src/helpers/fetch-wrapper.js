@@ -46,7 +46,17 @@ function authHeader(url) {
 
 function handleResponse(response) {
     return response.text().then(text => {
-        const data = text && JSON.parse(text);
+        let data = null;
+        if (text) {
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                // If it's not JSON, use the text as the error message
+                if (!response.ok) {
+                    return Promise.reject(text || response.statusText);
+                }
+            }
+        }
         
         if (!response.ok) {
             const { user, logout } = useAuthStore();
@@ -54,7 +64,7 @@ function handleResponse(response) {
                 logout();
             }
 
-            const error = (data && data.error && data.error.message) || response.statusText;
+            const error = (data && data.error && data.error.message) || (data && data.message) || text || response.statusText;
             return Promise.reject(error);
         }
 
