@@ -1,6 +1,6 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import { useRoute } from "vue-router";
 import { useEventStore, useAlertStore } from '@/stores';
 import Tiptap from '@/components/Tiptap.vue'
@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import Switch from '@/components/form/Switch.vue';
 import TextInput from '@/components/form/TextInput.vue';
 import ImageUpload from '@/components/form/ImageUpload.vue';
+import ImageGalleryUpload from '@/components/form/ImageGalleryUpload.vue';
 import DropDown from '@/components/form/DropDown.vue';
 
 const eventStore = useEventStore();
@@ -19,7 +20,22 @@ const route = useRoute()
 
 const { event } = storeToRefs(eventStore);
 const isLoading = ref(true);
-const isVolunteersOpen = ref(false);
+const hasChanges = ref(false);
+const originalEventData = ref(null);
+const isEditingTitle = ref(false);
+
+const startEditingTitle = async () => {
+  isEditingTitle.value = true;
+  await nextTick();
+  // Focus the input field after it's rendered
+  setTimeout(() => {
+    const input = document.querySelector('.title-input-wrapper input');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, 10);
+};
 
 eventStore.findById(route.params.id);
 
@@ -35,8 +51,156 @@ watch(event, async (newEvent) => {
   if (!newEvent.attributes.accessibility) {
     newEvent.attributes.accessibility = 'Public';
   }
+  // Initialize featured_gallery as empty array if it doesn't exist
+  if (!newEvent.attributes.featured_gallery) {
+    newEvent.attributes.featured_gallery = [];
+  }
+  
   isLoading.value = false;
+  
+  // Store original data for comparison when event loads (only once)
+  if (newEvent && newEvent.attributes && !originalEventData.value && newEvent.id) {
+    // Deep clone to prevent mutations
+    originalEventData.value = JSON.parse(JSON.stringify(newEvent.attributes));
+    hasChanges.value = false;
+  }
 }, { deep: true });
+
+// Watch for changes to detect modifications
+watch(() => event.value?.attributes, (newAttributes) => {
+  if (!originalEventData.value || isLoading.value || !newAttributes) return;
+  
+  // Use the helper function for consistent change detection
+  checkForChanges();
+}, { deep: true, immediate: false });
+
+// Also watch featured_gallery specifically to catch reordering
+watch(
+  () => {
+    const gallery = event.value?.attributes?.featured_gallery;
+    // Return a string representation of the array order for reliable change detection
+    if (!gallery) return '';
+    const ids = getGalleryIds(gallery);
+    return JSON.stringify(ids);
+  },
+  () => {
+    if (!originalEventData.value || isLoading.value) return;
+    // Check immediately, the watcher already has the updated value
+    checkForChanges();
+  },
+  { flush: 'post' }
+);
+
+// Helper to extract gallery IDs in order (consistent format)
+const getGalleryIds = (gallery) => {
+  if (!gallery) return [];
+  
+  let galleryArray = [];
+  if (gallery?.data && Array.isArray(gallery.data)) {
+    // Strapi format: { data: [{ id, attributes: {...} }] }
+    galleryArray = gallery.data;
+  } else if (Array.isArray(gallery)) {
+    // Component format: [{ id, url }, { id, url }]
+    galleryArray = gallery;
+  } else {
+    return [];
+  }
+  
+  // Extract IDs preserving order - be consistent with extraction
+  return galleryArray.map(img => {
+    if (typeof img === 'object' && img !== null) {
+      // Try to get ID from various possible locations
+      if (img.id) return img.id;
+      if (img.data?.id) return img.data.id;
+      // If it's already just a number, return it
+      if (typeof img === 'number') return img;
+      return null;
+    }
+    // If it's already a number/ID, return it directly
+    if (typeof img === 'number' || typeof img === 'string') return img;
+    return null;
+  }).filter(id => id !== null && id !== undefined);
+};
+
+// Helper function to check for changes
+const checkForChanges = () => {
+  if (!originalEventData.value || isLoading.value || !event.value?.attributes) {
+    hasChanges.value = false;
+    return;
+  }
+  
+  // Get normalized gallery arrays for comparison - use consistent extraction
+  const currentGalleryIds = getGalleryIds(event.value.attributes.featured_gallery);
+  const originalGalleryIds = getGalleryIds(originalEventData.value.featured_gallery);
+  
+  // Compare gallery order - arrays must match exactly in same order
+  const galleryChanged = JSON.stringify(currentGalleryIds) !== JSON.stringify(originalGalleryIds);
+  
+  // Compare rest of the data (excluding gallery which we already checked)
+  const currentAttrs = { ...event.value.attributes };
+  const originalAttrs = { ...originalEventData.value };
+  
+  // Remove gallery from comparison since we checked it separately
+  delete currentAttrs.featured_gallery;
+  delete originalAttrs.featured_gallery;
+  
+  // Normalize and compare other attributes
+  const currentNormalized = normalizeEventData(currentAttrs);
+  const originalNormalized = normalizeEventData(originalAttrs);
+  
+  const otherDataChanged = JSON.stringify(currentNormalized) !== JSON.stringify(originalNormalized);
+  
+  const changed = galleryChanged || otherDataChanged;
+  hasChanges.value = changed;
+  
+  // Debug logging (can remove later)
+  if (galleryChanged) {
+    console.log('Gallery changed:', {
+      current: currentGalleryIds,
+      original: originalGalleryIds
+    });
+  }
+};
+
+// Helper function to normalize event data for comparison
+const normalizeEventData = (attributes) => {
+  if (!attributes) return null;
+  
+  const normalized = { ...attributes };
+  
+  // Normalize hero_image
+  if (normalized.hero_image) {
+    normalized.hero_image = normalized.hero_image?.id || normalized.hero_image?.data?.id || null;
+  }
+  
+  // Normalize featured_gallery (preserve order to detect reordering)
+  if (normalized.featured_gallery) {
+    let galleryArray = []
+    if (normalized.featured_gallery?.data && Array.isArray(normalized.featured_gallery.data)) {
+      // Strapi format: { data: [{ id, attributes: {...} }] }
+      galleryArray = normalized.featured_gallery.data.map(img => {
+        if (typeof img === 'object' && img !== null) {
+          return img.id || img.data?.id || null;
+        }
+        return img;
+      }).filter(Boolean);
+    } else if (Array.isArray(normalized.featured_gallery)) {
+      // Component format: [{ id, url }, { id, url }] or Strapi format: [{ id, attributes: {...} }]
+      galleryArray = normalized.featured_gallery.map(img => {
+        if (typeof img === 'object' && img !== null) {
+          // Handle both { id, url } and { id, data: {...} } formats
+          return img.id || img.data?.id || null;
+        }
+        // Handle numeric IDs directly
+        return img;
+      }).filter(Boolean);
+    }
+    // Don't sort - preserve order to detect reordering changes
+    normalized.featured_gallery = galleryArray;
+  }
+  
+  return normalized;
+};
 
 const saveEvent = async () => {
   try {
@@ -50,7 +214,40 @@ const saveEvent = async () => {
       }
     }
     
+    // Format featured_gallery correctly if it exists
+    if (eventData.featured_gallery) {
+      // Handle Strapi format: { data: [...] } or direct array
+      let galleryArray = []
+      if (eventData.featured_gallery?.data && Array.isArray(eventData.featured_gallery.data)) {
+        galleryArray = eventData.featured_gallery.data
+      } else if (Array.isArray(eventData.featured_gallery)) {
+        galleryArray = eventData.featured_gallery
+      }
+      
+      if (galleryArray.length > 0) {
+        eventData.featured_gallery = galleryArray
+          .map(img => {
+            // Extract ID from different formats
+            const id = img?.id || img?.data?.id
+            return id ? { id } : null
+          })
+          .filter(img => img !== null)
+      } else {
+        eventData.featured_gallery = []
+      }
+    }
+    
     await eventStore.update(route.params.id, eventData)
+    
+    // Refresh event data from store and reset change tracking
+    await eventStore.findById(route.params.id)
+    await nextTick()
+    
+    if (event.value && event.value.attributes) {
+      originalEventData.value = JSON.parse(JSON.stringify(event.value.attributes));
+      hasChanges.value = false;
+    }
+    
     alertStore.success('Event saved successfully!')
     window.scrollTo(0, 0)
   } catch (error) {
@@ -80,13 +277,6 @@ const saveEvent = async () => {
           
           <!-- Header buttons and access controls -->
           <div class="flex items-start gap-4">
-            <button 
-              @click="$router.push(`/d/${event.id}`)" 
-              class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 mt-4 px-4 rounded"
-            >
-              Public Event Page
-            </button>
-            
             <!-- Accessibility dropdown -->
             <div class="flex flex-col">
               <span class="text-sm font-semibold mb-1">Event Access:</span>
@@ -122,50 +312,41 @@ const saveEvent = async () => {
 
         <!-- Rest of the content -->
         <div v-else>
-          <!-- Add this line to display the alert messages -->
-          <div v-if="alertStore.alert" :class="['alert', `alert-${alertStore.alert.type}`]">
-            {{ alertStore.alert.message }}
-          </div>
-          <div class="stew">
-            <button 
-              @click="isVolunteersOpen = !isVolunteersOpen"
-              class="w-full flex justify-between items-center text-xl font-bold mb-3 hover:bg-gray-100 p-2 rounded"
-            >
-              <span>
-                Volunteers RSVPd 
-                ({{ event.attributes.confirmed.data?.length || 0 }})
-              </span>
-              <i 
-                :class="['fas', isVolunteersOpen ? 'fa-caret-up' : 'fa-caret-down']"
-              ></i>
-            </button>
-            
-            <div v-show="isVolunteersOpen" class="transition-all duration-300">
-              <div v-if="!event.attributes.confirmed.data?.length" class="pl-5">
-                No one has RSVP'd to this event yet
+          <!-- Main Layout: Editor on left, RSVPs on right (desktop) or bottom (mobile) -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+            <!-- Main Editor Content (Left side on desktop, full width on mobile) -->
+            <div class="lg:col-span-2">
+              <div>
+            <!-- Title: Display as h1 with edit link, or show input when editing -->
+            <div class="mb-4">
+              <div v-if="!isEditingTitle" class="flex items-center gap-3">
+                <h1 class="text-3xl font-bold font-roboto mb-0">{{ event?.attributes?.title || 'Untitled Event' }}</h1>
+                <button
+                  @click="startEditingTitle"
+                  class="text-custom-green hover:text-custom-green-dark underline text-sm"
+                >
+                  Edit
+                </button>
               </div>
-              <ul v-else class="list-disc pl-5">
-                <div v-for="volunteer in event.attributes.confirmed.data" :key="volunteer.id" class="mb-2">
-                  <UserProfileDisplay :volunteer="volunteer.attributes" :showName="true" />
+              <div v-else class="flex items-center gap-2">
+                <div class="flex-1 title-input-wrapper">
+                  <TextInput
+                    v-model="event.attributes.title" 
+                    placeholder="Volunteer Day!" 
+                    class="flex-1"
+                    size="md"
+                    @blur="isEditingTitle = false"
+                    @keyup.enter="isEditingTitle = false"
+                  />
                 </div>
-              </ul>
+                <button
+                  @click="isEditingTitle = false"
+                  class="text-gray-600 hover:text-gray-800 text-sm"
+                >
+                  Done
+                </button>
+              </div>
             </div>
-          </div>
-          <h1 class="text-md mb-4 mt-20 font-roboto">Event Editor.</h1>
-          <hr class="my-4" />
-          <div>
-            <div class="flex items-left mb-2 relative">
-              <label for="title" class="block align-left">Title</label>
-              <TextInput
-                v-model="event.attributes.title" 
-                placeholder="Volunteer Day!" 
-                class="w-1/2"
-                size="md"
-              />
-            </div>
-            <label for="heroImage">Hero Image</label>
-            <ImageUpload v-model="event.attributes.hero_image" placeholder="Upload hero image" :eventId="event.id" />
-
             
             <!-- Two-column layout for date/time and ending time -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -221,7 +402,63 @@ const saveEvent = async () => {
               @update:content="(newContent) => event.attributes.content = newContent"
             />
             
-            <button @click="saveEvent" class="bg-custom-peach hover:bg-custom-green-dark text-black font-bold py-2 px-4 border-2 border-black m-4 rounded-md">Save Event</button>
+            <label for="heroImage">Hero Image</label>
+            <ImageUpload v-model="event.attributes.hero_image" placeholder="Upload hero image" :eventId="event.id" />
+
+            <!-- Featured Gallery Section -->
+            <div class="mb-4">
+              <label for="featuredGallery" class="block mb-2 font-semibold">
+                Featured Gallery
+              </label>
+              <p class="text-sm text-gray-600 mb-2">
+                Add 3-8 photos from the event. These will appear in the event gallery. Drag to reorder.
+              </p>
+              <ImageGalleryUpload 
+                v-model="event.attributes.featured_gallery"
+                :event-id="event.id"
+                :max-images="8"
+              />
+            </div>
+              </div>
+            </div>
+            
+            <!-- RSVPs Section (Right side on desktop, bottom on mobile) -->
+            <div class="lg:col-span-1">
+              <div class="stew lg:sticky lg:top-4">
+                <!-- Save Event Button -->
+                <button 
+                  @click="saveEvent" 
+                  :disabled="!hasChanges"
+                  class="w-full bg-custom-peach hover:bg-custom-green-dark text-black font-bold py-2 px-4 border-2 border-black rounded-md mb-4 transition-all disabled:bg-gray-400 disabled:text-white disabled:cursor-not-allowed disabled:hover:bg-gray-400 disabled:border-gray-400"
+                >
+                  Save Event
+                </button>
+                
+                <h2 class="text-xl font-bold mb-3">
+                  Volunteers RSVP'd 
+                  <span class="text-lg font-normal">({{ event.attributes.confirmed.data?.length || 0 }})</span>
+                </h2>
+                
+                <div>
+                  <div v-if="!event.attributes.confirmed.data?.length" class="text-gray-600">
+                    No one has RSVP'd to this event yet
+                  </div>
+                  <ul v-else class="space-y-3">
+                    <li v-for="volunteer in event.attributes.confirmed.data" :key="volunteer.id">
+                      <UserProfileDisplay :volunteer="volunteer.attributes" :showName="true" />
+                    </li>
+                  </ul>
+                </div>
+                
+                <!-- Public Event Page Link -->
+                <button 
+                  @click="$router.push(`/d/${event.id}`)" 
+                  class="w-full bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded mt-4"
+                >
+                  Public Event Page
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -234,8 +471,8 @@ const saveEvent = async () => {
   background-color: #f0f0f0;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  padding: 10px; /* Reduced padding for mobile */
-  margin: 10px; /* Reduced margin for mobile */
+  padding: 1.5rem;
+  margin-bottom: 1rem;
 }
 label {
   font-weight: bold;

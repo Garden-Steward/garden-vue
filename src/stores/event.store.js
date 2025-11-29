@@ -33,7 +33,7 @@ export const useEventStore = defineStore({
     },
         async findById(id) {
             this.event = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?populate=garden&populate=confirmed&populate=hero_image`)
+            return fetchWrapper.get(`${baseUrl}/${id}?populate=garden&populate=confirmed&populate=hero_image&populate=featured_gallery`)
                 .then(res => this.event = res.data)
                 .catch(this.handleError);
         },
@@ -45,15 +45,29 @@ export const useEventStore = defineStore({
                 .catch(error => this.volunteerDays = { error })
         },
         async update(id, data) {
+            // Format hero_image if it's in Strapi response format
             if (data.hero_image?.data?.id) {
                 data.hero_image = {
                     id: data.hero_image.data.id
                 };
             }
+            
+            // Ensure featured_gallery is properly formatted
+            if (data.featured_gallery && Array.isArray(data.featured_gallery)) {
+                data.featured_gallery = data.featured_gallery
+                    .filter(img => img && img.id)
+                    .map(img => ({
+                        id: typeof img === 'object' ? img.id : img
+                    }));
+            }
 
             return fetchWrapper.put(`${baseUrl}/${id}?populate=*`, { data: data })
                 .then(res => {
                     this.volunteerDay = res.data.attributes;
+                    // Update the event in state if it matches
+                    if (this.event.id === id) {
+                        this.event = res.data;
+                    }
                 })
                 .catch(this.handleError);
         },
