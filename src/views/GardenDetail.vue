@@ -5,11 +5,9 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore } from '@/stores';
 import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
 import SmsCampaignModal from '@/components/modals/SmsCampaignModal.vue';
-import VolunteerDayTasks from '@/components/modals/VolunteerDayTasks.vue';
 import Volunteer from '@/components/VolunteerDetail.vue';
 import ScheduleDays from '@/components/ScheduleDays.vue';
 import GardenTaskList from '@/components/GardenTaskList.vue';
-import { Vue3SlideUpDown } from 'vue3-slide-up-down';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
@@ -30,10 +28,24 @@ eventStore.getByGarden(route.params.slug);
 campaignStore.getByGarden(route.params.slug);
 defineOptions({ inheritAttrs: false })
 
-const showVol = ref(false);
-const showEvent = ref(true);
-const showCamp = ref(true);
-const showTasks = ref(false);
+// Sidebar navigation state
+const activeSection = ref('overview');
+
+// Navigation items
+const navItems = [
+  { id: 'overview', label: 'Overview', icon: '📊' },
+  { id: 'volunteers', label: 'Volunteers', icon: '👥' },
+  { id: 'projects', label: 'Projects', icon: '🌱' },
+  { id: 'schedule', label: 'Weekly Schedule', icon: '📆' },
+  { id: 'events', label: 'Events', icon: '📅' },
+  { id: 'sms', label: 'SMS Campaigns', icon: '💬' },
+  { id: 'messages', label: 'Task Messages', icon: '📨' },
+];
+
+const setActiveSection = (section) => {
+  activeSection.value = section;
+};
+
 let editor = ref(false);
 
 const isEditor = computed(() => {
@@ -68,32 +80,6 @@ const clearTemp = async () => {
 
 const showDayModal = ref(false);
 
-const toggleShowVol = () => {
-  showVol.value = !showVol.value;
-};
-
-const toggleShowEvent = () => {
-  showEvent.value = !showEvent.value;
-};
-
-const toggleShowCamp = () => {
-  showCamp.value = !showCamp.value;
-};
-
-const toggleShowTasks = () => {
-  showTasks.value = !showTasks.value;
-};
-
-const isMobile = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-};
-
-if (isMobile()) {
-  showEvent.value = false;
-  showCamp.value = false;
-  showTasks.value = false;
-}
-
 const sortField = ref('createdAt');
 const sortOrder = ref('desc');
 
@@ -123,148 +109,191 @@ const sortedVolunteers = computed(() => {
 </script>
 
 <template>
-    <div class="bg-custom-light rounded-lg mx-auto p-1 sm:p-5">
-        <h1 class="text-3xl font-bold mb-5">Hi {{user?.firstName}}!</h1>
-        <div class="table-auto" v-if="garden.attributes">
-          <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-white-600 p-3">{{ garden.attributes.title }}</h1>
-          <p class="font-medium leading-tight text-l mt-0 mb-2 text-black p-4"><span class="f">Welcome Text</span>: {{ garden.attributes.welcome_text }}</p>
-          <div class="container mx-auto mb-3">
-            <article v-if="garden.attributes.volunteers?.data.length" class="bg-white p-6 rounded-lg shadow-md">
-              <h3 class="text-2xl font-bold cursor-pointer " @click="toggleShowVol">Volunteers ({{ garden.attributes.volunteers.data.length }})
-                  <svg
-                    class="pl-2 w-6 h-6 fill-current inline-block mr-1"
-                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                    <path v-if="!showVol" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
-                  </svg>
-              </h3> 
-              <Vue3SlideUpDown v-model="showVol">
-                <div class="relative">
-                  <a @click="clearTemp" class="absolute top-0 right-0">Clear Temps</a>
-                  <table class="w-full">
-                    <thead>
-                      <tr class="tr-class">
-                        <th class="text-left">
-                          <a @click="toggleSortOrder('name')" class="cursor-pointer">
-                            Name {{ sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
-                          </a>
-                        </th>
-                        <th class="text-left">
-                          <a @click="toggleSortOrder('createdAt')" class="cursor-pointer">
-                            Registered {{ sortField === 'createdAt' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
-                          </a>
-                        </th>
-                        <th class="text-left">Interests</th>
-                      </tr>
-                    </thead>
-                      <tbody v-for="volunteer in sortedVolunteers" :key="volunteer.id">
-                          <Volunteer v-bind="volunteer.attributes" :id="volunteer.id" :interests="garden.attributes.interests" :garden="garden.id" :editor="editor"/>
-                      </tbody>
-                  </table>
-                </div>
-              </Vue3SlideUpDown>
-            </article>
-
-          </div>
-
-          <ScheduleDays :garden="garden" :volunteers="garden.attributes.volunteers.data" :editor="editor"/>
-
-          <div class="container mx-auto">
-            <!-- Garden Task List moved outside the grid -->
-            <div class="mt-4 bg-purple-50 p-2 md:px-6 md:py-6 mb-3 rounded-lg border border-purple-100">
-              <h3 class="text-2xl text-purple-800 p-1 font-semibold cursor-pointer" @click="toggleShowTasks">
-                Garden Tasks
-                <svg
-                  class="pl-2 w-6 h-6 fill-current inline-block mr-1 text-purple-600"
-                  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path v-if="!showTasks" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
-                </svg>
-              </h3>
-              <Vue3SlideUpDown v-model="showTasks">
-                <GardenTaskList :garden="garden" :editor="editor" />
-              </Vue3SlideUpDown>
-            </div>
-          </div>
-
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <!-- Left Column Content -->
-              <div class="bg-gray-200 p-2 mb-3">
-                <ul v-if="volunteerDays">
-                  <h3 class="text-2xl text-brown-800 p-1" @click="toggleShowEvent">Events ({{ volunteerDays.days?.length }})
-                    <svg
-                      class="pl-2 w-6 h-6 fill-current inline-block mr-1"
-                      xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path v-if="!showEvent" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
-                    </svg>
-                  </h3> 
-                  <button v-if="editor" type="button" class="px-5
-                    py-1.5
-                    bg-blue-600
-                    text-white
-                    font-medium
-                    text-xs
-                    leading-tight
-                    uppercase
-                    rounded
-                    shadow-md
-                    hover:bg-blue-700 hover:shadow-lg
-                    focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
-                    active:bg-blue-800 active:shadow-lg
-                    transition
-                    duration-150
-                    ease-in-out" 
-
-                    @click="showDayModal = true">
-                    Create Volunteer Day
-                  </button>
-
-                  <VolunteerDayModal v-model:show="showDayModal" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor">
-                  </VolunteerDayModal>
-                  <Vue3SlideUpDown v-model="showEvent">
-                    <div class="grid grid-cols-1 gap-2">
-                      <div class="ml-10 m-2" v-for="day in volunteerDays.days" :key="day.id">
-                        <div>
-                          <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" :key="garden.id"/>
-                        </div>
-                      </div>
-                    </div>
-                  </Vue3SlideUpDown>
-                </ul>
-              </div>
-              <!-- Right Column Content -->
-              <div class="bg-gray-300 p-2 mb-3">
-                <h3 class="text-2xl text-brown-800 p-1" @click="toggleShowCamp">SMS Campaigns ({{ smsCampaigns.length }})
-                  <svg
-                    class="pl-2 w-6 h-6 fill-current inline-block mr-1"
-                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                    <path v-if="!showCamp" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
-                  </svg>
-                </h3>
-                <SmsCampaignModal :garden="garden.id" :interests="garden.attributes.interests" :editor="editor">
-                    <div class="text-lg font-bold">Create a new Group SMS</div>
-                </SmsCampaignModal>
-
-                <div v-if="smsCampaigns?.length">
-                  <div class="grid grid-cols-1 gap-2">
-                      <Vue3SlideUpDown v-model="showCamp">
-                        <div class="ml-10 m-2" v-for="campaign in smsCampaigns.slice(0, 20)" :key="campaign.id">
-                            <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
-                        </div>
-                      </Vue3SlideUpDown>
-                    </div>
-                  </div>
-              </div>
-            </div>
-          <div v-if="volunteerDays.loading" class="spinner-border spinner-border-sm"></div>
-          <div v-if="volunteerDays.error" class="text-danger">Error loading volunteer days: {{volunteerDays.error}}</div>
-          <div v-if="smsCampaigns.loading" class="spinner-border spinner-border-sm"></div>
-          <div v-if="smsCampaigns.error" class="text-danger">Error loading sms campaigns: {{smsCampaigns.error}}</div>
-
-        </div>
-        <div v-if="garden.loading" class="spinner-border spinner-border-sm"></div>
-        <div v-if="garden.error" class="text-danger">Error loading gardens: {{garden.error}}</div>
+  <div class="bg-custom-light rounded-lg mx-auto p-1 sm:p-5 min-h-screen" v-if="garden.attributes">
+    <!-- Header -->
+    <div class="mb-6 text-center">
+      <h1 class="font-medium leading-tight text-4xl mt-0 mb-2 text-white-600">{{ garden.attributes.title }}</h1>
     </div>
 
+    <!-- Main Layout with Sidebar -->
+    <div class="flex flex-col lg:flex-row gap-6 px-2 sm:px-4 lg:px-6">
+      <!-- Sidebar Navigation -->
+      <aside class="w-full lg:w-64 flex-shrink-0">
+        <nav class="bg-white rounded-lg shadow-md p-2 sticky top-4">
+          <ul class="sidebar-nav">
+            <li v-for="item in navItems" :key="item.id" class="sidebar-nav-item">
+              <button
+                @click="setActiveSection(item.id)"
+                :class="[
+                  'sidebar-nav-link',
+                  activeSection === item.id ? 'active' : ''
+                ]"
+              >
+                <span class="sidebar-nav-icon">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 min-w-0">
+        <!-- Overview Section -->
+        <div v-if="activeSection === 'overview'" class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-2xl font-bold mb-4">Overview</h2>
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-lg font-semibold mb-2">Welcome Text</h3>
+              <p class="text-gray-700">{{ garden.attributes.welcome_text || 'No welcome text available.' }}</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div class="text-2xl font-bold text-blue-600">{{ garden.attributes.volunteers?.data?.length || 0 }}</div>
+                <div class="text-sm text-gray-600 mt-1">Volunteers</div>
+              </div>
+              <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <div class="text-2xl font-bold text-purple-600">{{ volunteerDays.days?.length || 0 }}</div>
+                <div class="text-sm text-gray-600 mt-1">Events</div>
+              </div>
+              <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                <div class="text-2xl font-bold text-green-600">{{ smsCampaigns.length || 0 }}</div>
+                <div class="text-sm text-gray-600 mt-1">SMS Campaigns</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Weekly Schedule Section -->
+        <div v-if="activeSection === 'schedule'" class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-2xl font-bold mb-4">Weekly Schedule</h2>
+          <ScheduleDays :garden="garden" :volunteers="garden.attributes.volunteers.data" :editor="editor"/>
+        </div>
+
+        <!-- Task Messages Section -->
+        <div v-if="activeSection === 'messages'" class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Task Messages</h2>
+          </div>
+          <div class="text-center py-8">
+            <router-link 
+              :to="`/admin/gardens/${garden.id}/messages`" 
+              class="text-blue-600 hover:text-blue-800 font-medium text-lg"
+            >
+              View Task Messages
+            </router-link>
+          </div>
+        </div>
+
+        <!-- Volunteers Section -->
+        <div v-if="activeSection === 'volunteers'" class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Volunteers ({{ garden.attributes.volunteers?.data?.length || 0 }})</h2>
+            <a v-if="editor" @click="clearTemp" class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">Clear Temps</a>
+          </div>
+          
+          <div v-if="garden.attributes.volunteers?.data?.length" class="relative">
+            <table class="w-full">
+              <thead>
+                <tr class="tr-class border-b-2 border-gray-200">
+                  <th class="text-left py-3 px-4">
+                    <button @click="toggleSortOrder('name')" class="cursor-pointer hover:text-blue-600 flex items-center gap-2">
+                      Name {{ sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
+                    </button>
+                  </th>
+                  <th class="text-left py-3 px-4">
+                    <button @click="toggleSortOrder('createdAt')" class="cursor-pointer hover:text-blue-600 flex items-center gap-2">
+                      Registered {{ sortField === 'createdAt' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
+                    </button>
+                  </th>
+                  <th class="text-left py-3 px-4">Interests</th>
+                </tr>
+              </thead>
+              <tbody>
+                <Volunteer 
+                  v-for="volunteer in sortedVolunteers" 
+                  :key="volunteer.id" 
+                  v-bind="volunteer.attributes" 
+                  :id="volunteer.id" 
+                  :interests="garden.attributes.interests" 
+                  :garden="garden.id" 
+                  :editor="editor"
+                />
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="text-gray-500 text-center py-8">
+            No volunteers yet.
+          </div>
+        </div>
+
+        <!-- Projects Section -->
+        <div v-if="activeSection === 'projects'" class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-2xl font-bold mb-4">Garden Tasks</h2>
+          <GardenTaskList :garden="garden" :editor="editor" />
+        </div>
+
+        <!-- Events Section -->
+        <div v-if="activeSection === 'events'" class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Events ({{ volunteerDays.days?.length || 0 }})</h2>
+            <button 
+              v-if="editor" 
+              type="button" 
+              class="px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded shadow-md hover:bg-blue-700 focus:bg-blue-700 focus:outline-none focus:ring-0 transition duration-150 ease-in-out" 
+              @click="showDayModal = true"
+            >
+              Create Volunteer Day
+            </button>
+          </div>
+
+          <VolunteerDayModal v-model:show="showDayModal" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" />
+
+          <div v-if="volunteerDays.days?.length" class="grid grid-cols-1 gap-4">
+            <div v-for="day in volunteerDays.days" :key="day.id">
+              <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" :key="garden.id"/>
+            </div>
+          </div>
+          <div v-else class="text-gray-500 text-center py-8">
+            No events scheduled yet.
+          </div>
+
+          <div v-if="volunteerDays.loading" class="spinner-border spinner-border-sm"></div>
+          <div v-if="volunteerDays.error" class="text-danger">Error loading volunteer days: {{volunteerDays.error}}</div>
+        </div>
+
+        <!-- SMS Campaigns Section -->
+        <div v-if="activeSection === 'sms'" class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
+            <SmsCampaignModal v-if="editor" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor">
+              <button class="px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded shadow-md hover:bg-blue-700 focus:bg-blue-700 focus:outline-none focus:ring-0 transition duration-150 ease-in-out">
+                Create a new Group SMS
+              </button>
+            </SmsCampaignModal>
+          </div>
+
+          <div v-if="smsCampaigns?.length" class="grid grid-cols-1 gap-4">
+            <div v-for="campaign in smsCampaigns.slice(0, 20)" :key="campaign.id">
+              <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
+            </div>
+          </div>
+          <div v-else class="text-gray-500 text-center py-8">
+            No SMS campaigns yet.
+          </div>
+
+          <div v-if="smsCampaigns.loading" class="spinner-border spinner-border-sm"></div>
+          <div v-if="smsCampaigns.error" class="text-danger">Error loading sms campaigns: {{smsCampaigns.error}}</div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Loading and Error States -->
+    <div v-if="garden.loading" class="spinner-border spinner-border-sm"></div>
+    <div v-if="garden.error" class="text-danger">Error loading gardens: {{garden.error}}</div>
+  </div>
 </template>
 
 <script>
@@ -272,9 +301,7 @@ export default {
   components: {
     VolunteerDayModal,
     SmsCampaignModal,
-    VolunteerDayTasks,
     Volunteer,
-    Vue3SlideUpDown,
     ScheduleDays,
     GardenTaskList
   }
@@ -284,5 +311,49 @@ export default {
 <style scoped>
   .tr-class {
     @apply flex flex-col mb-4 sm:table-row
+  }
+
+  .sidebar-nav {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .sidebar-nav-item {
+    margin-bottom: 0.5rem;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    list-style-type: none !important;
+  }
+
+  .sidebar-nav-link {
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: #f5f5f5;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    font-size: 1rem;
+  }
+
+  .sidebar-nav-link:hover {
+    background-color: #e8e8e8;
+  }
+
+  .sidebar-nav-link.active {
+    background-color: #8aa37c;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .sidebar-nav-icon {
+    font-size: 1.25rem;
+    display: inline-block;
   }
 </style>
