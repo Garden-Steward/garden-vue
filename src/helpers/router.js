@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { PublicHomeView, HomeView, LoginView, Garden, GardensView, SetPassword, 
+import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, SetPassword, 
     InstructionPublic, GardenApplyForm, HelpView, 
     BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
@@ -11,16 +11,12 @@ export const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     linkActiveClass: 'active',
     routes: [
+        // Public routes
         { path: '/', component: PublicHomeView },
-        { path: '/home', component: HomeView },
         { path: '/login', component: LoginView },
         {
             path: '/oauth/google/callback',
             component: GoogleOAuth
-        },
-        {
-            path: '/gardens',
-            component: GardensView
         },
         {
             path: '/join',
@@ -35,28 +31,8 @@ export const router = createRouter({
             component: SetPassword
         },
         {
-            path: '/gardens/:slug',
-            component: Garden
-        },
-        {
-            path: '/i/:slug',
-            component: InstructionPublic
-        },
-        {
-            path: '/d/:id',
-            component: EventView
-        },
-        {
             path: '/events',
             component: EventsList
-        },
-        {
-            path: '/event/edit/:id',
-            component: EventEditor
-        },
-        {
-            path: '/admin/gardens/:id/messages',
-            component: TaskMessages
         },
         {
             path: '/blog',
@@ -77,20 +53,95 @@ export const router = createRouter({
         {
             path: '/privacy',
             component: PrivacyView
+        },
+        
+        // Public garden and event pages
+        {
+            path: '/gardens/:slug',
+            component: GardenPublic,
+            name: 'garden-public'
+        },
+        {
+            path: '/d/:id',
+            component: EventView,
+            name: 'event-public'
+        },
+        {
+            path: '/i/:slug',
+            component: InstructionPublic,
+            name: 'instruction-public'
+        },
+        
+        // Legacy route redirects
+        {
+            path: '/home',
+            redirect: '/manage/home'
+        },
+        
+        // Management routes (authenticated)
+        {
+            path: '/manage',
+            redirect: '/manage/gardens',
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/manage/home',
+            component: HomeView,
+            name: 'manage-home',
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/manage/gardens',
+            component: GardensView,
+            name: 'manage-gardens-list',
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/manage/gardens/:slug',
+            component: GardenManage,
+            name: 'manage-garden-detail',
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/manage/events/:id/edit',
+            component: EventEditor,
+            name: 'manage-event-edit',
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/manage/gardens/:id/messages',
+            component: TaskMessages,
+            name: 'manage-garden-messages',
+            meta: { requiresAuth: true }
         }
     ]
 });
 
 router.beforeEach(async (to) => {
-    // redirect to login page if not logged in and trying to access a restricted page
-    const publicPages = ['/login', '/oauth/google/callback', '/set-password', '/', '/help', '/blog', '/events', '/join', '/contribute', '/privacy'];
-    let authRequired = !publicPages.includes(to.path);
-    let regexTest = new RegExp('/i/|/blog/|/d/', 'g');
-    if (regexTest.test(to.path)) {
-        authRequired = false;
-    }
+    const publicPages = [
+        '/login', 
+        '/oauth/google/callback', 
+        '/set-password', 
+        '/', 
+        '/help', 
+        '/blog', 
+        '/events', 
+        '/join', 
+        '/contribute',
+        '/map',
+        '/privacy'
+    ];
+    
+    // Check if route starts with public patterns
+    const isPublicRoute = publicPages.includes(to.path) || 
+                         to.path.startsWith('/i/') ||
+                         to.path.startsWith('/blog/') ||
+                         to.path.startsWith('/d/') ||
+                         to.path.startsWith('/gardens/'); // Public garden pages
+    
+    const authRequired = to.meta.requiresAuth || to.path.startsWith('/manage/');
     const auth = useAuthStore();
-    console.log("before: ", auth, authRequired);
+    
     if (authRequired && !auth.user) {
         auth.returnUrl = to.fullPath;
         return '/login';

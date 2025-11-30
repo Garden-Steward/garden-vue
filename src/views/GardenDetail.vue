@@ -224,14 +224,17 @@ const getStatusColor = (status) => {
 </script>
 
 <template>
-  <div class="bg-custom-light rounded-lg mx-auto p-1 sm:p-5 min-h-screen" v-if="garden.attributes">
-    <!-- Header -->
-    <div class="mb-6 text-center">
-      <h1 class="font-medium leading-tight text-4xl mt-0 mb-2 text-white-600">{{ garden.attributes.title }}</h1>
+  <div class="bg-custom-light mx-auto min-h-screen" v-if="garden.attributes">
+    <!-- Garden Title Header -->
+    <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-4 sm:px-6 lg:px-8 shadow-md">
+      <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">{{ garden.attributes.title }}</h1>
+        <p v-if="garden.attributes.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb }}</p>
+      </div>
     </div>
 
     <!-- Main Layout with Sidebar -->
-    <div class="flex flex-col lg:flex-row gap-6 px-2 sm:px-4 lg:px-6">
+    <div class="flex flex-col lg:flex-row gap-6 px-2 sm:px-4 lg:px-6 p-1 sm:p-5">
       <!-- Sidebar Navigation -->
       <GardenSidebar 
         :active-section="activeSection" 
@@ -242,7 +245,17 @@ const getStatusColor = (status) => {
       <main class="flex-1 min-w-0" :key="activeSection">
         <!-- Overview Section -->
         <div v-if="activeSection === 'overview'" class="bg-white rounded-lg shadow-md p-6">
-          <h2 class="text-2xl font-bold mb-4">Overview</h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Overview</h2>
+            <router-link 
+              :to="`/gardens/${garden.attributes.slug}`"
+              target="_blank"
+              class="inline-flex items-center px-4 py-2 bg-custom-green text-white font-medium rounded hover:bg-darker-green transition-colors"
+            >
+              <i class="fas fa-external-link-alt mr-2"></i>
+              View Public Garden Page
+            </router-link>
+          </div>
           <div class="space-y-4">
             <div>
               <h3 class="text-lg font-semibold mb-2">Welcome Text</h3>

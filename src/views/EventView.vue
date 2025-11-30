@@ -6,6 +6,7 @@ import MarkdownIt from 'markdown-it';
 import markdownItAttrs from 'markdown-it-attrs';
 
 import { useEventStore, useAuthStore  } from '@/stores';
+import { getImageOrDefault } from '@/helpers/image-utils';
 const md = new MarkdownIt().use(markdownItAttrs);
 
 
@@ -36,13 +37,11 @@ const isEventPast = computed(() => {
   return eventDate < now;
 });
 
-
-const images = [
-  "https://storage.googleapis.com/steward_upload/uploads/20240818_101336_dd55c7a910/20240818_101336_dd55c7a910.jpg",
-  "https://storage.googleapis.com/steward_upload/uploads/garden_volunteers_feb24_2c9697c88b/garden_volunteers_feb24_2c9697c88b.jpg",
-  "https://storage.googleapis.com/steward_upload/uploads/Screenshot_2024_08_20_at_7_23_46_AM_82aa7ed2a6/Screenshot_2024_08_20_at_7_23_46_AM_82aa7ed2a6.png"
-];
-const randomImage = images[Math.floor(Math.random() * images.length)];
+// Get hero image or use default
+const heroImage = computed(() => {
+  const heroImageUrl = event.value?.attributes?.hero_image?.data?.attributes?.url;
+  return getImageOrDefault(heroImageUrl);
+});
 
 watch(event, (newVal) => {
   if (newVal.attributes?.content) {
@@ -204,12 +203,7 @@ onUnmounted(() => {
     <div id="event-view">
       <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
 
-        <div v-if="event?.attributes?.hero_image?.data?.attributes?.url">
-          <img id="randomImage" alt="Hero Image" class="w-full h-auto mb-6 rounded-lg" :src="event?.attributes?.hero_image?.data?.attributes?.url">
-        </div>
-        <div v-else>
-          <img id="randomImage" alt="Random Hero Image" class="w-full h-auto mb-6 rounded-lg" :src="randomImage">
-        </div>
+        <img id="heroImage" alt="Hero Image" class="w-full h-auto mb-6 rounded-lg" :src="heroImage">
         <h1 class="text-3xl font-bold mb-6">{{ event?.attributes?.title }}</h1>
         <h4 class="text-lg font-bold mb-6">{{ processDate(event?.attributes?.startDatetime) }}</h4>
         <div v-if="event?.attributes?.blurb" class="text-left brief-box">
@@ -283,7 +277,15 @@ onUnmounted(() => {
       <div v-if="event.error" class="text-danger">Error loading event: {{event.error}}</div>
       <!-- Add this at the bottom of your template -->
       <div class="text-center py-4 text-white">
-        This event is brought to you by <strong>{{ event?.attributes?.garden?.data.attributes?.title }}</strong>
+        This event is brought to you by 
+        <router-link 
+          v-if="event?.attributes?.garden?.data?.attributes?.slug"
+          :to="{ name: 'garden-public', params: { slug: event?.attributes?.garden?.data?.attributes?.slug } }"
+          class="font-bold underline hover:text-custom-peach"
+        >
+          {{ event?.attributes?.garden?.data?.attributes?.title }}
+        </router-link>
+        <strong v-else>{{ event?.attributes?.garden?.data?.attributes?.title }}</strong>
       </div>
     </div>
       <!-- Modal -->

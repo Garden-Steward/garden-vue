@@ -14,7 +14,7 @@ gardensStore.getAll(user.value.id);
 eventStore.getUserEvents();
 
 const rowClick = (slug) => {
-    window.location=`/gardens/${slug}`
+    window.location=`/manage/gardens/${slug}`
 }
 
 const displayDate = (date) => {

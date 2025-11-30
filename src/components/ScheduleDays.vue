@@ -131,7 +131,7 @@ const filterUsers = () => {
     <!-- Add this new link section -->
     <div class="text-center mt-4">
       <router-link 
-        :to="`/admin/gardens/${props.garden.id}/messages`" 
+        :to="`/manage/gardens/${props.garden.id}/messages`" 
         class="text-blue-600 hover:text-blue-800 font-medium"
       >
         View Task Messages

@@ -22,8 +22,8 @@ gardensStore.getAll(user.value.id);
         <p class="text-lg mt-5">Thank you for helping out with your garden! This app is currently in <strong>Beta</strong> so feedback is encouraged. Feedback & Support email: <a href="mailto:volunteer@oufp.org" class="underline mb-10">volunteer@oufp.org</a> - screenshots helpful</p>
 
         <p class="text-md mb-2">Bio: {{ user.bio? user.bio : 'No bio yet' }}</p>
-        <p class="text-md mb-2">You're a member of <router-link to="/gardens" class="font-bold">{{ gardens.length }} gardens.</router-link></p>
-        <p><a href="/gardens" class="hover:underline text-slate-50 mt-3 btn btn-secondary bg-custom-green hover:bg-custom-green active:bg-custom-green border-white">
+        <p class="text-md mb-2">You're a member of <router-link to="/manage/gardens" class="font-bold">{{ gardens.length }} gardens.</router-link></p>
+        <p><a href="/manage/gardens" class="hover:underline text-slate-50 mt-3 btn btn-secondary bg-custom-green hover:bg-custom-green active:bg-custom-green border-white">
               View Gardens
           </a></p>
     </div>

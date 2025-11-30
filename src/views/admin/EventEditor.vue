@@ -264,7 +264,7 @@ const saveEvent = async () => {
       <div class="px-2 py-2 md:px-8 md:py-4">
         <!-- Back link -->
         <router-link 
-          :to="`/gardens/${event?.attributes?.garden?.data?.attributes?.slug}`"
+          :to="`/manage/gardens/${event?.attributes?.garden?.data?.attributes?.slug}`"
           class="inline-flex items-center text-custom-green hover:text-custom-green-dark mb-4"
         >
           <i class="fas fa-arrow-left mr-2"></i>

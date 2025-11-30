@@ -123,7 +123,7 @@ const showExisting = (id) => {
 <template>
 
   <div v-if="title" class="border-r-3 border rounded p-2 bg-slate-100 hover:bg-slate-200 cursor-pointer transition-colors">
-    <a @click.stop="$router.push(`/event/edit/${id}`)" class="block no-underline hover:no-underline">
+    <a @click.stop="$router.push(`/manage/events/${id}/edit`)" class="block no-underline hover:no-underline">
       <span class="text-md font-semibold">{{ title }}</span>
       <br />
       <span class="text-sm">{{ prettyDay }}</span>

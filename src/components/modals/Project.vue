@@ -134,7 +134,14 @@ watch(() => props.hero_image, (newVal) => {
   }
 });
 watch(() => props.featured_gallery, (newVal) => {
-  form.value.featured_gallery = newVal || [];
+  // Ensure it's always an array
+  if (Array.isArray(newVal)) {
+    form.value.featured_gallery = newVal;
+  } else if (newVal?.data && Array.isArray(newVal.data)) {
+    form.value.featured_gallery = newVal.data;
+  } else {
+    form.value.featured_gallery = [];
+  }
 }, { deep: true });
 watch(() => props.impact_metrics, (newVal) => {
   form.value.impact_metrics = newVal ? [...newVal] : [];
@@ -394,6 +401,12 @@ const handleGalleryChange = async (e) => {
       return await projectsStore.uploadImage(formData);
     });
     const uploaded = await Promise.all(uploadPromises);
+    
+    // Ensure featured_gallery is an array
+    if (!Array.isArray(form.value.featured_gallery)) {
+      form.value.featured_gallery = [];
+    }
+    
     form.value.featured_gallery = [...form.value.featured_gallery, ...uploaded];
   } catch (error) {
     console.error('Failed to upload gallery images:', error);
@@ -677,7 +690,7 @@ onUnmounted(() => {
             <label class="block text-sm font-medium mb-1">Hero image to google photos</label>
             <div
               class="image-upload-container border-2 border-dashed rounded-lg p-6 text-center cursor-pointer mb-4"
-              @click="heroImageInput?.click()"
+              @click.stop="heroImageInput?.click()"
             >
               <input
                 ref="heroImageInput"
@@ -711,7 +724,7 @@ onUnmounted(() => {
                 <div v-for="(img, idx) in validGalleryImages" :key="idx" class="relative">
                   <img :src="img.url || img.formats?.medium?.url" alt="Gallery image" class="w-full h-24 object-cover rounded" />
                   <button
-                    @click="() => {
+                    @click.stop="() => {
                       const originalIdx = form.featured_gallery.findIndex(i => i === img);
                       if (originalIdx !== -1) form.featured_gallery.splice(originalIdx, 1);
                     }"
@@ -722,7 +735,8 @@ onUnmounted(() => {
                 </div>
               </div>
               <button
-                @click="galleryInput?.click()"
+                @click.stop="galleryInput?.click()"
+                type="button"
                 class="px-4 py-2 bg-custom-green text-white rounded hover:bg-darker-green"
               >
                 Add Images
