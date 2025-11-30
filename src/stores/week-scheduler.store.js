@@ -30,13 +30,30 @@ export const useWeekSchedulerStore = defineStore({
       async register(data) {
         return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
             .then(res => {
-                this.weekscheduler = res.data;
+                // Add the new scheduler to the appropriate day
+                const day = res.data.attributes.day;
+                if (!this.weekscheduler[day]) {
+                    this.weekscheduler[day] = [];
+                }
+                res.data.attributes.id = res.data.id;
+                this.weekscheduler[day].push(res.data.attributes);
+                return res.data;
             })
             .catch(this.handleError);
       },
       async delete(id) {
         return fetchWrapper.delete(`${baseUrl}/${id}`)
             .then(res => {
+                // Find and remove the scheduler entry from state
+                for (const day in this.weekscheduler) {
+                    if (Array.isArray(this.weekscheduler[day])) {
+                        const idx = this.weekscheduler[day].findIndex(ws => ws.id == id);
+                        if (idx !== -1) {
+                            this.weekscheduler[day].splice(idx, 1);
+                            break;
+                        }
+                    }
+                }
                 console.log("delete: ", res)
             })
             .catch(this.handleError);

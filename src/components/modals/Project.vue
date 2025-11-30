@@ -267,6 +267,46 @@ const validGalleryImages = computed(() => {
   return form.value.featured_gallery.filter(img => img && (img.url || img.formats?.medium?.url));
 });
 
+// Get thumbnail URL from hero_image
+const heroThumbnailUrl = computed(() => {
+  const heroImage = form.value.hero_image;
+  if (!heroImage) return null;
+  
+  // Handle API response format: hero_image.data.attributes.formats.thumbnail.url
+  if (heroImage.data?.attributes?.formats?.thumbnail?.url) {
+    return heroImage.data.attributes.formats.thumbnail.url;
+  }
+  
+  // Handle normalized format: hero_image.formats.thumbnail.url
+  if (heroImage.formats?.thumbnail?.url) {
+    return heroImage.formats.thumbnail.url;
+  }
+  
+  // Fallback to small or medium if thumbnail not available
+  if (heroImage.data?.attributes?.formats?.small?.url) {
+    return heroImage.data.attributes.formats.small.url;
+  }
+  if (heroImage.formats?.small?.url) {
+    return heroImage.formats.small.url;
+  }
+  if (heroImage.data?.attributes?.formats?.medium?.url) {
+    return heroImage.data.attributes.formats.medium.url;
+  }
+  if (heroImage.formats?.medium?.url) {
+    return heroImage.formats.medium.url;
+  }
+  
+  // Last resort: use main URL
+  if (heroImage.data?.attributes?.url) {
+    return heroImage.data.attributes.url;
+  }
+  if (heroImage.url) {
+    return heroImage.url;
+  }
+  
+  return null;
+});
+
 // Normalize related events for display
 const normalizedRelatedEvents = computed(() => {
   if (!form.value.related_events || !Array.isArray(form.value.related_events)) {
@@ -563,20 +603,37 @@ onUnmounted(() => {
 
     <!-- Show project title/header if ID exists -->
     <div v-else-if="!showCreateButton" @click="openViewModal" class="cursor-pointer bg-white p-4 rounded-lg shadow-sm mb-2">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold">{{ form.title || 'Untitled Project' }}</h3>
-        <span class="text-sm text-gray-500">{{ form.category }}</span>
-      </div>
-      <p v-if="form.short_description" class="text-sm text-gray-600 mt-1">{{ form.short_description }}</p>
-      <!-- Related Events Tags -->
-      <div v-if="normalizedRelatedEvents.length > 0" class="flex flex-wrap gap-2 mt-2">
-        <span 
-          v-for="event in normalizedRelatedEvents" 
-          :key="event.id || event"
-          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-        >
-          {{ event.title || event.attributes?.title || 'Untitled Event' }}
-        </span>
+      <div class="flex gap-4">
+        <!-- Thumbnail on the left -->
+        <div v-if="heroThumbnailUrl" class="flex-shrink-0">
+          <img 
+            :src="heroThumbnailUrl" 
+            :alt="form.title || 'Project thumbnail'"
+            class="w-24 h-24 object-cover rounded-lg"
+          />
+        </div>
+        <div v-else class="flex-shrink-0 w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+          <span class="text-gray-400 text-xs">No Image</span>
+        </div>
+        
+        <!-- Text content on the right -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">{{ form.title || 'Untitled Project' }}</h3>
+            <span class="text-sm text-gray-500">{{ form.category }}</span>
+          </div>
+          <p v-if="form.short_description" class="text-sm text-gray-600 mt-1">{{ form.short_description }}</p>
+          <!-- Related Events Tags -->
+          <div v-if="normalizedRelatedEvents.length > 0" class="flex flex-wrap gap-2 mt-2">
+            <span 
+              v-for="event in normalizedRelatedEvents" 
+              :key="event.id || event"
+              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+            >
+              {{ event.title || event.attributes?.title || 'Untitled Event' }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
 

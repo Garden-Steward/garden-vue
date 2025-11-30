@@ -4,7 +4,6 @@ import EventsIcon from './icons/Events.svg?raw';
 import VolunteersIcon from './icons/Volunteers.svg?raw';
 import ProjectsIcon from './icons/Projects.svg?raw';
 import TasksIcon from './icons/Tasks.svg?raw';
-import ScheduleIcon from './icons/Schedule.svg?raw';
 import SmsIcon from './icons/Sms.svg?raw';
 import MessagesIcon from './icons/Messages.svg?raw';
 
@@ -24,7 +23,6 @@ const iconMap = {
   volunteers: VolunteersIcon,
   projects: ProjectsIcon,
   tasks: TasksIcon,
-  schedule: ScheduleIcon,
   sms: SmsIcon,
   messages: MessagesIcon,
 };
@@ -36,7 +34,6 @@ const navItems = [
   { id: 'volunteers', label: 'Volunteers' },
   { id: 'projects', label: 'Projects' },
   { id: 'tasks', label: 'Tasks' },
-  { id: 'schedule', label: 'Weekly Schedule' },
   { id: 'sms', label: 'SMS Campaigns' },
   { id: 'messages', label: 'Task Messages' },
 ];

@@ -62,9 +62,7 @@ const filterUsers = () => {
 
   <div class="container mx-auto mb-3">
     <!-- Weekly Schedule Container -->
-    <div class="bg-white p-6 rounded-lg shadow-md">
-      <h1 class="text-2xl font-bold mb-4">Weekly Schedule</h1>
-      
+    <div>
         <div class="mb-4" v-for="day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" :key="day">
           <h2 class="text-lg font-bold mb-1 flex">{{ day }}
             <span v-if="editor" @click="toggleEditMode(day)" class="text-blue-500 text-sm flex items-right text-right flex ml-3 mt-1 cursor-pointer">

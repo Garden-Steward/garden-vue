@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { fetchWrapper } from '@/helpers';
 
 const props = defineProps({
@@ -10,8 +10,11 @@ const props = defineProps({
 });
 
 const tasks = ref([]);
-const isLoading = ref(true);
+const isLoading = ref(false);
 const error = ref(null);
+const containerRef = ref(null);
+const hasLoaded = ref(false);
+let observer = null;
 
 const fetchRecentTasks = async () => {
   try {
@@ -109,6 +112,11 @@ const volunteerActivities = computed(() => {
     });
 });
 
+// Limit to most recent 5 activities
+const recentActivities = computed(() => {
+  return volunteerActivities.value.slice(0, 5);
+});
+
 const getTimeAgo = (dateString) => {
   if (!dateString) return 'recently';
   const now = new Date();
@@ -145,21 +153,60 @@ const getTaskTypeIcon = (type) => {
   return icons[type] || '🔧';
 };
 
-watch(() => props.gardenId, (newId) => {
-  if (newId) {
-    fetchRecentTasks();
-  }
-}, { immediate: true });
-
+// Set up Intersection Observer for lazy loading
 onMounted(() => {
-  if (props.gardenId) {
-    fetchRecentTasks();
+  if (!props.gardenId) return;
+  
+  // Use nextTick to ensure the ref is available
+  nextTick(() => {
+    if (!containerRef.value) return;
+    
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasLoaded.value && props.gardenId) {
+            hasLoaded.value = true;
+            fetchRecentTasks();
+            // Disconnect observer after first load
+            if (observer && containerRef.value) {
+              observer.unobserve(containerRef.value);
+            }
+          }
+        });
+      },
+      {
+        rootMargin: '50px', // Start loading slightly before it comes into view
+        threshold: 0.1
+      }
+    );
+    
+    if (containerRef.value) {
+      observer.observe(containerRef.value);
+    }
+  });
+});
+
+onUnmounted(() => {
+  if (observer && containerRef.value) {
+    observer.unobserve(containerRef.value);
+    observer.disconnect();
+  }
+});
+
+watch(() => props.gardenId, (newId) => {
+  if (newId && hasLoaded.value) {
+    // Reset and reload if garden ID changes
+    hasLoaded.value = false;
+    tasks.value = [];
+    if (containerRef.value && observer) {
+      observer.observe(containerRef.value);
+    }
   }
 });
 </script>
 
 <template>
-  <div class="volunteer-activity">
+  <div ref="containerRef" class="volunteer-activity">
     <!-- Loading state -->
     <div v-if="isLoading" class="loading-state">
       <div class="spinner"></div>
@@ -172,39 +219,23 @@ onMounted(() => {
     </div>
     
     <!-- No activity state -->
-    <div v-else-if="volunteerActivities.length === 0" class="activity-empty">
+    <div v-else-if="hasLoaded && recentActivities.length === 0" class="activity-empty">
       <p>No recent volunteer activity</p>
     </div>
     
     <!-- Activity list -->
-    <div v-else class="activity-list">
+    <div v-else-if="hasLoaded && recentActivities.length > 0" class="activity-list">
       <div 
-        v-for="activity in volunteerActivities" 
+        v-for="(activity, index) in recentActivities" 
         :key="activity.id"
         class="activity-item"
+        :style="{ animationDelay: `${index * 0.1}s` }"
       >
-        <div class="activity-header">
-          <span class="volunteer-name">
-            {{ activity.firstName }}
-          </span>
-          <span class="time-ago">
-            was active {{ getTimeAgo(activity.lastActive) }}
-          </span>
-        </div>
-        
-        <div class="activity-details">
-          <span class="task-icon">
-            {{ getTaskTypeIcon(activity.taskType) }}
-          </span>
-          <span class="task-title">
-            {{ activity.taskTitle || activity.recurringTaskTitle }}
-          </span>
-        </div>
-      </div>
-      
-      <!-- Show more indicator if there are many activities -->
-      <div v-if="volunteerActivities.length >= 20" class="activity-limit">
-        Showing most recent 20 activities
+        <span class="task-icon">{{ getTaskTypeIcon(activity.taskType) }}</span>
+        <span class="activity-text">
+          <span class="volunteer-name">{{ activity.firstName }}</span>
+          <span class="time-ago"> was active {{ getTimeAgo(activity.lastActive) }}.</span>
+        </span>
       </div>
     </div>
   </div>
@@ -260,39 +291,47 @@ onMounted(() => {
 .activity-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .activity-item {
-  padding: 16px;
-  border-radius: 8px;
-  background-color: rgba(138, 163, 124, 0.05);
-  transition: all 0.3s ease;
-}
-
-.dark .activity-item {
-  background-color: rgba(138, 163, 124, 0.1);
-}
-
-.activity-item:hover {
-  background-color: rgba(138, 163, 124, 0.1);
-}
-
-.dark .activity-item:hover {
-  background-color: rgba(138, 163, 124, 0.2);
-}
-
-.activity-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.task-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.activity-text {
+  display: inline;
+  color: #4a4a4a;
+}
+
+.dark .activity-text {
+  color: #d0d0d0;
 }
 
 .volunteer-name {
   font-weight: 600;
-  font-size: 1rem;
   color: #1a1a1a;
 }
 
@@ -301,32 +340,11 @@ onMounted(() => {
 }
 
 .time-ago {
-  font-size: 0.9rem;
   color: #666;
 }
 
 .dark .time-ago {
   color: #999;
-}
-
-.activity-details {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 0.95rem;
-}
-
-.task-icon {
-  font-size: 1.2rem;
-}
-
-.task-title {
-  color: #4a4a4a;
-}
-
-.dark .task-title {
-  color: #d0d0d0;
 }
 
 

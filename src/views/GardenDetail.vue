@@ -6,7 +6,6 @@ import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useU
 import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
 import SmsCampaignModal from '@/components/modals/SmsCampaignModal.vue';
 import Volunteer from '@/components/VolunteerDetail.vue';
-import ScheduleDays from '@/components/ScheduleDays.vue';
 import GardenTaskList from '@/components/GardenTaskList.vue';
 import ProjectsList from '@/components/ProjectsList.vue';
 import GardenSidebar from '@/components/GardenSidebar.vue';
@@ -39,7 +38,7 @@ const activeSection = ref('overview');
 const initializeFromHash = () => {
   const hash = route.hash.replace('#', '');
   if (hash) {
-    const validSections = ['overview', 'events', 'volunteers', 'projects', 'tasks', 'schedule', 'sms', 'messages'];
+    const validSections = ['overview', 'events', 'volunteers', 'projects', 'tasks', 'sms', 'messages'];
     if (validSections.includes(hash)) {
       activeSection.value = hash;
     }
@@ -59,7 +58,7 @@ const setActiveSection = (section) => {
 watch(() => route.hash, (newHash) => {
   const hash = newHash.replace('#', '');
   if (hash) {
-    const validSections = ['overview', 'events', 'volunteers', 'projects', 'tasks', 'schedule', 'sms', 'messages'];
+    const validSections = ['overview', 'events', 'volunteers', 'projects', 'tasks', 'sms', 'messages'];
     if (validSections.includes(hash) && activeSection.value !== hash) {
       activeSection.value = hash;
     }
@@ -280,12 +279,6 @@ const getStatusColor = (status) => {
           </div>
         </div>
 
-        <!-- Weekly Schedule Section -->
-        <div v-if="activeSection === 'schedule'" class="bg-white rounded-lg shadow-md p-6">
-          <h2 class="text-2xl font-bold mb-4">Weekly Schedule</h2>
-          <ScheduleDays :garden="garden" :volunteers="garden.attributes.volunteers.data" :editor="editor"/>
-        </div>
-
         <!-- Task Messages Section -->
         <div v-if="activeSection === 'messages'" class="bg-white rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
@@ -397,7 +390,7 @@ const getStatusColor = (status) => {
 
         <!-- Tasks Section -->
         <div v-if="activeSection === 'tasks'" class="bg-white rounded-lg shadow-md p-6">
-          <h2 class="text-2xl font-bold mb-4">Garden Tasks</h2>
+          <h2 class="text-2xl font-bold mb-4">Recurring tasks</h2>
           <GardenTaskList :garden="garden" :editor="editor" />
         </div>
 
@@ -468,7 +461,6 @@ export default {
     VolunteerDayModal,
     SmsCampaignModal,
     Volunteer,
-    ScheduleDays,
     GardenTaskList,
     ProjectsList,
     GardenSidebar
