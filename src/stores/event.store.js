@@ -39,10 +39,15 @@ export const useEventStore = defineStore({
         },
         async getByGarden(slug) {
             this.volunteerDays = { loading: true };
-            fetchWrapper.get(`${baseUrl}/garden/${slug}`)
-                .then(res => this.volunteerDays.days = res)
-                .then(this.volunteerDays = { loading: false })
-                .catch(error => this.volunteerDays = { error })
+            return fetchWrapper.get(`${baseUrl}/garden/${slug}`)
+                .then(res => {
+                    this.volunteerDays = { days: res, loading: false };
+                    return res;
+                })
+                .catch(error => {
+                    this.volunteerDays = { error };
+                    throw error;
+                });
         },
         async update(id, data) {
             // Format hero_image if it's in Strapi response format

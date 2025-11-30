@@ -106,7 +106,7 @@
                     Have questions about contributing? We'd love to hear from you!
                 </p>
                 <p>
-                    Email: <a href="mailto:cameron@oufp.org" class="text-green-700 hover:text-green-900 hover:underline">cameron@oufp.org</a>
+                    Email: <a href="mailto:volunteer@oufp.org" class="text-green-700 hover:text-green-900 hover:underline">volunteer@oufp.org</a>
                 </p>
             </div>
 

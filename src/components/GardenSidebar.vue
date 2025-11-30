@@ -1,0 +1,130 @@
+<script setup>
+import OverviewIcon from './icons/Overview.svg?raw';
+import EventsIcon from './icons/Events.svg?raw';
+import VolunteersIcon from './icons/Volunteers.svg?raw';
+import ProjectsIcon from './icons/Projects.svg?raw';
+import TasksIcon from './icons/Tasks.svg?raw';
+import ScheduleIcon from './icons/Schedule.svg?raw';
+import SmsIcon from './icons/Sms.svg?raw';
+import MessagesIcon from './icons/Messages.svg?raw';
+
+defineProps({
+  activeSection: {
+    type: String,
+    required: true
+  }
+});
+
+const emit = defineEmits(['update:activeSection']);
+
+// Icon mapping
+const iconMap = {
+  overview: OverviewIcon,
+  events: EventsIcon,
+  volunteers: VolunteersIcon,
+  projects: ProjectsIcon,
+  tasks: TasksIcon,
+  schedule: ScheduleIcon,
+  sms: SmsIcon,
+  messages: MessagesIcon,
+};
+
+// Navigation items
+const navItems = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'events', label: 'Events' },
+  { id: 'volunteers', label: 'Volunteers' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'tasks', label: 'Tasks' },
+  { id: 'schedule', label: 'Weekly Schedule' },
+  { id: 'sms', label: 'SMS Campaigns' },
+  { id: 'messages', label: 'Task Messages' },
+];
+
+const setActiveSection = (section) => {
+  emit('update:activeSection', section);
+};
+</script>
+
+<template>
+  <aside class="w-full lg:w-64 flex-shrink-0">
+    <nav class="bg-white rounded-lg shadow-md p-2 sticky top-4">
+      <ul class="sidebar-nav">
+        <li v-for="item in navItems" :key="item.id" class="sidebar-nav-item">
+          <button
+            @click="setActiveSection(item.id)"
+            :class="[
+              'sidebar-nav-link',
+              activeSection === item.id ? 'active' : ''
+            ]"
+          >
+            <span class="sidebar-nav-icon" v-html="iconMap[item.id]"></span>
+            <span>{{ item.label }}</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+</template>
+
+<style scoped>
+.sidebar-nav {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.sidebar-nav-item {
+  margin-bottom: 0.5rem;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  list-style-type: none !important;
+}
+
+.sidebar-nav-link {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: #f5f5f5;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  font-size: 1rem;
+}
+
+.sidebar-nav-link:hover {
+  background-color: #e8e8e8;
+}
+
+.sidebar-nav-link.active {
+  background-color: #8aa37c;
+  color: #fff;
+  font-weight: 600;
+}
+
+.sidebar-nav-icon {
+  font-size: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.sidebar-nav-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+  stroke: #2d5016;
+}
+
+.sidebar-nav-link.active .sidebar-nav-icon :deep(svg) {
+  stroke: #fff;
+}
+</style>
+

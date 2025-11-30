@@ -1,19 +1,13 @@
 <script setup>
 
-import { Vue3SlideUpDown } from "vue3-slide-up-down";
 import { ref } from 'vue';
 import { useWeekSchedulerStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import UserProfileDisplay from "./UserProfileDisplay.vue";
 
-const showDays = ref(false);
 const showAddUserDropdown = ref(false);
 const searchQuery = ref('');
 const filteredUsers = ref([]);
-
-const toggleShow = () => {
-      showDays.value = !showDays.value;
-}
 
 const props = defineProps({
    id: Number,
@@ -69,15 +63,7 @@ const filterUsers = () => {
   <div class="container mx-auto mb-3">
     <!-- Weekly Schedule Container -->
     <div class="bg-white p-6 rounded-lg shadow-md">
-      <h1 class="text-2xl font-bold mb-4 cursor-pointer" @click="toggleShow">Weekly Schedule
-        <svg
-          class="pl-2 w-6 h-6 fill-current inline-block mr-1"
-          xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-          <path v-if="!showDays" d="M10 3l-7 9h14l-7-9z" /><path v-else d="M10 17l-7-9h14z" />
-        </svg>
-      </h1>
-
-      <Vue3SlideUpDown v-model="showDays">
+      <h1 class="text-2xl font-bold mb-4">Weekly Schedule</h1>
       
         <div class="mb-4" v-for="day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" :key="day">
           <h2 class="text-lg font-bold mb-1 flex">{{ day }}
@@ -141,7 +127,6 @@ const filterUsers = () => {
           </div>
 
         </div>
-      </Vue3SlideUpDown>
     </div>
     <!-- Add this new link section -->
     <div class="text-center mt-4">

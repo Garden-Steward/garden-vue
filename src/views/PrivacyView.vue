@@ -3,7 +3,7 @@
 
 <template>
     <div class="bg-custom-light p-5 rounded-lg md:w-2/3 lg:w-3/4 mx-auto">
-        <div class="text-lg mt-6 max-w-4xl w-full mx-auto mt-8 mb-4">
+        <div class="text-lg max-w-4xl w-full mx-auto mt-8 mb-4">
             <h1 class="text-2xl text-center mb-6 uppercase font-roboto">Privacy Policy for Garden Steward</h1>
             
             <div class="mb-4">
@@ -120,7 +120,7 @@
                     <li><strong>Unsubscribe</strong> from email communications</li>
                 </ul>
                 <p class="mb-4">
-                    To exercise these rights, contact us at: <a href="mailto:cameron@oufp.org" class="text-green-700 hover:text-green-900 hover:underline">cameron@oufp.org</a>
+                    To exercise these rights, contact us at: <a href="mailto:volunteer@oufp.org" class="text-green-700 hover:text-green-900 hover:underline">volunteer@oufp.org</a>
                 </p>
             </div>
 
@@ -165,7 +165,7 @@
                 <p class="mb-2">If you have questions about this Privacy Policy or your personal information, contact:</p>
                 <p class="mb-2">
                     <strong>Garden Steward</strong><br>
-                    Email: <a href="mailto:cameron@oufp.org" class="text-green-700 hover:text-green-900 hover:underline">cameron@oufp.org</a><br>
+                    Email: <a href="mailto:volunteer@oufp.org" class="text-green-700 hover:text-green-900 hover:underline">volunteer@oufp.org</a><br>
                     GitHub: <a href="https://github.com/Garden-Steward" target="_blank" rel="noopener noreferrer" class="text-green-700 hover:text-green-900 hover:underline">https://github.com/Garden-Steward</a>
                 </p>
             </div>

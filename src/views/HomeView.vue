@@ -19,7 +19,7 @@ gardensStore.getAll(user.value.id);
         <div class="text-lg mt-6 max-w-md w-full mx-auto mt-8 mb-4">
             Garden Steward is a community-driven, open-source project developing SMS-based software for managing volunteer events, watering schedules, and harvest coordination. Since 2022, we've partnered with the Oakland Urban Farming Project (OUFP) to foster urban agriculture. Join us by either setting up your own decentralized Garden Steward instance or participating in our existing network. Our cooperative approach empowers local communities to cultivate sustainable urban green spaces efficiently.
         </div>
-        <p class="text-lg mt-5">Thank you for helping out with your garden! This app is currently in <strong>Beta</strong> so feedback is encouraged. Feedback & Support email: <a href="mailto:cameron@oufp.org" class="underline mb-10">cameron@oufp.org</a> - screenshots helpful</p>
+        <p class="text-lg mt-5">Thank you for helping out with your garden! This app is currently in <strong>Beta</strong> so feedback is encouraged. Feedback & Support email: <a href="mailto:volunteer@oufp.org" class="underline mb-10">volunteer@oufp.org</a> - screenshots helpful</p>
 
         <p class="text-md mb-2">Bio: {{ user.bio? user.bio : 'No bio yet' }}</p>
         <p class="text-md mb-2">You're a member of <router-link to="/gardens" class="font-bold">{{ gardens.length }} gardens.</router-link></p>

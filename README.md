@@ -174,7 +174,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For questions, feedback, or support, please contact:
-- Email: cameron@oufp.org
+- Email: volunteer@oufp.org
 - Website: https://steward.garden
 
 ## Acknowledgments
