@@ -162,7 +162,10 @@ export const useProjectsStore = defineStore({
                                 id: img.id
                             }));
                         }
-                        this.projects.push(response.data);
+                        
+                        // Don't manually add to store - let getProjects refetch to avoid duplicates
+                        // The component will refetch after creation
+                        
                         return response.data.attributes;
                     }
                     return response;

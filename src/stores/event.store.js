@@ -11,7 +11,10 @@ export const useEventStore = defineStore({
         volunteerDays: {},
         volunteerDay: {},
         event: {},
-        events: {}
+        events: {},
+        currentGardenSlug: null, // Track which garden slug's data is currently loaded
+        loadingGardenSlug: null, // Track which slug is currently being loaded
+        loadingPromise: null // Track the in-flight promise for the current request
     }),
     actions: {
         handleError(err) {
@@ -38,16 +41,35 @@ export const useEventStore = defineStore({
                 .catch(this.handleError);
         },
         async getByGarden(slug) {
+            // If data is already loaded for this slug and not loading, return cached data
+            if (this.currentGardenSlug === slug && this.volunteerDays.days && !this.volunteerDays.loading) {
+                return Promise.resolve(this.volunteerDays.days);
+            }
+            
+            // If a request is already in progress for this same slug, return the existing promise
+            if (this.loadingGardenSlug === slug && this.loadingPromise && this.volunteerDays.loading) {
+                return this.loadingPromise;
+            }
+            
+            // Create new request
+            this.loadingGardenSlug = slug;
             this.volunteerDays = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/garden/${slug}`)
+            this.loadingPromise = fetchWrapper.get(`${baseUrl}/garden/${slug}`)
                 .then(res => {
+                    this.currentGardenSlug = slug;
+                    this.loadingGardenSlug = null;
+                    this.loadingPromise = null;
                     this.volunteerDays = { days: res, loading: false };
                     return res;
                 })
                 .catch(error => {
+                    this.loadingGardenSlug = null;
+                    this.loadingPromise = null;
                     this.volunteerDays = { error };
                     throw error;
                 });
+            
+            return this.loadingPromise;
         },
         async update(id, data) {
             // Format hero_image if it's in Strapi response format

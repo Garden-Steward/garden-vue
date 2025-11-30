@@ -94,10 +94,10 @@ const projectsList = computed(() => {
     });
   }
 
-  // Sort by date_start
+  // Sort by createdAt (newest first by default)
   filtered.sort((a, b) => {
-    const dateA = a.attributes?.date_start ? new Date(a.attributes.date_start) : new Date(0);
-    const dateB = b.attributes?.date_start ? new Date(b.attributes.date_start) : new Date(0);
+    const dateA = a.attributes?.createdAt ? new Date(a.attributes.createdAt) : new Date(0);
+    const dateB = b.attributes?.createdAt ? new Date(b.attributes.createdAt) : new Date(0);
     
     if (sortOrder.value === 'asc') {
       return dateA - dateB;

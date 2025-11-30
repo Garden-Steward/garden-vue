@@ -47,6 +47,7 @@ const showDateFields = ref(false);
 const showMediaFields = ref(false);
 const availableEvents = ref([]);
 const showEventSelector = ref(false);
+const isSubmitting = ref(false);
 
 const categoryOptions = [
   { value: 'Infrastructure', label: 'Infrastructure' },
@@ -419,11 +420,19 @@ const handleGalleryChange = async (e) => {
 };
 
 const submit = async () => {
+  // Prevent double submission
+  if (isSubmitting.value) {
+    return;
+  }
+  
+  isSubmitting.value = true;
   error.value = false;
   
   if (!form.value.title || !form.value.slug || !form.value.short_description) {
     error.value = true;
     alertStore.error('Please fill in all required fields');
+    alertStore.error('Please fill in all required fields');
+    isSubmitting.value = false;
     return;
   }
 
@@ -485,6 +494,8 @@ const submit = async () => {
   } catch (err) {
     error.value = true;
     console.error('Error submitting project:', err);
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -913,11 +924,12 @@ onUnmounted(() => {
 
                 <div class="flex gap-2">
                   <button
+                    type="button"
                     @click="submit"
-                    :disabled="!hasChanges"
+                    :disabled="!hasChanges || isSubmitting"
                     class="px-4 py-2 bg-green-800 text-white font-medium rounded shadow-md hover:bg-green-900 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    {{ submitText }}
+                    {{ isSubmitting ? 'Saving...' : submitText }}
                   </button>
                   <button
                     v-if="props.id"
