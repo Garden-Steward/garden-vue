@@ -173,7 +173,7 @@ const projectsList = computed(() => {
     </div>
     
     <template v-if="projectsList.length > 0">
-      <div v-for="project in projectsList" :key="project.id" class="ml-3 mb-4">
+      <div v-for="project in projectsList" :key="project.id" class="ml-3 mb-2">
         <Project 
           v-if="project.attributes"
           v-bind="project.attributes" 

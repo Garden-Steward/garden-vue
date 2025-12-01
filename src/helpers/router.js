@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, SetPassword, 
     InstructionPublic, GardenApplyForm, HelpView, 
-    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView } from '@/views';
+    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
@@ -56,6 +56,12 @@ export const router = createRouter({
         },
         
         // Public garden and event pages
+        // More specific route must come first
+        {
+            path: '/gardens/:gardenSlug/p/:projectSlug',
+            component: ProjectPublic,
+            name: 'project-public'
+        },
         {
             path: '/gardens/:slug',
             component: GardenPublic,
@@ -137,7 +143,7 @@ router.beforeEach(async (to) => {
                          to.path.startsWith('/i/') ||
                          to.path.startsWith('/blog/') ||
                          to.path.startsWith('/d/') ||
-                         to.path.startsWith('/gardens/'); // Public garden pages
+                         to.path.startsWith('/gardens/'); // Public garden pages (includes nested project pages)
     
     const authRequired = to.meta.requiresAuth || to.path.startsWith('/manage/');
     const auth = useAuthStore();

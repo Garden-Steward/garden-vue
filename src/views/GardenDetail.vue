@@ -220,6 +220,46 @@ const getStatusColor = (status) => {
   };
   return colors[status] || 'bg-gray-100 text-gray-800';
 };
+
+// Get latest 3 events, sorted from soonest to happen to longest
+const latestEvents = computed(() => {
+  if (!volunteerDays.value?.days || !Array.isArray(volunteerDays.value.days)) {
+    return [];
+  }
+  
+  // Normalize events (handle both Strapi format and normalized format)
+  const normalizedEvents = volunteerDays.value.days.map(event => {
+    // Handle Strapi format: { id, attributes: { title, startDatetime, ... } }
+    if (event.attributes) {
+      return { ...event.attributes, id: event.id };
+    }
+    // Already normalized format
+    return event;
+  });
+  
+  // Filter out events without startDatetime and sort by startDatetime (soonest first)
+  const sortedEvents = normalizedEvents
+    .filter(event => event.startDatetime)
+    .sort((a, b) => {
+      const dateA = new Date(a.startDatetime);
+      const dateB = new Date(b.startDatetime);
+      return dateA - dateB; // Soonest first
+    });
+  
+  // Return the first 3 events
+  return sortedEvents.slice(0, 3);
+});
+
+// Format event date helper
+const formatEventDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
 </script>
 
 <template>
@@ -245,7 +285,7 @@ const getStatusColor = (status) => {
         <!-- Overview Section -->
         <div v-if="activeSection === 'overview'" class="bg-white rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold">Overview</h2>
+            <h2 class="text-2xl font-light font-serif">Overview</h2>
             <router-link 
               :to="`/gardens/${garden.attributes.slug}`"
               target="_blank"
@@ -276,13 +316,36 @@ const getStatusColor = (status) => {
               </div>
             </div>
 
+            <!-- Latest Events Section -->
+            <div class="mt-6">
+              <h3 class="text-lg font-semibold mb-2">Upcoming Events</h3>
+              <div v-if="latestEvents.length === 0" class="text-gray-500 text-sm">
+                No upcoming events scheduled.
+              </div>
+              <div v-else class="space-y-2">
+                <div 
+                  v-for="event in latestEvents" 
+                  :key="event.id || event.startDatetime"
+                  class="bg-gray-50 py-2 px-3 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
+                  :class="{ 'cursor-pointer': event.id }"
+                  @click="event.id && $router.push(`/manage/events/${event.id}/edit`)"
+                >
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-calendar-alt text-gray-500 text-sm"></i>
+                    <span class="text-sm font-medium text-gray-900">{{ event.title || 'Untitled Event' }}</span>
+                    <span class="text-sm text-gray-600">- {{ formatEventDate(event.startDatetime) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
         <!-- Task Messages Section -->
         <div v-if="activeSection === 'messages'" class="bg-white rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold">Task Messages</h2>
+            <h2 class="text-2xl font-light font-serif">Task Messages</h2>
           </div>
 
           <div v-if="messagesLoading" class="flex justify-center py-8">
@@ -343,7 +406,7 @@ const getStatusColor = (status) => {
         <!-- Volunteers Section -->
         <div v-if="activeSection === 'volunteers'" class="bg-white rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold">Volunteers ({{ garden.attributes.volunteers?.data?.length || 0 }})</h2>
+            <h2 class="text-2xl font-light font-serif">Volunteers ({{ garden.attributes.volunteers?.data?.length || 0 }})</h2>
             <a v-if="editor" @click="clearTemp" class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">Clear Temps</a>
           </div>
           
@@ -384,20 +447,19 @@ const getStatusColor = (status) => {
 
         <!-- Projects Section -->
         <div v-if="activeSection === 'projects'" class="bg-white rounded-lg shadow-md p-6">
-          <h2 class="text-2xl font-bold mb-4">Projects</h2>
+          <h2 class="text-2xl font-light font-serif mb-4">Projects</h2>
           <ProjectsList :garden="garden" :editor="editor" />
         </div>
 
         <!-- Tasks Section -->
         <div v-if="activeSection === 'tasks'" class="bg-white rounded-lg shadow-md p-6">
-          <h2 class="text-2xl font-bold mb-4">Recurring tasks</h2>
           <GardenTaskList :garden="garden" :editor="editor" />
         </div>
 
         <!-- Events Section -->
         <div v-if="activeSection === 'events'" class="bg-white rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold">Events ({{ volunteerDays.days?.length || 0 }})</h2>
+            <h2 class="text-2xl font-light font-serif">Events ({{ volunteerDays.days?.length || 0 }})</h2>
             <button 
               v-if="editor" 
               type="button" 
@@ -426,7 +488,7 @@ const getStatusColor = (status) => {
         <!-- SMS Campaigns Section -->
         <div v-if="activeSection === 'sms'" class="bg-white rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
+            <h2 class="text-2xl font-light font-serif">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
             <SmsCampaignModal v-if="editor" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor">
               <button class="px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded shadow-md hover:bg-blue-700 focus:bg-blue-700 focus:outline-none focus:ring-0 transition duration-150 ease-in-out">
                 Create a new Group SMS

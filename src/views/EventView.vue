@@ -7,10 +7,11 @@ import markdownItAttrs from 'markdown-it-attrs';
 
 import { useEventStore, useAuthStore  } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
+import Gallery from '@/components/Gallery.vue';
 const md = new MarkdownIt().use(markdownItAttrs);
 
 
-import { watch, onMounted, onUnmounted, computed } from 'vue';
+import { watch, computed } from 'vue';
 
 const eventStore = useEventStore();
 const { user } = useAuthStore();
@@ -18,8 +19,6 @@ const showModal = ref(false);
 const phoneNumber = ref('');
 const phoneError = ref('');
 const isRSVPed = ref(false);
-const showLightbox = ref(false);
-const lightboxImageIndex = ref(0);
 
 const closeModal = () => {
   showModal.value = false;
@@ -124,79 +123,6 @@ const handleKeyPress = (event) => {
   }
 };
 
-const getGalleryImages = () => {
-  const gallery = event.value?.attributes?.featured_gallery
-  if (!gallery) return []
-  
-  // Handle Strapi format: { data: [...] } or direct array
-  let imagesArray = []
-  if (gallery?.data && Array.isArray(gallery.data)) {
-    imagesArray = gallery.data
-  } else if (Array.isArray(gallery)) {
-    imagesArray = gallery
-  } else {
-    return []
-  }
-  
-  return imagesArray.map(img => {
-    // Handle different Strapi formats
-    if (typeof img === 'object' && img !== null) {
-      return {
-        id: img.id || img.data?.id,
-        url: img.url || img.data?.attributes?.url || img.attributes?.url || ''
-      }
-    }
-    return { id: null, url: img }
-  }).filter(img => img.url)
-}
-
-const openLightbox = (index) => {
-  lightboxImageIndex.value = index
-  showLightbox.value = true
-}
-
-const closeLightbox = () => {
-  showLightbox.value = false
-}
-
-const nextImage = () => {
-  const images = getGalleryImages()
-  if (lightboxImageIndex.value < images.length - 1) {
-    lightboxImageIndex.value++
-  } else {
-    lightboxImageIndex.value = 0
-  }
-}
-
-const prevImage = () => {
-  const images = getGalleryImages()
-  if (lightboxImageIndex.value > 0) {
-    lightboxImageIndex.value--
-  } else {
-    lightboxImageIndex.value = images.length - 1
-  }
-}
-
-const handleLightboxKeydown = (e) => {
-  if (!showLightbox.value) return
-  
-  if (e.key === 'Escape') {
-    closeLightbox()
-  } else if (e.key === 'ArrowLeft') {
-    prevImage()
-  } else if (e.key === 'ArrowRight') {
-    nextImage()
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', handleLightboxKeydown)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleLightboxKeydown)
-})
-
 </script>
 
 <template>
@@ -214,33 +140,11 @@ onUnmounted(() => {
         </div>
         
         <!-- Featured Gallery -->
-        <div v-if="getGalleryImages().length > 0" class="mt-8 mb-6">
-          <h2 class="text-2xl font-bold mb-4">Event Gallery</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            <div
-              v-for="(image, index) in getGalleryImages()"
-              :key="image.id || index"
-              class="aspect-square cursor-pointer overflow-hidden rounded-lg hover:opacity-90 transition-opacity"
-              @click="openLightbox(index)"
-            >
-              <img
-                :src="image.url"
-                :alt="`Gallery image ${index + 1}`"
-                class="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-          <p v-if="event?.attributes?.photo_album_url" class="mt-4">
-            <a 
-              :href="event.attributes.photo_album_url" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="text-custom-green hover:underline font-medium"
-            >
-              View Full Album <i class="fas fa-external-link-alt"></i>
-            </a>
-          </p>
-        </div>
+        <Gallery 
+          :gallery="event?.attributes?.featured_gallery"
+          title="Event Gallery"
+          :photo-album-url="event?.attributes?.photo_album_url"
+        />
         
         <div v-if="user?.id" class="text-left mt-5">
             <div v-if="!isRSVPed && !isEventPast" style="font-size: 1.2rem; font-weight: bold;" class="mb-2">Hello {{ user?.firstName }} {{ user?.lastName }}
@@ -310,55 +214,6 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-      
-      <!-- Lightbox Modal -->
-      <div 
-        v-if="showLightbox && getGalleryImages().length > 0"
-        class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
-        @click="closeLightbox"
-      >
-        <div class="relative max-w-7xl max-h-full p-4">
-          <button
-            @click.stop="closeLightbox"
-            class="absolute top-4 right-4 text-white hover:text-gray-300 text-3xl z-10"
-            aria-label="Close"
-          >
-            <i class="fas fa-times"></i>
-          </button>
-          
-          <button
-            v-if="getGalleryImages().length > 1"
-            @click.stop="prevImage"
-            class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 text-3xl z-10"
-            aria-label="Previous"
-          >
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          
-          <button
-            v-if="getGalleryImages().length > 1"
-            @click.stop="nextImage"
-            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 text-3xl z-10"
-            aria-label="Next"
-          >
-            <i class="fas fa-chevron-right"></i>
-          </button>
-          
-          <img
-            :src="getGalleryImages()[lightboxImageIndex]?.url"
-            :alt="`Gallery image ${lightboxImageIndex + 1}`"
-            class="max-w-full max-h-screen mx-auto rounded-lg"
-            @click.stop
-          />
-          
-          <div 
-            v-if="getGalleryImages().length > 1"
-            class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm"
-          >
-            {{ lightboxImageIndex + 1 }} / {{ getGalleryImages().length }}
-          </div>
-        </div>
-      </div>
 
 </template>
 
@@ -381,14 +236,5 @@ onUnmounted(() => {
 h4 {
   font-weight: bold;
   margin-bottom: 0.5rem;
-}
-
-/* Lightbox styles */
-.fixed {
-  cursor: pointer;
-}
-
-.fixed img {
-  cursor: default;
 }
 </style>

@@ -534,6 +534,25 @@ const submit = async () => {
   } catch (err) {
     error.value = true;
     console.error('Error submitting project:', err);
+    
+    // Extract error message from various possible error formats
+    let errorMessage = 'An unknown error occurred';
+    
+    if (typeof err === 'string') {
+      errorMessage = err;
+    } else if (err?.error?.message) {
+      // Handle Strapi error format: { error: { message: "..." } }
+      errorMessage = err.error.message;
+    } else if (err?.message) {
+      // Handle standard error format: { message: "..." }
+      errorMessage = err.message;
+    } else if (err?.response?.data?.error?.message) {
+      // Handle axios-style error format
+      errorMessage = err.response.data.error.message;
+    }
+    
+    const action = props.id ? 'update' : 'create';
+    alertStore.error(`We were not able to ${action} this Project: ${errorMessage}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -602,17 +621,17 @@ onUnmounted(() => {
     </div>
 
     <!-- Show project title/header if ID exists -->
-    <div v-else-if="!showCreateButton" @click="openViewModal" class="cursor-pointer bg-white p-4 rounded-lg shadow-sm mb-2">
-      <div class="flex gap-4">
+    <div v-else-if="!showCreateButton" @click="openViewModal" class="cursor-pointer bg-white p-3 rounded-lg shadow-sm mb-1">
+      <div class="flex gap-3">
         <!-- Thumbnail on the left -->
         <div v-if="heroThumbnailUrl" class="flex-shrink-0">
           <img 
             :src="heroThumbnailUrl" 
             :alt="form.title || 'Project thumbnail'"
-            class="w-24 h-24 object-cover rounded-lg"
+            class="w-16 h-16 object-cover rounded-lg"
           />
         </div>
-        <div v-else class="flex-shrink-0 w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+        <div v-else class="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
           <span class="text-gray-400 text-xs">No Image</span>
         </div>
         
@@ -715,16 +734,16 @@ onUnmounted(() => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Short Description * (max 250 chars)</label>
+          <label class="block text-sm font-medium mb-1">Short Description * (max 350 chars)</label>
           <textarea
             v-model="form.short_description"
-            maxlength="250"
+            maxlength="350"
             rows="3"
             class="w-full px-3 py-2 border border-gray-300 rounded-md"
             placeholder="Brief description of the project"
             required
           ></textarea>
-          <p class="text-xs text-gray-500 mt-1">{{ form.short_description?.length || 0 }}/250</p>
+          <p class="text-xs text-gray-500 mt-1">{{ form.short_description?.length || 0 }}/350</p>
         </div>
 
         <div>

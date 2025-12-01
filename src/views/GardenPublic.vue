@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useGardensStore, useEventStore, useAuthStore, useProjectsStore } from '@/stores';
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch, nextTick } from 'vue';
 import { getRandomDefaultImage, getImageOrDefault } from '@/helpers/image-utils';
 import VolunteerActivity from '@/components/VolunteerActivity.vue';
 
@@ -42,7 +42,40 @@ onMounted(() => {
   
   isDarkMode.value = shouldBeDark;
   applyDarkMode(shouldBeDark);
+  
+  // Restore scroll position if returning from a project page
+  restoreScrollPosition();
 });
+
+// Restore scroll position when navigating back from project
+const restoreScrollPosition = async () => {
+  if (!garden.value?.attributes?.slug) return;
+  
+  const scrollKey = `garden-scroll-${garden.value.attributes.slug}`;
+  const savedScrollPosition = sessionStorage.getItem(scrollKey);
+  
+  if (savedScrollPosition) {
+    // Wait for DOM to be ready
+    await nextTick();
+    
+    // Additional small delay to ensure content is rendered
+    setTimeout(() => {
+      const container = document.querySelector('.garden-public-container');
+      if (container) {
+        container.scrollTop = parseInt(savedScrollPosition, 10);
+      }
+      // Clear the saved position after restoring
+      sessionStorage.removeItem(scrollKey);
+    }, 100);
+  }
+};
+
+// Watch for garden to load and restore scroll position
+watch(() => garden.value?.attributes?.slug, async (slug) => {
+  if (slug && !garden.value?.loading) {
+    await restoreScrollPosition();
+  }
+}, { immediate: false });
 
 // Apply dark mode class to html element (for Tailwind)
 const applyDarkMode = (dark) => {
@@ -59,6 +92,16 @@ const toggleDarkMode = () => {
   applyDarkMode(isDarkMode.value);
   // Save preference when manually toggled
   localStorage.setItem('garden-public-theme', isDarkMode.value ? 'dark' : 'light');
+};
+
+// Save scroll position before navigating to project
+const saveScrollPosition = () => {
+  const container = document.querySelector('.garden-public-container');
+  if (container && garden.value?.attributes?.slug) {
+    const scrollPosition = container.scrollTop;
+    const scrollKey = `garden-scroll-${garden.value.attributes.slug}`;
+    sessionStorage.setItem(scrollKey, scrollPosition.toString());
+  }
 };
 
 // Load garden data
@@ -362,6 +405,14 @@ const getProjectHeroImage = (project) => {
               <h3 class="project-title">{{ project.attributes.title }}</h3>
               <div v-if="project.attributes.short_description" class="project-description" v-html="project.attributes.short_description"></div>
               <div v-else-if="project.attributes.description" class="project-description" v-html="project.attributes.description"></div>
+              <router-link 
+                v-if="project.attributes.slug && garden?.attributes?.slug"
+                :to="`/gardens/${garden.attributes.slug}/p/${project.attributes.slug}`"
+                class="btn-explore-project"
+                @click="saveScrollPosition"
+              >
+                Explore this Project
+              </router-link>
             </div>
             
             <!-- Hero Image (cropped square) -->
@@ -684,7 +735,8 @@ const getProjectHeroImage = (project) => {
 
 .section-title {
   font-size: 1.75rem;
-  font-weight: 600;
+  font-weight: 300;
+  font-family: Georgia, "Times New Roman", Times, serif;
   margin-bottom: 24px;
   color: #1a1a1a;
   transition: color 0.3s ease;
@@ -860,6 +912,37 @@ const getProjectHeroImage = (project) => {
 }
 
 .dark .btn-secondary:hover {
+  background-color: #8aa37c;
+  color: #ffffff;
+}
+
+.btn-explore-project {
+  display: inline-block;
+  padding: 14px 32px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  background-color: transparent;
+  color: #8aa37c;
+  border: 2px solid #8aa37c;
+  margin-top: 20px;
+}
+
+.btn-explore-project:hover {
+  background-color: #8aa37c;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
+}
+
+.dark .btn-explore-project {
+  color: #8aa37c;
+  border-color: #8aa37c;
+}
+
+.dark .btn-explore-project:hover {
   background-color: #8aa37c;
   color: #ffffff;
 }

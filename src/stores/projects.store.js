@@ -13,9 +13,27 @@ export const useProjectsStore = defineStore({
     }),
     actions: {
         handleError(err) {
-            const alertStore = useAlertStore();  
-            alertStore.error(err);
-            console.log("Projects Error: ", err)
+            const alertStore = useAlertStore();
+            // Extract error message from various possible error formats
+            let errorMessage = 'An unknown error occurred';
+            
+            if (typeof err === 'string') {
+                errorMessage = err;
+            } else if (err?.error?.message) {
+                // Handle Strapi error format: { error: { message: "..." } }
+                errorMessage = err.error.message;
+            } else if (err?.message) {
+                // Handle standard error format: { message: "..." }
+                errorMessage = err.message;
+            } else if (err?.response?.data?.error?.message) {
+                // Handle axios-style error format
+                errorMessage = err.response.data.error.message;
+            }
+            
+            alertStore.error(errorMessage);
+            console.log("Projects Error: ", err);
+            // Re-throw so component can also handle the error
+            throw err;
         },
         async getProjects(gardenId) {
             return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=related_events.title&populate[5]=impact_metrics&filters[garden][id][$eq]=${gardenId}`)
@@ -53,6 +71,63 @@ export const useProjectsStore = defineStore({
                     return projects;
                 })
                 .catch(this.handleError);
+        },
+        async getSlug(slug) {
+            this.project = { loading: true };
+            return fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=garden.organization&populate[4]=related_events&populate[5]=related_events.title&populate[6]=related_events.startDatetime&populate[7]=related_events.hero_image&populate[8]=impact_metrics`)
+                .then(response => {
+                    const projects = Array.isArray(response.data) ? response.data : [response.data];
+                    if (projects.length === 0) {
+                        this.project = { error: 'Project not found' };
+                        return null;
+                    }
+                    
+                    const project = projects[0];
+                    // Normalize hero_image
+                    if (project.attributes?.hero_image?.data) {
+                        const imageData = project.attributes.hero_image.data;
+                        project.attributes.hero_image = {
+                            ...imageData.attributes,
+                            id: imageData.id
+                        };
+                    }
+                    // Normalize featured_gallery
+                    if (project.attributes?.featured_gallery?.data) {
+                        project.attributes.featured_gallery = project.attributes.featured_gallery.data.map(img => ({
+                            ...img.attributes,
+                            id: img.id
+                        }));
+                    } else if (!project.attributes?.featured_gallery) {
+                        project.attributes.featured_gallery = [];
+                    }
+                    // Normalize related_events
+                    if (project.attributes?.related_events?.data) {
+                        project.attributes.related_events = project.attributes.related_events.data.map(event => {
+                            const normalizedEvent = {
+                                ...event.attributes,
+                                id: event.id
+                            };
+                            // Normalize hero_image if present
+                            if (normalizedEvent.hero_image?.data) {
+                                const imageData = normalizedEvent.hero_image.data;
+                                normalizedEvent.hero_image = {
+                                    ...imageData.attributes,
+                                    id: imageData.id
+                                };
+                            }
+                            return normalizedEvent;
+                        });
+                    } else if (!project.attributes?.related_events) {
+                        project.attributes.related_events = [];
+                    }
+                    
+                    this.project = project;
+                    return project;
+                })
+                .catch(error => {
+                    this.project = { error };
+                    throw error;
+                });
         },
         async update(id, data) {
             // Handle hero_image
@@ -109,8 +184,7 @@ export const useProjectsStore = defineStore({
                         return response.data.attributes;
                     }
                     return response;
-                })
-                .catch(this.handleError);
+                });
         },
         async register(data) {
             // Handle hero_image
@@ -169,8 +243,7 @@ export const useProjectsStore = defineStore({
                         return response.data.attributes;
                     }
                     return response;
-                })
-                .catch(this.handleError);
+                });
         },
         async uploadImage(formData) {
             return fetchWrapper.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData)

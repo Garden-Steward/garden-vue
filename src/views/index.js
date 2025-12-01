@@ -16,3 +16,4 @@ export { default as PublicHomeView } from './PublicHomeView.vue';
 export { default as MapView } from './MapView.vue';
 export { default as ContributeView } from './ContributeView.vue';
 export { default as PrivacyView } from './PrivacyView.vue';
+export { default as ProjectPublic } from './ProjectPublic.vue';
