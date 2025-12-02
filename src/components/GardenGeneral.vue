@@ -294,12 +294,12 @@ const saveDescription = async () => {
 
 <template>
   <div class="bg-white rounded-lg shadow-md p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-2xl font-light font-serif">General</h2>
+    <div class="mb-4">
+      <h2 class="text-2xl font-light font-serif mb-4">General</h2>
       <router-link 
         :to="`/gardens/${garden.attributes.slug}`"
         target="_blank"
-        class="inline-flex items-center px-4 py-2 bg-custom-green text-white font-medium rounded hover:bg-darker-green transition-colors"
+        class="btn-view-public inline-flex items-center px-4 py-2 bg-custom-green text-white font-medium rounded hover:bg-darker-green transition-colors"
       >
         <i class="fas fa-external-link-alt mr-2"></i>
         View Public Garden Page
@@ -488,4 +488,22 @@ const saveDescription = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Make "View Public Garden Page" button full width on mobile */
+@media (max-width: 768px) {
+  .btn-view-public {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Make button full width on all screen sizes */
+.btn-view-public {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+</style>
 

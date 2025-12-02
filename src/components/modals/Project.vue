@@ -622,20 +622,20 @@ onUnmounted(() => {
 
     <!-- Show project title/header if ID exists -->
     <div v-else-if="!showCreateButton" @click="openViewModal" class="cursor-pointer bg-white p-3 rounded-lg shadow-sm mb-1">
-      <div class="flex gap-3">
-        <!-- Thumbnail on the left -->
-        <div v-if="heroThumbnailUrl" class="flex-shrink-0">
+      <div class="flex flex-col md:flex-row gap-3">
+        <!-- Thumbnail - full width on mobile, fixed size on desktop -->
+        <div v-if="heroThumbnailUrl" class="w-full md:w-16 md:flex-shrink-0">
           <img 
             :src="heroThumbnailUrl" 
             :alt="form.title || 'Project thumbnail'"
-            class="w-16 h-16 object-cover rounded-lg"
+            class="w-full h-48 md:w-16 md:h-16 object-cover rounded-lg"
           />
         </div>
-        <div v-else class="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+        <div v-else class="w-full md:w-16 md:flex-shrink-0 h-48 md:h-16 bg-gray-200 rounded-lg flex items-center justify-center">
           <span class="text-gray-400 text-xs">No Image</span>
         </div>
         
-        <!-- Text content on the right -->
+        <!-- Text content - full width on mobile, flex-1 on desktop -->
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold">{{ form.title || 'Untitled Project' }}</h3>
@@ -1038,8 +1038,9 @@ onUnmounted(() => {
             </svg>
           </button>
 
-          <!-- Project content - full width with padding -->
-          <div class="w-full px-4 py-8 md:px-8 md:py-12" @click.stop>
+          <!-- Project content - centered with max width -->
+          <div class="w-full flex justify-center px-4 py-8 md:px-8 md:py-12" @click.stop>
+            <div class="w-full max-w-4xl">
               <!-- Hero Image -->
               <div v-if="form.hero_image?.url || form.hero_image?.formats?.medium?.url" class="mb-8">
                 <img 
@@ -1136,6 +1137,7 @@ onUnmounted(() => {
                   View Photo Album
                 </a>
               </div>
+            </div>
             </div>
       </div>
     </Teleport>

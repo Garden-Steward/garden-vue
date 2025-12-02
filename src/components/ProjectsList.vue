@@ -112,63 +112,51 @@ const projectsList = computed(() => {
 
 <template>
   <div class="bg-yellow-50 p-1 md:p-6 rounded-lg shadow-md mb-4">
-    <!-- Header with Create Button and Filters -->
-    <div class="flex justify-between items-center mb-4">
-      <!-- Filter and Sort Controls -->
-      <div v-if="allProjects.length > 0" class="flex flex-wrap gap-3 items-center flex-1">
-        <!-- Category Filter -->
-        <div class="flex items-center gap-2">
-          <label class="text-sm font-medium text-gray-700">Category:</label>
-          <select 
-            v-model="selectedCategory"
-            class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
-          >
-            <option value="all">All Categories</option>
-            <option v-for="category in availableCategories" :key="category" :value="category">
-              {{ category }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Event Filter -->
-        <div class="flex items-center gap-2">
-          <label class="text-sm font-medium text-gray-700">Event:</label>
-          <select 
-            v-model="selectedEvent"
-            class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
-          >
-            <option value="all">All Events</option>
-            <option v-for="event in availableEvents" :key="event.id" :value="event.id">
-              {{ event.title || event.attributes?.title || 'Untitled Event' }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Sort Order -->
-        <div class="flex items-center gap-2">
-          <label class="text-sm font-medium text-gray-700">Sort:</label>
-          <select 
-            v-model="sortOrder"
-            class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
-          >
-            <option value="desc">Newest First</option>
-            <option value="asc">Oldest First</option>
-          </select>
-        </div>
-
-        <!-- Results count -->
-        <div class="text-sm text-gray-600 ml-auto">
-          Showing {{ projectsList.length }} of {{ allProjects.length }} projects
-        </div>
+    <!-- Header with Filters -->
+    <div v-if="allProjects.length > 0" class="flex flex-wrap gap-3 items-center mb-4">
+      <!-- Category Filter -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-700">Category:</label>
+        <select 
+          v-model="selectedCategory"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
+        >
+          <option value="all">All Categories</option>
+          <option v-for="category in availableCategories" :key="category" :value="category">
+            {{ category }}
+          </option>
+        </select>
       </div>
-      
-      <!-- Create New Project button for editors - top right -->
-      <div v-if="editor && garden?.id" class="ml-4">
-        <Project 
-          :garden="garden.id"
-          :garden-slug="garden?.attributes?.slug"
-          :editor="editor"
-        />
+
+      <!-- Event Filter -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-700">Event:</label>
+        <select 
+          v-model="selectedEvent"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
+        >
+          <option value="all">All Events</option>
+          <option v-for="event in availableEvents" :key="event.id" :value="event.id">
+            {{ event.title || event.attributes?.title || 'Untitled Event' }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Sort Order -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-700">Sort:</label>
+        <select 
+          v-model="sortOrder"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
+        >
+          <option value="desc">Newest First</option>
+          <option value="asc">Oldest First</option>
+        </select>
+      </div>
+
+      <!-- Results count -->
+      <div class="text-sm text-gray-600 ml-auto">
+        Showing {{ projectsList.length }} of {{ allProjects.length }} projects
       </div>
     </div>
     

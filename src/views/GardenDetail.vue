@@ -8,8 +8,10 @@ import SmsCampaignModal from '@/components/modals/SmsCampaignModal.vue';
 import Volunteer from '@/components/VolunteerDetail.vue';
 import GardenTaskList from '@/components/GardenTaskList.vue';
 import ProjectsList from '@/components/ProjectsList.vue';
+import Project from '@/components/modals/Project.vue';
 import GardenSidebar from '@/components/GardenSidebar.vue';
 import GardenGeneral from '@/components/GardenGeneral.vue';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
@@ -225,33 +227,42 @@ const getStatusColor = (status) => {
 </script>
 
 <template>
-  <div class="bg-custom-light mx-auto min-h-screen" v-if="garden.attributes">
+  <div class="bg-custom-light mx-auto min-h-screen">
     <!-- Garden Title Header -->
     <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-4 sm:px-6 lg:px-8 shadow-md">
       <div class="max-w-7xl mx-auto">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">{{ garden.attributes.title }}</h1>
-        <p v-if="garden.attributes.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb.length > 150 ? garden.attributes.blurb.substring(0, 150) + '...' : garden.attributes.blurb }}</p>
+        <h1 v-if="garden.attributes?.title" class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">{{ garden.attributes.title }}</h1>
+        <div v-else class="h-12 bg-white/20 rounded animate-pulse"></div>
+        <p v-if="garden.attributes?.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb.length > 150 ? garden.attributes.blurb.substring(0, 150) + '...' : garden.attributes.blurb }}</p>
+        <div v-else-if="garden.loading || (!garden.attributes && !garden.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
       </div>
     </div>
 
-    <!-- Main Layout with Sidebar -->
-    <div class="flex flex-col lg:flex-row gap-6 px-2 sm:px-4 lg:px-6 p-1 sm:p-5">
-      <!-- Sidebar Navigation -->
-      <GardenSidebar 
-        :active-section="activeSection" 
-        @update:active-section="setActiveSection" 
-      />
+    <!-- Loading State -->
+    <div v-if="garden.loading || (!garden.attributes && !garden.error)" class="flex items-center justify-center min-h-[60vh]">
+      <LoadingSpinner size="lg" :centered="true" />
+    </div>
 
-      <!-- Main Content Area -->
-      <main class="flex-1 min-w-0" :key="activeSection">
-        <!-- General Section -->
-        <GardenGeneral 
-          v-if="activeSection === 'general'"
-          :garden="garden"
-          :editor="editor"
-          :volunteer-days="volunteerDays"
-          :sms-campaigns="smsCampaigns"
+    <!-- Main Content -->
+    <div v-else-if="garden.attributes">
+      <!-- Main Layout with Sidebar -->
+      <div class="flex flex-col lg:flex-row gap-6 px-2 sm:px-4 lg:px-6 p-1 sm:p-5">
+        <!-- Sidebar Navigation -->
+        <GardenSidebar 
+          :active-section="activeSection" 
+          @update:active-section="setActiveSection" 
         />
+
+        <!-- Main Content Area -->
+        <main class="flex-1 min-w-0" :key="activeSection">
+          <!-- General Section -->
+          <GardenGeneral 
+            v-if="activeSection === 'general'"
+            :garden="garden"
+            :editor="editor"
+            :volunteer-days="volunteerDays"
+            :sms-campaigns="smsCampaigns"
+          />
 
         <!-- Task Messages Section -->
         <div v-if="activeSection === 'messages'" class="bg-white rounded-lg shadow-md p-6">
@@ -259,9 +270,7 @@ const getStatusColor = (status) => {
             <h2 class="text-2xl font-light font-serif">Task Messages</h2>
           </div>
 
-          <div v-if="messagesLoading" class="flex justify-center py-8">
-            <div class="spinner-border spinner-border-sm"></div>
-          </div>
+          <LoadingSpinner v-if="messagesLoading" size="sm" :centered="true" />
 
           <div v-else-if="!groupedMessages || groupedMessages.length === 0" class="text-center py-8">
             <p class="text-gray-500">No task messages found</p>
@@ -359,6 +368,13 @@ const getStatusColor = (status) => {
         <!-- Projects Section -->
         <div v-if="activeSection === 'projects'" class="bg-white rounded-lg shadow-md p-6">
           <h2 class="text-2xl font-light font-serif mb-4">Projects</h2>
+          <div v-if="editor && garden?.id" class="mb-4">
+            <Project 
+              :garden="garden.id"
+              :garden-slug="garden?.attributes?.slug"
+              :editor="editor"
+            />
+          </div>
           <ProjectsList :garden="garden" :editor="editor" />
         </div>
 
@@ -392,7 +408,7 @@ const getStatusColor = (status) => {
             No events scheduled yet.
           </div>
 
-          <div v-if="volunteerDays.loading" class="spinner-border spinner-border-sm"></div>
+          <LoadingSpinner v-if="volunteerDays.loading" size="sm" />
           <div v-if="volunteerDays.error" class="text-danger">Error loading volunteer days: {{volunteerDays.error}}</div>
         </div>
 
@@ -416,15 +432,15 @@ const getStatusColor = (status) => {
             No SMS campaigns yet.
           </div>
 
-          <div v-if="smsCampaigns.loading" class="spinner-border spinner-border-sm"></div>
+          <LoadingSpinner v-if="smsCampaigns.loading" size="sm" />
           <div v-if="smsCampaigns.error" class="text-danger">Error loading sms campaigns: {{smsCampaigns.error}}</div>
         </div>
       </main>
+      </div>
     </div>
 
-    <!-- Loading and Error States -->
-    <div v-if="garden.loading" class="spinner-border spinner-border-sm"></div>
-    <div v-if="garden.error" class="text-danger">Error loading gardens: {{garden.error}}</div>
+    <!-- Error State -->
+    <div v-if="garden.error" class="text-danger p-6">Error loading gardens: {{garden.error}}</div>
   </div>
 </template>
 
@@ -437,7 +453,8 @@ export default {
     GardenTaskList,
     ProjectsList,
     GardenSidebar,
-    GardenGeneral
+    GardenGeneral,
+    LoadingSpinner
   }
 };
 </script>

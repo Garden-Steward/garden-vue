@@ -36,7 +36,7 @@ const toggleMobileMenu = async () => {
 
     <nav class="navbar navbar-expand navbar-light bg-custom-light w-full max-w-full overflow-x-hidden">
         <router-link to="/" class="logo-image desktop-logo">
-                <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7 mt-1">
+                <img src="/public/gs-logo-name.png" alt="GS Logo" class="logo-img h-7 mt-1">
         </router-link>
 
         <div class="navbar-nav d-flex justify-content-center w-100 mb-1">
@@ -68,7 +68,7 @@ const toggleMobileMenu = async () => {
 				<span class="bottom"></span>
 			</button>
             <router-link to="/" class="nav-item image mobile-logo">
-                <img src="/public/gs-logo-name.png" alt="GS Logo" class="h-7">
+                <img src="/public/gs-logo-name.png" alt="GS Logo" class="logo-img h-7">
             </router-link>
 
             <div class="web-nav">
@@ -184,6 +184,15 @@ const toggleMobileMenu = async () => {
     z-index: 1; /* Ensure it's above other content */
 }
 
+/* Prevent logo from getting squished */
+.logo-img {
+    height: auto;
+    max-height: 3rem; /* Increased by another 20% from 2.5rem */
+    width: auto;
+    max-width: 288px; /* Increased by another 20% from 240px */
+    object-fit: contain; /* Preserve aspect ratio */
+}
+
 .navbar-nav {
     width: 100%; /* Takes up the full width of the navbar */
     display: flex;
@@ -253,6 +262,12 @@ const toggleMobileMenu = async () => {
     .nav-item img {
         display: block; /* Makes the image a block element to center it */
         margin: 0 auto; /* Auto margin for horizontal centering */
+    }
+    
+    /* Ensure mobile logo doesn't get squished */
+    .mobile-logo .logo-img {
+        max-width: 216px; /* Increased by another 20% from 180px */
+        max-height: 2.7rem; /* Increased by another 20% from 2.25rem */
     }
 
     /* Update mobile logo positioning */

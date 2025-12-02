@@ -6,6 +6,7 @@ import { computed, ref, onMounted, watch, nextTick } from 'vue';
 import { getRandomDefaultImage, getImageOrDefault } from '@/helpers/image-utils';
 import VolunteerActivity from '@/components/VolunteerActivity.vue';
 import SunIcon from '@/components/icons/Sun.svg?raw';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const route = useRoute();
 const gardensStore = useGardensStore();
@@ -204,6 +205,26 @@ const formatDate = (dateString) => {
   });
 };
 
+// Truncate description to 200 characters
+const truncateDescription = (htmlString) => {
+  if (!htmlString) return '';
+  // Strip HTML tags using regex to get plain text length
+  const plainText = htmlString.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  
+  if (plainText.length <= 200) {
+    return htmlString;
+  }
+  
+  // Truncate plain text to 200 characters
+  const truncated = plainText.substring(0, 200).trim();
+  // Find the last space to avoid cutting words
+  const lastSpace = truncated.lastIndexOf(' ');
+  const finalText = lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated;
+  
+  // Return truncated text with ellipsis (keeping it as plain text since we're truncating)
+  return finalText + '...';
+};
+
 const isManager = computed(() => {
   if (!garden.value?.attributes?.managers?.data || !user.value) return false;
   return garden.value.attributes.managers.data.some(manager => manager.id === user.value.id);
@@ -337,11 +358,18 @@ const getProjectHeroImage = (project) => {
           class="hero-image"
         />
       </div>
+      <div v-else-if="garden.loading" class="garden-hero-image">
+        <div class="hero-image bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+      </div>
 
       <!-- Header -->
       <div v-if="garden.attributes" class="garden-header">
         <h1 class="garden-title">{{ garden.attributes.title }}</h1>
         <p v-if="garden.attributes.blurb" class="garden-blurb">{{ garden.attributes.blurb }}</p>
+      </div>
+      <div v-else-if="garden.loading" class="garden-header">
+        <div class="garden-title h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
+        <div class="garden-blurb h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
       </div>
 
       <section v-if="garden.attributes?.description" class="garden-section">
@@ -397,14 +425,14 @@ const getProjectHeroImage = (project) => {
           v-for="(project, index) in featuredProjects" 
           :key="project.id"
           class="project-section"
-          :class="{ 'mt-6': index > 0 }"
+          :class="{ 'project-section-spacing': index > 0 }"
         >
           <div class="project-layout" :class="{ 'project-layout-reverse': index % 2 === 1 }">
             <!-- Copy/Text -->
             <div class="project-content">
               <h3 class="project-title">{{ project.attributes.title }}</h3>
-              <div v-if="project.attributes.short_description" class="project-description" v-html="project.attributes.short_description"></div>
-              <div v-else-if="project.attributes.description" class="project-description" v-html="project.attributes.description"></div>
+              <div v-if="project.attributes.short_description" class="project-description" v-html="truncateDescription(project.attributes.short_description)"></div>
+              <div v-else-if="project.attributes.description" class="project-description" v-html="truncateDescription(project.attributes.description)"></div>
               <router-link 
                 v-if="project.attributes.slug && garden?.attributes?.slug"
                 :to="`/gardens/${garden.attributes.slug}/p/${project.attributes.slug}`"
@@ -967,6 +995,15 @@ const getProjectHeroImage = (project) => {
   color: #ffffff;
 }
 
+/* Make button full width on mobile */
+@media (max-width: 768px) {
+  .btn-explore-project {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+}
+
 .btn-manage {
   background-color: #8aa37c;
   color: #ffffff;
@@ -1014,7 +1051,8 @@ const getProjectHeroImage = (project) => {
   margin-bottom: 0;
 }
 
-.project-section + .project-section {
+.project-section + .project-section,
+.project-section-spacing {
   margin-top: 40px;
   padding-top: 40px;
   border-top: 1px solid rgba(138, 163, 124, 0.2);
@@ -1025,23 +1063,20 @@ const getProjectHeroImage = (project) => {
 }
 
 .project-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: row;
   gap: 50px;
   align-items: center;
 }
 
-.project-layout-reverse .project-content {
-  order: 2;
-}
-
-.project-layout-reverse .project-image-wrapper {
-  order: 1;
+.project-layout-reverse {
+  flex-direction: row-reverse;
 }
 
 .project-content {
   padding: 40px 30px;
   min-width: 0; /* Allow text to wrap properly */
+  flex: 1;
 }
 
 .project-title {
@@ -1072,6 +1107,7 @@ const getProjectHeroImage = (project) => {
 
 .project-image-wrapper {
   width: 100%;
+  max-width: 400px;
   aspect-ratio: 1;
   overflow: hidden;
   display: flex;
@@ -1082,6 +1118,7 @@ const getProjectHeroImage = (project) => {
   border: 3px solid #8aa37c;
   background-color: rgba(138, 163, 124, 0.05);
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .dark .project-image-wrapper {
@@ -1227,17 +1264,38 @@ const getProjectHeroImage = (project) => {
   }
   
   .project-layout {
-    grid-template-columns: 1fr;
+    flex-direction: column !important;
     gap: 0;
+    align-items: stretch;
+  }
+  
+  .project-layout-reverse {
+    flex-direction: column !important;
   }
   
   .project-content {
     padding: 24px;
+    width: 100%;
+    order: 2;
   }
   
   .project-image-wrapper {
-    order: -1;
     aspect-ratio: 16/9;
+    margin-bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    order: 1;
+  }
+  
+  /* Ensure image is always at top on mobile, regardless of reverse class */
+  .project-layout-reverse .project-image-wrapper,
+  .project-layout .project-image-wrapper {
+    order: 1;
+  }
+  
+  .project-layout-reverse .project-content,
+  .project-layout .project-content {
+    order: 2;
   }
   
   .two-column-layout {

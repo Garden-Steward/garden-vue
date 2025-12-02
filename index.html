@@ -2,15 +2,6 @@
 <html lang="en">
 
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8ESBJBG5EG"></script>
-    <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-8ESBJBG5EG');
-    </script>
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -33,6 +24,25 @@
     <div id="modals" class="relative z-20"></div>
 
     <script type="module" src="/src/main.js"></script>
+
+    <!-- Google Analytics - Loaded after page load to improve performance -->
+    <script>
+    // Load Google Analytics after page load to avoid blocking initial render
+    window.addEventListener('load', function() {
+        // Initialize dataLayer
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', 'G-8ESBJBG5EG');
+
+        // Load the GA script asynchronously
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-8ESBJBG5EG';
+        document.head.appendChild(script);
+    });
+    </script>
 
     <!-- credits -->
     <div class="text-center mt-4">
