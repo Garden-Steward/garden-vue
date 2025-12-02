@@ -9,6 +9,7 @@ import Volunteer from '@/components/VolunteerDetail.vue';
 import GardenTaskList from '@/components/GardenTaskList.vue';
 import ProjectsList from '@/components/ProjectsList.vue';
 import GardenSidebar from '@/components/GardenSidebar.vue';
+import GardenGeneral from '@/components/GardenGeneral.vue';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
@@ -32,13 +33,13 @@ campaignStore.getByGarden(route.params.slug);
 defineOptions({ inheritAttrs: false })
 
 // Sidebar navigation state
-const activeSection = ref('overview');
+const activeSection = ref('general');
 
 // Initialize activeSection from URL hash if present
 const initializeFromHash = () => {
   const hash = route.hash.replace('#', '');
   if (hash) {
-    const validSections = ['overview', 'events', 'volunteers', 'projects', 'tasks', 'sms', 'messages'];
+    const validSections = ['general', 'events', 'volunteers', 'projects', 'tasks', 'sms', 'messages'];
     if (validSections.includes(hash)) {
       activeSection.value = hash;
     }
@@ -58,7 +59,7 @@ const setActiveSection = (section) => {
 watch(() => route.hash, (newHash) => {
   const hash = newHash.replace('#', '');
   if (hash) {
-    const validSections = ['overview', 'events', 'volunteers', 'projects', 'tasks', 'sms', 'messages'];
+    const validSections = ['general', 'events', 'volunteers', 'projects', 'tasks', 'sms', 'messages'];
     if (validSections.includes(hash) && activeSection.value !== hash) {
       activeSection.value = hash;
     }
@@ -221,45 +222,6 @@ const getStatusColor = (status) => {
   return colors[status] || 'bg-gray-100 text-gray-800';
 };
 
-// Get latest 3 events, sorted from soonest to happen to longest
-const latestEvents = computed(() => {
-  if (!volunteerDays.value?.days || !Array.isArray(volunteerDays.value.days)) {
-    return [];
-  }
-  
-  // Normalize events (handle both Strapi format and normalized format)
-  const normalizedEvents = volunteerDays.value.days.map(event => {
-    // Handle Strapi format: { id, attributes: { title, startDatetime, ... } }
-    if (event.attributes) {
-      return { ...event.attributes, id: event.id };
-    }
-    // Already normalized format
-    return event;
-  });
-  
-  // Filter out events without startDatetime and sort by startDatetime (soonest first)
-  const sortedEvents = normalizedEvents
-    .filter(event => event.startDatetime)
-    .sort((a, b) => {
-      const dateA = new Date(a.startDatetime);
-      const dateB = new Date(b.startDatetime);
-      return dateA - dateB; // Soonest first
-    });
-  
-  // Return the first 3 events
-  return sortedEvents.slice(0, 3);
-});
-
-// Format event date helper
-const formatEventDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
 </script>
 
 <template>
@@ -268,7 +230,7 @@ const formatEventDate = (dateString) => {
     <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-4 sm:px-6 lg:px-8 shadow-md">
       <div class="max-w-7xl mx-auto">
         <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">{{ garden.attributes.title }}</h1>
-        <p v-if="garden.attributes.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb }}</p>
+        <p v-if="garden.attributes.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb.length > 150 ? garden.attributes.blurb.substring(0, 150) + '...' : garden.attributes.blurb }}</p>
       </div>
     </div>
 
@@ -282,65 +244,14 @@ const formatEventDate = (dateString) => {
 
       <!-- Main Content Area -->
       <main class="flex-1 min-w-0" :key="activeSection">
-        <!-- Overview Section -->
-        <div v-if="activeSection === 'overview'" class="bg-white rounded-lg shadow-md p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif">Overview</h2>
-            <router-link 
-              :to="`/gardens/${garden.attributes.slug}`"
-              target="_blank"
-              class="inline-flex items-center px-4 py-2 bg-custom-green text-white font-medium rounded hover:bg-darker-green transition-colors"
-            >
-              <i class="fas fa-external-link-alt mr-2"></i>
-              View Public Garden Page
-            </router-link>
-          </div>
-          <div class="space-y-4">
-            <div>
-              <h3 class="text-lg font-semibold mb-2">Welcome Text</h3>
-              <p class="text-gray-700">{{ garden.attributes.welcome_text || 'No welcome text available.' }}</p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-              <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div class="text-2xl font-bold text-blue-600">{{ garden.attributes.volunteers?.data?.length || 0 }}</div>
-                <div class="text-sm text-gray-600 mt-1">Volunteers</div>
-              </div>
-              <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                <div class="text-2xl font-bold text-purple-600">{{ volunteerDays.days?.length || 0 }}</div>
-                <div class="text-sm text-gray-600 mt-1">Events</div>
-              </div>
-              <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                <div class="text-2xl font-bold text-green-600">{{ smsCampaigns.length || 0 }}</div>
-                <div class="text-sm text-gray-600 mt-1">SMS Campaigns</div>
-              </div>
-            </div>
-
-            <!-- Latest Events Section -->
-            <div class="mt-6">
-              <h3 class="text-lg font-semibold mb-2">Upcoming Events</h3>
-              <div v-if="latestEvents.length === 0" class="text-gray-500 text-sm">
-                No upcoming events scheduled.
-              </div>
-              <div v-else class="space-y-2">
-                <div 
-                  v-for="event in latestEvents" 
-                  :key="event.id || event.startDatetime"
-                  class="bg-gray-50 py-2 px-3 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
-                  :class="{ 'cursor-pointer': event.id }"
-                  @click="event.id && $router.push(`/manage/events/${event.id}/edit`)"
-                >
-                  <div class="flex items-center gap-2">
-                    <i class="fas fa-calendar-alt text-gray-500 text-sm"></i>
-                    <span class="text-sm font-medium text-gray-900">{{ event.title || 'Untitled Event' }}</span>
-                    <span class="text-sm text-gray-600">- {{ formatEventDate(event.startDatetime) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
+        <!-- General Section -->
+        <GardenGeneral 
+          v-if="activeSection === 'general'"
+          :garden="garden"
+          :editor="editor"
+          :volunteer-days="volunteerDays"
+          :sms-campaigns="smsCampaigns"
+        />
 
         <!-- Task Messages Section -->
         <div v-if="activeSection === 'messages'" class="bg-white rounded-lg shadow-md p-6">
@@ -525,7 +436,8 @@ export default {
     Volunteer,
     GardenTaskList,
     ProjectsList,
-    GardenSidebar
+    GardenSidebar,
+    GardenGeneral
   }
 };
 </script>

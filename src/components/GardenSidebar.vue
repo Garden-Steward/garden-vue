@@ -18,7 +18,7 @@ const emit = defineEmits(['update:activeSection']);
 
 // Icon mapping
 const iconMap = {
-  overview: OverviewIcon,
+  general: OverviewIcon,
   events: EventsIcon,
   volunteers: VolunteersIcon,
   projects: ProjectsIcon,
@@ -29,7 +29,7 @@ const iconMap = {
 
 // Navigation items
 const navItems = [
-  { id: 'overview', label: 'Overview' },
+  { id: 'general', label: 'General' },
   { id: 'events', label: 'Events' },
   { id: 'volunteers', label: 'Volunteers' },
   { id: 'projects', label: 'Projects' },

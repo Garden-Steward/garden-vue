@@ -5,6 +5,7 @@ import { useGardensStore, useEventStore, useAuthStore, useProjectsStore } from '
 import { computed, ref, onMounted, watch, nextTick } from 'vue';
 import { getRandomDefaultImage, getImageOrDefault } from '@/helpers/image-utils';
 import VolunteerActivity from '@/components/VolunteerActivity.vue';
+import SunIcon from '@/components/icons/Sun.svg?raw';
 
 const route = useRoute();
 const gardensStore = useGardensStore();
@@ -322,7 +323,7 @@ const getProjectHeroImage = (project) => {
       class="dark-mode-toggle"
       :aria-label="isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'"
     >
-      <i v-if="isDarkMode" class="fas fa-sun"></i>
+      <span v-if="isDarkMode" class="sun-icon" v-html="SunIcon"></span>
       <i v-else class="fas fa-moon"></i>
     </button>
 
@@ -343,10 +344,9 @@ const getProjectHeroImage = (project) => {
         <p v-if="garden.attributes.blurb" class="garden-blurb">{{ garden.attributes.blurb }}</p>
       </div>
 
-      <!-- Welcome Text -->
-      <section v-if="garden.attributes?.welcome_text" class="garden-section">
-        <h2 class="section-title">About This Garden</h2>
-        <div class="section-content" v-html="garden.attributes.welcome_text.replace(/\n/g, '<br>')"></div>
+      <section v-if="garden.attributes?.description" class="garden-section">
+
+        <div class="section-content" v-html="garden.attributes.description.replace(/\n/g, '<br>')"></div>
       </section>
 
       <!-- Upcoming Events and Garden Activity -->
@@ -614,6 +614,26 @@ const getProjectHeroImage = (project) => {
 
 .dark .dark-mode-toggle:hover {
   background-color: #8aa37c;
+  color: #ffffff;
+}
+
+/* Sun icon SVG styling */
+.sun-icon {
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s ease;
+  color: #4a4a4a;
+}
+
+.dark-mode-toggle:hover .sun-icon {
+  color: #ffffff;
+}
+
+.dark .dark-mode-toggle .sun-icon {
+  color: #8aa37c;
+}
+
+.dark .dark-mode-toggle:hover .sun-icon {
   color: #ffffff;
 }
 

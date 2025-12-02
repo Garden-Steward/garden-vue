@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, SetPassword, 
+import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, GardensPublicView, SetPassword, 
     InstructionPublic, GardenApplyForm, HelpView, 
     BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
@@ -53,6 +53,11 @@ export const router = createRouter({
         {
             path: '/privacy',
             component: PrivacyView
+        },
+        {
+            path: '/gardens',
+            component: GardensPublicView,
+            name: 'gardens-public-list'
         },
         
         // Public garden and event pages
@@ -135,7 +140,8 @@ router.beforeEach(async (to) => {
         '/join', 
         '/contribute',
         '/map',
-        '/privacy'
+        '/privacy',
+        '/gardens'
     ];
     
     // Check if route starts with public patterns

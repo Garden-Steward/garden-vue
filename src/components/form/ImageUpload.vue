@@ -16,18 +16,38 @@ const props = defineProps({
     type: Number,
     default: null,
   },
+  uploadFn: {
+    type: Function,
+    default: null,
+  },
 })
 
 const eventStore = useEventStore()
 const fileInput = ref(null)
 const dragActive = ref(false)
 const isUploading = ref(false)
+const baseUrl = `${import.meta.env.VITE_API_URL}`
+
+// Helper to normalize image URL
+const normalizeImageUrl = (url) => {
+  if (!url) return ''
+  // If it's already a full URL, return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  // If it's a relative URL and we're on localhost, prepend base URL
+  if (url.startsWith('/') && import.meta.env.VITE_API_URL === 'http://localhost:1337') {
+    return `${baseUrl}${url}`
+  }
+  return url
+}
 
 const getImageUrl = computed(() => {
   if (!props.modelValue) return ''
-  return typeof props.modelValue === 'string' 
+  const url = typeof props.modelValue === 'string' 
     ? props.modelValue 
     : props.modelValue.url || props.modelValue?.data?.attributes?.url || ''
+  return normalizeImageUrl(url)
 })
 
 const handleDrag = (e) => {
@@ -64,7 +84,15 @@ const uploadFile = async (file) => {
     const formData = new FormData()
     formData.append('files', file)
     
-    const response = await eventStore.uploadImage(formData, props.eventId)
+    let response
+    if (props.uploadFn) {
+      // Use custom upload function if provided
+      response = await props.uploadFn(formData)
+    } else {
+      // Use default eventStore upload
+      response = await eventStore.uploadImage(formData, props.eventId)
+    }
+    
     // Emit the full image object instead of just the URL
     emit('update:modelValue', {
       id: response.id,

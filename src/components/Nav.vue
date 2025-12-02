@@ -50,7 +50,8 @@ const toggleMobileMenu = async () => {
             <!-- Mobile Menu Items -->
             <div ref="mobileMenu" v-show="isMobileMenuOpen" class="mobile-menu bg-darker-green text-white">
                 <router-link to="/" class="nav-item nav-link" @click="toggleMobileMenu">Home</router-link>
-                <router-link to="/manage/gardens" class="nav-item nav-link" v-show="authStore.user" @click="toggleMobileMenu">Gardens</router-link>
+                <router-link to="/gardens" class="nav-item nav-link" @click="toggleMobileMenu">Gardens</router-link>
+                <router-link to="/manage/gardens" class="nav-item nav-link" v-show="authStore.user" @click="toggleMobileMenu">Manage</router-link>
                 <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
                 <router-link to="/join" class="nav-item nav-link" @click="toggleMobileMenu">Join</router-link>
                 <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
@@ -72,9 +73,8 @@ const toggleMobileMenu = async () => {
 
             <div class="web-nav">
                 <div class="d-flex align-items-center">
-                    <div v-show="authStore.user">
-                        <router-link to="/manage/gardens" class="nav-item nav-link">Gardens</router-link>            
-                    </div>
+                    <router-link to="/gardens" class="nav-item nav-link">Gardens</router-link>
+                    <router-link to="/manage/gardens" class="nav-item nav-link" v-show="authStore.user">Manage</router-link>
                     <router-link to="/join" class="nav-item nav-link">Join</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
                     <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
