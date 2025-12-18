@@ -494,7 +494,10 @@ const getProjectHeroImage = (project) => {
       </section>
 
       <!-- Garden Activity (only if there's activity) -->
-      <section v-if="garden?.id" v-show="hasGardenActivity" class="garden-section">
+      <section 
+        v-if="garden?.id" 
+        :class="['garden-section', { 'garden-activity-hidden': !hasGardenActivity }]"
+      >
         <h2 class="section-title">Garden Activity</h2>
         <VolunteerActivity 
           :garden-id="garden.id"
@@ -909,13 +912,13 @@ const getProjectHeroImage = (project) => {
   gap: 12px;
 }
 
-/* Latest Events Section */
-.latest-events-section {
-  margin-top: 40px;
-}
-
-.latest-events-title {
-  margin-top: 0;
+/* Garden Activity Section - hide when no activity but keep rendered for IntersectionObserver */
+.garden-activity-hidden {
+  visibility: hidden;
+  position: absolute;
+  left: -9999px;
+  height: 0;
+  overflow: hidden;
 }
 
 /* Garden Activity Section - hide when no activity but keep rendered for IntersectionObserver */
