@@ -45,7 +45,7 @@ const setActiveSection = (section) => {
 
 <template>
   <aside class="w-full lg:w-64 flex-shrink-0">
-    <nav class="bg-white rounded-lg shadow-md p-2 sticky top-4">
+    <nav class="bg-[rgba(26,26,26,0.6)] rounded-lg shadow-md p-2 sticky top-4">
       <ul class="sidebar-nav">
         <li v-for="item in navItems" :key="item.id" class="sidebar-nav-item">
           <button
@@ -83,8 +83,8 @@ const setActiveSection = (section) => {
   text-align: left;
   padding: 0.75rem 1rem;
   border: none;
-  background: #f5f5f5;
-  color: #333;
+  background: #2d3e26;
+  color: #f5f5f5;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -95,7 +95,7 @@ const setActiveSection = (section) => {
 }
 
 .sidebar-nav-link:hover {
-  background-color: #e8e8e8;
+  background-color: #344a34;
 }
 
 .sidebar-nav-link.active {
@@ -117,11 +117,13 @@ const setActiveSection = (section) => {
 .sidebar-nav-icon :deep(svg) {
   width: 100%;
   height: 100%;
-  stroke: #2d5016;
+  stroke: #f5f5f5;
+  fill: #f5f5f5;
 }
 
 .sidebar-nav-link.active .sidebar-nav-icon :deep(svg) {
   stroke: #fff;
+  fill: #fff;
 }
 </style>
 

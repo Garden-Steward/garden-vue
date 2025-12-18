@@ -82,19 +82,19 @@ const requestRegistration = (id) => {
       class="tr-class"
       @click="toggleExpand"
     >
-      <td class="td-class">{{ displayName }}</td>
-      <td class="td-class">{{ prettyDay }}</td>
-      <td class="td-class">{{ interestTags }}</td>
+      <td class="td-class text-[#f5f5f5]">{{ displayName }}</td>
+      <td class="td-class text-[#f5f5f5]">{{ prettyDay }}</td>
+      <td class="td-class text-[#f5f5f5]">{{ interestTags }}</td>
 </tr>
 
     <div 
       v-show="isExpanded"
       v-on-click-outside="onClickOutsideHandler"
-      class="p-4 bg-white border-t"
+      class="p-4 bg-[rgba(26,26,26,0.6)] border-t border-[#3d4d36]/50"
     >
-      <p><span class="font-semibold">Email:</span> {{ email }}</p>
-      <p><span class="font-semibold">Phone:</span> {{ phoneNumber }}</p>
-      <p><span class="font-semibold">Interests:</span></p>
+      <p class="text-[#f5f5f5]"><span class="font-semibold">Email:</span> <span class="text-[#d0d0d0]">{{ email }}</span></p>
+      <p class="text-[#f5f5f5]"><span class="font-semibold">Phone:</span> <span class="text-[#d0d0d0]">{{ phoneNumber }}</span></p>
+      <p class="text-[#f5f5f5]"><span class="font-semibold">Interests:</span></p>
       <div v-for="interest in interests" :key="interest.id">
         <VolunteerInterest 
           v-bind="interest" 
@@ -106,7 +106,7 @@ const requestRegistration = (id) => {
         ></VolunteerInterest>
       </div>
       <div v-if="email =='test@test.com'">
-        <button @click="requestRegistration({id})" class="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-black py-1 px-3 border border-blue-500 hover:border-transparent rounded">
+        <button @click="requestRegistration({id})" class="bg-transparent hover:bg-orange-600 text-orange-600 font-semibold hover:text-white py-1 px-3 border border-orange-600 hover:border-transparent rounded">
           Request Complete Registration
         </button>
       </div>
@@ -115,7 +115,7 @@ const requestRegistration = (id) => {
 
 <style scoped>
   .td-class {
-    @apply px-4 py-3 bg-custom-light border-green-800 first:rounded-t-lg last:rounded-b-lg sm:first:rounded-t-none sm:last:rounded-b-none sm:first:rounded-tl-lg sm:first:rounded-bl-lg sm:last:rounded-tr-lg sm:last:rounded-br-lg cursor-pointer border-b border-b-green-800
+    @apply px-4 py-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 first:rounded-t-lg last:rounded-b-lg sm:first:rounded-t-none sm:last:rounded-b-none sm:first:rounded-tl-lg sm:first:rounded-bl-lg sm:last:rounded-tr-lg sm:last:rounded-br-lg cursor-pointer border-b hover:bg-[rgba(26,26,26,0.8)] transition-colors
   }
   .tr-class {
     @apply flex flex-col mb-4 sm:table-row

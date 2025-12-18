@@ -546,7 +546,7 @@ const handleDelete = async () => {
             <div class="pr-4 flex flex-row-reverse flex-shrink-0 flex-wrap items-center gap-2 justify-end">
               <button v-if="isDirty" class="px-6
                 py-2.5
-                bg-blue-600
+                bg-orange-700
                 text-white
                 font-medium
                 text-xs
@@ -554,9 +554,9 @@ const handleDelete = async () => {
                 uppercase
                 rounded
                 shadow-md
-                hover:bg-blue-700 hover:shadow-lg
-                focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
-                active:bg-blue-800 active:shadow-lg
+                hover:bg-orange-800 hover:shadow-lg
+                focus:bg-orange-800 focus:shadow-lg focus:outline-none focus:ring-0
+                active:bg-orange-900 active:shadow-lg
                 transition
                 duration-150
                 ease-in-out" type="submit">{{ submitText }}</button>

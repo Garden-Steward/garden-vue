@@ -111,18 +111,18 @@ const projectsList = computed(() => {
 </script>
 
 <template>
-  <div class="bg-yellow-50 p-1 md:p-6 rounded-lg shadow-md mb-4">
+  <div class="bg-[#405a40] p-1 md:p-6 rounded-lg shadow-md mb-4">
     <!-- Header with Filters -->
     <div v-if="allProjects.length > 0" class="flex flex-wrap gap-3 items-center mb-4">
       <!-- Category Filter -->
       <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700">Category:</label>
+        <label class="text-sm font-medium text-[#f5f5f5]">Category:</label>
         <select 
           v-model="selectedCategory"
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
+          class="px-3 py-1.5 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
         >
-          <option value="all">All Categories</option>
-          <option v-for="category in availableCategories" :key="category" :value="category">
+          <option value="all" class="bg-[rgba(26,26,26,0.8)]">All Categories</option>
+          <option v-for="category in availableCategories" :key="category" :value="category" class="bg-[rgba(26,26,26,0.8)]">
             {{ category }}
           </option>
         </select>
@@ -130,13 +130,13 @@ const projectsList = computed(() => {
 
       <!-- Event Filter -->
       <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700">Event:</label>
+        <label class="text-sm font-medium text-[#f5f5f5]">Event:</label>
         <select 
           v-model="selectedEvent"
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
+          class="px-3 py-1.5 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
         >
-          <option value="all">All Events</option>
-          <option v-for="event in availableEvents" :key="event.id" :value="event.id">
+          <option value="all" class="bg-[rgba(26,26,26,0.8)]">All Events</option>
+          <option v-for="event in availableEvents" :key="event.id" :value="event.id" class="bg-[rgba(26,26,26,0.8)]">
             {{ event.title || event.attributes?.title || 'Untitled Event' }}
           </option>
         </select>
@@ -144,18 +144,18 @@ const projectsList = computed(() => {
 
       <!-- Sort Order -->
       <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-700">Sort:</label>
+        <label class="text-sm font-medium text-[#f5f5f5]">Sort:</label>
         <select 
           v-model="sortOrder"
-          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
+          class="px-3 py-1.5 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
         >
-          <option value="desc">Newest First</option>
-          <option value="asc">Oldest First</option>
+          <option value="desc" class="bg-[rgba(26,26,26,0.8)]">Newest First</option>
+          <option value="asc" class="bg-[rgba(26,26,26,0.8)]">Oldest First</option>
         </select>
       </div>
 
       <!-- Results count -->
-      <div class="text-sm text-gray-600 ml-auto">
+      <div class="text-sm text-[#d0d0d0] ml-auto">
         Showing {{ projectsList.length }} of {{ allProjects.length }} projects
       </div>
     </div>
@@ -173,11 +173,11 @@ const projectsList = computed(() => {
       </div>
     </template>
     
-    <div v-else-if="!editor" class="text-gray-500 italic">
+    <div v-else-if="!editor" class="text-[#d0d0d0] italic">
       No projects available at this time
     </div>
 
-    <div v-else-if="projectsList.length === 0 && allProjects.length > 0" class="text-gray-500 italic">
+    <div v-else-if="projectsList.length === 0 && allProjects.length > 0" class="text-[#d0d0d0] italic">
       No projects match the selected filters.
     </div>
   </div>

@@ -25,12 +25,32 @@ const messagesStore = useMessagesStore();
 
 const { user } = storeToRefs(authStore);
 const { garden } = storeToRefs(gardensStore);
-const { volunteerDays } = storeToRefs(eventStore);
+const { volunteerDays, volunteerDaysPagination } = storeToRefs(eventStore);
 const { smsCampaigns } = storeToRefs(campaignStore);
 const { taskMessages, loading: messagesLoading } = storeToRefs(messagesStore);
 
+const eventsPage = ref(1);
+const eventsPageSize = ref(15);
+const isLoadingMoreEvents = ref(false);
+const hasMoreEvents = computed(() => {
+  // Use pagination metadata from the API response
+  return volunteerDaysPagination.value.page < volunteerDaysPagination.value.pageCount;
+});
+
+const loadMoreEvents = async () => {
+  isLoadingMoreEvents.value = true;
+  try {
+    eventsPage.value += 1;
+    await eventStore.getByGarden(route.params.slug, eventsPage.value, eventsPageSize.value, true);
+  } catch (error) {
+    console.error('Error loading more events:', error);
+  } finally {
+    isLoadingMoreEvents.value = false;
+  }
+};
+
 gardensStore.getSlug(route.params.slug);
-eventStore.getByGarden(route.params.slug);
+eventStore.getByGarden(route.params.slug, eventsPage.value, eventsPageSize.value);
 campaignStore.getByGarden(route.params.slug);
 defineOptions({ inheritAttrs: false })
 
@@ -224,10 +244,49 @@ const getStatusColor = (status) => {
   return colors[status] || 'bg-gray-100 text-gray-800';
 };
 
+// Normalize event data (handle both Strapi format and normalized format)
+const normalizeEvent = (day) => {
+  // Handle Strapi format: { id, attributes: { title, startDatetime, ... } }
+  if (day.attributes) {
+    return { ...day.attributes, id: day.id };
+  }
+  // Already normalized format
+  return day;
+};
+
+// Separate events into upcoming and past
+const upcomingEvents = computed(() => {
+  if (!volunteerDays.value?.days || !Array.isArray(volunteerDays.value.days)) return [];
+  
+  const now = new Date();
+  return volunteerDays.value.days
+    .map(normalizeEvent)
+    .filter(day => {
+      const startDatetime = day.startDatetime;
+      if (!startDatetime) return false;
+      const eventDate = new Date(startDatetime);
+      return eventDate >= now;
+    });
+});
+
+const pastEvents = computed(() => {
+  if (!volunteerDays.value?.days || !Array.isArray(volunteerDays.value.days)) return [];
+  
+  const now = new Date();
+  return volunteerDays.value.days
+    .map(normalizeEvent)
+    .filter(day => {
+      const startDatetime = day.startDatetime;
+      if (!startDatetime) return false;
+      const eventDate = new Date(startDatetime);
+      return eventDate < now;
+    });
+});
+
 </script>
 
 <template>
-  <div class="bg-custom-light mx-auto min-h-screen">
+  <div class="bg-[#344a34] mx-auto min-h-screen">
     <!-- Garden Title Header -->
     <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-4 sm:px-6 lg:px-8 shadow-md">
       <div class="max-w-7xl mx-auto">
@@ -265,56 +324,56 @@ const getStatusColor = (status) => {
           />
 
         <!-- Task Messages Section -->
-        <div v-if="activeSection === 'messages'" class="bg-white rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'messages'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif">Task Messages</h2>
+            <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">Task Messages</h2>
           </div>
 
           <LoadingSpinner v-if="messagesLoading" size="sm" :centered="true" />
 
           <div v-else-if="!groupedMessages || groupedMessages.length === 0" class="text-center py-8">
-            <p class="text-gray-500">No task messages found</p>
+            <p class="text-[#d0d0d0]">No task messages found</p>
           </div>
 
           <div v-else class="space-y-4">
-            <div v-for="group in groupedMessages" :key="group.taskId" class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div v-for="group in groupedMessages" :key="group.taskId" class="bg-[rgba(26,26,26,0.6)] rounded-lg p-4 border border-[#3d4d36]/50">
               <div class="flex items-center gap-2 mb-3">
-                <h3 class="text-lg font-semibold">{{ group.taskTitle }}</h3>
+                <h3 class="text-lg font-semibold text-[#f5f5f5]">{{ group.taskTitle }}</h3>
                 <span v-if="group.taskId !== 'no-task'" 
                       :class="[getStatusColor(group.messages[0]?.garden_task?.status), 'px-2 py-1 rounded-full text-xs']">
                   {{ group.messages[0]?.garden_task?.status || 'UNKNOWN' }}
                 </span>
-                <span class="text-sm text-gray-500">
+                <span class="text-sm text-[#d0d0d0]">
                   ({{ group.messages.length }} message{{ group.messages.length === 1 ? '' : 's' }})
                 </span>
               </div>
-              <div class="text-sm text-gray-600 mb-3">
+              <div class="text-sm text-[#d0d0d0] mb-3">
                 <div>To: {{ group.user }}</div>
                 <div>First message: {{ formatDate(group.messages[group.messages.length - 1]?.createdAt) }}</div>
               </div>
               
               <div class="space-y-3 mt-4">
                 <div v-for="message in group.messages" :key="message.id" 
-                     class="bg-white rounded p-3 border-l-4" 
+                     class="bg-[rgba(26,26,26,0.8)] rounded p-3 border-l-4" 
                      :class="getMessageBorderColor(message.type)">
                   <div class="flex justify-between items-start mb-2">
                     <div class="flex items-center gap-2">
-                      <span class="font-medium text-sm">
+                      <span class="font-medium text-sm text-[#f5f5f5]">
                         {{ message.user?.username || 'Anonymous' }}
                       </span>
                       <span :class="[getTypeColor(message.type), 'px-2 py-1 rounded-full text-xs']">
                         {{ message.type }}
                       </span>
                     </div>
-                    <span class="text-xs text-gray-400">{{ formatDate(message.createdAt) }}</span>
+                    <span class="text-xs text-[#d0d0d0]">{{ formatDate(message.createdAt) }}</span>
                   </div>
-                  <p class="text-gray-700 text-sm">{{ message.body }}</p>
-                  <p v-if="message.previous" class="text-gray-400 text-xs mt-2 italic">
+                  <p class="text-[#d0d0d0] text-sm">{{ message.body }}</p>
+                  <p v-if="message.previous" class="text-[#999] text-xs mt-2 italic">
                     Previous: {{ message.previous }}
                   </p>
                   
                   <!-- Related Event (if exists) -->
-                  <div v-if="message.event" class="mt-2 text-xs text-gray-500">
+                  <div v-if="message.event" class="mt-2 text-xs text-[#d0d0d0]">
                     Related Event: {{ message.event.title }}
                   </div>
                 </div>
@@ -324,27 +383,27 @@ const getStatusColor = (status) => {
         </div>
 
         <!-- Volunteers Section -->
-        <div v-if="activeSection === 'volunteers'" class="bg-white rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'volunteers'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif">Volunteers ({{ garden.attributes.volunteers?.data?.length || 0 }})</h2>
-            <a v-if="editor" @click="clearTemp" class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">Clear Temps</a>
+            <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">Volunteers ({{ garden.attributes.volunteers?.data?.length || 0 }})</h2>
+            <a v-if="editor" @click="clearTemp" class="text-sm text-blue-400 hover:text-blue-300 cursor-pointer">Clear Temps</a>
           </div>
           
           <div v-if="garden.attributes.volunteers?.data?.length" class="relative">
             <table class="w-full">
               <thead>
-                <tr class="tr-class border-b-2 border-gray-200">
-                  <th class="text-left py-3 px-4">
-                    <button @click="toggleSortOrder('name')" class="cursor-pointer hover:text-blue-600 flex items-center gap-2">
+                <tr class="tr-class border-b-2 border-[#3d4d36]/50">
+                  <th class="text-left py-3 px-4 text-[#f5f5f5]">
+                    <button @click="toggleSortOrder('name')" class="cursor-pointer hover:text-blue-400 flex items-center gap-2">
                       Name {{ sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
                     </button>
                   </th>
-                  <th class="text-left py-3 px-4">
-                    <button @click="toggleSortOrder('createdAt')" class="cursor-pointer hover:text-blue-600 flex items-center gap-2">
+                  <th class="text-left py-3 px-4 text-[#f5f5f5]">
+                    <button @click="toggleSortOrder('createdAt')" class="cursor-pointer hover:text-blue-400 flex items-center gap-2">
                       Registered {{ sortField === 'createdAt' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
                     </button>
                   </th>
-                  <th class="text-left py-3 px-4">Interests</th>
+                  <th class="text-left py-3 px-4 text-[#f5f5f5]">Interests</th>
                 </tr>
               </thead>
               <tbody>
@@ -360,14 +419,14 @@ const getStatusColor = (status) => {
               </tbody>
             </table>
           </div>
-          <div v-else class="text-gray-500 text-center py-8">
+          <div v-else class="text-[#d0d0d0] text-center py-8">
             No volunteers yet.
           </div>
         </div>
 
         <!-- Projects Section -->
-        <div v-if="activeSection === 'projects'" class="bg-white rounded-lg shadow-md p-6">
-          <h2 class="text-2xl font-light font-serif mb-4">Projects</h2>
+        <div v-if="activeSection === 'projects'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
+          <h2 class="text-2xl font-light font-serif mb-4 text-[#f5f5f5]">Projects</h2>
           <div v-if="editor && garden?.id" class="mb-4">
             <Project 
               :garden="garden.id"
@@ -379,18 +438,18 @@ const getStatusColor = (status) => {
         </div>
 
         <!-- Tasks Section -->
-        <div v-if="activeSection === 'tasks'" class="bg-white rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'tasks'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
           <GardenTaskList :garden="garden" :editor="editor" />
         </div>
 
         <!-- Events Section -->
-        <div v-if="activeSection === 'events'" class="bg-white rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'events'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif">Events ({{ volunteerDays.days?.length || 0 }})</h2>
+            <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">Events ({{ volunteerDays.days?.length || 0 }})</h2>
             <button 
               v-if="editor" 
               type="button" 
-              class="px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded shadow-md hover:bg-blue-700 focus:bg-blue-700 focus:outline-none focus:ring-0 transition duration-150 ease-in-out" 
+              class="px-4 py-2 bg-orange-700 text-white font-medium text-sm rounded shadow-md hover:bg-orange-800 focus:bg-orange-800 focus:outline-none focus:ring-0 transition duration-150 ease-in-out" 
               @click="showDayModal = true"
             >
               Create Volunteer Day
@@ -399,13 +458,44 @@ const getStatusColor = (status) => {
 
           <VolunteerDayModal v-model:show="showDayModal" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" />
 
-          <div v-if="volunteerDays.days?.length" class="grid grid-cols-1 gap-4">
-            <div v-for="day in volunteerDays.days" :key="day.id">
-              <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" :key="garden.id"/>
+          <!-- Upcoming Events -->
+          <div v-if="upcomingEvents.length > 0" class="grid grid-cols-1 gap-4">
+            <div v-for="day in upcomingEvents" :key="day.id">
+              <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" :smsLink="true" :key="garden.id"/>
             </div>
           </div>
-          <div v-else class="text-gray-500 text-center py-8">
+
+          <!-- Divider and Previous Events Header -->
+          <div v-if="pastEvents.length > 0" class="mt-8 mb-4">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="flex-1 border-t-2 border-[#3d4d36]/50"></div>
+              <h3 class="text-xl font-light font-serif text-[#f5f5f5] px-4">Previous Events</h3>
+              <div class="flex-1 border-t-2 border-[#3d4d36]/50"></div>
+            </div>
+          </div>
+
+          <!-- Past Events -->
+          <div v-if="pastEvents.length > 0" class="grid grid-cols-1 gap-4">
+            <div v-for="day in pastEvents" :key="day.id">
+              <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" :smsLink="true" :key="garden.id"/>
+            </div>
+          </div>
+
+          <!-- No Events Message -->
+          <div v-if="upcomingEvents.length === 0 && pastEvents.length === 0" class="text-[#d0d0d0] text-center py-8">
             No events scheduled yet.
+          </div>
+
+          <!-- Load More Button -->
+          <div v-if="hasMoreEvents && !volunteerDays.loading" class="flex justify-center mt-8 mb-4">
+            <button 
+              @click="loadMoreEvents"
+              :disabled="isLoadingMoreEvents"
+              class="px-6 py-3 bg-custom-green text-white font-medium rounded-lg hover:bg-darker-green transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isLoadingMoreEvents">Loading...</span>
+              <span v-else>Load More Events</span>
+            </button>
           </div>
 
           <LoadingSpinner v-if="volunteerDays.loading" size="sm" />
@@ -413,11 +503,11 @@ const getStatusColor = (status) => {
         </div>
 
         <!-- SMS Campaigns Section -->
-        <div v-if="activeSection === 'sms'" class="bg-white rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'sms'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
+            <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
             <SmsCampaignModal v-if="editor" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor">
-              <button class="px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded shadow-md hover:bg-blue-700 focus:bg-blue-700 focus:outline-none focus:ring-0 transition duration-150 ease-in-out">
+              <button class="px-4 py-2 bg-orange-700 text-white font-medium text-sm rounded shadow-md hover:bg-orange-800 focus:bg-orange-800 focus:outline-none focus:ring-0 transition duration-150 ease-in-out">
                 Create a new Group SMS
               </button>
             </SmsCampaignModal>
@@ -428,7 +518,7 @@ const getStatusColor = (status) => {
               <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
             </div>
           </div>
-          <div v-else class="text-gray-500 text-center py-8">
+          <div v-else class="text-[#d0d0d0] text-center py-8">
             No SMS campaigns yet.
           </div>
 

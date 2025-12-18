@@ -125,7 +125,7 @@ export default {
 
   <button v-else-if="this.editor" type="button" class="px-6
               py-1.5
-              bg-blue-600
+              bg-orange-700
               text-white
               font-medium
               text-xs
@@ -133,9 +133,9 @@ export default {
               uppercase
               rounded
               shadow-md
-              hover:bg-blue-700 hover:shadow-lg
-              focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
-              active:bg-blue-800 active:shadow-lg
+              hover:bg-orange-800 hover:shadow-lg
+              focus:bg-orange-800 focus:shadow-lg focus:outline-none focus:ring-0
+              active:bg-orange-900 active:shadow-lg
               transition
               duration-150
               ease-in-out" @click="show = true">
@@ -194,14 +194,14 @@ export default {
                 class="flex items-center">
                   <UserProfileDisplay :volunteer="conf" />
                 </div> 
-                <button @click="copyRSVPNumbers" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">Copy RSVPs #</button>
+                <button @click="copyRSVPNumbers" class="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-800">Copy RSVPs #</button>
             </div>
             
             <div v-if="!id"
               class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
               <span class="px-6
                 py-2.5
-                bg-blue-600
+                bg-orange-700
                 text-white
                 font-medium
                 text-xs
@@ -209,9 +209,9 @@ export default {
                 uppercase
                 rounded
                 shadow-md
-                hover:bg-blue-700 hover:shadow-lg
-                focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
-                active:bg-slate-800 active:shadow-lg
+                hover:bg-orange-800 hover:shadow-lg
+                focus:bg-orange-800 focus:shadow-lg focus:outline-none focus:ring-0
+                active:bg-orange-900 active:shadow-lg
                 cursor-pointer
                 ease-in-out
                 ml-1" @click="testCampaign()">Test SMS</span>

@@ -1,12 +1,69 @@
 <script setup>
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, onMounted } from 'vue';
 import { useAuthStore } from '@/stores';
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
+import SunIcon from '@/components/icons/Sun.svg?raw';
+import MoonIcon from '@/components/icons/Moon.svg?raw';
+import SystemIcon from '@/components/icons/System.svg?raw';
 
 const authStore = useAuthStore();
 const showProfileOptions = ref(false);
 const isMobileMenuOpen = ref(false);
 const mobileMenu = ref(null);
+
+// Theme management
+const theme = ref('system'); // 'light', 'dark', or 'system'
+
+const getSystemPreference = () => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+};
+
+const applyTheme = (themeValue) => {
+    let shouldBeDark = false;
+    
+    if (themeValue === 'dark') {
+        shouldBeDark = true;
+    } else if (themeValue === 'light') {
+        shouldBeDark = false;
+    } else { // 'system'
+        shouldBeDark = getSystemPreference();
+    }
+    
+    if (shouldBeDark) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+};
+
+const setTheme = (newTheme) => {
+    theme.value = newTheme;
+    localStorage.setItem('app-theme', newTheme);
+    applyTheme(newTheme);
+};
+
+// Initialize theme on mount
+onMounted(() => {
+    const savedTheme = localStorage.getItem('app-theme');
+    if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system') {
+        theme.value = savedTheme;
+    }
+    applyTheme(theme.value);
+    
+    // Watch for system preference changes when theme is 'system'
+    if (typeof window !== 'undefined' && window.matchMedia) {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = () => {
+            if (theme.value === 'system') {
+                applyTheme('system');
+            }
+        };
+        mediaQuery.addEventListener('change', handleChange);
+    }
+});
 
 const toggleProfileOptions = () => {
     showProfileOptions.value = !showProfileOptions.value;
@@ -27,6 +84,35 @@ const toggleMobileMenu = async () => {
     <!-- Profile menu outside navbar -->
     <transition name="fade">
         <div v-if="showProfileOptions" class="profile-menu bg-custom-light p-2">
+            <div v-if="authStore.user" class="user-info">
+                <div class="user-name">{{ authStore.user.username || (authStore.user.firstName && authStore.user.lastName ? `${authStore.user.firstName} ${authStore.user.lastName}` : 'User') }}</div>
+            </div>
+            <div class="theme-settings">
+                <div class="theme-settings-label">Theme Settings</div>
+                <div class="theme-options">
+                    <button 
+                        @click="setTheme('light')" 
+                        :class="['theme-option', { active: theme === 'light' }]"
+                        title="Light Mode"
+                    >
+                        <span v-html="SunIcon" class="theme-icon"></span>
+                    </button>
+                    <button 
+                        @click="setTheme('dark')" 
+                        :class="['theme-option', { active: theme === 'dark' }]"
+                        title="Dark Mode"
+                    >
+                        <span v-html="MoonIcon" class="theme-icon"></span>
+                    </button>
+                    <button 
+                        @click="setTheme('system')" 
+                        :class="['theme-option', { active: theme === 'system' }]"
+                        title="System Preference"
+                    >
+                        <span v-html="SystemIcon" class="theme-icon"></span>
+                    </button>
+                </div>
+            </div>
             <button @click="() => { authStore.logout(); showProfileOptions = false; }" 
                     class="btn btn-link nav-item nav-link">
                 Logout
@@ -133,6 +219,67 @@ const toggleMobileMenu = async () => {
 }
 .profile-menu .nav-link:hover {
     background-color: #f5f5f5;
+}
+.user-info {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 8px;
+}
+.user-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    word-break: break-word;
+}
+.theme-settings {
+    padding: 8px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 8px;
+}
+.theme-settings-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+.theme-options {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+}
+.theme-option {
+    background: transparent;
+    border: 2px solid #8aa37c;
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+}
+.theme-option:hover {
+    background-color: #f5f5f5;
+    transform: scale(1.05);
+}
+.theme-option.active {
+    background-color: #8aa37c;
+    border-color: #6c8a6a;
+}
+.theme-option.active .theme-icon {
+    color: #fff;
+}
+.theme-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    color: #8aa37c;
+    transition: color 0.2s ease;
+}
+.theme-option.active .theme-icon {
+    color: #fff;
 }
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s;
@@ -245,7 +392,8 @@ const toggleMobileMenu = async () => {
 }
 
 /* Hide desktop logo and show mobile logo when hamburger menu appears */
-@media (max-width: 868px) {
+/* Tablet and below: show hamburger menu */
+@media (max-width: 1024px) {
     .desktop-logo {
         display: none;
     }
@@ -294,7 +442,8 @@ const toggleMobileMenu = async () => {
 }
 
 /* Show desktop logo and hide mobile logo above the breakpoint */
-@media (min-width: 869px) {
+/* Desktop: show full navigation links */
+@media (min-width: 1025px) {
     .desktop-logo {
         display: block;
     }

@@ -20,7 +20,9 @@ module.exports = {
         'primary': '#8aa37c',
         'custom-green': '#8aa37c',
         'darker-green': '#6c8a6a', // Slightly darker version of custom-green
+        'darkest-green': '#376451', // Darkest green from logo
         'custom-peach': '#F9E2D1',
+        'dark-orange': '#C2410C', // Dark orange for primary buttons
         // Add more custom colors here as needed
       },
       fontFamily: {
@@ -39,7 +41,7 @@ module.exports = {
    plugins: [],
    safelist: [
     {
-      pattern: /bg-(red|green|blue|orange|purple|fuchsia|emerald|violet|indigo|yellow|lime|slate|bg-custom-light|bg-custom-green)-(100|500|700)/, // You can display all the colors that you need
+      pattern: /bg-(red|green|blue|orange|purple|fuchsia|emerald|violet|indigo|yellow|lime|slate|bg-custom-light|bg-custom-green)-(100|500|600|700|800|900)/, // You can display all the colors that you need
     },
   ],
   }

@@ -7,22 +7,51 @@ import { useEventStore } from '@/stores';
 const eventStore = useEventStore();
 // const baseUrl = `${import.meta.env.VITE_API_URL}`;
 
-const { events } = storeToRefs(eventStore);
+const { events, eventsPagination } = storeToRefs(eventStore);
 const isLoading = ref(true);
+const isLoadingMore = ref(false);
 const error = ref(null);
 
 eventStore.fetchPublic();
 
 watch(events, (newEvents) => {
   console.log("newEvents", events)
-  if (newEvents.length > 0) {
-    isLoading.value = false;
-    error.value = null;
-  } else {
-    isLoading.value = false;
-    error.value = "No events found"
+  // Check if events is loading
+  if (newEvents && newEvents.loading) {
+    isLoading.value = true;
+    return;
   }
+  
+  // Check if events is an array with data
+  if (Array.isArray(newEvents)) {
+    if (newEvents.length > 0) {
+      isLoading.value = false;
+      error.value = null;
+    } else if (!isLoading.value) {
+      isLoading.value = false;
+      error.value = "No events found";
+    }
+  } else if (newEvents && !newEvents.loading) {
+    // Events loaded but might be empty or in different format
+    isLoading.value = false;
+  }
+}, { immediate: true });
+
+const hasMoreEvents = computed(() => {
+  return eventsPagination.value.page < eventsPagination.value.pageCount;
 });
+
+const loadMore = async () => {
+  isLoadingMore.value = true;
+  try {
+    await eventStore.loadMoreEvents();
+  } catch (err) {
+    error.value = "Failed to load more events";
+    console.error("Error loading more events:", err);
+  } finally {
+    isLoadingMore.value = false;
+  }
+};
 const displayDate = (date) => {
     let cleanDate = new Date(date).toLocaleDateString();
     const options = { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true };
@@ -42,10 +71,12 @@ const volunteerDayClick = (id) => {
 const currentDate = new Date();
 
 const upcomingEvents = computed(() => {
+  if (!events.value || !Array.isArray(events.value)) return [];
   return events.value.filter(event => new Date(event.startDatetime) >= currentDate);
 });
 
 const pastEvents = computed(() => {
+  if (!events.value || !Array.isArray(events.value)) return [];
   return events.value.filter(event => new Date(event.startDatetime) < currentDate);
 });
 
@@ -63,11 +94,11 @@ const pastEvents = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row stew font-roboto">
+  <div class="flex flex-col md:flex-row stew font-roboto bg-[#2d3e26] min-h-screen">
     <div class="flex-1">
       <div class="px-4 py-2 md:px-8 md:py-4"> <!-- Conditional padding for non-mobile screens -->
-        <h1 class="text-2xl font-bold mb-4 font-roboto sm:text-3xl">Garden Steward Events</h1>
-        <p class="text-md mb-4 font-roboto">Hub to local, group harvesting, land restoration, garden events.</p>
+        <h1 class="text-2xl font-bold mb-4 font-roboto sm:text-3xl text-[#f5f5f5]">Garden Steward Events</h1>
+        <p class="text-md mb-4 font-roboto text-[#d0d0d0]">Hub to local, group harvesting, land restoration, garden events.</p>
       </div>
       <div class="flex justify-center items-center">
         <!-- Loading spinner -->
@@ -77,32 +108,44 @@ const pastEvents = computed(() => {
         <!-- Events list -->
         <div v-else class="space-y-8 w-full px-4 md:px-8">
           <div v-if="upcomingEvents.length">
-            <h3 class="text-2xl font-bold mb-2 mt-2">Upcoming Events:</h3>
+            <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Upcoming Events:</h3>
             <div class="space-y-2">
               <div v-for="day in upcomingEvents" :key="day.id" 
-                   class="border-r-4 border rounded p-3 bg-white hover:opacity-70 cursor-pointer hover:bg-yellow-300"  
+                   class="border-r-4 border rounded p-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
                    @click="volunteerDayClick(day.id)">
-                <span class="text-xl font-bold">{{ day.title }}</span>
-                <p class="text-m mb-2">{{ day.blurb }}</p>
-                <p class="text-m inline-block bg-peach-100 text-peach-800 rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
+                <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
+                <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
+                <p class="text-m inline-block bg-[rgba(138,163,124,0.3)] text-[#8aa37c] rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
               </div>
             </div>
           </div>
           
           <div v-if="pastEvents.length">
-            <h3 class="text-2xl font-bold mb-2 mt-2">Recent Events:</h3>
+            <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Recent Events:</h3>
             <div class="space-y-2">
               <div v-for="day in pastEvents" :key="day.id" 
-                   class="border-r-4 border rounded p-3 bg-white hover:opacity-70 cursor-pointer hover:bg-yellow-300"  
+                   class="border-r-4 border rounded p-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
                    @click="volunteerDayClick(day.id)">
-                <span class="text-xl font-bold">{{ day.title }}</span>
-                <p class="text-m mb-2">{{ day.blurb }}</p>
-                <p class="text-m inline-block bg-peach-100 text-peach-800 rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
+                <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
+                <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
+                <p class="text-m inline-block bg-[rgba(138,163,124,0.3)] text-[#8aa37c] rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
               </div>
             </div>
           </div>
           <div v-if="error">
-            <p class="text-m">{{ error }}</p>
+            <p class="text-m text-[#d0d0d0]">{{ error }}</p>
+          </div>
+          
+          <!-- Load More Button -->
+          <div v-if="hasMoreEvents" class="flex justify-center mt-8 mb-4">
+            <button 
+              @click="loadMore"
+              :disabled="isLoadingMore"
+              class="px-6 py-3 bg-custom-green text-white font-medium rounded-lg hover:bg-darker-green transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isLoadingMore">Loading...</span>
+              <span v-else>Load More Events</span>
+            </button>
           </div>
         </div>
       </div>
@@ -113,9 +156,9 @@ const pastEvents = computed(() => {
 <style>
 /* Additional styles if needed */
 .loader {
-  border: 13px solid #f3f3f3;
+  border: 13px solid rgba(26, 26, 26, 0.6);
   border-radius: 50%;
-  border-top: 13px solid #0bb365;
+  border-top: 13px solid #8aa37c;
   width: 75px;
   height: 75px;
   animation: spin 1.5s linear infinite;

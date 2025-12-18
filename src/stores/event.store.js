@@ -12,6 +12,18 @@ export const useEventStore = defineStore({
         volunteerDay: {},
         event: {},
         events: {},
+        eventsPagination: {
+            page: 1,
+            pageSize: 15,
+            pageCount: 0,
+            total: 0
+        },
+        volunteerDaysPagination: {
+            page: 1,
+            pageSize: 15,
+            pageCount: 0,
+            total: 0
+        },
         currentGardenSlug: null, // Track which garden slug's data is currently loaded
         loadingGardenSlug: null, // Track which slug is currently being loaded
         loadingPromise: null // Track the in-flight promise for the current request
@@ -28,21 +40,75 @@ export const useEventStore = defineStore({
                 .then(res => this.volunteerDays.days = res)
                 .catch(this.handleError);
         },
-        async fetchPublic() {
+        async fetchPublic(page = 1, pageSize = 15) {
             this.events = { loading: true };
-            fetchWrapper.get(`${baseUrl}/public`)
-                .then(res => this.events = res)
+            const url = `${baseUrl}/public?pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+            return fetchWrapper.get(url)
+                .then(res => {
+                    // Handle Strapi pagination response format
+                    if (res.data && res.meta?.pagination) {
+                        this.events = res.data;
+                        this.eventsPagination = res.meta.pagination;
+                    } else if (Array.isArray(res)) {
+                        // Fallback for non-paginated response
+                        this.events = res;
+                        this.eventsPagination = {
+                            page: 1,
+                            pageSize: res.length,
+                            pageCount: 1,
+                            total: res.length
+                        };
+                    } else {
+                        this.events = res;
+                    }
+                    return res;
+                })
                 .catch(this.handleError);
-    },
+        },
+        async loadMoreEvents() {
+            const nextPage = this.eventsPagination.page + 1;
+            if (nextPage > this.eventsPagination.pageCount) {
+                return Promise.resolve([]);
+            }
+            
+            const url = `${baseUrl}/public?pagination[page]=${nextPage}&pagination[pageSize]=${this.eventsPagination.pageSize}`;
+            return fetchWrapper.get(url)
+                .then(res => {
+                    let newEvents = [];
+                    if (res.data && Array.isArray(res.data)) {
+                        newEvents = res.data;
+                    } else if (Array.isArray(res)) {
+                        newEvents = res;
+                    }
+                    
+                    // Append new events to existing ones
+                    if (Array.isArray(this.events)) {
+                        this.events = [...this.events, ...newEvents];
+                    } else {
+                        this.events = newEvents;
+                    }
+                    
+                    // Update pagination metadata
+                    if (res.meta?.pagination) {
+                        this.eventsPagination = res.meta.pagination;
+                    }
+                    
+                    return newEvents;
+                })
+                .catch(this.handleError);
+        },
         async findById(id) {
             this.event = { loading: true };
             return fetchWrapper.get(`${baseUrl}/${id}?populate=garden&populate=confirmed&populate=hero_image&populate=featured_gallery`)
                 .then(res => this.event = res.data)
                 .catch(this.handleError);
         },
-        async getByGarden(slug) {
-            // If data is already loaded for this slug and not loading, return cached data
-            if (this.currentGardenSlug === slug && this.volunteerDays.days && !this.volunteerDays.loading) {
+        async getByGarden(slug, page = 1, pageSize = 15, append = false) {
+            // If appending and we already have data, don't use cache
+            if (append && this.currentGardenSlug === slug && this.volunteerDays.days) {
+                // Continue to load more
+            } else if (this.currentGardenSlug === slug && this.volunteerDays.days && !this.volunteerDays.loading && page === 1) {
+                // If data is already loaded for this slug and not loading, return cached data (only for page 1)
                 return Promise.resolve(this.volunteerDays.days);
             }
             
@@ -53,14 +119,37 @@ export const useEventStore = defineStore({
             
             // Create new request
             this.loadingGardenSlug = slug;
-            this.volunteerDays = { loading: true };
-            this.loadingPromise = fetchWrapper.get(`${baseUrl}/garden/${slug}`)
+            if (!append) {
+                this.volunteerDays = { loading: true };
+            }
+            const url = `${baseUrl}/garden/${slug}?pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+            this.loadingPromise = fetchWrapper.get(url)
                 .then(res => {
                     this.currentGardenSlug = slug;
                     this.loadingGardenSlug = null;
                     this.loadingPromise = null;
-                    this.volunteerDays = { days: res, loading: false };
-                    return res;
+                    
+                    // Extract data and pagination from Strapi response format
+                    let eventsData = [];
+                    if (res.data && Array.isArray(res.data)) {
+                        eventsData = res.data;
+                    } else if (Array.isArray(res)) {
+                        eventsData = res;
+                    }
+                    
+                    // Update pagination metadata
+                    if (res.meta?.pagination) {
+                        this.volunteerDaysPagination = res.meta.pagination;
+                    }
+                    
+                    if (append && Array.isArray(this.volunteerDays.days) && eventsData.length > 0) {
+                        // Append new events to existing ones
+                        this.volunteerDays = { days: [...this.volunteerDays.days, ...eventsData], loading: false };
+                    } else {
+                        // Replace with new data
+                        this.volunteerDays = { days: eventsData, loading: false };
+                    }
+                    return eventsData;
                 })
                 .catch(error => {
                     this.loadingGardenSlug = null;
@@ -115,6 +204,10 @@ export const useEventStore = defineStore({
             return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
                 .then(res => {
                     let vday = res.data;
+                    // Ensure volunteerDays.days is an array before calling unshift
+                    if (!this.volunteerDays.days || !Array.isArray(this.volunteerDays.days)) {
+                        this.volunteerDays.days = [];
+                    }
                     this.volunteerDays.days.unshift(vday.attributes);
                     this.volunteerDay = vday.attributes;
                     this.volunteerDay.id = vday.id;

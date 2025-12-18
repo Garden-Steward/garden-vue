@@ -293,9 +293,9 @@ const saveDescription = async () => {
 </script>
 
 <template>
-  <div class="bg-white rounded-lg shadow-md p-6">
+  <div class="bg-[#2d3e26] rounded-lg shadow-md p-6">
     <div class="mb-4">
-      <h2 class="text-2xl font-light font-serif mb-4">General</h2>
+      <h2 class="text-2xl font-light font-serif mb-4 text-[#f5f5f5]">General</h2>
       <router-link 
         :to="`/gardens/${garden.attributes.slug}`"
         target="_blank"
@@ -308,38 +308,38 @@ const saveDescription = async () => {
     <div class="space-y-6">
       <!-- Summary Numbers -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div class="text-2xl font-bold text-blue-600">{{ garden.attributes.volunteers?.data?.length || 0 }}</div>
-          <div class="text-sm text-gray-600 mt-1">Volunteers</div>
+        <div class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50">
+          <div class="text-2xl font-bold text-blue-300">{{ garden.attributes.volunteers?.data?.length || 0 }}</div>
+          <div class="text-sm text-[#d0d0d0] mt-1">Volunteers</div>
         </div>
-        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
-          <div class="text-2xl font-bold text-purple-600">{{ volunteerDays.days?.length || 0 }}</div>
-          <div class="text-sm text-gray-600 mt-1">Events</div>
+        <div class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50">
+          <div class="text-2xl font-bold text-purple-300">{{ volunteerDays.days?.length || 0 }}</div>
+          <div class="text-sm text-[#d0d0d0] mt-1">Events</div>
         </div>
-        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-          <div class="text-2xl font-bold text-green-600">{{ smsCampaigns.length || 0 }}</div>
-          <div class="text-sm text-gray-600 mt-1">SMS Campaigns</div>
+        <div class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50">
+          <div class="text-2xl font-bold text-green-300">{{ smsCampaigns.length || 0 }}</div>
+          <div class="text-sm text-[#d0d0d0] mt-1">SMS Campaigns</div>
         </div>
       </div>
 
       <!-- Latest Events Section -->
       <div>
-        <h3 class="text-lg font-semibold mb-2">Upcoming Events</h3>
-        <div v-if="latestEvents.length === 0" class="text-gray-500 text-sm">
+        <h3 class="text-lg font-semibold mb-2 text-[#f5f5f5]">Upcoming Events</h3>
+        <div v-if="latestEvents.length === 0" class="text-[#d0d0d0] text-sm">
           No upcoming events scheduled.
         </div>
         <div v-else class="space-y-2">
           <div 
             v-for="event in latestEvents" 
             :key="event.id || event.startDatetime"
-            class="bg-gray-50 py-2 px-3 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
+            class="bg-[rgba(26,26,26,0.6)] py-2 px-3 rounded border border-[#3d4d36]/50 hover:bg-[rgba(26,26,26,0.8)] transition-colors"
             :class="{ 'cursor-pointer': event.id }"
             @click="event.id && $router.push(`/manage/events/${event.id}/edit`)"
           >
             <div class="flex items-center gap-2">
-              <i class="fas fa-calendar-alt text-gray-500 text-sm"></i>
-              <span class="text-sm font-medium text-gray-900">{{ event.title || 'Untitled Event' }}</span>
-              <span class="text-sm text-gray-600">- {{ formatEventDate(event.startDatetime) }}</span>
+              <i class="fas fa-calendar-alt text-[#d0d0d0] text-sm"></i>
+              <span class="text-sm font-medium text-[#f5f5f5]">{{ event.title || 'Untitled Event' }}</span>
+              <span class="text-sm text-[#d0d0d0]">- {{ formatEventDate(event.startDatetime) }}</span>
             </div>
           </div>
         </div>
@@ -348,23 +348,23 @@ const saveDescription = async () => {
       <!-- Blurb Section -->
       <div>
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-lg font-semibold">Garden Blurb</h3>
+          <h3 class="text-lg font-semibold text-[#f5f5f5]">Garden Blurb</h3>
           <button 
             v-if="editor && !editingBlurb" 
             @click="startEditingBlurb"
-            class="text-sm text-blue-600 hover:text-blue-800 underline"
+            class="text-sm text-blue-400 hover:text-blue-300 underline"
           >
             Edit
           </button>
         </div>
         <div v-if="!editingBlurb">
-          <p class="text-gray-700">{{ garden.attributes.blurb || 'No blurb available.' }}</p>
+          <p class="text-[#d0d0d0]">{{ garden.attributes.blurb || 'No blurb available.' }}</p>
         </div>
         <div v-else class="space-y-2">
           <textarea
             v-model="blurbValue"
             rows="3"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
+            class="w-full px-3 py-2 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
             placeholder="Enter garden blurb..."
           ></textarea>
           <div class="flex gap-2">
@@ -378,7 +378,7 @@ const saveDescription = async () => {
             <button
               @click="cancelEditingBlurb"
               :disabled="isSavingText"
-              class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-4 py-2 bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] rounded hover:bg-[rgba(26,26,26,1)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -390,25 +390,25 @@ const saveDescription = async () => {
       <div>
         <div class="flex items-center justify-between mb-2">
           <div>
-            <h3 class="text-lg font-semibold">Description</h3>
-            <p class="text-sm text-gray-500 italic">This text appears in the "About This Garden" section on the public page</p>
+            <h3 class="text-lg font-semibold text-[#f5f5f5]">Description</h3>
+            <p class="text-sm text-[#d0d0d0] italic">This text appears in the "About This Garden" section on the public page</p>
           </div>
           <button 
             v-if="editor && !editingDescription" 
             @click="startEditingDescription"
-            class="text-sm text-blue-600 hover:text-blue-800 underline"
+            class="text-sm text-blue-400 hover:text-blue-300 underline"
           >
             Edit
           </button>
         </div>
         <div v-if="!editingDescription">
-          <p class="text-gray-700 whitespace-pre-wrap">{{ garden.attributes.description || 'No description available.' }}</p>
+          <p class="text-[#d0d0d0] whitespace-pre-wrap">{{ garden.attributes.description || 'No description available.' }}</p>
         </div>
         <div v-else class="space-y-2">
           <textarea
             v-model="descriptionValue"
             rows="6"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
+            class="w-full px-3 py-2 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
             placeholder="Enter garden description for the About This Garden section..."
           ></textarea>
           <div class="flex gap-2">
@@ -422,7 +422,7 @@ const saveDescription = async () => {
             <button
               @click="cancelEditingDescription"
               :disabled="isSavingText"
-              class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-4 py-2 bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] rounded hover:bg-[rgba(26,26,26,1)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -434,25 +434,25 @@ const saveDescription = async () => {
       <div>
         <div class="flex items-center justify-between mb-2">
           <div>
-            <h3 class="text-lg font-semibold">Welcome Text</h3>
-            <p class="text-sm text-gray-500 italic">This text is shown to people when they join the SMS list</p>
+            <h3 class="text-lg font-semibold text-[#f5f5f5]">Welcome Text</h3>
+            <p class="text-sm text-[#d0d0d0] italic">This text is shown to people when they join the SMS list</p>
           </div>
           <button 
             v-if="editor && !editingWelcomeText" 
             @click="startEditingWelcomeText"
-            class="text-sm text-blue-600 hover:text-blue-800 underline"
+            class="text-sm text-blue-400 hover:text-blue-300 underline"
           >
             Edit
           </button>
         </div>
         <div v-if="!editingWelcomeText">
-          <p class="text-gray-700">{{ garden.attributes.welcome_text || 'No welcome text available.' }}</p>
+          <p class="text-[#d0d0d0]">{{ garden.attributes.welcome_text || 'No welcome text available.' }}</p>
         </div>
         <div v-else class="space-y-2">
           <textarea
             v-model="welcomeTextValue"
             rows="4"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
+            class="w-full px-3 py-2 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
             placeholder="Enter welcome text for SMS list signup..."
           ></textarea>
           <div class="flex gap-2">
@@ -466,7 +466,7 @@ const saveDescription = async () => {
             <button
               @click="cancelEditingWelcomeText"
               :disabled="isSavingText"
-              class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-4 py-2 bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] rounded hover:bg-[rgba(26,26,26,1)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -476,14 +476,14 @@ const saveDescription = async () => {
       
       <!-- Hero Image Upload Section (Editor Only) -->
       <div v-if="editor" class="mt-6">
-        <h3 class="text-lg font-semibold mb-2">Hero Image</h3>
+        <h3 class="text-lg font-semibold mb-2 text-[#f5f5f5]">Hero Image</h3>
         <ImageUpload 
           :model-value="heroImage" 
           placeholder="Drag and drop hero image or click to upload"
           :upload-fn="(formData) => gardensStore.uploadImage(formData)"
           @update:model-value="handleHeroImageUpdate"
         />
-        <p v-if="isSavingHeroImage" class="text-sm text-gray-500 mt-2">Saving...</p>
+        <p v-if="isSavingHeroImage" class="text-sm text-[#d0d0d0] mt-2">Saving...</p>
       </div>
     </div>
   </div>

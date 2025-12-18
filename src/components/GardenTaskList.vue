@@ -361,33 +361,33 @@ const openEditModal = (taskId) => {
 </script>
 
 <template>
-  <div class="bg-white p-1 md:p-6 rounded-lg shadow-md mb-4">
+  <div class="bg-[#2d3e26] p-1 md:p-6 rounded-lg shadow-md mb-4">
     
     <!-- Recurring Tasks Section (with scheduling) -->
     <div v-if="recurringTasks.length > 0" class="mb-8">
-      <h3 class="text-xl font-bold mb-4">Recurring Tasks</h3>
+      <h3 class="text-xl font-bold mb-4 text-[#f5f5f5]">Recurring Tasks</h3>
       
       <div class="space-y-4">
         <div v-for="recurringTask in recurringTasks" :key="recurringTask.id" class="ml-3">
           <!-- Display recurring task info -->
-          <div class="bg-gray-50 rounded-lg border border-gray-200 mb-2 overflow-hidden">
+          <div class="bg-[rgba(26,26,26,0.6)] rounded-lg border border-[#3d4d36]/50 mb-2 overflow-hidden">
             <!-- Always visible header -->
             <div 
-              class="p-4 cursor-pointer hover:bg-gray-100 transition-colors"
+              class="p-4 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
               @click="toggleDrawer(recurringTask.id)"
             >
               <div class="flex items-center justify-between">
-                <div class="text-lg font-medium text-gray-800">
+                <div class="text-lg font-medium text-[#f5f5f5]">
                   {{ recurringTask.attributes?.title }}
                 </div>
                 <div class="flex gap-2 items-center">
                   <span 
-                    class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
+                    class="px-3 py-1 rounded-full text-sm font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
                   >
                     {{ recurringTask.attributes?.type || 'General' }}
                   </span>
                   <svg 
-                    class="w-5 h-5 text-gray-500 transition-transform"
+                    class="w-5 h-5 text-[#d0d0d0] transition-transform"
                     :class="{ 'rotate-180': openDrawers[recurringTask.id] }"
                     fill="none" 
                     stroke="currentColor" 
@@ -402,19 +402,19 @@ const openEditModal = (taskId) => {
             <!-- Drawer content (description, last updated, Edit button, Add Day) -->
             <div 
               v-if="openDrawers[recurringTask.id]"
-              class="px-4 pb-4 border-t border-gray-200 pt-4 space-y-3"
+              class="px-4 pb-4 border-t border-[#3d4d36]/50 pt-4 space-y-3"
             >
-              <div v-if="recurringTask.attributes?.overview" class="text-sm text-gray-600">
+              <div v-if="recurringTask.attributes?.overview" class="text-sm text-[#d0d0d0]">
                 {{ recurringTask.attributes.overview }}
               </div>
-              <div v-if="recurringTask.attributes?.updatedAt" class="text-xs text-gray-500">
+              <div v-if="recurringTask.attributes?.updatedAt" class="text-xs text-[#999]">
                 Last updated: {{ formatDate(recurringTask.attributes.updatedAt) }}
               </div>
               
               <div v-if="editor" class="pt-2">
                 <button
                   @click.stop="openEditModal(recurringTask.id)"
-                  class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                  class="px-4 py-2 bg-custom-green text-white rounded-lg hover:bg-darker-green transition-colors text-sm font-medium"
                 >
                   Edit
                 </button>
@@ -433,7 +433,7 @@ const openEditModal = (taskId) => {
           </div>
           
           <!-- Day tags and volunteer management for recurring tasks -->
-          <div class="mt-3 ml-0 bg-white rounded-lg p-4 border border-gray-200">
+          <div class="mt-3 ml-0 bg-[rgba(26,26,26,0.6)] rounded-lg p-4 border border-[#3d4d36]/50">
             <!-- Day tags with Edit option -->
             <div class="mb-3">
               <div class="flex items-center justify-between mb-2">
@@ -445,10 +445,10 @@ const openEditModal = (taskId) => {
                     :class="[
                       'px-3 py-1 rounded-full text-sm font-medium transition-colors flex items-center gap-1',
                       selectedTaskId === recurringTask.id && selectedDay === day
-                        ? 'bg-purple-600 text-white'
+                        ? 'bg-[rgba(138,163,124,0.5)] text-white'
                         : dayHasVolunteers(recurringTask, day)
-                          ? 'bg-purple-200 text-purple-800 hover:bg-purple-300'
-                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300',
+                          ? 'bg-[rgba(138,163,124,0.3)] text-[#8aa37c] hover:bg-[rgba(138,163,124,0.4)]'
+                          : 'bg-[rgba(26,26,26,0.8)] text-[#d0d0d0] hover:bg-[rgba(26,26,26,1)] border border-[#3d4d36]/50',
                       dayEditMode[recurringTask.id] ? 'cursor-default' : 'cursor-pointer'
                     ]"
                   >
@@ -456,7 +456,7 @@ const openEditModal = (taskId) => {
                     <button
                       v-if="dayEditMode[recurringTask.id] && editor"
                       @click.stop="removeDay(recurringTask, day)"
-                      class="ml-1 text-red-500 hover:text-red-700"
+                      class="ml-1 text-red-400 hover:text-red-300"
                       title="Remove day"
                     >
                       <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -469,7 +469,7 @@ const openEditModal = (taskId) => {
                   <button
                     v-if="editor && !dayEditMode[recurringTask.id]"
                     @click.stop="toggleAddDayForm(recurringTask.id)"
-                    class="px-3 py-1 rounded-full text-sm font-medium bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors flex items-center justify-center w-8 h-8"
+                    class="px-3 py-1 rounded-full text-sm font-medium bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] hover:bg-[rgba(26,26,26,1)] border border-[#3d4d36]/50 transition-colors flex items-center justify-center w-8 h-8"
                     title="Add day"
                   >
                     <span class="text-lg font-bold leading-none">+</span>
@@ -478,24 +478,25 @@ const openEditModal = (taskId) => {
                 <button
                   v-if="editor"
                   @click="toggleDayEditMode(recurringTask.id)"
-                  class="text-sm text-blue-600 hover:text-blue-800 underline"
+                  class="text-sm text-blue-400 hover:text-blue-300 underline"
                 >
                   {{ dayEditMode[recurringTask.id] ? 'Done' : 'Edit' }}
                 </button>
               </div>
               
               <!-- Add Day form (shown when + is clicked) -->
-              <div v-if="showAddDayForm[recurringTask.id] && editor" class="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div v-if="showAddDayForm[recurringTask.id] && editor" class="mt-2 p-3 bg-[rgba(26,26,26,0.8)] rounded-lg border border-[#3d4d36]/50">
                 <div class="flex items-start gap-2">
                   <select
                     v-model="newDaySelection[recurringTask.id]"
-                    class="w-1/2 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-1/2 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
                   >
-                    <option value="">Select a day...</option>
+                    <option value="" class="bg-[rgba(26,26,26,0.8)]">Select a day...</option>
                     <option 
                       v-for="day in getAvailableDaysForTask(recurringTask)"
                       :key="day"
                       :value="day"
+                      class="bg-[rgba(26,26,26,0.8)]"
                     >
                       {{ day }}
                     </option>
@@ -504,13 +505,13 @@ const openEditModal = (taskId) => {
                     <button
                       @click.stop="createNewScheduler(recurringTask)"
                       :disabled="!newDaySelection[recurringTask.id]"
-                      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      class="px-4 py-2 bg-orange-700 text-white rounded-lg hover:bg-orange-800 transition-colors text-sm font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
                     >
                       Add
                     </button>
                     <button
                       @click.stop="toggleAddDayForm(recurringTask.id)"
-                      class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+                      class="px-4 py-2 bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] rounded-lg hover:bg-[rgba(26,26,26,1)] transition-colors text-sm font-medium"
                     >
                       Cancel
                     </button>
@@ -520,17 +521,17 @@ const openEditModal = (taskId) => {
             </div>
             
             <!-- Selected day volunteers display -->
-            <div v-if="selectedTaskId === recurringTask.id && selectedDay" class="mt-4 border-t border-gray-200 pt-4">
+            <div v-if="selectedTaskId === recurringTask.id && selectedDay" class="mt-4 border-t border-[#3d4d36]/50 pt-4">
               <div class="relative">
                 <!-- Volunteers list -->
                 <div class="flex flex-wrap items-center gap-3 mb-3">
-                  <div v-for="volunteer in selectedVolunteers" :key="volunteer.id" class="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                  <div v-for="volunteer in selectedVolunteers" :key="volunteer.id" class="flex items-center gap-2 bg-[rgba(26,26,26,0.8)] rounded-lg p-2 border border-[#3d4d36]/50">
                     <UserProfileDisplay :volunteer="volunteer.attributes" />
-                    <span class="text-sm font-medium">{{ volunteer.attributes.firstName }} {{ volunteer.attributes.lastName }}</span>
+                    <span class="text-sm font-medium text-[#f5f5f5]">{{ volunteer.attributes.firstName }} {{ volunteer.attributes.lastName }}</span>
                     <button
                       v-if="editor"
                       @click="deleteUser(volunteer.id)"
-                      class="ml-2 text-red-500 hover:text-red-700"
+                      class="ml-2 text-red-400 hover:text-red-300"
                       title="Remove volunteer"
                     >
                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -543,7 +544,7 @@ const openEditModal = (taskId) => {
                   <button
                     v-if="editor"
                     @click="toggleAddUserDropdown()"
-                    class="flex items-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                    class="flex items-center gap-2 px-3 py-2 bg-custom-green text-white rounded-lg hover:bg-darker-green transition-colors"
                   >
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M10 18a1 1 0 0 1-1-1v-6H3a1 1 0 1 1 0-2h6V3a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 0 1-1 1z"/>
@@ -555,12 +556,12 @@ const openEditModal = (taskId) => {
                 <!-- Add user dropdown -->
                 <div
                   v-if="showAddUserDropdown && selectedTaskId === recurringTask.id && selectedDay"
-                  class="absolute z-10 bg-white border border-gray-300 rounded-lg shadow-lg p-3 w-64 max-h-64 overflow-y-auto"
+                  class="absolute z-10 bg-[rgba(26,26,26,0.95)] border border-[#3d4d36]/50 rounded-lg shadow-lg p-3 w-64 max-h-64 overflow-y-auto"
                 >
                   <input
                     v-model="searchQuery"
                     placeholder="Search volunteer..."
-                    class="w-full border border-gray-300 rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-custom-green"
                   />
                   
                   <ul v-if="filteredVolunteers.length > 0" class="space-y-1">
@@ -568,15 +569,15 @@ const openEditModal = (taskId) => {
                       v-for="volunteer in filteredVolunteers"
                       :key="volunteer.id"
                       @click="addUserToSchedule(volunteer)"
-                      class="px-3 py-2 cursor-pointer hover:bg-gray-100 rounded-md"
+                      class="px-3 py-2 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] rounded-md text-[#f5f5f5]"
                     >
                       {{ volunteer.attributes.firstName }} {{ volunteer.attributes.lastName }}
                     </li>
                   </ul>
-                  <p v-else class="px-3 py-2 text-gray-500 text-sm">No matching volunteers</p>
+                  <p v-else class="px-3 py-2 text-[#d0d0d0] text-sm">No matching volunteers</p>
                 </div>
                 
-                <div v-if="selectedVolunteers.length === 0 && !editor" class="text-gray-500 text-sm italic">
+                <div v-if="selectedVolunteers.length === 0 && !editor" class="text-[#d0d0d0] text-sm italic">
                   No volunteers assigned for this day
                 </div>
               </div>
@@ -588,13 +589,13 @@ const openEditModal = (taskId) => {
     
     <!-- Regular Tasks Section (simple list) -->
     <div v-if="regularTasks.length > 0" class="mt-8">
-      <h3 class="text-xl font-bold mb-4">Tasks</h3>
+      <h3 class="text-xl font-bold mb-4 text-[#f5f5f5]">Tasks</h3>
       
       <!-- Headers for desktop -->
       <div class="hidden md:grid md:grid-cols-12 md:gap-4 mb-2">
         <div class="col-span-4"></div>
         <div class="col-span-4"></div>
-        <div class="col-span-4 flex justify-between text-sm text-gray-600">
+        <div class="col-span-4 flex justify-between text-sm text-[#d0d0d0]">
           <span>Status</span>
           <span>Category</span>
         </div>
@@ -603,24 +604,24 @@ const openEditModal = (taskId) => {
       <div class="space-y-4">
         <div v-for="task in regularTasks" :key="task.id" class="ml-3">
           <!-- Task info card -->
-          <div class="bg-gray-50 rounded-lg border border-gray-200 mb-2 overflow-hidden">
+          <div class="bg-[rgba(26,26,26,0.6)] rounded-lg border border-[#3d4d36]/50 mb-2 overflow-hidden">
             <!-- Always visible header -->
             <div 
-              class="p-4 cursor-pointer hover:bg-gray-100 transition-colors"
+              class="p-4 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
               @click="toggleDrawer(task.id)"
             >
               <div class="flex items-center justify-between">
-                <div class="text-lg font-medium text-gray-800">
+                <div class="text-lg font-medium text-[#f5f5f5]">
                   {{ task.attributes?.title }}
                 </div>
                 <div class="flex gap-2 items-center">
                   <span 
-                    class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
+                    class="px-3 py-1 rounded-full text-sm font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
                   >
                     {{ task.attributes?.type || 'General' }}
                   </span>
                   <svg 
-                    class="w-5 h-5 text-gray-500 transition-transform"
+                    class="w-5 h-5 text-[#d0d0d0] transition-transform"
                     :class="{ 'rotate-180': openDrawers[task.id] }"
                     fill="none" 
                     stroke="currentColor" 
@@ -635,18 +636,18 @@ const openEditModal = (taskId) => {
             <!-- Drawer content (description, last updated, Edit button) -->
             <div 
               v-if="openDrawers[task.id]"
-              class="px-4 pb-4 border-t border-gray-200 pt-4 space-y-3"
+              class="px-4 pb-4 border-t border-[#3d4d36]/50 pt-4 space-y-3"
             >
-              <div v-if="task.attributes?.overview" class="text-sm text-gray-600">
+              <div v-if="task.attributes?.overview" class="text-sm text-[#d0d0d0]">
                 {{ task.attributes.overview }}
               </div>
-              <div v-if="task.attributes?.updatedAt" class="text-xs text-gray-500">
+              <div v-if="task.attributes?.updatedAt" class="text-xs text-[#999]">
                 Last updated: {{ formatDate(task.attributes.updatedAt) }}
               </div>
               <div v-if="editor" class="pt-2">
                 <button
                   @click.stop="openEditModal(task.id)"
-                  class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                  class="px-4 py-2 bg-custom-green text-white rounded-lg hover:bg-darker-green transition-colors text-sm font-medium"
                 >
                   Edit
                 </button>
@@ -668,7 +669,7 @@ const openEditModal = (taskId) => {
     </div>
     
     <!-- Empty state -->
-    <div v-if="recurringTasks.length === 0 && regularTasks.length === 0" class="text-gray-500 italic">
+    <div v-if="recurringTasks.length === 0 && regularTasks.length === 0" class="text-[#d0d0d0] italic">
       No tasks available at this time
     </div>
 
@@ -687,15 +688,15 @@ const openEditModal = (taskId) => {
         <div class="fixed inset-0 bg-gray-900 opacity-40" @click="cancelRemoveDay"></div>
         
         <!-- Modal -->
-        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4" @click.stop>
-          <h3 class="text-lg font-semibold mb-4">Remove Day</h3>
-          <p class="text-gray-700 mb-6">
+        <div class="relative bg-[#2d3e26] rounded-lg shadow-lg p-6 max-w-md w-full mx-4" @click.stop>
+          <h3 class="text-lg font-semibold mb-4 text-[#f5f5f5]">Remove Day</h3>
+          <p class="text-[#d0d0d0] mb-6">
             Are you sure? You will have to re-setup all the volunteers for this day if you remove this day.
           </p>
           <div class="flex justify-end gap-3">
             <button
               @click="cancelRemoveDay"
-              class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              class="px-4 py-2 bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] rounded-lg hover:bg-[rgba(26,26,26,1)] transition-colors"
             >
               Cancel
             </button>

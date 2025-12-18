@@ -621,7 +621,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Show project title/header if ID exists -->
-    <div v-else-if="!showCreateButton" @click="openViewModal" class="cursor-pointer bg-white p-3 rounded-lg shadow-sm mb-1">
+    <div v-else-if="!showCreateButton" @click="openViewModal" class="cursor-pointer bg-[rgba(26,26,26,0.6)] border border-[#3d4d36]/50 p-3 rounded-lg shadow-sm mb-1 hover:bg-[rgba(26,26,26,0.8)] transition-colors">
       <div class="flex flex-col md:flex-row gap-3">
         <!-- Thumbnail - full width on mobile, fixed size on desktop -->
         <div v-if="heroThumbnailUrl" class="w-full md:w-16 md:flex-shrink-0">
@@ -631,23 +631,23 @@ onUnmounted(() => {
             class="w-full h-48 md:w-16 md:h-16 object-cover rounded-lg"
           />
         </div>
-        <div v-else class="w-full md:w-16 md:flex-shrink-0 h-48 md:h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-          <span class="text-gray-400 text-xs">No Image</span>
+        <div v-else class="w-full md:w-16 md:flex-shrink-0 h-48 md:h-16 bg-[rgba(26,26,26,0.8)] rounded-lg flex items-center justify-center">
+          <span class="text-[#d0d0d0] text-xs">No Image</span>
         </div>
         
         <!-- Text content - full width on mobile, flex-1 on desktop -->
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">{{ form.title || 'Untitled Project' }}</h3>
-            <span class="text-sm text-gray-500">{{ form.category }}</span>
+            <h3 class="text-lg font-semibold text-[#f5f5f5]">{{ form.title || 'Untitled Project' }}</h3>
+            <span class="text-sm text-[#d0d0d0]">{{ form.category }}</span>
           </div>
-          <p v-if="form.short_description" class="text-sm text-gray-600 mt-1">{{ form.short_description }}</p>
+          <p v-if="form.short_description" class="text-sm text-[#d0d0d0] mt-1">{{ form.short_description }}</p>
           <!-- Related Events Tags -->
           <div v-if="normalizedRelatedEvents.length > 0" class="flex flex-wrap gap-2 mt-2">
             <span 
               v-for="event in normalizedRelatedEvents" 
               :key="event.id || event"
-              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
             >
               {{ event.title || event.attributes?.title || 'Untitled Event' }}
             </span>
@@ -1129,7 +1129,7 @@ onUnmounted(() => {
                   :href="form.photo_album_url" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  class="inline-flex items-center px-6 py-3 bg-orange-700 text-white rounded-lg hover:bg-orange-800 transition-colors"
                 >
                   <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />

@@ -30,12 +30,13 @@ const toggleInterest = () => {
 </script>
 
 <template>
-          <input type="checkbox" 
-            :id="props.id"
-            v-model="ugBool"
-            @click="toggleInterest"
-            :disabled="!props.editor">
-          <label class="text-sm p-1 ml-1" :for="props.id" @click="toggleInterest" ref="ignoreElRef">{{ props.tag }}</label>
-          
-          
+          <div class="flex items-center mb-2">
+            <input type="checkbox" 
+              :id="props.id"
+              v-model="ugBool"
+              @click="toggleInterest"
+              :disabled="!props.editor"
+              class="w-4 h-4 text-custom-green bg-[rgba(26,26,26,0.8)] border-[#3d4d36] rounded focus:ring-custom-green focus:ring-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+            <label class="text-sm p-1 ml-2 text-[#f5f5f5] cursor-pointer" :for="props.id" @click="toggleInterest" ref="ignoreElRef">{{ props.tag }}</label>
+          </div>
 </template>
