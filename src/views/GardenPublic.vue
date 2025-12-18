@@ -284,7 +284,7 @@ const isManager = computed(() => {
 // Donation modal state
 const showDonationModal = ref(false);
 
-// Garden activity state
+// Garden activity state - only show section if API returns activity
 const hasGardenActivity = ref(false);
 
 const openDonationModal = () => {
@@ -490,7 +490,8 @@ const getProjectHeroImage = (project) => {
       <!-- Garden Activity (only if there's activity) -->
       <section 
         v-if="garden?.id" 
-        :class="['garden-section', { 'garden-activity-hidden': !hasGardenActivity }]"
+        v-show="hasGardenActivity"
+        class="garden-section"
       >
         <h2 class="section-title">Garden Activity</h2>
         <VolunteerActivity 

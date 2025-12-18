@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { fetchWrapper } from '@/helpers';
 
 const props = defineProps({
@@ -14,9 +14,7 @@ const emit = defineEmits(['has-activity']);
 const tasks = ref([]);
 const isLoading = ref(false);
 const error = ref(null);
-const containerRef = ref(null);
 const hasLoaded = ref(false);
-let observer = null;
 
 const fetchRecentTasks = async () => {
   try {
@@ -121,8 +119,11 @@ const recentActivities = computed(() => {
 
 // Watch for activity changes and emit to parent
 watch([hasLoaded, recentActivities], () => {
-  const hasActivity = hasLoaded.value && recentActivities.value.length > 0;
-  emit('has-activity', hasActivity);
+  // Only emit if we've loaded and there's activity
+  if (hasLoaded.value) {
+    const hasActivity = recentActivities.value.length > 0;
+    emit('has-activity', hasActivity);
+  }
 }, { immediate: true });
 
 const getTimeAgo = (dateString) => {
@@ -161,54 +162,20 @@ const getTaskTypeIcon = (type) => {
   return icons[type] || '🔧';
 };
 
-// Set up Intersection Observer for lazy loading
+// Fetch immediately on mount
 onMounted(() => {
-  if (!props.gardenId) return;
-  
-  // Use nextTick to ensure the ref is available
-  nextTick(() => {
-    if (!containerRef.value) return;
-    
-    observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !hasLoaded.value && props.gardenId) {
-            hasLoaded.value = true;
-            fetchRecentTasks();
-            // Disconnect observer after first load
-            if (observer && containerRef.value) {
-              observer.unobserve(containerRef.value);
-            }
-          }
-        });
-      },
-      {
-        rootMargin: '50px', // Start loading slightly before it comes into view
-        threshold: 0.1
-      }
-    );
-    
-    if (containerRef.value) {
-      observer.observe(containerRef.value);
-    }
-  });
-});
-
-onUnmounted(() => {
-  if (observer && containerRef.value) {
-    observer.unobserve(containerRef.value);
-    observer.disconnect();
+  if (props.gardenId) {
+    fetchRecentTasks();
   }
 });
 
+// Watch for garden ID changes and reload
 watch(() => props.gardenId, (newId) => {
-  if (newId && hasLoaded.value) {
+  if (newId) {
     // Reset and reload if garden ID changes
     hasLoaded.value = false;
     tasks.value = [];
-    if (containerRef.value && observer) {
-      observer.observe(containerRef.value);
-    }
+    fetchRecentTasks();
   }
 });
 </script>
