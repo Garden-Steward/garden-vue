@@ -169,17 +169,11 @@ const upcomingEvents = computed(() => {
         return false;
       }
       
-      // Skip disabled events
-      if (day.disabled === true) {
-        console.log('Event skipped - disabled:', day);
-        return false;
-      }
-      
       // Parse the date
       const eventDate = new Date(day.startDatetime);
       console.log(`Event "${day.title}": ${eventDate} >= ${now}?`, eventDate >= now);
       
-      // Include events that haven't passed yet
+      // Include events that haven't passed yet (disabled events still show, they just don't send SMS)
       return eventDate >= now;
     })
     .sort((a, b) => {
