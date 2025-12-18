@@ -9,6 +9,8 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['has-activity']);
+
 const tasks = ref([]);
 const isLoading = ref(false);
 const error = ref(null);
@@ -116,6 +118,12 @@ const volunteerActivities = computed(() => {
 const recentActivities = computed(() => {
   return volunteerActivities.value.slice(0, 5);
 });
+
+// Watch for activity changes and emit to parent
+watch([hasLoaded, recentActivities], () => {
+  const hasActivity = hasLoaded.value && recentActivities.value.length > 0;
+  emit('has-activity', hasActivity);
+}, { immediate: true });
 
 const getTimeAgo = (dateString) => {
   if (!dateString) return 'recently';

@@ -188,10 +188,67 @@ const upcomingEvents = computed(() => {
       const dateB = new Date(b.startDatetime || 0);
       return dateA - dateB;
     })
-    .slice(0, 5); // Limit to 5 upcoming events
+    .slice(0, 3); // Limit to 3 upcoming events
     
   console.log('Upcoming events result:', upcoming);
   return upcoming;
+});
+
+// Get latest 3 events (regardless of date)
+const latestEvents = computed(() => {
+  // Handle different response structures (same as upcomingEvents)
+  let eventsArray = [];
+  
+  if (volunteerDays.value) {
+    if (Array.isArray(volunteerDays.value)) {
+      eventsArray = volunteerDays.value;
+    } 
+    else if (volunteerDays.value.days) {
+      if (Array.isArray(volunteerDays.value.days)) {
+        eventsArray = volunteerDays.value.days;
+      } else if (volunteerDays.value.days.data && Array.isArray(volunteerDays.value.days.data)) {
+        eventsArray = volunteerDays.value.days.data;
+      }
+    }
+    else if (volunteerDays.value.data && Array.isArray(volunteerDays.value.data)) {
+      eventsArray = volunteerDays.value.data;
+    }
+  }
+  
+  if (!eventsArray || eventsArray.length === 0) {
+    return [];
+  }
+  
+  const latest = eventsArray
+    .map(day => {
+      // Normalize Strapi format if needed
+      if (day.attributes) {
+        return { ...day.attributes, id: day.id };
+      }
+      return day;
+    })
+    .filter(day => {
+      // Skip if no startDatetime
+      if (!day.startDatetime) {
+        return false;
+      }
+      
+      // Skip disabled events
+      if (day.disabled === true) {
+        return false;
+      }
+      
+      return true;
+    })
+    .sort((a, b) => {
+      // Sort by startDatetime, most recent first
+      const dateA = new Date(a.startDatetime || 0);
+      const dateB = new Date(b.startDatetime || 0);
+      return dateB - dateA;
+    })
+    .slice(0, 3); // Limit to 3 latest events
+    
+  return latest;
 });
 
 const formatDate = (dateString) => {
@@ -232,6 +289,9 @@ const isManager = computed(() => {
 
 // Donation modal state
 const showDonationModal = ref(false);
+
+// Garden activity state
+const hasGardenActivity = ref(false);
 
 const openDonationModal = () => {
   showDonationModal.value = true;
@@ -377,12 +437,12 @@ const getProjectHeroImage = (project) => {
         <div class="section-content" v-html="garden.attributes.description.replace(/\n/g, '<br>')"></div>
       </section>
 
-      <!-- Upcoming Events and Garden Activity -->
+      <!-- Upcoming Events and Latest Events -->
       <section class="garden-section two-column-section">
         <div class="two-column-layout">
           <!-- Left: Upcoming Events -->
           <div class="column-content">
-            <h2 class="section-title">Upcoming Events</h2>
+            <h2 v-if="upcomingEvents.length > 0" class="section-title">Upcoming Events</h2>
             <div v-if="upcomingEvents.length > 0" class="events-list">
               <div 
                 v-for="event in upcomingEvents" 
@@ -399,23 +459,47 @@ const getProjectHeroImage = (project) => {
                 </router-link>
               </div>
             </div>
-            <div v-else-if="!volunteerDays.loading" class="section-empty">
-              <p>No upcoming events scheduled at this time.</p>
+            
+            <div v-if="upcomingEvents.length === 0 && latestEvents.length === 0 && !volunteerDays.loading" class="section-empty">
+              <p>No events scheduled at this time.</p>
             </div>
           </div>
           
-          <!-- Right: Garden Activity -->
+          <!-- Right: Latest Events -->
           <div class="column-content">
-            <h2 class="section-title">Garden Activity</h2>
-            <VolunteerActivity 
-              v-if="garden?.id" 
-              :garden-id="garden.id" 
-            />
-            <div v-else class="activity-content">
-              <p class="activity-text">Loading garden activity...</p>
+            <div v-if="latestEvents.length > 0">
+              <h2 class="section-title">
+                <span v-if="upcomingEvents.length > 0">Latest Events</span>
+                <span v-else>Events</span>
+              </h2>
+              <div class="events-list">
+                <div 
+                  v-for="event in latestEvents" 
+                  :key="event.id"
+                  class="event-item"
+                >
+                  <router-link 
+                    :to="`/d/${event.id}`"
+                    class="event-link"
+                  >
+                    <h3 class="event-title">{{ event.title }}</h3>
+                    <p class="event-date">{{ formatDate(event.startDatetime) }}</p>
+                    <div v-if="event.blurb" class="event-description" v-html="event.blurb"></div>
+                  </router-link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Garden Activity (only if there's activity) -->
+      <section v-if="garden?.id" v-show="hasGardenActivity" class="garden-section">
+        <h2 class="section-title">Garden Activity</h2>
+        <VolunteerActivity 
+          :garden-id="garden.id"
+          @has-activity="hasGardenActivity = $event"
+        />
       </section>
 
       <!-- What We're Working On (Featured Projects) -->
@@ -822,24 +906,47 @@ const getProjectHeroImage = (project) => {
 .events-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
+}
+
+/* Latest Events Section */
+.latest-events-section {
+  margin-top: 40px;
+}
+
+.latest-events-title {
+  margin-top: 0;
+}
+
+/* Garden Activity Section - hide when no activity but keep rendered for IntersectionObserver */
+.garden-activity-hidden {
+  visibility: hidden;
+  position: absolute;
+  left: -9999px;
+  height: 0;
+  overflow: hidden;
 }
 
 .event-item {
   border-left: 4px solid #8aa37c;
-  padding: 20px;
+  padding: 12px 20px;
   margin: 0 -20px;
   border-radius: 8px;
   transition: all 0.3s ease;
   cursor: pointer;
-}
-
-.event-item:hover {
   background-color: rgba(138, 163, 124, 0.1);
 }
 
-.dark .event-item:hover {
+.dark .event-item {
   background-color: rgba(138, 163, 124, 0.2);
+}
+
+.event-item:hover {
+  background-color: rgba(108, 138, 106, 0.25);
+}
+
+.dark .event-item:hover {
+  background-color: rgba(108, 138, 106, 0.35);
 }
 
 .event-link {
@@ -854,9 +961,9 @@ const getProjectHeroImage = (project) => {
 }
 
 .event-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: #1a1a1a;
   transition: color 0.3s ease;
 }
