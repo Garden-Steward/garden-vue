@@ -3,9 +3,10 @@ import { storeToRefs } from 'pinia';
 import { ref, watch, computed } from 'vue';
 
 import { useEventStore } from '@/stores';
+import { getImageOrDefault } from '@/helpers/image-utils';
 
 const eventStore = useEventStore();
-// const baseUrl = `${import.meta.env.VITE_API_URL}`;
+const baseUrl = `${import.meta.env.VITE_API_URL}`;
 
 const { events, eventsPagination } = storeToRefs(eventStore);
 const isLoading = ref(true);
@@ -80,17 +81,51 @@ const pastEvents = computed(() => {
   return events.value.filter(event => new Date(event.startDatetime) < currentDate);
 });
 
-// let heroImage = function(event) {
-//   if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !event.attributes.hero.data.attributes?.url.includes('googleapis.com')) {
-//     return `${baseUrl}${event.attributes.hero.data.attributes?.url}`;
-//   } else {
-//     return event.attributes.hero.data.attributes?.url;
-//   }
-// }
+// Get event hero image thumbnail URL (prefer event's hero_image over garden's)
+const getGardenImageThumbnail = (event) => {
+  // First, try to get hero_image from the event itself
+  let heroImage = event?.hero_image || event?.attributes?.hero_image || event?.data?.attributes?.hero_image;
+  
+  // If event doesn't have hero_image, fall back to garden's hero_image
+  if (!heroImage && event?.garden) {
+    const garden = event.garden;
+    heroImage = garden?.data?.attributes?.hero_image || garden?.attributes?.hero_image || garden?.hero_image;
+  }
+  
+  if (!heroImage) return getImageOrDefault(null);
+  
+  // Handle different Strapi formats
+  let imageUrl = null;
+  
+  // Check for thumbnail format first
+  if (heroImage?.data?.attributes?.formats?.thumbnail?.url) {
+    imageUrl = heroImage.data.attributes.formats.thumbnail.url;
+  } else if (heroImage?.formats?.thumbnail?.url) {
+    imageUrl = heroImage.formats.thumbnail.url;
+  } else if (heroImage?.data?.attributes?.formats?.small?.url) {
+    imageUrl = heroImage.data.attributes.formats.small.url;
+  } else if (heroImage?.formats?.small?.url) {
+    imageUrl = heroImage.formats.small.url;
+  } else if (heroImage?.data?.attributes?.url) {
+    imageUrl = heroImage.data.attributes.url;
+  } else if (heroImage?.url) {
+    imageUrl = heroImage.url;
+  }
+  
+  // Handle localhost URLs
+  if (imageUrl && import.meta.env.VITE_API_URL === 'http://localhost:1337' && !imageUrl.includes('googleapis.com') && imageUrl.startsWith('/')) {
+    imageUrl = `${baseUrl}${imageUrl}`;
+  }
+  
+  return getImageOrDefault(imageUrl);
+};
 
-// const truncateExcerpt = (excerpt) => {
-//     return `${excerpt?.substring(0, 150)}...`;
-// };
+// Get garden name
+const getGardenName = (event) => {
+  if (!event?.garden) return '';
+  const garden = event.garden;
+  return garden?.data?.attributes?.title || garden?.attributes?.title || garden?.title || '';
+};
 </script>
 
 <template>
@@ -111,11 +146,26 @@ const pastEvents = computed(() => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Upcoming Events:</h3>
             <div class="space-y-2">
               <div v-for="day in upcomingEvents" :key="day.id" 
-                   class="border-r-4 border rounded p-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
+                   class="flex gap-3 border-r-4 border rounded p-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
                    @click="volunteerDayClick(day.id)">
-                <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
-                <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
-                <p class="text-m inline-block bg-[rgba(138,163,124,0.3)] text-[#8aa37c] rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
+                <!-- Garden Image Square -->
+                <div class="flex-shrink-0 w-32 h-32 relative">
+                  <img 
+                    :src="getGardenImageThumbnail(day)" 
+                    :alt="getGardenName(day)"
+                    class="w-full h-full object-cover rounded"
+                  />
+                  <!-- Garden Name Overlay -->
+                  <div class="absolute bottom-0 left-0 right-0 bg-[rgba(138,163,124,0.9)] px-2 py-1 rounded-b">
+                    <p class="text-xs font-semibold text-white truncate">{{ getGardenName(day) }}</p>
+                  </div>
+                </div>
+                <!-- Event Content -->
+                <div class="flex-1 min-w-0">
+                  <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
+                  <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
+                  <p class="text-m inline-block bg-[rgba(138,163,124,0.3)] text-[#8aa37c] rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -124,11 +174,26 @@ const pastEvents = computed(() => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Recent Events:</h3>
             <div class="space-y-2">
               <div v-for="day in pastEvents" :key="day.id" 
-                   class="border-r-4 border rounded p-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
+                   class="flex gap-3 border-r-4 border rounded p-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
                    @click="volunteerDayClick(day.id)">
-                <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
-                <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
-                <p class="text-m inline-block bg-[rgba(138,163,124,0.3)] text-[#8aa37c] rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
+                <!-- Garden Image Square -->
+                <div class="flex-shrink-0 w-32 h-32 relative">
+                  <img 
+                    :src="getGardenImageThumbnail(day)" 
+                    :alt="getGardenName(day)"
+                    class="w-full h-full object-cover rounded"
+                  />
+                  <!-- Garden Name Overlay -->
+                  <div class="absolute bottom-0 left-0 right-0 bg-[rgba(138,163,124,0.9)] px-2 py-1 rounded-b">
+                    <p class="text-xs font-semibold text-white truncate">{{ getGardenName(day) }}</p>
+                  </div>
+                </div>
+                <!-- Event Content -->
+                <div class="flex-1 min-w-0">
+                  <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
+                  <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
+                  <p class="text-m inline-block bg-[rgba(138,163,124,0.3)] text-[#8aa37c] rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
+                </div>
               </div>
             </div>
           </div>

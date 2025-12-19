@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useGardensStore, useAlertStore } from '@/stores';
 import ImageUpload from '@/components/form/ImageUpload.vue';
 
@@ -24,6 +24,7 @@ const props = defineProps({
 });
 
 const route = useRoute();
+const router = useRouter();
 const gardensStore = useGardensStore();
 const alertStore = useAlertStore();
 
@@ -308,15 +309,24 @@ const saveDescription = async () => {
     <div class="space-y-6">
       <!-- Summary Numbers -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50">
+        <div 
+          class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
+          @click="router.push({ path: route.path, hash: '#volunteers' })"
+        >
           <div class="text-2xl font-bold text-blue-300">{{ garden.attributes.volunteers?.data?.length || 0 }}</div>
           <div class="text-sm text-[#d0d0d0] mt-1">Volunteers</div>
         </div>
-        <div class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50">
+        <div 
+          class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
+          @click="router.push({ path: route.path, hash: '#events' })"
+        >
           <div class="text-2xl font-bold text-purple-300">{{ volunteerDays.days?.length || 0 }}</div>
           <div class="text-sm text-[#d0d0d0] mt-1">Events</div>
         </div>
-        <div class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50">
+        <div 
+          class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
+          @click="router.push({ path: route.path, hash: '#sms' })"
+        >
           <div class="text-2xl font-bold text-green-300">{{ smsCampaigns.length || 0 }}</div>
           <div class="text-sm text-[#d0d0d0] mt-1">SMS Campaigns</div>
         </div>

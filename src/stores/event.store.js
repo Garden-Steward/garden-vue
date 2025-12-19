@@ -42,7 +42,7 @@ export const useEventStore = defineStore({
         },
         async fetchPublic(page = 1, pageSize = 15) {
             this.events = { loading: true };
-            const url = `${baseUrl}/public?pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+            const url = `${baseUrl}/public?pagination[page]=${page}&pagination[pageSize]=${pageSize}&populate[0]=hero_image&populate[1]=garden&populate[garden][populate][0]=hero_image`;
             return fetchWrapper.get(url)
                 .then(res => {
                     // Handle Strapi pagination response format
@@ -71,7 +71,7 @@ export const useEventStore = defineStore({
                 return Promise.resolve([]);
             }
             
-            const url = `${baseUrl}/public?pagination[page]=${nextPage}&pagination[pageSize]=${this.eventsPagination.pageSize}`;
+            const url = `${baseUrl}/public?pagination[page]=${nextPage}&pagination[pageSize]=${this.eventsPagination.pageSize}&populate[0]=hero_image&populate[1]=garden&populate[garden][populate][0]=hero_image`;
             return fetchWrapper.get(url)
                 .then(res => {
                     let newEvents = [];
