@@ -6,6 +6,7 @@ import TextInput from '@/components/form/TextInput.vue';
 import DropDown from '@/components/form/DropDown.vue';
 import Tiptap from '@/components/Tiptap.vue';
 import FormToggle from '@/components/Toggle.vue';
+import MediaSelector from '@/components/form/MediaSelector.vue';
 
 const props = defineProps({
   title: String,
@@ -19,8 +20,7 @@ const props = defineProps({
   category: String,
   volunteer_count: Number,
   hours_contributed: Number,
-  photo_album_url: String,
-  photo_album_id: String,
+  partiful_link: String,
   featured: Boolean,
   impact_metrics: Array,
   related_events: Array,
@@ -41,8 +41,6 @@ const { volunteerDays } = storeToRefs(eventStore);
 const show = ref(false);
 const showViewModal = ref(false);
 const error = ref(false);
-const heroImageInput = ref(null);
-const galleryInput = ref(null);
 const showDateFields = ref(false);
 const showMediaFields = ref(false);
 const availableEvents = ref([]);
@@ -70,8 +68,7 @@ const form = ref({
   category: props.category || 'Community',
   volunteer_count: props.volunteer_count || null,
   hours_contributed: props.hours_contributed || null,
-  photo_album_url: props.photo_album_url || '',
-  photo_album_id: props.photo_album_id || '',
+  partiful_link: props.partiful_link || '',
   featured: props.featured || false,
   impact_metrics: props.impact_metrics ? [...props.impact_metrics] : [],
   related_events: props.related_events ? (Array.isArray(props.related_events) ? props.related_events : props.related_events.data || []) : [],
@@ -125,7 +122,7 @@ watch(() => props.description, (newVal) => { form.value.description = newVal || 
 watch(() => props.category, (newVal) => { form.value.category = newVal || 'Community'; });
 watch(() => props.volunteer_count, (newVal) => { form.value.volunteer_count = newVal || null; });
 watch(() => props.hours_contributed, (newVal) => { form.value.hours_contributed = newVal || null; });
-watch(() => props.photo_album_url, (newVal) => { form.value.photo_album_url = newVal || ''; });
+watch(() => props.partiful_link, (newVal) => { form.value.partiful_link = newVal || ''; });
 watch(() => props.featured, (newVal) => { form.value.featured = newVal || false; });
 watch(() => props.hero_image, (newVal) => {
   if (newVal) {
@@ -410,55 +407,6 @@ const removeImpactMetric = (index) => {
   form.value.impact_metrics.splice(index, 1);
 };
 
-// Handle hero image upload
-const handleHeroImageChange = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  
-  try {
-    const formData = new FormData();
-    formData.append('files', file);
-    const uploaded = await projectsStore.uploadImage(formData);
-    form.value.hero_image = uploaded;
-  } catch (error) {
-    console.error('Failed to upload hero image:', error);
-    alertStore.error('Failed to upload hero image');
-  } finally {
-    if (heroImageInput.value) {
-      heroImageInput.value.value = '';
-    }
-  }
-};
-
-// Handle featured gallery upload
-const handleGalleryChange = async (e) => {
-  const files = Array.from(e.target.files || []);
-  if (files.length === 0) return;
-  
-  try {
-    const uploadPromises = files.map(async (file) => {
-      const formData = new FormData();
-      formData.append('files', file);
-      return await projectsStore.uploadImage(formData);
-    });
-    const uploaded = await Promise.all(uploadPromises);
-    
-    // Ensure featured_gallery is an array
-    if (!Array.isArray(form.value.featured_gallery)) {
-      form.value.featured_gallery = [];
-    }
-    
-    form.value.featured_gallery = [...form.value.featured_gallery, ...uploaded];
-  } catch (error) {
-    console.error('Failed to upload gallery images:', error);
-    alertStore.error('Failed to upload gallery images');
-  } finally {
-    if (galleryInput.value) {
-      galleryInput.value.value = '';
-    }
-  }
-};
-
 const submit = async () => {
   // Prevent double submission
   if (isSubmitting.value) {
@@ -490,6 +438,43 @@ const submit = async () => {
       data.date_end = null;
     }
     
+    // Format hero_image for Strapi
+    if (data.hero_image) {
+      // Handle MediaSelector format: { id, url } or Strapi format: { id, data: {...} }
+      const heroImageId = data.hero_image.id || data.hero_image.data?.id
+      if (heroImageId) {
+        data.hero_image = {
+          id: heroImageId
+        }
+      } else {
+        // If no valid ID, set to null
+        data.hero_image = null
+      }
+    }
+    
+    // Format featured_gallery for Strapi
+    if (data.featured_gallery) {
+      // Handle Strapi format: { data: [...] } or direct array
+      let galleryArray = []
+      if (data.featured_gallery?.data && Array.isArray(data.featured_gallery.data)) {
+        galleryArray = data.featured_gallery.data
+      } else if (Array.isArray(data.featured_gallery)) {
+        galleryArray = data.featured_gallery
+      }
+      
+      if (galleryArray.length > 0) {
+        data.featured_gallery = galleryArray
+          .map(img => {
+            // Extract ID from different formats (MediaSelector: { id, url } or Strapi: { id, data: {...} })
+            const id = img?.id || img?.data?.id
+            return id ? { id } : null
+          })
+          .filter(img => img !== null)
+      } else {
+        data.featured_gallery = []
+      }
+    }
+    
     // Format related_events for Strapi (many-to-many relation)
     if (data.related_events && Array.isArray(data.related_events)) {
       data.related_events = data.related_events
@@ -518,8 +503,7 @@ const submit = async () => {
         category: 'Community',
         volunteer_count: null,
         hours_contributed: null,
-        photo_album_url: '',
-        photo_album_id: '',
+        partiful_link: '',
         featured: false,
         impact_metrics: [],
         related_events: [],
@@ -774,72 +758,36 @@ onUnmounted(() => {
         <!-- Media fields (hidden by default) -->
         <div v-if="showMediaFields">
           <div>
-            <label class="block text-sm font-medium mb-1">Hero image to google photos</label>
-            <div
-              class="image-upload-container border-2 border-dashed rounded-lg p-6 text-center cursor-pointer mb-4"
-              @click.stop="heroImageInput?.click()"
-            >
-              <input
-                ref="heroImageInput"
-                type="file"
-                class="hidden"
-                accept="image/*"
-                @change="(e) => handleHeroImageChange(e)"
-              />
-              <div v-if="form.hero_image?.url || form.hero_image?.formats?.medium?.url" class="space-y-2">
-                <img :src="form.hero_image.url || form.hero_image.formats?.medium?.url" alt="Hero image" class="max-h-40 mx-auto" />
-                <div class="text-sm text-gray-600">Click to replace image</div>
-              </div>
-              <div v-else class="text-gray-600">
-                Click or drag to upload hero image
-              </div>
+            <label class="block text-sm font-medium mb-1">Hero image</label>
+            <MediaSelector 
+              v-if="form.garden"
+              v-model="form.hero_image" 
+              :gardenId="form.garden"
+              :multiple="false"
+              placeholder="Select or upload hero image"
+            />
+            <div v-else class="text-gray-500 text-sm mb-4">
+              Garden must be set before selecting media
             </div>
           </div>
 
           <div>
             <label class="block text-sm font-medium mb-1">Featured Gallery</label>
-            <div class="border-2 border-dashed rounded-lg p-4 mb-4">
-              <input
-                ref="galleryInput"
-                type="file"
-                class="hidden"
-                accept="image/*"
-                multiple
-                @change="(e) => handleGalleryChange(e)"
-              />
-              <div class="grid grid-cols-4 gap-2 mb-2">
-                <div v-for="(img, idx) in validGalleryImages" :key="idx" class="relative">
-                  <img :src="img.url || img.formats?.medium?.url" alt="Gallery image" class="w-full h-24 object-cover rounded" />
-                  <button
-                    @click.stop="() => {
-                      const originalIdx = form.featured_gallery.findIndex(i => i === img);
-                      if (originalIdx !== -1) form.featured_gallery.splice(originalIdx, 1);
-                    }"
-                    class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-              <button
-                @click.stop="galleryInput?.click()"
-                type="button"
-                class="px-4 py-2 bg-custom-green text-white rounded hover:bg-darker-green"
-              >
-                Add Images
-              </button>
+            <MediaSelector 
+              v-if="form.garden"
+              v-model="form.featured_gallery" 
+              :gardenId="form.garden"
+              :multiple="true"
+              placeholder="Select or upload gallery images"
+            />
+            <div v-else class="text-gray-500 text-sm mb-4">
+              Garden must be set before selecting media
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">Photo Album URL</label>
-              <TextInput v-model="form.photo_album_url" placeholder="https://photos.google.com/..." />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Photo Album ID</label>
-              <TextInput v-model="form.photo_album_id" placeholder="Album ID" />
-            </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Partiful Link</label>
+            <TextInput v-model="form.partiful_link" placeholder="https://partiful.com/..." />
           </div>
         </div>
 
@@ -1123,18 +1071,18 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <!-- Photo Album Link -->
-              <div v-if="form.photo_album_url" class="mb-8">
+              <!-- Partiful Link -->
+              <div v-if="form.partiful_link" class="mb-8">
                 <a 
-                  :href="form.photo_album_url" 
+                  :href="form.partiful_link" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  class="inline-flex items-center px-6 py-3 bg-orange-700 text-white rounded-lg hover:bg-orange-800 transition-colors"
+                  class="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
-                  View Photo Album
+                  RSVP via Partiful
                 </a>
               </div>
             </div>

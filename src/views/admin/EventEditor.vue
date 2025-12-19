@@ -10,7 +10,7 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import { format } from 'date-fns';
 import Switch from '@/components/form/Switch.vue';
 import TextInput from '@/components/form/TextInput.vue';
-import ImageUpload from '@/components/form/ImageUpload.vue';
+import MediaSelector from '@/components/form/MediaSelector.vue';
 import ImageGalleryUpload from '@/components/form/ImageGalleryUpload.vue';
 import DropDown from '@/components/form/DropDown.vue';
 
@@ -208,9 +208,16 @@ const saveEvent = async () => {
     const eventData = { ...event.value.attributes }
     
     // Format hero_image correctly if it exists
-    if (eventData.hero_image?.id) {
-      eventData.hero_image = {
-        id: eventData.hero_image.id
+    if (eventData.hero_image) {
+      // Handle MediaSelector format: { id, url } or Strapi format: { id, data: {...} }
+      const heroImageId = eventData.hero_image.id || eventData.hero_image.data?.id
+      if (heroImageId) {
+        eventData.hero_image = {
+          id: heroImageId
+        }
+      } else {
+        // If no valid ID, set to null
+        eventData.hero_image = null
       }
     }
     
@@ -403,7 +410,16 @@ const saveEvent = async () => {
             />
             
             <label for="heroImage">Hero Image</label>
-            <ImageUpload v-model="event.attributes.hero_image" placeholder="Upload hero image" :eventId="event.id" />
+            <MediaSelector 
+              v-if="event?.attributes?.garden?.data?.id"
+              v-model="event.attributes.hero_image" 
+              :gardenId="event.attributes.garden.data.id"
+              :multiple="false"
+              placeholder="Select or upload hero image"
+            />
+            <div v-else class="text-gray-500 text-sm mb-4">
+              Loading garden information...
+            </div>
 
             <!-- Featured Gallery Section -->
             <div class="mb-4">
