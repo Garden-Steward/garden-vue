@@ -107,10 +107,10 @@ watch(
       if (autoSaveTimeout.value) {
         clearTimeout(autoSaveTimeout.value);
       }
-      // Auto-save after a short delay to debounce rapid changes
+      // Auto-save after a delay to debounce rapid changes and allow multiple uploads
       autoSaveTimeout.value = setTimeout(() => {
         autoSaveEvent();
-      }, 500);
+      }, 1500);
     }
   }
 );
@@ -131,10 +131,10 @@ watch(
       if (autoSaveTimeout.value) {
         clearTimeout(autoSaveTimeout.value);
       }
-      // Auto-save after a short delay to debounce rapid changes
+      // Auto-save after a delay to debounce rapid changes and allow multiple uploads
       autoSaveTimeout.value = setTimeout(() => {
         autoSaveEvent();
-      }, 500);
+      }, 1500);
     }
   }
 );
@@ -294,17 +294,22 @@ const saveEvent = async (isAutoSave = false) => {
     
     await eventStore.update(route.params.id, eventData)
     
-    // Refresh event data from store and reset change tracking
-    await eventStore.findById(route.params.id)
-    await nextTick()
-    
-    if (event.value && event.value.attributes) {
-      originalEventData.value = JSON.parse(JSON.stringify(event.value.attributes));
-      hasChanges.value = false;
-    }
-    
-    // Only show success message for manual saves, not auto-saves
-    if (!isAutoSave) {
+    if (isAutoSave) {
+      // For auto-save, just update originalEventData without refreshing to avoid interrupting uploads
+      if (event.value && event.value.attributes) {
+        originalEventData.value = JSON.parse(JSON.stringify(event.value.attributes));
+        hasChanges.value = false;
+      }
+    } else {
+      // For manual save, refresh event data from store and reset change tracking
+      await eventStore.findById(route.params.id)
+      await nextTick()
+      
+      if (event.value && event.value.attributes) {
+        originalEventData.value = JSON.parse(JSON.stringify(event.value.attributes));
+        hasChanges.value = false;
+      }
+      
       alertStore.success('Event saved successfully!')
       window.scrollTo(0, 0)
     }
