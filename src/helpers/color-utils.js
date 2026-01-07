@@ -12,8 +12,8 @@ export function getColorForIdentifier(identifier) {
   const str = String(identifier);
   
   // Available colors matching the safelist in tailwind.config.js
+  // Red removed - replaced with green/blue for better banner appearance
   const colors = [
-    'red',
     'green',
     'blue',
     'orange',
@@ -50,8 +50,11 @@ export function getColorForIdentifier(identifier) {
 export function getGardenColor(garden) {
   if (!garden) return 'green';
   
-  // If garden already has a color property, use it
-  if (garden.color) return garden.color;
+  // If garden already has a color property, use it (but map red to green)
+  if (garden.color) {
+    // Convert red to green for better banner appearance
+    return garden.color === 'red' ? 'green' : garden.color;
+  }
   
   // Try to get identifier from various possible locations
   const identifier = 

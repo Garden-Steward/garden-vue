@@ -168,8 +168,12 @@ const getGardenBannerColor = (event) => {
 
 // Get rgba color values for banner overlay (opacity 0.9)
 const getBannerOverlayColor = (colorName) => {
+  // Map red to green for better banner appearance
+  if (colorName === 'red') {
+    colorName = 'green';
+  }
+  
   const colorMap = {
-    red: 'rgba(239, 68, 68, 0.9)',      // red-500
     green: 'rgba(34, 197, 94, 0.9)',    // green-500
     blue: 'rgba(59, 130, 246, 0.9)',    // blue-500
     orange: 'rgba(249, 115, 22, 0.9)',  // orange-500
@@ -187,8 +191,12 @@ const getBannerOverlayColor = (colorName) => {
 
 // Get rgba color values for date badge (opacity 0.3)
 const getBadgeColor = (colorName) => {
+  // Map red to green for consistency with banner
+  if (colorName === 'red') {
+    colorName = 'green';
+  }
+  
   const colorMap = {
-    red: 'rgba(239, 68, 68, 0.3)',      // red-500
     green: 'rgba(34, 197, 94, 0.3)',    // green-500
     blue: 'rgba(59, 130, 246, 0.3)',    // blue-500
     orange: 'rgba(249, 115, 22, 0.3)',  // orange-500
@@ -206,8 +214,12 @@ const getBadgeColor = (colorName) => {
 
 // Get bright text color for badge (100% opacity)
 const getBadgeTextColor = (colorName) => {
+  // Map red to green for consistency with banner
+  if (colorName === 'red') {
+    colorName = 'green';
+  }
+  
   const colorMap = {
-    red: 'rgba(255, 100, 100, 1)',      // bright red
     green: 'rgba(74, 222, 128, 1)',      // bright green (green-400)
     blue: 'rgba(96, 165, 250, 1)',      // bright blue (blue-400)
     orange: 'rgba(251, 146, 60, 1)',    // bright orange (orange-400)
