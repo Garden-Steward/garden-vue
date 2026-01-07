@@ -14,7 +14,8 @@ const md = new MarkdownIt().use(markdownItAttrs);
 import { watch, computed } from 'vue';
 
 const eventStore = useEventStore();
-const { user } = useAuthStore();
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 const showModal = ref(false);
 const phoneNumber = ref('');
 const phoneError = ref('');
@@ -34,6 +35,12 @@ const isEventPast = computed(() => {
   const eventDate = new Date(event.value.attributes.startDatetime);
   const now = new Date();
   return eventDate < now;
+});
+
+// Check if user is a manager of the event's garden
+const isManager = computed(() => {
+  if (!event.value?.attributes?.garden?.data?.attributes?.managers?.data || !user.value) return false;
+  return event.value.attributes.garden.data.attributes.managers.data.some(manager => manager.id === user.value.id);
 });
 
 // Get hero image or use default
@@ -132,7 +139,16 @@ const handleKeyPress = (event) => {
         <div class="w-full h-[350px] overflow-hidden rounded-lg mb-6">
           <img id="heroImage" alt="Hero Image" class="w-full h-full object-cover object-center" :src="heroImage">
         </div>
-        <h1 class="text-3xl font-bold mb-6">{{ event?.attributes?.title }}</h1>
+        <div class="flex justify-between items-start mb-6">
+          <h1 class="text-3xl font-bold">{{ event?.attributes?.title }}</h1>
+          <router-link 
+            v-if="user && isManager && event?.id"
+            :to="`/manage/events/${event.id}/edit`"
+            class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded no-underline"
+          >
+            Edit Event
+          </router-link>
+        </div>
         <h4 class="text-lg font-bold mb-6">{{ processDate(event?.attributes?.startDatetime) }}</h4>
         <div v-if="event?.attributes?.blurb" class="text-left brief-box">
             <div v-html="event?.attributes?.blurb"></div>

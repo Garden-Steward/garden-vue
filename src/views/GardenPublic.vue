@@ -188,8 +188,11 @@ const upcomingEvents = computed(() => {
   return upcoming;
 });
 
-// Get latest 3 events (regardless of date)
-const latestEvents = computed(() => {
+// State for how many latest events to show
+const latestEventsToShow = ref(2);
+
+// Get all past events (sorted by most recent first)
+const allPastEvents = computed(() => {
   // Handle different response structures (same as upcomingEvents)
   let eventsArray = [];
   
@@ -213,7 +216,9 @@ const latestEvents = computed(() => {
     return [];
   }
   
-  const latest = eventsArray
+  const now = new Date();
+  
+  const pastEvents = eventsArray
     .map(day => {
       // Normalize Strapi format if needed
       if (day.attributes) {
@@ -232,18 +237,34 @@ const latestEvents = computed(() => {
         return false;
       }
       
-      return true;
+      // Only include past events (events that have already happened)
+      const eventDate = new Date(day.startDatetime);
+      return eventDate < now;
     })
     .sort((a, b) => {
       // Sort by startDatetime, most recent first
       const dateA = new Date(a.startDatetime || 0);
       const dateB = new Date(b.startDatetime || 0);
       return dateB - dateA;
-    })
-    .slice(0, 3); // Limit to 3 latest events
+    });
     
-  return latest;
+  return pastEvents;
 });
+
+// Get displayed latest events (limited by latestEventsToShow)
+const latestEvents = computed(() => {
+  return allPastEvents.value.slice(0, latestEventsToShow.value);
+});
+
+// Check if there are more events to load
+const hasMoreLatestEvents = computed(() => {
+  return allPastEvents.value.length > latestEventsToShow.value;
+});
+
+// Load more latest events
+const loadMoreLatestEvents = () => {
+  latestEventsToShow.value += 2;
+};
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
@@ -482,6 +503,13 @@ const getProjectHeroImage = (project) => {
                   </router-link>
                 </div>
               </div>
+              <button 
+                v-if="hasMoreLatestEvents"
+                @click="loadMoreLatestEvents"
+                class="btn-load-more"
+              >
+                Load More
+              </button>
             </div>
           </div>
         </div>
@@ -1120,6 +1148,38 @@ const getProjectHeroImage = (project) => {
   background-color: #6c8a6a;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
+}
+
+.btn-load-more {
+  display: inline-block;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  background-color: transparent;
+  color: #8aa37c;
+  border: 1px solid #8aa37c;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.btn-load-more:hover {
+  background-color: #8aa37c;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(138, 163, 124, 0.3);
+}
+
+.dark .btn-load-more {
+  color: #8aa37c;
+  border-color: #8aa37c;
+}
+
+.dark .btn-load-more:hover {
+  background-color: #8aa37c;
+  color: #ffffff;
 }
 
 /* Loading State */

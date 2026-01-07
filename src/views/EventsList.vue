@@ -124,15 +124,15 @@ const getGardenImageThumbnail = (event) => {
   // Handle different Strapi formats
   let imageUrl = null;
   
-  // Check for thumbnail format first
-  if (heroImage?.data?.attributes?.formats?.thumbnail?.url) {
-    imageUrl = heroImage.data.attributes.formats.thumbnail.url;
-  } else if (heroImage?.formats?.thumbnail?.url) {
-    imageUrl = heroImage.formats.thumbnail.url;
-  } else if (heroImage?.data?.attributes?.formats?.small?.url) {
+  // Check for small format first
+  if (heroImage?.data?.attributes?.formats?.small?.url) {
     imageUrl = heroImage.data.attributes.formats.small.url;
   } else if (heroImage?.formats?.small?.url) {
     imageUrl = heroImage.formats.small.url;
+  } else if (heroImage?.data?.attributes?.formats?.thumbnail?.url) {
+    imageUrl = heroImage.data.attributes.formats.thumbnail.url;
+  } else if (heroImage?.formats?.thumbnail?.url) {
+    imageUrl = heroImage.formats.thumbnail.url;
   } else if (heroImage?.data?.attributes?.url) {
     imageUrl = heroImage.data.attributes.url;
   } else if (heroImage?.url) {
@@ -242,27 +242,27 @@ const getBadgeTextColor = (colorName) => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Upcoming Events:</h3>
             <div class="space-y-2">
               <div v-for="day in upcomingEvents" :key="day.id" 
-                   class="flex flex-col border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
+                   class="flex border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors overflow-hidden"  
                    @click="volunteerDayClick(day.id)">
-                <!-- Garden Name Banner at Top -->
-                <div 
-                  class="w-full px-4 py-2 rounded-t"
-                  :style="{ backgroundColor: getBannerOverlayColor(getGardenBannerColor(day)) }"
-                >
-                  <p class="text-lg font-semibold text-white text-right">{{ getGardenName(day) }}</p>
+                <!-- Hero Image Column - Square -->
+                <div class="flex-shrink-0 w-48 md:w-64 aspect-square relative overflow-hidden border-[3px] border-custom-light">
+                  <img 
+                    :src="getGardenImageThumbnail(day)" 
+                    :alt="getGardenName(day)"
+                    class="w-full h-full object-cover"
+                  />
                 </div>
-                <!-- Event Content Row -->
-                <div class="flex gap-3 p-3">
-                  <!-- Garden Image Square -->
-                  <div class="flex-shrink-0 w-32 h-32 relative">
-                    <img 
-                      :src="getGardenImageThumbnail(day)" 
-                      :alt="getGardenName(day)"
-                      class="w-full h-full object-cover rounded"
-                    />
+                <!-- Content Column - Includes Banner and Event Details -->
+                <div class="flex flex-col flex-1 min-w-0">
+                  <!-- Garden Name Banner -->
+                  <div 
+                    class="px-4 py-2 bg-gradient-to-r"
+                    :style="{ backgroundImage: `linear-gradient(to right, ${getBannerOverlayColor(getGardenBannerColor(day))}, #f7f1e3)` }"
+                  >
+                    <p class="text-lg font-semibold text-gray-900 text-right">{{ getGardenName(day) }}</p>
                   </div>
                   <!-- Event Content -->
-                  <div class="flex-1 min-w-0">
+                  <div class="flex-1 p-3">
                     <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
                     <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
                     <p 
@@ -282,27 +282,27 @@ const getBadgeTextColor = (colorName) => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Future Events:</h3>
             <div class="space-y-2">
               <div v-for="day in futureEvents" :key="day.id" 
-                   class="flex flex-col border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
+                   class="flex border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors overflow-hidden"  
                    @click="volunteerDayClick(day.id)">
-                <!-- Garden Name Banner at Top -->
-                <div 
-                  class="w-full px-4 py-2 rounded-t"
-                  :style="{ backgroundColor: getBannerOverlayColor(getGardenBannerColor(day)) }"
-                >
-                  <p class="text-lg font-semibold text-white text-right">{{ getGardenName(day) }}</p>
+                <!-- Hero Image Column - Square -->
+                <div class="flex-shrink-0 w-48 md:w-64 aspect-square relative overflow-hidden border-[3px] border-custom-light">
+                  <img 
+                    :src="getGardenImageThumbnail(day)" 
+                    :alt="getGardenName(day)"
+                    class="w-full h-full object-cover"
+                  />
                 </div>
-                <!-- Event Content Row -->
-                <div class="flex gap-3 p-3">
-                  <!-- Garden Image Square -->
-                  <div class="flex-shrink-0 w-32 h-32 relative">
-                    <img 
-                      :src="getGardenImageThumbnail(day)" 
-                      :alt="getGardenName(day)"
-                      class="w-full h-full object-cover rounded"
-                    />
+                <!-- Content Column - Includes Banner and Event Details -->
+                <div class="flex flex-col flex-1 min-w-0">
+                  <!-- Garden Name Banner -->
+                  <div 
+                    class="px-4 py-2 bg-gradient-to-r"
+                    :style="{ backgroundImage: `linear-gradient(to right, ${getBannerOverlayColor(getGardenBannerColor(day))}, #f7f1e3)` }"
+                  >
+                    <p class="text-lg font-semibold text-gray-900 text-right">{{ getGardenName(day) }}</p>
                   </div>
                   <!-- Event Content -->
-                  <div class="flex-1 min-w-0">
+                  <div class="flex-1 p-3">
                     <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
                     <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
                     <p 
@@ -322,27 +322,27 @@ const getBadgeTextColor = (colorName) => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Recent Events:</h3>
             <div class="space-y-2">
               <div v-for="day in pastEvents" :key="day.id" 
-                   class="flex flex-col border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
+                   class="flex border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors overflow-hidden"  
                    @click="volunteerDayClick(day.id)">
-                <!-- Garden Name Banner at Top -->
-                <div 
-                  class="w-full px-4 py-2 rounded-t"
-                  :style="{ backgroundColor: getBannerOverlayColor(getGardenBannerColor(day)) }"
-                >
-                  <p class="text-lg font-semibold text-white text-right">{{ getGardenName(day) }}</p>
+                <!-- Hero Image Column - Square -->
+                <div class="flex-shrink-0 w-48 md:w-64 aspect-square relative overflow-hidden border-[3px] border-custom-light">
+                  <img 
+                    :src="getGardenImageThumbnail(day)" 
+                    :alt="getGardenName(day)"
+                    class="w-full h-full object-cover"
+                  />
                 </div>
-                <!-- Event Content Row -->
-                <div class="flex gap-3 p-3">
-                  <!-- Garden Image Square -->
-                  <div class="flex-shrink-0 w-32 h-32 relative">
-                    <img 
-                      :src="getGardenImageThumbnail(day)" 
-                      :alt="getGardenName(day)"
-                      class="w-full h-full object-cover rounded"
-                    />
+                <!-- Content Column - Includes Banner and Event Details -->
+                <div class="flex flex-col flex-1 min-w-0">
+                  <!-- Garden Name Banner -->
+                  <div 
+                    class="px-4 py-2 bg-gradient-to-r"
+                    :style="{ backgroundImage: `linear-gradient(to right, ${getBannerOverlayColor(getGardenBannerColor(day))}, #f7f1e3)` }"
+                  >
+                    <p class="text-lg font-semibold text-gray-900 text-right">{{ getGardenName(day) }}</p>
                   </div>
                   <!-- Event Content -->
-                  <div class="flex-1 min-w-0">
+                  <div class="flex-1 p-3">
                     <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
                     <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
                     <p 
@@ -406,4 +406,5 @@ const getBadgeTextColor = (colorName) => {
 .text-peach-800 {
   color: #8B4513;
 }
+
 </style>

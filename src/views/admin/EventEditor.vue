@@ -526,15 +526,15 @@ onBeforeUnmount(() => {
                 
                 <h2 class="text-xl font-bold mb-3">
                   Volunteers RSVP'd 
-                  <span class="text-lg font-normal">({{ event.attributes.confirmed.data?.length || 0 }})</span>
+                  <span class="text-lg font-normal">({{ event.attributes.confirmed?.data?.length || 0 }})</span>
                 </h2>
                 
                 <div>
-                  <div v-if="!event.attributes.confirmed.data?.length" class="text-gray-600">
+                  <div v-if="!event.attributes.confirmed?.data?.length" class="text-gray-600">
                     No one has RSVP'd to this event yet
                   </div>
                   <ul v-else class="space-y-3">
-                    <li v-for="volunteer in event.attributes.confirmed.data" :key="volunteer.id">
+                    <li v-for="volunteer in event.attributes.confirmed?.data" :key="volunteer.id">
                       <UserProfileDisplay :volunteer="volunteer.attributes" :showName="true" />
                     </li>
                   </ul>

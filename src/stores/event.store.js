@@ -99,7 +99,7 @@ export const useEventStore = defineStore({
         },
         async findById(id) {
             this.event = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?populate=garden&populate=confirmed&populate=hero_image&populate=featured_gallery`)
+            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=garden&populate[garden][populate][0]=managers&populate[1]=confirmed&populate[2]=hero_image&populate[3]=featured_gallery`)
                 .then(res => this.event = res.data)
                 .catch(this.handleError);
         },
