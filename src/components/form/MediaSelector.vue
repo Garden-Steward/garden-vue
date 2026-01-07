@@ -35,6 +35,10 @@ const isCompressing = ref(false)
 const compressionStatus = ref(null)
 const baseUrl = `${import.meta.env.VITE_API_URL}`
 
+// Pagination for hero images (single selection)
+const itemsPerPage = 8
+const visibleItemsCount = ref(itemsPerPage)
+
 // Normalize selected media for comparison
 const selectedMedia = computed(() => {
   if (!props.modelValue) return props.multiple ? [] : null
@@ -57,10 +61,37 @@ const selectedMedia = computed(() => {
   }
 })
 
-// Get displayed media
+// Get displayed media with pagination for hero images
 const displayedMedia = computed(() => {
-  return mediaStore.mediaLibrary
+  const allMedia = mediaStore.mediaLibrary
+  
+  // For hero images (single selection), apply pagination and sort by latest first
+  if (!props.multiple) {
+    // Sort by createdAt descending (latest first), fallback to id if createdAt not available
+    const sorted = [...allMedia].sort((a, b) => {
+      const aDate = a?.attributes?.createdAt || a?.data?.attributes?.createdAt || a?.createdAt || a?.id || 0
+      const bDate = b?.attributes?.createdAt || b?.data?.attributes?.createdAt || b?.createdAt || b?.id || 0
+      return new Date(bDate) - new Date(aDate)
+    })
+    
+    // Return only visible items
+    return sorted.slice(0, visibleItemsCount.value)
+  }
+  
+  // For multiple selection (gallery), show all
+  return allMedia
 })
+
+// Check if there are more items to load (for hero images)
+const hasMoreItems = computed(() => {
+  if (props.multiple) return false
+  return mediaStore.mediaLibrary.length > visibleItemsCount.value
+})
+
+// Load more items
+const loadMore = () => {
+  visibleItemsCount.value += itemsPerPage
+}
 
 // Check if a media item is selected
 const isSelected = (mediaItem) => {
@@ -343,13 +374,20 @@ const uploadFile = async (file) => {
 onMounted(async () => {
   if (props.gardenId) {
     await mediaStore.fetchGardenMedia(props.gardenId)
+    visibleItemsCount.value = itemsPerPage
   }
 })
 
 watch(() => props.gardenId, async (newId) => {
   if (newId) {
     await mediaStore.fetchGardenMedia(newId)
+    visibleItemsCount.value = itemsPerPage
   }
+})
+
+// Reset pagination when switching tabs
+watch(activeTab, () => {
+  visibleItemsCount.value = itemsPerPage
 })
 </script>
 
@@ -390,7 +428,13 @@ watch(() => props.gardenId, async (newId) => {
       </div>
 
       <!-- Media Grid -->
-      <div v-else-if="displayedMedia.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div 
+        v-else-if="displayedMedia.length > 0" 
+        :class="[
+          'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4',
+          !multiple && 'hero-image-grid'
+        ]"
+      >
         <div
           v-for="(mediaItem, index) in displayedMedia"
           :key="mediaItem.id || mediaItem.data?.id || `media-${index}`"
@@ -430,8 +474,18 @@ watch(() => props.gardenId, async (newId) => {
         </div>
       </div>
 
+      <!-- Load More Button (only for hero images) -->
+      <div v-if="!multiple && hasMoreItems" class="mt-4 text-center">
+        <button
+          @click="loadMore"
+          class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+        >
+          Load More
+        </button>
+      </div>
+
       <!-- Empty State -->
-      <div v-else class="text-center py-8 text-gray-500">
+      <div v-else-if="displayedMedia.length === 0" class="text-center py-8 text-gray-500">
         <p>No media available for this garden</p>
       </div>
     </div>
@@ -507,6 +561,34 @@ watch(() => props.gardenId, async (newId) => {
 <style scoped>
 .media-selector {
   width: 100%;
+}
+
+/* Hero image grid - limit height on desktop */
+@media (min-width: 768px) {
+  .hero-image-grid {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  
+  /* Custom scrollbar styling */
+  .hero-image-grid::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .hero-image-grid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  .hero-image-grid::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  .hero-image-grid::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
 }
 </style>
 
