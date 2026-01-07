@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useMediaStore } from '@/stores'
+import { useMediaStore, useAlertStore } from '@/stores'
 import { fetchWrapper } from '@/helpers'
+import { useImageCompression } from '@/composables/useImageCompression'
 
 const emit = defineEmits(['update:modelValue'])
 const props = defineProps({
@@ -24,10 +25,14 @@ const props = defineProps({
 })
 
 const mediaStore = useMediaStore()
+const alertStore = useAlertStore()
+const { compressImageWithDefaults, createCompressionStatus } = useImageCompression()
 const activeTab = ref('existing') // 'existing' or 'upload'
 const fileInput = ref(null)
 const dragActive = ref(false)
 const isUploading = ref(false)
+const isCompressing = ref(false)
+const compressionStatus = ref(null)
 const baseUrl = `${import.meta.env.VITE_API_URL}`
 
 // Normalize selected media for comparison
@@ -267,9 +272,34 @@ const handleChange = async (e) => {
 
 const uploadFile = async (file) => {
   try {
+    // Step 1: Compress image
+    isCompressing.value = true
+    compressionStatus.value = {
+      message: 'Compressing image...',
+      originalSize: file.size
+    }
+    
+    const compressionResult = await compressImageWithDefaults(file, (progress) => {
+      compressionStatus.value = {
+        ...compressionStatus.value,
+        progress: Math.round(progress)
+      }
+    })
+    
+    isCompressing.value = false
+    
+    // Show compression feedback
+    compressionStatus.value = createCompressionStatus(compressionResult)
+    
+    // Step 2: Upload compressed image
     isUploading.value = true
+    compressionStatus.value = {
+      ...compressionStatus.value,
+      message: 'Uploading...'
+    }
+    
     const formData = new FormData()
-    formData.append('files', file)
+    formData.append('files', compressionResult.file)
     
     // Upload to media endpoint
     const response = await fetchWrapper.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData)
@@ -292,12 +322,20 @@ const uploadFile = async (file) => {
       emit('update:modelValue', newMedia)
     }
     
+    // Clear compression status after a brief delay
+    setTimeout(() => {
+      compressionStatus.value = null
+    }, 2000)
+    
     // Switch to existing tab to show the new upload
     activeTab.value = 'existing'
   } catch (error) {
     console.error('Upload failed:', error)
+    alertStore.error('Failed to upload image. Please try again.')
+    compressionStatus.value = null
   } finally {
     isUploading.value = false
+    isCompressing.value = false
   }
 }
 
@@ -386,7 +424,7 @@ watch(() => props.gardenId, async (newId) => {
           <!-- Media Name on Hover -->
           <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
             <p class="text-white text-sm font-medium px-2 text-center">
-              {{ getMediaName(mediaItem) }}
+              {{ multiple ? getMediaName(mediaItem) : 'Select as Hero' }}
             </p>
           </div>
         </div>
@@ -420,11 +458,41 @@ watch(() => props.gardenId, async (newId) => {
           @change="handleChange"
         />
         
-        <div v-if="isUploading" class="text-gray-600">
+        <!-- Compression Status -->
+        <div v-if="isCompressing || compressionStatus" class="text-gray-600 space-y-2">
+          <div v-if="isCompressing" class="text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-2"></div>
+            <p class="text-sm">{{ compressionStatus?.message || 'Compressing image...' }}</p>
+            <div v-if="compressionStatus?.progress !== undefined" class="mt-2 max-w-xs mx-auto">
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  class="bg-purple-600 h-2 rounded-full transition-all duration-300" 
+                  :style="{ width: compressionStatus.progress + '%' }"
+                ></div>
+              </div>
+              <div class="text-xs text-gray-500 mt-1">{{ compressionStatus.progress }}%</div>
+            </div>
+          </div>
+          <div v-else-if="compressionStatus && !isUploading" class="text-sm text-center">
+            <div 
+              class="px-3 py-2 rounded inline-block"
+              :class="compressionStatus.error 
+                ? 'bg-yellow-50 text-yellow-800 border border-yellow-200' 
+                : 'bg-green-50 text-green-800 border border-green-200'"
+            >
+              <div class="font-medium">{{ compressionStatus.message }}</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Upload Status -->
+        <div v-if="isUploading && !isCompressing" class="text-gray-600">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div>
           <p>Uploading...</p>
         </div>
-        <div v-else class="text-gray-600">
+        
+        <!-- Placeholder -->
+        <div v-else-if="!isCompressing && !isUploading && !compressionStatus" class="text-gray-600">
           <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
@@ -441,3 +509,6 @@ watch(() => props.gardenId, async (newId) => {
   width: 100%;
 }
 </style>
+
+
+

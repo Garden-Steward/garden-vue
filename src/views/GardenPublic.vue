@@ -1188,6 +1188,7 @@ const getProjectHeroImage = (project) => {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 16px;
+  line-height: 1.2em;
   color: #1a1a1a;
   transition: color 0.3s ease;
 }

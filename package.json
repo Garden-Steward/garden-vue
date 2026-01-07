@@ -18,6 +18,7 @@
         "@vuepic/vue-datepicker": "^4.0.1",
         "@vueuse/components": "^10.7.2",
         "@vueuse/core": "^10.7.2",
+        "browser-image-compression": "^2.0.2",
         "date-fns": "^2.29.3",
         "leaflet": "^1.9.4",
         "markdown-it": "^14.0.0",

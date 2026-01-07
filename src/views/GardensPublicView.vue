@@ -36,7 +36,7 @@ const gardenClick = (slug) => {
 
 <template>
     <div class="bg-custom-light p-5 rounded-lg mx-auto">
-        <h1 class="text-3xl font-bold mb-5">Gardens</h1>
+        <h1 class="text-3xl font-bold mb-5 leading-tight">Gardens</h1>
         <p class="text-lg mb-5">Explore our community gardens and learn about the amazing work happening in your neighborhood.</p>
 
         <div v-if="gardens.loading" class="spinner-border spinner-border-sm"></div>
@@ -57,7 +57,7 @@ const gardenClick = (slug) => {
                     />
                 </div>
                 <div class="p-4">
-                    <h3 class="text-xl font-bold mb-2">{{ garden.attributes?.title }}</h3>
+                    <h3 class="text-xl font-bold mb-2 leading-snug">{{ garden.attributes?.title }}</h3>
                     <p v-if="garden.attributes?.blurb" class="text-gray-600 mb-2">{{ garden.attributes.blurb }}</p>
                 </div>
             </div>

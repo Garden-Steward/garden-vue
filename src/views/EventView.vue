@@ -129,7 +129,9 @@ const handleKeyPress = (event) => {
     <div id="event-view">
       <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
 
-        <img id="heroImage" alt="Hero Image" class="w-full h-auto mb-6 rounded-lg" :src="heroImage">
+        <div class="w-full h-[350px] overflow-hidden rounded-lg mb-6">
+          <img id="heroImage" alt="Hero Image" class="w-full h-full object-cover object-center" :src="heroImage">
+        </div>
         <h1 class="text-3xl font-bold mb-6">{{ event?.attributes?.title }}</h1>
         <h4 class="text-lg font-bold mb-6">{{ processDate(event?.attributes?.startDatetime) }}</h4>
         <div v-if="event?.attributes?.blurb" class="text-left brief-box">

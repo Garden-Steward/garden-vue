@@ -1,6 +1,6 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { ref, watch, computed, nextTick } from 'vue';
+import { ref, watch, computed, nextTick, onBeforeUnmount } from 'vue';
 import { useRoute } from "vue-router";
 import { useEventStore, useAlertStore } from '@/stores';
 import Tiptap from '@/components/Tiptap.vue'
@@ -23,6 +23,8 @@ const isLoading = ref(true);
 const hasChanges = ref(false);
 const originalEventData = ref(null);
 const isEditingTitle = ref(false);
+const autoSaveTimeout = ref(null);
+const isAutoSaving = ref(false);
 
 const startEditingTitle = async () => {
   isEditingTitle.value = true;
@@ -89,6 +91,52 @@ watch(
     checkForChanges();
   },
   { flush: 'post' }
+);
+
+// Auto-save when hero_image changes (after upload)
+watch(
+  () => {
+    const heroImage = event.value?.attributes?.hero_image;
+    return heroImage?.id || heroImage?.data?.id || null;
+  },
+  (newId, oldId) => {
+    if (!originalEventData.value || isLoading.value || isAutoSaving.value) return;
+    // Only auto-save if image was added/changed (not removed or initial load)
+    if (newId && newId !== oldId) {
+      // Clear any existing timeout
+      if (autoSaveTimeout.value) {
+        clearTimeout(autoSaveTimeout.value);
+      }
+      // Auto-save after a short delay to debounce rapid changes
+      autoSaveTimeout.value = setTimeout(() => {
+        autoSaveEvent();
+      }, 500);
+    }
+  }
+);
+
+// Auto-save when featured_gallery changes (after upload)
+watch(
+  () => {
+    const gallery = event.value?.attributes?.featured_gallery;
+    if (!gallery) return '';
+    const ids = getGalleryIds(gallery);
+    return JSON.stringify(ids);
+  },
+  (newIds, oldIds) => {
+    if (!originalEventData.value || isLoading.value || isAutoSaving.value) return;
+    // Only auto-save if gallery was modified (not initial load)
+    if (oldIds && newIds !== oldIds) {
+      // Clear any existing timeout
+      if (autoSaveTimeout.value) {
+        clearTimeout(autoSaveTimeout.value);
+      }
+      // Auto-save after a short delay to debounce rapid changes
+      autoSaveTimeout.value = setTimeout(() => {
+        autoSaveEvent();
+      }, 500);
+    }
+  }
 );
 
 // Helper to extract gallery IDs in order (consistent format)
@@ -202,7 +250,7 @@ const normalizeEventData = (attributes) => {
   return normalized;
 };
 
-const saveEvent = async () => {
+const saveEvent = async (isAutoSave = false) => {
   try {
     // Create a copy of the attributes to modify
     const eventData = { ...event.value.attributes }
@@ -255,13 +303,34 @@ const saveEvent = async () => {
       hasChanges.value = false;
     }
     
-    alertStore.success('Event saved successfully!')
-    window.scrollTo(0, 0)
+    // Only show success message for manual saves, not auto-saves
+    if (!isAutoSave) {
+      alertStore.success('Event saved successfully!')
+      window.scrollTo(0, 0)
+    }
   } catch (error) {
     console.error('Error saving event:', error)
     alertStore.error('Failed to save event. Please try again.')
   }
 }
+
+// Auto-save function for image uploads
+const autoSaveEvent = async () => {
+  if (isAutoSaving.value) return;
+  isAutoSaving.value = true;
+  try {
+    await saveEvent(true);
+  } finally {
+    isAutoSaving.value = false;
+  }
+}
+
+// Cleanup timeout on unmount
+onBeforeUnmount(() => {
+  if (autoSaveTimeout.value) {
+    clearTimeout(autoSaveTimeout.value);
+  }
+});
 
 </script>
 

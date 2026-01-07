@@ -4,6 +4,7 @@ import { ref, watch, computed } from 'vue';
 
 import { useEventStore } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
+import { getGardenColor } from '@/helpers/color-utils';
 
 const eventStore = useEventStore();
 const baseUrl = `${import.meta.env.VITE_API_URL}`;
@@ -71,9 +72,35 @@ const volunteerDayClick = (id) => {
 
 const currentDate = new Date();
 
+// Calculate date 45 days from now
+const futureDateThreshold = computed(() => {
+  const date = new Date();
+  date.setDate(date.getDate() + 45);
+  return date;
+});
+
+// Upcoming events (within 45 days), sorted by date (soonest first)
 const upcomingEvents = computed(() => {
   if (!events.value || !Array.isArray(events.value)) return [];
-  return events.value.filter(event => new Date(event.startDatetime) >= currentDate);
+  const upcoming = events.value
+    .filter(event => {
+      const eventDate = new Date(event.startDatetime);
+      return eventDate >= currentDate && eventDate <= futureDateThreshold.value;
+    })
+    .sort((a, b) => new Date(a.startDatetime) - new Date(b.startDatetime));
+  return upcoming;
+});
+
+// Future events (more than 45 days away), sorted by date (soonest first)
+const futureEvents = computed(() => {
+  if (!events.value || !Array.isArray(events.value)) return [];
+  const future = events.value
+    .filter(event => {
+      const eventDate = new Date(event.startDatetime);
+      return eventDate > futureDateThreshold.value;
+    })
+    .sort((a, b) => new Date(a.startDatetime) - new Date(b.startDatetime));
+  return future;
 });
 
 const pastEvents = computed(() => {
@@ -126,6 +153,75 @@ const getGardenName = (event) => {
   const garden = event.garden;
   return garden?.data?.attributes?.title || garden?.attributes?.title || garden?.title || '';
 };
+
+// Get garden object from event
+const getGardenFromEvent = (event) => {
+  if (!event?.garden) return null;
+  return event.garden?.data || event.garden;
+};
+
+// Get garden color for event banner
+const getGardenBannerColor = (event) => {
+  const garden = getGardenFromEvent(event);
+  return getGardenColor(garden);
+};
+
+// Get rgba color values for banner overlay (opacity 0.9)
+const getBannerOverlayColor = (colorName) => {
+  const colorMap = {
+    red: 'rgba(239, 68, 68, 0.9)',      // red-500
+    green: 'rgba(34, 197, 94, 0.9)',    // green-500
+    blue: 'rgba(59, 130, 246, 0.9)',    // blue-500
+    orange: 'rgba(249, 115, 22, 0.9)',  // orange-500
+    purple: 'rgba(168, 85, 247, 0.9)',  // purple-500
+    fuchsia: 'rgba(217, 70, 239, 0.9)', // fuchsia-500
+    emerald: 'rgba(16, 185, 129, 0.9)', // emerald-500
+    violet: 'rgba(139, 92, 246, 0.9)',  // violet-500
+    indigo: 'rgba(99, 102, 241, 0.9)',  // indigo-500
+    yellow: 'rgba(234, 179, 8, 0.9)',   // yellow-500
+    lime: 'rgba(132, 204, 22, 0.9)',    // lime-500
+    slate: 'rgba(100, 116, 139, 0.9)'   // slate-500
+  };
+  return colorMap[colorName] || 'rgba(138, 163, 124, 0.9)'; // fallback to custom-green
+};
+
+// Get rgba color values for date badge (opacity 0.3)
+const getBadgeColor = (colorName) => {
+  const colorMap = {
+    red: 'rgba(239, 68, 68, 0.3)',      // red-500
+    green: 'rgba(34, 197, 94, 0.3)',    // green-500
+    blue: 'rgba(59, 130, 246, 0.3)',    // blue-500
+    orange: 'rgba(249, 115, 22, 0.3)',  // orange-500
+    purple: 'rgba(168, 85, 247, 0.3)',  // purple-500
+    fuchsia: 'rgba(217, 70, 239, 0.3)', // fuchsia-500
+    emerald: 'rgba(16, 185, 129, 0.3)', // emerald-500
+    violet: 'rgba(139, 92, 246, 0.3)',  // violet-500
+    indigo: 'rgba(99, 102, 241, 0.3)',  // indigo-500
+    yellow: 'rgba(234, 179, 8, 0.3)',   // yellow-500
+    lime: 'rgba(132, 204, 22, 0.3)',    // lime-500
+    slate: 'rgba(100, 116, 139, 0.3)'   // slate-500
+  };
+  return colorMap[colorName] || 'rgba(138, 163, 124, 0.3)'; // fallback to custom-green
+};
+
+// Get bright text color for badge (100% opacity)
+const getBadgeTextColor = (colorName) => {
+  const colorMap = {
+    red: 'rgba(255, 100, 100, 1)',      // bright red
+    green: 'rgba(74, 222, 128, 1)',      // bright green (green-400)
+    blue: 'rgba(96, 165, 250, 1)',      // bright blue (blue-400)
+    orange: 'rgba(251, 146, 60, 1)',    // bright orange (orange-400)
+    purple: 'rgba(192, 132, 252, 1)',   // bright purple (purple-400)
+    fuchsia: 'rgba(240, 171, 252, 1)',  // bright fuchsia (fuchsia-300)
+    emerald: 'rgba(52, 211, 153, 1)',   // bright emerald (emerald-400)
+    violet: 'rgba(167, 139, 250, 1)',   // bright violet (violet-400)
+    indigo: 'rgba(129, 140, 248, 1)',   // bright indigo (indigo-400)
+    yellow: 'rgba(250, 204, 21, 1)',    // bright yellow (yellow-400)
+    lime: 'rgba(163, 230, 53, 1)',      // bright lime (lime-400)
+    slate: 'rgba(148, 163, 184, 1)'     // bright slate (slate-400)
+  };
+  return colorMap[colorName] || 'rgba(138, 163, 124, 1)'; // fallback to custom-green at 100% opacity
+};
 </script>
 
 <template>
@@ -146,25 +242,77 @@ const getGardenName = (event) => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Upcoming Events:</h3>
             <div class="space-y-2">
               <div v-for="day in upcomingEvents" :key="day.id" 
-                   class="flex gap-3 border-r-4 border rounded p-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
+                   class="flex flex-col border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
                    @click="volunteerDayClick(day.id)">
-                <!-- Garden Image Square -->
-                <div class="flex-shrink-0 w-32 h-32 relative">
-                  <img 
-                    :src="getGardenImageThumbnail(day)" 
-                    :alt="getGardenName(day)"
-                    class="w-full h-full object-cover rounded"
-                  />
-                  <!-- Garden Name Overlay -->
-                  <div class="absolute bottom-0 left-0 right-0 bg-[rgba(138,163,124,0.9)] px-2 py-1 rounded-b">
-                    <p class="text-xs font-semibold text-white truncate">{{ getGardenName(day) }}</p>
+                <!-- Garden Name Banner at Top -->
+                <div 
+                  class="w-full px-4 py-2 rounded-t"
+                  :style="{ backgroundColor: getBannerOverlayColor(getGardenBannerColor(day)) }"
+                >
+                  <p class="text-lg font-semibold text-white text-right">{{ getGardenName(day) }}</p>
+                </div>
+                <!-- Event Content Row -->
+                <div class="flex gap-3 p-3">
+                  <!-- Garden Image Square -->
+                  <div class="flex-shrink-0 w-32 h-32 relative">
+                    <img 
+                      :src="getGardenImageThumbnail(day)" 
+                      :alt="getGardenName(day)"
+                      class="w-full h-full object-cover rounded"
+                    />
+                  </div>
+                  <!-- Event Content -->
+                  <div class="flex-1 min-w-0">
+                    <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
+                    <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
+                    <p 
+                      class="text-lg font-medium inline-block rounded-md px-3 py-1"
+                      :style="{ 
+                        backgroundColor: getBadgeColor(getGardenBannerColor(day)),
+                        color: getBadgeTextColor(getGardenBannerColor(day))
+                      }"
+                    >{{ displayDate(day.startDatetime) }}</p>
                   </div>
                 </div>
-                <!-- Event Content -->
-                <div class="flex-1 min-w-0">
-                  <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
-                  <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
-                  <p class="text-m inline-block bg-[rgba(138,163,124,0.3)] text-[#8aa37c] rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="futureEvents.length">
+            <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Future Events:</h3>
+            <div class="space-y-2">
+              <div v-for="day in futureEvents" :key="day.id" 
+                   class="flex flex-col border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
+                   @click="volunteerDayClick(day.id)">
+                <!-- Garden Name Banner at Top -->
+                <div 
+                  class="w-full px-4 py-2 rounded-t"
+                  :style="{ backgroundColor: getBannerOverlayColor(getGardenBannerColor(day)) }"
+                >
+                  <p class="text-lg font-semibold text-white text-right">{{ getGardenName(day) }}</p>
+                </div>
+                <!-- Event Content Row -->
+                <div class="flex gap-3 p-3">
+                  <!-- Garden Image Square -->
+                  <div class="flex-shrink-0 w-32 h-32 relative">
+                    <img 
+                      :src="getGardenImageThumbnail(day)" 
+                      :alt="getGardenName(day)"
+                      class="w-full h-full object-cover rounded"
+                    />
+                  </div>
+                  <!-- Event Content -->
+                  <div class="flex-1 min-w-0">
+                    <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
+                    <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
+                    <p 
+                      class="text-lg font-medium inline-block rounded-md px-3 py-1"
+                      :style="{ 
+                        backgroundColor: getBadgeColor(getGardenBannerColor(day)),
+                        color: getBadgeTextColor(getGardenBannerColor(day))
+                      }"
+                    >{{ displayDate(day.startDatetime) }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -174,25 +322,37 @@ const getGardenName = (event) => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Recent Events:</h3>
             <div class="space-y-2">
               <div v-for="day in pastEvents" :key="day.id" 
-                   class="flex gap-3 border-r-4 border rounded p-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
+                   class="flex flex-col border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"  
                    @click="volunteerDayClick(day.id)">
-                <!-- Garden Image Square -->
-                <div class="flex-shrink-0 w-32 h-32 relative">
-                  <img 
-                    :src="getGardenImageThumbnail(day)" 
-                    :alt="getGardenName(day)"
-                    class="w-full h-full object-cover rounded"
-                  />
-                  <!-- Garden Name Overlay -->
-                  <div class="absolute bottom-0 left-0 right-0 bg-[rgba(138,163,124,0.9)] px-2 py-1 rounded-b">
-                    <p class="text-xs font-semibold text-white truncate">{{ getGardenName(day) }}</p>
-                  </div>
+                <!-- Garden Name Banner at Top -->
+                <div 
+                  class="w-full px-4 py-2 rounded-t"
+                  :style="{ backgroundColor: getBannerOverlayColor(getGardenBannerColor(day)) }"
+                >
+                  <p class="text-lg font-semibold text-white text-right">{{ getGardenName(day) }}</p>
                 </div>
-                <!-- Event Content -->
-                <div class="flex-1 min-w-0">
-                  <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
-                  <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
-                  <p class="text-m inline-block bg-[rgba(138,163,124,0.3)] text-[#8aa37c] rounded-md px-3 py-1">{{ displayDate(day.startDatetime) }}</p>
+                <!-- Event Content Row -->
+                <div class="flex gap-3 p-3">
+                  <!-- Garden Image Square -->
+                  <div class="flex-shrink-0 w-32 h-32 relative">
+                    <img 
+                      :src="getGardenImageThumbnail(day)" 
+                      :alt="getGardenName(day)"
+                      class="w-full h-full object-cover rounded"
+                    />
+                  </div>
+                  <!-- Event Content -->
+                  <div class="flex-1 min-w-0">
+                    <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
+                    <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
+                    <p 
+                      class="text-lg font-medium inline-block rounded-md px-3 py-1"
+                      :style="{ 
+                        backgroundColor: getBadgeColor(getGardenBannerColor(day)),
+                        color: getBadgeTextColor(getGardenBannerColor(day))
+                      }"
+                    >{{ displayDate(day.startDatetime) }}</p>
+                  </div>
                 </div>
               </div>
             </div>

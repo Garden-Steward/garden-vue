@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, onBeforeUnmount } from 'vue';
+import { getVolunteerColor } from '@/helpers/color-utils';
 
 const props = defineProps({
   volunteer: Object,
@@ -53,7 +54,7 @@ const fullName = computed(() => {
 });
 
 const userBubbleColor = computed(() => {
-  return props.volunteer?.color || 'green';
+  return getVolunteerColor(props.volunteer);
 });
 </script>
 

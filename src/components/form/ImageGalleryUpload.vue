@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useEventStore } from '@/stores'
+import { useEventStore, useAlertStore } from '@/stores'
+import { useImageCompression } from '@/composables/useImageCompression'
 
 const emit = defineEmits(['update:modelValue'])
 const props = defineProps({
@@ -19,9 +20,12 @@ const props = defineProps({
 })
 
 const eventStore = useEventStore()
+const alertStore = useAlertStore()
+const { compressImageWithDefaults, createCompressionStatus } = useImageCompression()
 const fileInput = ref(null)
 const dragActive = ref(false)
 const uploadingFiles = ref([])
+const compressingFiles = ref([])
 const draggedIndex = ref(null)
 const dragOverIndex = ref(null)
 const dragPreviewPosition = ref({ x: 0, y: 0 })
@@ -136,11 +140,53 @@ const uploadFiles = async (files) => {
 
 const uploadFile = async (file) => {
   const uploadId = Date.now() + Math.random()
-  uploadingFiles.value.push({ id: uploadId, name: file.name, progress: 0 })
+  const compressId = Date.now() + Math.random()
   
   try {
+    // Step 1: Compress image
+    compressingFiles.value.push({ 
+      id: compressId, 
+      name: file.name, 
+      progress: 0,
+      status: 'compressing'
+    })
+    
+    const compressionResult = await compressImageWithDefaults(file, (progress) => {
+      const compressFile = compressingFiles.value.find(f => f.id === compressId)
+      if (compressFile) {
+        compressFile.progress = Math.round(progress)
+      }
+    })
+    
+    // Update compression status
+    const compressFile = compressingFiles.value.find(f => f.id === compressId)
+    if (compressFile) {
+      const status = createCompressionStatus(compressionResult)
+      if (compressionResult.skipped) {
+        compressFile.status = 'skipped'
+        compressFile.message = status.message
+      } else if (compressionResult.error) {
+        compressFile.status = 'error'
+        compressFile.message = status.message
+      } else {
+        compressFile.status = 'complete'
+        // Extract just the size comparison part (before the percentage) for cleaner display
+        compressFile.message = status.message.split(' (')[0]
+        compressFile.savings = status.savings
+      }
+    }
+    
+    // Step 2: Upload compressed image
+    uploadingFiles.value.push({ 
+      id: uploadId, 
+      name: file.name, 
+      progress: 0,
+      status: 'uploading',
+      compressionInfo: compressFile
+    })
+    
     const formData = new FormData()
-    formData.append('files', file)
+    formData.append('files', compressionResult.file)
     
     // Upload using the event store method
     const response = await eventStore.uploadImage(formData, null) // Don't auto-update event
@@ -154,8 +200,9 @@ const uploadFile = async (file) => {
     images.value = [...images.value, newImage]
   } catch (error) {
     console.error('Upload failed:', error)
-    alert(`Failed to upload ${file.name}. Please try again.`)
+    alertStore.error(`Failed to upload ${file.name}. Please try again.`)
   } finally {
+    compressingFiles.value = compressingFiles.value.filter(f => f.id !== compressId)
     uploadingFiles.value = uploadingFiles.value.filter(f => f.id !== uploadId)
   }
 }
@@ -339,6 +386,31 @@ const canAddMore = computed(() => {
       </div>
     </div>
     
+    <!-- Compression Progress -->
+    <div v-if="compressingFiles.length > 0" class="mb-4">
+      <div
+        v-for="compressing in compressingFiles"
+        :key="compressing.id"
+        class="bg-purple-50 border border-purple-200 rounded p-3 mb-2"
+      >
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-sm text-purple-800 font-medium">{{ compressing.name }}</span>
+          <span class="text-xs text-purple-600">
+            {{ compressing.status === 'compressing' ? 'Compressing...' : compressing.message }}
+          </span>
+        </div>
+        <div v-if="compressing.status === 'compressing'" class="w-full bg-purple-200 rounded-full h-2">
+          <div 
+            class="bg-purple-600 h-2 rounded-full transition-all duration-300" 
+            :style="{ width: compressing.progress + '%' }"
+          ></div>
+        </div>
+        <div v-else-if="compressing.status === 'complete' && compressing.savings" class="text-xs text-purple-600 mt-1">
+          ✓ Saved {{ compressing.savings }}% space
+        </div>
+      </div>
+    </div>
+    
     <!-- Upload Progress -->
     <div v-if="uploadingFiles.length > 0" class="mb-4">
       <div
@@ -346,11 +418,14 @@ const canAddMore = computed(() => {
         :key="uploading.id"
         class="bg-blue-50 border border-blue-200 rounded p-3 mb-2"
       >
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-blue-800">{{ uploading.name }}</span>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-sm text-blue-800 font-medium">{{ uploading.name }}</span>
           <span class="text-xs text-blue-600">Uploading...</span>
         </div>
-        <div class="w-full bg-blue-200 rounded-full h-2 mt-2">
+        <div v-if="uploading.compressionInfo && uploading.compressionInfo.status === 'complete'" class="text-xs text-blue-600 mb-1">
+          {{ uploading.compressionInfo.message }}
+        </div>
+        <div class="w-full bg-blue-200 rounded-full h-2">
           <div class="bg-blue-600 h-2 rounded-full animate-pulse" style="width: 60%"></div>
         </div>
       </div>
