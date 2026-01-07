@@ -36,7 +36,7 @@ export const useEventStore = defineStore({
             throw err;
         },
         async getUserEvents() {
-            return fetchWrapper.get(`${baseUrl}/user`)
+            return fetchWrapper.get(`${baseUrl}/user?populate[0]=garden&populate[garden][populate][0]=managers`)
                 .then(res => this.volunteerDays.days = res)
                 .catch(this.handleError);
         },

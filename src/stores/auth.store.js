@@ -32,7 +32,7 @@ export const useAuthStore = defineStore({
             localStorage.setItem('user', JSON.stringify(user));
             localStorage.setItem(localStorageTokenKey, this.auth.accessToken);
             
-            router.push(this.returnUrl || '/');
+            router.push(this.returnUrl || '/manage');
         },
         async login(username, password) {
             const {jwt, user} = await fetchWrapper.post(`${baseUrl}/api/auth/local?populate=role`, { identifier: username, password });
@@ -47,8 +47,8 @@ export const useAuthStore = defineStore({
             localStorage.setItem('user', JSON.stringify(user));
             localStorage.setItem(localStorageTokenKey, jwt);
 
-            // redirect to previous url or default to home page
-            router.push(this.returnUrl || '/');
+            // redirect to previous url or default to manage page
+            router.push(this.returnUrl || '/manage');
         },
         async forgot(email) {
             console.log("reset pw: ", email)
