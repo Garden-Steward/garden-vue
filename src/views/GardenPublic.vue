@@ -453,7 +453,7 @@ const getProjectHeroImage = (project) => {
       </section>
 
       <!-- Upcoming Events and Latest Events -->
-      <section class="garden-section two-column-section">
+      <section class="two-column-section">
         <div class="two-column-layout">
           <!-- Left: Upcoming Events -->
           <div class="column-content">
@@ -859,13 +859,17 @@ const getProjectHeroImage = (project) => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Two-column section with dark green background */
+/* Two-column section */
 .two-column-section {
-  background-color: rgba(108, 138, 106, 0.15);
+  background-color: transparent;
+  padding: 0;
+  margin-bottom: 30px;
+  box-shadow: none;
 }
 
 .dark .two-column-section {
-  background-color: rgba(108, 138, 106, 0.25);
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .two-column-layout {
@@ -933,6 +937,7 @@ const getProjectHeroImage = (project) => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: none;
 }
 
 /* Garden Activity Section - hide when no activity but keep rendered for IntersectionObserver */
@@ -961,10 +966,11 @@ const getProjectHeroImage = (project) => {
   transition: all 0.3s ease;
   cursor: pointer;
   background-color: rgba(138, 163, 124, 0.1);
+  box-shadow: none;
 }
 
 .dark .event-item {
-  background-color: rgba(138, 163, 124, 0.2);
+  background-color: rgba(138, 163, 124, 0.8);
 }
 
 .event-item:hover {

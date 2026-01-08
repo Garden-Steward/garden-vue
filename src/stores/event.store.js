@@ -99,7 +99,9 @@ export const useEventStore = defineStore({
         },
         async findById(id) {
             this.event = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=garden&populate[garden][populate][0]=managers&populate[1]=confirmed&populate[2]=hero_image&populate[3]=featured_gallery`)
+            // Test: Try dot notation for nested relations (like projects.store.js uses garden.organization)
+            // This avoids conflicts with array-based populate parameters
+            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=garden&populate[1]=garden.managers&populate[2]=confirmed&populate[3]=hero_image&populate[4]=featured_gallery`)
                 .then(res => this.event = res.data)
                 .catch(this.handleError);
         },

@@ -254,7 +254,7 @@ const getBadgeTextColor = (colorName) => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Upcoming Events:</h3>
             <div class="space-y-2">
               <div v-for="day in upcomingEvents" :key="day.id" 
-                   class="flex border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors overflow-hidden"  
+                   class="flex border-r-4 border rounded bg-[rgba(26,26,26,0.8)] border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"  
                    @click="volunteerDayClick(day.id)">
                 <!-- Hero Image Column - Square -->
                 <div class="flex-shrink-0 w-48 md:w-64 aspect-square relative overflow-hidden border-[3px] border-custom-light">
@@ -294,7 +294,7 @@ const getBadgeTextColor = (colorName) => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Future Events:</h3>
             <div class="space-y-2">
               <div v-for="day in futureEvents" :key="day.id" 
-                   class="flex border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors overflow-hidden"  
+                   class="flex border-r-4 border rounded bg-[rgba(26,26,26,0.8)] border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"  
                    @click="volunteerDayClick(day.id)">
                 <!-- Hero Image Column - Square -->
                 <div class="flex-shrink-0 w-48 md:w-64 aspect-square relative overflow-hidden border-[3px] border-custom-light">
@@ -334,7 +334,7 @@ const getBadgeTextColor = (colorName) => {
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5]">Recent Events:</h3>
             <div class="space-y-2">
               <div v-for="day in pastEvents" :key="day.id" 
-                   class="flex border-r-4 border rounded bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:opacity-70 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors overflow-hidden"  
+                   class="flex border-r-4 border rounded bg-[rgba(26,26,26,0.8)] border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(26,26,26,0.95)] transition-colors overflow-hidden"  
                    @click="volunteerDayClick(day.id)">
                 <!-- Hero Image Column - Square -->
                 <div class="flex-shrink-0 w-48 md:w-64 aspect-square relative overflow-hidden border-[3px] border-custom-light">

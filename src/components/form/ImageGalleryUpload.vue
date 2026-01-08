@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { useEventStore, useAlertStore } from '@/stores'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useEventStore, useAlertStore, useMediaStore } from '@/stores'
 import { useImageCompression } from '@/composables/useImageCompression'
 
 const emit = defineEmits(['update:modelValue'])
@@ -16,12 +16,18 @@ const props = defineProps({
   eventId: {
     type: Number,
     default: null
+  },
+  gardenId: {
+    type: Number,
+    default: null
   }
 })
 
 const eventStore = useEventStore()
 const alertStore = useAlertStore()
+const mediaStore = useMediaStore()
 const { compressImageWithDefaults, createCompressionStatus } = useImageCompression()
+const activeTab = ref('upload') // 'existing' or 'upload' - start with upload
 const fileInput = ref(null)
 const dragActive = ref(false)
 const uploadingFiles = ref([])
@@ -30,6 +36,8 @@ const draggedIndex = ref(null)
 const dragOverIndex = ref(null)
 const dragPreviewPosition = ref({ x: 0, y: 0 })
 const draggedImageData = ref(null)
+const visibleMediaCount = ref(4)
+const visibleGalleryCount = ref(4)
 
 // Normalize images array - handle Strapi format
 const images = computed({
@@ -198,6 +206,12 @@ const uploadFile = async (file) => {
     }
     
     images.value = [...images.value, newImage]
+    
+    // Refresh media library if gardenId is provided and switch to existing tab
+    if (props.gardenId) {
+      await mediaStore.fetchGardenMedia(props.gardenId)
+      activeTab.value = 'existing'
+    }
   } catch (error) {
     console.error('Upload failed:', error)
     alertStore.error(`Failed to upload ${file.name}. Please try again.`)
@@ -350,10 +364,245 @@ const getImageUrl = (image) => {
 const canAddMore = computed(() => {
   return images.value.length < props.maxImages
 })
+
+// Get displayed media from media store
+const displayedMedia = computed(() => {
+  return mediaStore.mediaLibrary
+})
+
+// Paginated displayed media (show first 4, then load more)
+const visibleMedia = computed(() => {
+  return displayedMedia.value.slice(0, visibleMediaCount.value)
+})
+
+const hasMoreMedia = computed(() => {
+  return displayedMedia.value.length > visibleMediaCount.value
+})
+
+const loadMoreMedia = () => {
+  visibleMediaCount.value += 4
+}
+
+// Paginated gallery images (show first 4, then load more)
+const visibleGalleryImages = computed(() => {
+  return images.value.slice(0, visibleGalleryCount.value)
+})
+
+const visibleGalleryIndices = computed(() => {
+  return Array.from({ length: visibleGalleryCount.value }, (_, i) => i)
+})
+
+const hasMoreGalleryImages = computed(() => {
+  return images.value.length > visibleGalleryCount.value
+})
+
+const loadMoreGalleryImages = () => {
+  visibleGalleryCount.value += 4
+}
+
+// Reset visible count if images are removed below threshold
+watch(() => images.value.length, (newLength) => {
+  if (newLength < visibleGalleryCount.value) {
+    visibleGalleryCount.value = Math.max(4, newLength)
+  }
+})
+
+// Check if a media item is already in the gallery
+const isInGallery = (mediaItem) => {
+  const mediaId = mediaItem.id || mediaItem.data?.id || mediaItem.attributes?.id
+  if (!mediaId) return false
+  
+  return images.value.some(img => {
+    const imgId = img?.id || img?.data?.id
+    return imgId === mediaId
+  })
+}
+
+// Select media from gallery
+const selectMedia = (mediaItem) => {
+  if (!canAddMore.value) {
+    alert(`Maximum of ${props.maxImages} images allowed.`)
+    return
+  }
+  
+  const mediaId = mediaItem.id || mediaItem.data?.id || mediaItem.attributes?.id
+  const mediaUrl = getMediaImageUrl(mediaItem)
+  
+  if (!mediaId || !mediaUrl) return
+  
+  // Check if already in gallery
+  if (isInGallery(mediaItem)) {
+    return
+  }
+  
+  // Add to gallery
+  const newImage = {
+    id: mediaId,
+    url: mediaUrl
+  }
+  
+  images.value = [...images.value, newImage]
+}
+
+// Get image URL from media item
+const getMediaImageUrl = (mediaItem) => {
+  if (!mediaItem) return ''
+  
+  // Handle Strapi format
+  const attrs = mediaItem.data?.attributes || mediaItem.attributes || mediaItem
+  
+  // Try main URL first
+  if (attrs.url) {
+    return attrs.url.startsWith('http') ? attrs.url : `${import.meta.env.VITE_API_URL}${attrs.url}`
+  }
+  if (mediaItem.url) {
+    return mediaItem.url.startsWith('http') ? mediaItem.url : `${import.meta.env.VITE_API_URL}${mediaItem.url}`
+  }
+  
+  // Fallback to formats
+  if (attrs.formats?.large?.url) {
+    const url = attrs.formats.large.url
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`
+  }
+  if (attrs.formats?.medium?.url) {
+    const url = attrs.formats.medium.url
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`
+  }
+  
+  return ''
+}
+
+// Get thumbnail URL from media item
+const getMediaThumbnailUrl = (mediaItem) => {
+  if (!mediaItem) return ''
+  
+  const attrs = mediaItem.data?.attributes || mediaItem.attributes || mediaItem
+  
+  // Try thumbnail format first
+  if (attrs.formats?.thumbnail?.url) {
+    const url = attrs.formats.thumbnail.url
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`
+  }
+  if (mediaItem.formats?.thumbnail?.url) {
+    const url = mediaItem.formats.thumbnail.url
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`
+  }
+  
+  // Fallback to small format
+  if (attrs.formats?.small?.url) {
+    const url = attrs.formats.small.url
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`
+  }
+  
+  // Fallback to main URL
+  return getMediaImageUrl(mediaItem)
+}
+
+// Fetch media on mount and when gardenId changes
+onMounted(async () => {
+  if (props.gardenId) {
+    await mediaStore.fetchGardenMedia(props.gardenId)
+  }
+})
+
+watch(() => props.gardenId, async (newId) => {
+  if (newId) {
+    await mediaStore.fetchGardenMedia(newId)
+  }
+})
 </script>
 
 <template>
   <div class="image-gallery-upload">
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-300 mb-4">
+      <button
+        @click="activeTab = 'upload'"
+        :class="[
+          'px-4 py-2 font-medium text-sm transition-colors',
+          activeTab === 'upload'
+            ? 'border-b-2 border-green-600 text-green-600'
+            : 'text-gray-600 hover:text-gray-900'
+        ]"
+      >
+        Upload New
+      </button>
+      <button
+        v-if="gardenId"
+        @click="activeTab = 'existing'"
+        :class="[
+          'px-4 py-2 font-medium text-sm transition-colors',
+          activeTab === 'existing'
+            ? 'border-b-2 border-green-600 text-green-600'
+            : 'text-gray-600 hover:text-gray-900'
+        ]"
+      >
+        Choose Existing
+      </button>
+    </div>
+
+    <!-- Choose Existing Tab -->
+    <div v-if="activeTab === 'existing' && gardenId" class="existing-media-tab mb-4">
+      <!-- Loading State -->
+      <div v-if="mediaStore.loading" class="text-center py-8 text-gray-600">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div>
+        <p>Loading media...</p>
+      </div>
+
+      <!-- Media Grid -->
+      <div v-else-if="displayedMedia.length > 0">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div
+            v-for="(mediaItem, index) in visibleMedia"
+            :key="mediaItem.id || mediaItem.data?.id || `media-${index}`"
+            class="relative group cursor-pointer"
+            @click="selectMedia(mediaItem)"
+          >
+            <div
+              class="aspect-square rounded-lg overflow-hidden border-2 transition-all"
+              :class="{
+                'border-green-500 ring-2 ring-green-200': isInGallery(mediaItem),
+                'border-gray-300 hover:border-green-400': !isInGallery(mediaItem),
+                'opacity-50': isInGallery(mediaItem) || !canAddMore
+              }"
+            >
+              <img
+                :src="getMediaThumbnailUrl(mediaItem)"
+                :alt="mediaItem.attributes?.name || mediaItem.data?.attributes?.name || 'Media'"
+                class="w-full h-full object-cover"
+              />
+              
+              <!-- Selection Indicator -->
+              <div
+                v-if="isInGallery(mediaItem)"
+                class="absolute top-2 right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+              >
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="hasMoreMedia" class="mt-4 text-center">
+          <button
+            @click="loadMoreMedia"
+            type="button"
+            class="px-4 py-2 bg-custom-green text-white font-medium rounded shadow-md hover:bg-darker-green transition duration-150 ease-in-out"
+          >
+            Load More
+          </button>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else class="text-center py-8 text-gray-500">
+        <p>No media available for this garden</p>
+      </div>
+    </div>
+
+    <!-- Upload New Tab -->
+    <div v-if="activeTab === 'upload'">
     <!-- Upload Zone -->
     <div
       v-if="canAddMore"
@@ -436,8 +685,8 @@ const canAddMore = computed(() => {
       <p class="text-sm font-semibold mb-2">Current Gallery ({{ images.length }} photo{{ images.length !== 1 ? 's' : '' }})</p>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         <div
-          v-for="(image, index) in images"
-          :key="image.id ? `image-${image.id}` : `image-temp-${index}`"
+          v-for="index in visibleGalleryIndices"
+          :key="images[index]?.id ? `image-${images[index].id}` : `image-temp-${index}`"
           class="relative group aspect-square gallery-thumbnail cursor-move"
           :class="{ 
             'opacity-50 scale-95': draggedIndex === index,
@@ -453,7 +702,7 @@ const canAddMore = computed(() => {
           @dragend="handleDragEnd"
         >
           <img
-            :src="getImageUrl(image)"
+            :src="getImageUrl(images[index])"
             :alt="`Gallery image ${index + 1}`"
             class="w-full h-full object-cover rounded-lg border-2 transition-all pointer-events-none"
             :class="{
@@ -487,14 +736,25 @@ const canAddMore = computed(() => {
         </div>
       </div>
       
+      <div v-if="hasMoreGalleryImages" class="mt-4 text-center">
+        <button
+          @click="loadMoreGalleryImages"
+          type="button"
+          class="px-4 py-2 bg-custom-green text-white font-medium rounded shadow-md hover:bg-darker-green transition duration-150 ease-in-out"
+        >
+          Load More
+        </button>
+      </div>
+      
       <p class="text-xs text-gray-500 mt-2">
         <i class="fas fa-info-circle"></i> Drag images to reorder. Hover to delete.
       </p>
     </div>
     
     <!-- Empty State -->
-    <div v-if="images.length === 0 && uploadingFiles.length === 0 && !dragActive" class="text-center text-gray-500 text-sm py-4">
+    <div v-if="images.length === 0 && uploadingFiles.length === 0 && !dragActive && activeTab === 'upload'" class="text-center text-gray-500 text-sm py-4">
       No photos yet. Add {{ maxImages }} photos to showcase your event.
+    </div>
     </div>
     
     <!-- Custom Drag Preview -->
