@@ -36,7 +36,7 @@ const compressionStatus = ref(null)
 const baseUrl = `${import.meta.env.VITE_API_URL}`
 
 // Pagination for hero images (single selection)
-const itemsPerPage = 8
+const itemsPerPage = 4
 const visibleItemsCount = ref(itemsPerPage)
 
 // Normalize selected media for comparison
@@ -478,7 +478,8 @@ watch(activeTab, () => {
       <div v-if="!multiple && hasMoreItems" class="mt-4 text-center">
         <button
           @click="loadMore"
-          class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+          type="button"
+          class="px-4 py-2 bg-custom-green text-white font-medium rounded shadow-md hover:bg-darker-green transition duration-150 ease-in-out"
         >
           Load More
         </button>

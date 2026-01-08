@@ -25,6 +25,7 @@ const originalEventData = ref(null);
 const isEditingTitle = ref(false);
 const autoSaveTimeout = ref(null);
 const isAutoSaving = ref(false);
+const showMediaFields = ref(false);
 
 const startEditingTitle = async () => {
   isEditingTitle.value = true;
@@ -357,7 +358,7 @@ onBeforeUnmount(() => {
           <h1 class="text-2xl font-bold font-roboto sm:text-3xl">Event Manager</h1>
           
           <!-- Header buttons and access controls -->
-          <div class="flex items-start gap-4">
+          <div v-if="event?.attributes" class="flex items-start gap-4">
             <!-- Accessibility dropdown -->
             <div class="flex flex-col">
               <span class="text-sm font-semibold mb-1">Event Access:</span>
@@ -483,31 +484,55 @@ onBeforeUnmount(() => {
               @update:content="(newContent) => event.attributes.content = newContent"
             />
             
-            <label for="heroImage">Hero Image</label>
-            <MediaSelector 
-              v-if="event?.attributes?.garden?.data?.id"
-              v-model="event.attributes.hero_image" 
-              :gardenId="event.attributes.garden.data.id"
-              :multiple="false"
-              placeholder="Select or upload hero image"
-            />
-            <div v-else class="text-gray-500 text-sm mb-4">
-              Loading garden information...
+            <!-- Manage Media button/link -->
+            <div class="mb-4 mt-[10px]">
+              <button
+                v-if="!showMediaFields"
+                @click="showMediaFields = true"
+                type="button"
+                class="px-4 py-2 bg-custom-green text-white font-medium rounded shadow-md hover:bg-darker-green transition duration-150 ease-in-out"
+              >
+                Manage Media
+              </button>
+              <button
+                v-else
+                @click="showMediaFields = false"
+                type="button"
+                class="text-custom-green hover:text-darker-green underline font-medium"
+              >
+                Hide Media
+              </button>
             </div>
 
-            <!-- Featured Gallery Section -->
-            <div class="mb-4">
-              <label for="featuredGallery" class="block mb-2 font-semibold">
-                Featured Gallery
-              </label>
-              <p class="text-sm text-gray-600 mb-2">
-                Add 3-8 photos from the event. These will appear in the event gallery. Drag to reorder.
-              </p>
-              <ImageGalleryUpload 
-                v-model="event.attributes.featured_gallery"
-                :event-id="event.id"
-                :max-images="8"
+            <!-- Media fields (hidden by default) -->
+            <div v-if="showMediaFields" class="border-2 border-custom-green rounded-lg p-4 mt-4">
+              <label for="heroImage">Hero Image</label>
+              <MediaSelector 
+                v-if="event?.attributes?.garden?.data?.id"
+                v-model="event.attributes.hero_image" 
+                :gardenId="event.attributes.garden.data.id"
+                :multiple="false"
+                placeholder="Select or upload hero image"
               />
+              <div v-else class="text-gray-500 text-sm mb-4">
+                Loading garden information...
+              </div>
+
+              <!-- Featured Gallery Section -->
+              <div class="mb-4">
+                <label for="featuredGallery" class="block mb-2 font-semibold">
+                  Featured Gallery
+                </label>
+                <p class="text-sm text-gray-600 mb-2">
+                  Add 3-8 photos from the event. These will appear in the event gallery. Drag to reorder.
+                </p>
+                <ImageGalleryUpload 
+                  v-model="event.attributes.featured_gallery"
+                  :event-id="event.id"
+                  :garden-id="event?.attributes?.garden?.data?.id"
+                  :max-images="8"
+                />
+              </div>
             </div>
               </div>
             </div>

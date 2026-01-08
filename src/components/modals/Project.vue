@@ -46,6 +46,7 @@ const showMediaFields = ref(false);
 const availableEvents = ref([]);
 const showEventSelector = ref(false);
 const isSubmitting = ref(false);
+const visibleGalleryImages = ref(4);
 
 const categoryOptions = [
   { value: 'Infrastructure', label: 'Infrastructure' },
@@ -262,6 +263,26 @@ const validGalleryImages = computed(() => {
     return [];
   }
   return form.value.featured_gallery.filter(img => img && (img.url || img.formats?.medium?.url));
+});
+
+// Paginated gallery images (show first 4, then load more)
+const displayedGalleryImages = computed(() => {
+  return validGalleryImages.value.slice(0, visibleGalleryImages.value);
+});
+
+const hasMoreGalleryImages = computed(() => {
+  return validGalleryImages.value.length > visibleGalleryImages.value;
+});
+
+const loadMoreGalleryImages = () => {
+  visibleGalleryImages.value += 4;
+};
+
+// Reset visible count if images are removed below threshold
+watch(() => validGalleryImages.value.length, (newLength) => {
+  if (newLength < visibleGalleryImages.value) {
+    visibleGalleryImages.value = Math.max(4, newLength);
+  }
 });
 
 // Get thumbnail URL from hero_image
@@ -735,15 +756,15 @@ onUnmounted(() => {
           <Tiptap v-model="form.description" :editor="true" />
         </div>
 
-        <!-- Add Media button/link -->
-        <div>
+        <!-- Manage Media button/link -->
+        <div class="mt-[10px]">
           <button
             v-if="!showMediaFields"
             @click="showMediaFields = true"
             type="button"
             class="px-4 py-2 bg-custom-green text-white font-medium rounded shadow-md hover:bg-darker-green transition duration-150 ease-in-out"
           >
-            Add Media
+            Manage Media
           </button>
           <button
             v-else
@@ -756,7 +777,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Media fields (hidden by default) -->
-        <div v-if="showMediaFields">
+        <div v-if="showMediaFields" class="border-2 border-custom-green rounded-lg p-4 mt-4">
           <div>
             <label class="block text-sm font-medium mb-1">Hero image</label>
             <MediaSelector 
@@ -1037,13 +1058,22 @@ onUnmounted(() => {
               <div v-if="validGalleryImages.length > 0" class="mb-8">
                 <h2 class="text-2xl font-bold mb-4">Gallery</h2>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  <div v-for="(img, idx) in validGalleryImages" :key="idx" class="relative">
+                  <div v-for="(img, idx) in displayedGalleryImages" :key="idx" class="relative">
                     <img 
                       :src="img.url || img.formats?.medium?.url" 
                       :alt="`Gallery image ${idx + 1}`"
                       class="w-full h-48 object-cover rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
                     />
                   </div>
+                </div>
+                <div v-if="hasMoreGalleryImages" class="mt-4 text-center">
+                  <button
+                    @click="loadMoreGalleryImages"
+                    type="button"
+                    class="px-4 py-2 bg-custom-green text-white font-medium rounded shadow-md hover:bg-darker-green transition duration-150 ease-in-out"
+                  >
+                    Load More
+                  </button>
                 </div>
               </div>
 
