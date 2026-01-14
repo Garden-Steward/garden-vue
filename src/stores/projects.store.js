@@ -218,9 +218,9 @@ export const useProjectsStore = defineStore({
                 data.date_end = null;
             }
 
-            return fetchWrapper.post(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=impact_metrics`, { data: data })
+            return fetchWrapper.post(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=related_events.title&populate[5]=impact_metrics`, { data: data })
                 .then(response => {
-                    if (response?.data?.attributes) {
+                    if (response?.data?.id && response?.data?.attributes) {
                         // Normalize hero_image
                         if (response.data.attributes.hero_image?.data) {
                             const imageData = response.data.attributes.hero_image.data;
@@ -235,12 +235,38 @@ export const useProjectsStore = defineStore({
                                 ...img.attributes,
                                 id: img.id
                             }));
+                        } else if (!response.data.attributes.featured_gallery) {
+                            response.data.attributes.featured_gallery = [];
+                        }
+                        // Normalize related_events
+                        if (response.data.attributes.related_events?.data) {
+                            response.data.attributes.related_events = response.data.attributes.related_events.data.map(event => ({
+                                ...event.attributes,
+                                id: event.id
+                            }));
+                        } else if (!response.data.attributes.related_events) {
+                            response.data.attributes.related_events = [];
                         }
                         
-                        // Don't manually add to store - let getProjects refetch to avoid duplicates
-                        // The component will refetch after creation
+                        // Create normalized project object matching getProjects format
+                        const newProject = {
+                            id: response.data.id,
+                            attributes: response.data.attributes
+                        };
                         
-                        return response.data.attributes;
+                        // Add to store if projects is an array
+                        if (Array.isArray(this.projects)) {
+                            // Check if project already exists (shouldn't happen, but prevent duplicates)
+                            const exists = this.projects.some(p => p.id === newProject.id);
+                            if (!exists) {
+                                this.projects.push(newProject);
+                            }
+                        } else {
+                            // If projects is not an array, initialize it
+                            this.projects = [newProject];
+                        }
+                        
+                        return newProject;
                     }
                     return response;
                 });

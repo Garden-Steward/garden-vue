@@ -392,11 +392,12 @@ watch(activeTab, () => {
 </script>
 
 <template>
-  <div class="media-selector">
+  <div class="media-selector" @click.stop>
     <!-- Tabs -->
-    <div class="flex border-b border-gray-300 mb-4">
+    <div class="flex border-b border-gray-300 mb-4" @click.stop>
       <button
-        @click="activeTab = 'existing'"
+        type="button"
+        @click.stop="activeTab = 'existing'"
         :class="[
           'px-4 py-2 font-medium text-sm transition-colors',
           activeTab === 'existing'
@@ -407,7 +408,8 @@ watch(activeTab, () => {
         Choose Existing
       </button>
       <button
-        @click="activeTab = 'upload'"
+        type="button"
+        @click.stop="activeTab = 'upload'"
         :class="[
           'px-4 py-2 font-medium text-sm transition-colors',
           activeTab === 'upload'
@@ -439,7 +441,7 @@ watch(activeTab, () => {
           v-for="(mediaItem, index) in displayedMedia"
           :key="mediaItem.id || mediaItem.data?.id || `media-${index}`"
           class="relative group cursor-pointer"
-          @click="selectMedia(mediaItem)"
+          @click.stop="selectMedia(mediaItem)"
         >
           <div
             class="aspect-square rounded-lg overflow-hidden border-2 transition-all"
@@ -477,7 +479,7 @@ watch(activeTab, () => {
       <!-- Load More Button (only for hero images) -->
       <div v-if="!multiple && hasMoreItems" class="mt-4 text-center">
         <button
-          @click="loadMore"
+          @click.stop="loadMore"
           type="button"
           class="px-4 py-2 bg-custom-green text-white font-medium rounded shadow-md hover:bg-darker-green transition duration-150 ease-in-out"
         >
@@ -499,11 +501,11 @@ watch(activeTab, () => {
           'border-green-500 bg-green-50': dragActive,
           'border-gray-300 bg-gray-50': !dragActive
         }"
-        @dragenter="handleDrag"
-        @dragleave="handleDrag"
-        @dragover="handleDrag"
-        @drop="handleDrop"
-        @click="fileInput?.click()"
+        @dragenter.stop="handleDrag"
+        @dragleave.stop="handleDrag"
+        @dragover.stop="handleDrag"
+        @drop.stop="handleDrop"
+        @click.stop="fileInput?.click()"
       >
         <input
           ref="fileInput"

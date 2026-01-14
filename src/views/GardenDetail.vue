@@ -288,12 +288,16 @@ const pastEvents = computed(() => {
 <template>
   <div class="bg-[#344a34] mx-auto min-h-screen">
     <!-- Garden Title Header -->
-    <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-4 sm:px-6 lg:px-8 shadow-md">
+    <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-4 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
       <div class="max-w-7xl mx-auto">
-        <h1 v-if="garden.attributes?.title" class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">{{ garden.attributes.title }}</h1>
-        <div v-else class="h-12 bg-white/20 rounded animate-pulse"></div>
-        <p v-if="garden.attributes?.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb.length > 150 ? garden.attributes.blurb.substring(0, 150) + '...' : garden.attributes.blurb }}</p>
-        <div v-else-if="garden.loading || (!garden.attributes && !garden.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <h1 v-if="garden.attributes?.title" class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight pr-12 lg:pr-0">{{ garden.attributes.title }}</h1>
+            <div v-else class="h-12 bg-white/20 rounded animate-pulse"></div>
+            <p v-if="garden.attributes?.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb.length > 150 ? garden.attributes.blurb.substring(0, 150) + '...' : garden.attributes.blurb }}</p>
+            <div v-else-if="garden.loading || (!garden.attributes && !garden.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
+          </div>
+        </div>
       </div>
     </div>
 
