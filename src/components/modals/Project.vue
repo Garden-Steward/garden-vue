@@ -274,6 +274,12 @@ const hasMoreGalleryImages = computed(() => {
   return validGalleryImages.value.length > visibleGalleryImages.value;
 });
 
+// Public page URL
+const publicPageUrl = computed(() => {
+  if (!props.gardenSlug || !props.slug) return null;
+  return `/gardens/${props.gardenSlug}/p/${props.slug}`;
+});
+
 const loadMoreGalleryImages = () => {
   visibleGalleryImages.value += 4;
 };
@@ -626,7 +632,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Show project title/header if ID exists -->
-    <div v-else-if="!showCreateButton" @click="openViewModal" class="cursor-pointer bg-[rgba(26,26,26,0.6)] border border-[#3d4d36]/50 p-3 rounded-lg shadow-sm mb-1 hover:bg-[rgba(26,26,26,0.8)] transition-colors">
+    <div v-else-if="!showCreateButton" @click="openViewModal" class="relative cursor-pointer bg-[rgba(26,26,26,0.6)] border border-[#3d4d36]/50 p-3 rounded-lg shadow-sm mb-1 hover:bg-[rgba(26,26,26,0.8)] transition-colors">
       <div class="flex flex-col md:flex-row gap-3">
         <!-- Thumbnail - full width on mobile, fixed size on desktop -->
         <div v-if="heroThumbnailUrl" class="w-full md:w-16 md:flex-shrink-0">
@@ -659,6 +665,18 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+      
+      <!-- Public Page Button -->
+      <a
+        v-if="publicPageUrl"
+        :href="publicPageUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        @click.stop
+        class="absolute bottom-2 right-2 px-2 py-1 text-xs font-medium bg-custom-green text-white rounded shadow-md hover:bg-darker-green focus:bg-darker-green focus:outline-none focus:ring-0 transition duration-150 ease-in-out z-10"
+      >
+        Public Page
+      </a>
     </div>
 
     <!-- Edit/Create Modal (editor mode) -->
@@ -670,7 +688,7 @@ onUnmounted(() => {
         <!-- Modal form -->
         <form @submit.prevent="submit">
           <div class="fixed inset-0 flex items-center justify-center overflow-x-hidden overflow-y-auto py-6" @click="toggleShow">
-            <div class="bg-white text-black grid grid-cols-1 md:w-1/2 w-[90%] gap-2 p-6 md:p-10 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto relative rounded-md" @click.stop>
+            <div class="bg-white text-black grid grid-cols-1 w-[95%] md:w-[90%] lg:w-1/2 gap-2 p-6 md:p-10 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto relative rounded-md" @click.stop>
               <!-- Close X button -->
               <button 
                 type="button" 

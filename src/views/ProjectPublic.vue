@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useProjectsStore, useGardensStore } from '@/stores';
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
 import MarkdownIt from 'markdown-it';
@@ -171,7 +171,7 @@ const relatedVolunteerDays = computed(() => {
     return [];
   }
   
-  return eventsArray.map(event => {
+  const normalized = eventsArray.map(event => {
     // Handle Strapi format: { id, attributes: { title, startDatetime, hero_image, ... } }
     if (event.attributes) {
       return {
@@ -189,7 +189,32 @@ const relatedVolunteerDays = computed(() => {
       hero_image: event.hero_image
     };
   }).filter(event => event.title); // Only include events with titles
+  
+  // Sort by most recent first (by startDatetime)
+  return normalized.sort((a, b) => {
+    const dateA = a.startDatetime ? new Date(a.startDatetime).getTime() : 0;
+    const dateB = b.startDatetime ? new Date(b.startDatetime).getTime() : 0;
+    return dateB - dateA; // Most recent first
+  });
 });
+
+// Number of volunteer days to display
+const visibleVolunteerDaysCount = ref(3);
+
+// Get visible volunteer days (first N)
+const visibleVolunteerDays = computed(() => {
+  return relatedVolunteerDays.value.slice(0, visibleVolunteerDaysCount.value);
+});
+
+// Check if there are more volunteer days to load
+const hasMoreVolunteerDays = computed(() => {
+  return relatedVolunteerDays.value.length > visibleVolunteerDaysCount.value;
+});
+
+// Load more volunteer days
+const loadMoreVolunteerDays = () => {
+  visibleVolunteerDaysCount.value += 3;
+};
 
 // Format event date and time
 const formatEventDateTime = (dateString) => {
@@ -271,7 +296,7 @@ const getEventImage = (event) => {
         <h2 class="section-title">Volunteer Days worked on:</h2>
         <div class="volunteer-days-list">
           <router-link
-            v-for="event in relatedVolunteerDays"
+            v-for="event in visibleVolunteerDays"
             :key="event.id"
             :to="`/d/${event.id}`"
             class="volunteer-day-item"
@@ -290,6 +315,14 @@ const getEventImage = (event) => {
               </div>
             </div>
           </router-link>
+        </div>
+        <div v-if="hasMoreVolunteerDays" class="load-more-container">
+          <button
+            @click="loadMoreVolunteerDays"
+            class="load-more-button"
+          >
+            Load More
+          </button>
         </div>
       </section>
 
@@ -848,6 +881,44 @@ const getEventImage = (event) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Load More Button */
+.load-more-container {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.load-more-button {
+  padding: 12px 32px;
+  background-color: #8aa37c;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(138, 163, 124, 0.2);
+}
+
+.load-more-button:hover {
+  background-color: #6c8a6a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.3);
+}
+
+.load-more-button:active {
+  transform: translateY(0);
+}
+
+.dark .load-more-button {
+  background-color: #8aa37c;
+  color: #ffffff;
+}
+
+.dark .load-more-button:hover {
+  background-color: #a5c499;
 }
 
 /* Small back button in description */
