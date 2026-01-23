@@ -10,9 +10,10 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import { format } from 'date-fns';
 import Switch from '@/components/form/Switch.vue';
 import TextInput from '@/components/form/TextInput.vue';
-import MediaSelector from '@/components/form/MediaSelector.vue';
+import HeroImageCard from '@/components/form/HeroImageCard.vue';
 import ImageGalleryUpload from '@/components/form/ImageGalleryUpload.vue';
 import DropDown from '@/components/form/DropDown.vue';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const eventStore = useEventStore();
 const alertStore = useAlertStore();
@@ -341,27 +342,29 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex flex-col font-roboto bg-custom-light max-w-screen-xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
-    <div class="flex-1">
-      <div class="px-2 py-2 md:px-8 md:py-4">
-        <!-- Back link -->
-        <router-link 
-          :to="`/manage/gardens/${event?.attributes?.garden?.data?.attributes?.slug}`"
-          class="inline-flex items-center text-custom-green hover:text-custom-green-dark mb-4"
-        >
-          <i class="fas fa-arrow-left mr-2"></i>
-          Back to Garden
-        </router-link>
-
-        <!-- Header section -->
-        <div class="flex justify-between items-start mb-4">
-          <h1 class="text-2xl font-bold font-roboto sm:text-3xl">Event Manager</h1>
+  <div class="bg-[#344a34] mx-auto min-h-screen">
+    <!-- Event Title Header -->
+    <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-0">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <!-- Back link -->
+            <router-link 
+              :to="`/manage/gardens/${event?.attributes?.garden?.data?.attributes?.slug}`"
+              class="inline-flex items-center text-white/90 hover:text-white mb-2"
+            >
+              <i class="fas fa-arrow-left mr-2"></i>
+              Back to Garden
+            </router-link>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">Event Manager</h1>
+            <p v-if="event?.attributes?.title" class="text-white/90 text-lg mt-2">{{ event.attributes.title }}</p>
+          </div>
           
           <!-- Header buttons and access controls -->
           <div v-if="event?.attributes" class="flex items-start gap-4">
             <!-- Accessibility dropdown -->
             <div class="flex flex-col">
-              <span class="text-sm font-semibold mb-1">Event Access:</span>
+              <span class="text-sm font-semibold mb-1 text-white/90">Event Access:</span>
               <div class="w-48">
                 <DropDown
                   v-model="event.attributes.accessibility"
@@ -384,28 +387,32 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Loading spinner -->
-        <div v-if="isLoading">
-          <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
+    <!-- Main Content -->
+    <div class="flex flex-col font-roboto max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+      <div class="flex-1">
+        <div class="px-2 py-2 md:px-2 md:py-4">
+          <!-- Loading spinner -->
+          <div v-if="isLoading" class="flex justify-center items-center py-8">
+            <LoadingSpinner size="lg" />
           </div>
-        </div>
 
-        <!-- Rest of the content -->
-        <div v-else>
+          <!-- Rest of the content -->
+          <div v-else>
           <!-- Main Layout: Editor on left, RSVPs on right (desktop) or bottom (mobile) -->
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
             <!-- Main Editor Content (Left side on desktop, full width on mobile) -->
             <div class="lg:col-span-2">
-              <div>
+              <div class="rounded-lg shadow-md">
             <!-- Title: Display as h1 with edit link, or show input when editing -->
             <div class="mb-4">
               <div v-if="!isEditingTitle" class="flex items-center gap-3">
-                <h1 class="text-3xl font-bold font-roboto mb-0">{{ event?.attributes?.title || 'Untitled Event' }}</h1>
+                <h1 class="text-3xl font-bold font-roboto mb-0 text-[#f5f5f5]">{{ event?.attributes?.title || 'Untitled Event' }}</h1>
                 <button
                   @click="startEditingTitle"
-                  class="text-custom-green hover:text-custom-green-dark underline text-sm"
+                  class="text-custom-green hover:text-darker-green underline text-sm"
                 >
                   Edit
                 </button>
@@ -423,7 +430,7 @@ onBeforeUnmount(() => {
                 </div>
                 <button
                   @click="isEditingTitle = false"
-                  class="text-gray-600 hover:text-gray-800 text-sm"
+                  class="text-[#d0d0d0] hover:text-[#f5f5f5] text-sm"
                 >
                   Done
                 </button>
@@ -433,25 +440,25 @@ onBeforeUnmount(() => {
             <!-- Two-column layout for date/time and ending time -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label class="block mb-2">Start Date & Time:</label>
+                <label class="block mb-2 text-[#f5f5f5]">Start Date & Time:</label>
                 <VueDatePicker v-model="event.attributes.startDatetime" class="mb-2" week-start="0"></VueDatePicker>
-                <p class="text-sm">{{ prettyDay }}</p>
-                <p class="text-sm">{{ new Date(event.attributes.startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</p>
+                <p class="text-sm text-[#d0d0d0]">{{ prettyDay }}</p>
+                <p class="text-sm text-[#d0d0d0]">{{ new Date(event.attributes.startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</p>
               </div>
               
               <div>
-                <label for="endText" class="block mb-2">Ending Time:</label>
+                <label for="endText" class="block mb-2 text-[#f5f5f5]">Ending Time:</label>
                 <TextInput
                   v-model="event.attributes.endText" 
                   size="md"
                   placeholder="e.g., around noon" 
-                  class="w-full md:w-1/2"
+                  class="w-full md:w-1/2 ending-time-input"
                 />
               </div>
             </div>
             
             <div class="flex items-center mb-2 relative">
-              <label for="blurb" class="mr-2">Blurb</label>
+              <label for="blurb" class="mr-2 text-[#f5f5f5]">Blurb</label>
               <div class="group relative">
                 <span class="tooltip-icon cursor-pointer">ⓘ</span>
                 <div class="tooltip-text">
@@ -462,30 +469,30 @@ onBeforeUnmount(() => {
               <div class="ml-auto flex items-center">
                 
                 <Switch v-model="event.attributes.smsLink" >
-                  <span class="text-sm font-medium text-gray-900 dark:text-gray-300 mr-2">SMS sends with link</span>
+                  <span class="text-sm font-medium text-[#f5f5f5] mr-2">SMS sends with link</span>
                 </Switch>
               </div>
             </div>
 
-            <div class="brief-box mb-4">
-              <textarea
-                id="blurb"
-                v-model="event.attributes.blurb"
-                rows="3"
-                class="w-full p-2 border border-gray-300 rounded"
-              ></textarea>
+            <textarea
+              id="blurb"
+              v-model="event.attributes.blurb"
+              rows="3"
+              class="w-full p-2 border border-[#3d4d36]/50 rounded bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] mb-4"
+            ></textarea>
+            
+            <label for="content" class="text-[#f5f5f5]">Content</label>
+            <div class="w-full tiptap-wrapper -mx-6 border-l-4 border-custom-green pl-4">
+              <Tiptap 
+                v-model="event.attributes.content" 
+                :editable="true"
+                :content="event.attributes.content"
+                @update:content="(newContent) => event.attributes.content = newContent"
+              />
             </div>
             
-            <label for="content">Content</label>
-            <Tiptap 
-              v-model="event.attributes.content" 
-              :editable="true"
-              :content="event.attributes.content"
-              @update:content="(newContent) => event.attributes.content = newContent"
-            />
-            
             <!-- Manage Media button/link -->
-            <div class="mb-4 mt-[10px]">
+            <div class="mb-4 mt-[10px] -mx-6 px-6 flex">
               <button
                 v-if="!showMediaFields"
                 @click="showMediaFields = true"
@@ -505,25 +512,18 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Media fields (hidden by default) -->
-            <div v-if="showMediaFields" class="border-2 border-custom-green rounded-lg p-4 mt-4">
-              <label for="heroImage">Hero Image</label>
-              <MediaSelector 
-                v-if="event?.attributes?.garden?.data?.id"
-                v-model="event.attributes.hero_image" 
-                :gardenId="event.attributes.garden.data.id"
-                :multiple="false"
-                placeholder="Select or upload hero image"
+            <div v-if="showMediaFields" class="border-2 border-custom-green rounded-lg p-4 mt-4 bg-[rgba(26,26,26,0.4)]">
+              <HeroImageCard
+                v-model="event.attributes.hero_image"
+                :gardenId="event?.attributes?.garden?.data?.id"
               />
-              <div v-else class="text-gray-500 text-sm mb-4">
-                Loading garden information...
-              </div>
 
               <!-- Featured Gallery Section -->
               <div class="mb-4">
-                <label for="featuredGallery" class="block mb-2 font-semibold">
+                <label for="featuredGallery" class="block mb-2 font-semibold text-[#f5f5f5]">
                   Featured Gallery
                 </label>
-                <p class="text-sm text-gray-600 mb-2">
+                <p class="text-sm text-[#d0d0d0] mb-2">
                   Add 3-8 photos from the event. These will appear in the event gallery. Drag to reorder.
                 </p>
                 <ImageGalleryUpload 
@@ -544,18 +544,18 @@ onBeforeUnmount(() => {
                 <button 
                   @click="saveEvent" 
                   :disabled="!hasChanges"
-                  class="w-full bg-custom-peach hover:bg-custom-green-dark text-black font-bold py-2 px-4 border-2 border-black rounded-md mb-4 transition-all disabled:bg-gray-400 disabled:text-white disabled:cursor-not-allowed disabled:hover:bg-gray-400 disabled:border-gray-400"
+                  class="w-full bg-custom-green hover:bg-darker-green text-white font-bold py-2 px-4 rounded-md mb-4 transition-all disabled:bg-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-600"
                 >
                   Save Event
                 </button>
                 
-                <h2 class="text-xl font-bold mb-3">
+                <h2 class="text-xl font-bold mb-3 text-[#f5f5f5]">
                   Volunteers RSVP'd 
-                  <span class="text-lg font-normal">({{ event.attributes.confirmed?.data?.length || 0 }})</span>
+                  <span class="text-lg font-normal text-white/80">({{ event.attributes.confirmed?.data?.length || 0 }})</span>
                 </h2>
                 
                 <div>
-                  <div v-if="!event.attributes.confirmed?.data?.length" class="text-gray-600">
+                  <div v-if="!event.attributes.confirmed?.data?.length" class="text-[#d0d0d0]">
                     No one has RSVP'd to this event yet
                   </div>
                   <ul v-else class="space-y-3">
@@ -568,7 +568,7 @@ onBeforeUnmount(() => {
                 <!-- Public Event Page Link -->
                 <button 
                   @click="$router.push(`/d/${event.id}`)" 
-                  class="w-full bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded mt-4"
+                  class="w-full bg-custom-green hover:bg-darker-green text-white font-bold py-2 px-4 rounded mt-4"
                 >
                   Public Event Page
                 </button>
@@ -578,13 +578,14 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .stew {
-  background-color: #f0f0f0;
-  border: 1px solid #e0e0e0;
+  background-color: #2d3e26;
+  border: 1px solid #3d4d36;
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1rem;
@@ -595,14 +596,17 @@ label {
   margin-bottom: 5px;
   margin-right: 10px;
   display: block;
+  color: #f5f5f5;
 }
 input {
   width: 100%;
   padding: 10px;
   margin-bottom: 15px;
-  border: 1px solid #ccc;
+  border: 1px solid #3d4d36;
   border-radius: 4px;
   font-size: 1.2em;
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
 }
 
 .save-button {
@@ -620,22 +624,127 @@ input {
   background-color: #45a049;
 }
 
-/* Add this CSS for the brief box */
-.brief-box {
-  background-color: #FFDAB9; /* Peach color */
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
+/* Dark mode styles for VueDatePicker */
+:deep(.dp__input_wrap) {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  border-color: #3d4d36 !important;
+}
+
+:deep(.dp__input) {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  color: #f5f5f5 !important;
+  border-color: #3d4d36 !important;
+}
+
+:deep(.dp__input::placeholder) {
+  color: #d0d0d0 !important;
+}
+
+:deep(.dp__input_icon) {
+  color: #d0d0d0 !important;
+}
+
+:deep(.dp__clear_icon) {
+  color: #d0d0d0 !important;
+}
+
+:deep(.dp__menu) {
+  background-color: rgba(26, 26, 26, 0.95) !important;
+  border-color: #3d4d36 !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+:deep(.dp__calendar_header_item) {
+  color: #f5f5f5 !important;
+}
+
+:deep(.dp__calendar_header_item:hover) {
+  background-color: rgba(138, 163, 124, 0.2) !important;
+}
+
+:deep(.dp__cell_inner) {
+  color: #f5f5f5 !important;
+}
+
+:deep(.dp__cell_inner:hover) {
+  background-color: rgba(138, 163, 124, 0.2) !important;
+}
+
+:deep(.dp__active_date) {
+  background-color: #8aa37c !important;
+  color: #fff !important;
+}
+
+:deep(.dp__range_start),
+:deep(.dp__range_end) {
+  background-color: #8aa37c !important;
+  color: #fff !important;
+}
+
+:deep(.dp__range_between) {
+  background-color: rgba(138, 163, 124, 0.3) !important;
+}
+
+:deep(.dp__today) {
+  border-color: #8aa37c !important;
+}
+
+:deep(.dp__month_year_wrap) {
+  color: #f5f5f5 !important;
+}
+
+:deep(.dp__arrow_top),
+:deep(.dp__arrow_bottom) {
+  border-color: #f5f5f5 transparent transparent transparent !important;
+}
+
+:deep(.dp__inner_nav) {
+  color: #f5f5f5 !important;
+}
+
+:deep(.dp__inner_nav:hover) {
+  background-color: rgba(138, 163, 124, 0.2) !important;
+}
+
+:deep(.dp__time_display) {
+  color: #f5f5f5 !important;
+}
+
+:deep(.dp__time_input) {
+  background-color: rgba(26, 26, 26, 0.8) !important;
+  color: #f5f5f5 !important;
+  border-color: #3d4d36 !important;
+}
+
+:deep(.dp__time_input:focus) {
+  border-color: #8aa37c !important;
+}
+
+/* Dark mode styling for TextInput in Ending Time field */
+.ending-time-input :deep(input) {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  color: #f5f5f5 !important;
+  border-color: #3d4d36 !important;
+}
+
+.ending-time-input :deep(input::placeholder) {
+  color: #d0d0d0 !important;
+}
+
+.ending-time-input :deep(input:focus) {
+  border-color: #8aa37c !important;
+  outline: none !important;
 }
 
 select {
   width: 100%;
   padding: 10px;
   margin-bottom: 15px;
-  border: 1px solid #ccc;
+  border: 1px solid #3d4d36;
   border-radius: 4px;
   font-size: 1.2em;
-  background-color: white;
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
 }
 
 .tooltip-icon {
@@ -645,8 +754,8 @@ select {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background-color: #f0f0f0;
-  color: #666;
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #d0d0d0;
   font-size: 12px;
 }
 
@@ -700,5 +809,18 @@ select {
 
 .duration-300 {
   transition-duration: 300ms;
+}
+
+/* Make Tiptap editor full width and align with Manage Media button */
+.tiptap-wrapper {
+  width: calc(100% + 3rem) !important;
+  margin-left: -1.5rem !important;
+  margin-right: -1.5rem !important;
+}
+
+.tiptap-wrapper .container {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
 }
 </style>

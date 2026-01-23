@@ -6,6 +6,7 @@ import TextInput from '@/components/form/TextInput.vue';
 import DropDown from '@/components/form/DropDown.vue';
 import Tiptap from '@/components/Tiptap.vue';
 import FormToggle from '@/components/Toggle.vue';
+import HeroImageCard from '@/components/form/HeroImageCard.vue';
 import MediaSelector from '@/components/form/MediaSelector.vue';
 
 const props = defineProps({
@@ -682,17 +683,17 @@ onUnmounted(() => {
     <!-- Edit/Create Modal (editor mode) -->
     <Teleport to="#modals">
       <div v-if="show && editor" class="w-xl">
-        <!-- The backdrop with darker peach color -->
-        <div class="fixed inset-0 bg-[#9A9084] opacity-90" @click="toggleShow"></div>
+        <!-- The backdrop with dark color -->
+        <div class="fixed inset-0 bg-black opacity-75" @click="toggleShow"></div>
 
         <!-- Modal form -->
         <form @submit.prevent="submit">
           <div class="fixed inset-0 flex items-center justify-center overflow-x-hidden overflow-y-auto py-6" @click="toggleShow">
-            <div class="bg-white text-black grid grid-cols-1 w-[95%] md:w-[90%] lg:w-1/2 gap-2 p-6 md:p-10 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto relative rounded-md" @click.stop>
+            <div class="bg-[#344a34] text-[#f5f5f5] grid grid-cols-1 w-[95%] md:w-[90%] lg:w-1/2 gap-2 p-6 md:p-10 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto relative rounded-md border border-[#3d4d36]" @click.stop>
               <!-- Close X button -->
               <button 
                 type="button" 
-                class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                class="absolute top-2 right-2 text-[#d0d0d0] hover:text-[#f5f5f5] focus:outline-none"
                 @click="toggleShow"
               >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -704,7 +705,7 @@ onUnmounted(() => {
         <!-- Title and Category row -->
         <div class="grid grid-cols-3 gap-4">
           <div class="col-span-2">
-            <label class="block text-sm font-medium mb-1">Title *</label>
+            <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Title *</label>
             <TextInput v-model="form.title" placeholder="Project title" />
             <!-- Slug display right below title with Featured toggle -->
             <div class="flex items-center justify-between" style="margin-top: -6px;">
@@ -714,15 +715,15 @@ onUnmounted(() => {
                     <FormToggle v-model="form.featured" />
                   </div>
                 </div>
-                <span class="text-xs text-gray-600" style="margin-left: -4px;">Featured</span>
+                <span class="text-xs text-[#d0d0d0]" style="margin-left: -4px;">Featured</span>
               </div>
-              <p class="text-xs text-gray-600">
+              <p class="text-xs text-[#d0d0d0]">
                 slug: <span class="font-bold">{{ form.slug || 'slug-will-be-generated' }}</span>
               </p>
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">Category</label>
+            <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Category</label>
             <DropDown v-model="form.category" :options="categoryOptions" />
           </div>
         </div>
@@ -730,19 +731,19 @@ onUnmounted(() => {
         <!-- Date fields - only show if showDateFields is true or if dates exist -->
         <div v-if="showDateFields" class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium mb-1">Start Date</label>
+            <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Start Date</label>
             <input
               v-model="form.date_start"
               type="date"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md"
+              class="w-full px-3 py-2 border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] focus:border-custom-green focus:outline-none"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">End Date</label>
+            <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">End Date</label>
             <input
               v-model="form.date_end"
               type="date"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md"
+              class="w-full px-3 py-2 border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] focus:border-custom-green focus:outline-none"
             />
           </div>
         </div>
@@ -750,27 +751,27 @@ onUnmounted(() => {
           <button
             @click="showDateFields = true"
             type="button"
-            class="px-4 py-2 bg-gray-200 text-gray-700 font-medium text-sm rounded shadow-sm hover:bg-gray-300 transition duration-150 ease-in-out"
+            class="px-4 py-2 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] border border-[#3d4d36] font-medium text-sm rounded shadow-sm hover:bg-[rgba(26,26,26,0.8)] transition duration-150 ease-in-out"
           >
             Add the Date
           </button>
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Short Description * (max 350 chars)</label>
+          <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Short Description * (max 350 chars)</label>
           <textarea
             v-model="form.short_description"
             maxlength="350"
             rows="3"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md"
+            class="w-full px-3 py-2 border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] placeholder-[#d0d0d0] focus:border-custom-green focus:outline-none"
             placeholder="Brief description of the project"
             required
           ></textarea>
-          <p class="text-xs text-gray-500 mt-1">{{ form.short_description?.length || 0 }}/350</p>
+          <p class="text-xs text-[#d0d0d0] mt-1">{{ form.short_description?.length || 0 }}/350</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Description</label>
+          <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Description</label>
           <Tiptap v-model="form.description" :editor="true" />
         </div>
 
@@ -795,23 +796,15 @@ onUnmounted(() => {
         </div>
 
         <!-- Media fields (hidden by default) -->
-        <div v-if="showMediaFields" class="border-2 border-custom-green rounded-lg p-4 mt-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">Hero image</label>
-            <MediaSelector 
-              v-if="form.garden"
-              v-model="form.hero_image" 
-              :gardenId="form.garden"
-              :multiple="false"
-              placeholder="Select or upload hero image"
-            />
-            <div v-else class="text-gray-500 text-sm mb-4">
-              Garden must be set before selecting media
-            </div>
-          </div>
+        <div v-if="showMediaFields" class="border-2 border-custom-green rounded-lg p-4 mt-4 bg-[rgba(26,26,26,0.4)]">
+          <HeroImageCard
+            v-model="form.hero_image"
+            :gardenId="form.garden"
+            label="Hero image"
+          />
 
           <div>
-            <label class="block text-sm font-medium mb-1">Featured Gallery</label>
+            <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Featured Gallery</label>
             <MediaSelector 
               v-if="form.garden"
               v-model="form.featured_gallery" 
@@ -819,13 +812,13 @@ onUnmounted(() => {
               :multiple="true"
               placeholder="Select or upload gallery images"
             />
-            <div v-else class="text-gray-500 text-sm mb-4">
+            <div v-else class="text-[#d0d0d0] text-sm mb-4">
               Garden must be set before selecting media
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1">Partiful Link</label>
+            <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Partiful Link</label>
             <TextInput v-model="form.partiful_link" placeholder="https://partiful.com/..." />
           </div>
         </div>
@@ -834,7 +827,7 @@ onUnmounted(() => {
         <!-- Related Events -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <label class="block text-sm font-medium">Related Events</label>
+            <label class="block text-sm font-medium text-[#f5f5f5]">Related Events</label>
             <button
               v-if="editor"
               @click="showEventSelector = !showEventSelector"
@@ -846,20 +839,20 @@ onUnmounted(() => {
           </div>
           
           <!-- Event selector dropdown -->
-          <div v-if="showEventSelector && editor" class="mb-3 p-3 bg-gray-50 rounded-md border border-gray-200">
-            <div v-if="!props.gardenSlug" class="text-sm text-gray-500 italic mb-2">
+          <div v-if="showEventSelector && editor" class="mb-3 p-3 bg-[rgba(26,26,26,0.6)] rounded-md border border-[#3d4d36]">
+            <div v-if="!props.gardenSlug" class="text-sm text-[#d0d0d0] italic mb-2">
               Garden slug not available
             </div>
-            <div v-else-if="volunteerDays.value?.loading || (availableEvents.length === 0 && !volunteerDays.value?.error)" class="text-sm text-gray-500 italic mb-2">
+            <div v-else-if="volunteerDays.value?.loading || (availableEvents.length === 0 && !volunteerDays.value?.error)" class="text-sm text-[#d0d0d0] italic mb-2">
               Loading events...
             </div>
-            <div v-else-if="volunteerDays.value?.error" class="text-sm text-red-500 italic mb-2">
-              Error loading events. <button @click="fetchAvailableEvents" class="text-blue-600 underline">Retry</button>
+            <div v-else-if="volunteerDays.value?.error" class="text-sm text-red-400 italic mb-2">
+              Error loading events. <button @click="fetchAvailableEvents" class="text-custom-green underline">Retry</button>
             </div>
-            <div v-else-if="availableEvents.length === 0" class="text-sm text-gray-500 italic mb-2">
+            <div v-else-if="availableEvents.length === 0" class="text-sm text-[#d0d0d0] italic mb-2">
               No events available for this garden.
             </div>
-            <div v-else-if="availableEventsToConnect.length === 0" class="text-sm text-gray-500 italic mb-2">
+            <div v-else-if="availableEventsToConnect.length === 0" class="text-sm text-[#d0d0d0] italic mb-2">
               All available events are already connected
             </div>
             <div v-else class="max-h-60 overflow-y-auto space-y-1">
@@ -867,7 +860,7 @@ onUnmounted(() => {
                 v-for="event in availableEventsToConnect"
                 :key="event.id"
                 @click="addRelatedEvent(event.id)"
-                class="w-full text-left px-3 py-2 text-sm bg-white hover:bg-blue-50 rounded border border-gray-200 transition-colors"
+                class="w-full text-left px-3 py-2 text-sm bg-[rgba(26,26,26,0.8)] hover:bg-[rgba(138,163,124,0.2)] text-[#f5f5f5] rounded border border-[#3d4d36] transition-colors"
               >
                 {{ event.title || event.attributes?.title || 'Untitled Event' }}
               </button>
@@ -879,20 +872,20 @@ onUnmounted(() => {
             <span 
               v-for="event in normalizedRelatedEvents" 
               :key="event.id || event"
-              class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+              class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
             >
               {{ event.title || event.attributes?.title || 'Untitled Event' }}
               <button
                 v-if="editor"
                 @click="removeRelatedEvent(event.id || event)"
-                class="ml-2 text-blue-600 hover:text-blue-800 font-bold"
+                class="ml-2 text-[#8aa37c] hover:text-[#a0b890] font-bold"
                 type="button"
               >
                 ×
               </button>
             </span>
           </div>
-          <div v-else-if="!showEventSelector" class="text-sm text-gray-500 italic mb-2">
+          <div v-else-if="!showEventSelector" class="text-sm text-[#d0d0d0] italic mb-2">
             No related events connected
           </div>
         </div>
@@ -900,7 +893,7 @@ onUnmounted(() => {
         <!-- Impact Metrics -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <label class="block text-sm font-medium">Impact Metrics</label>
+            <label class="block text-sm font-medium text-[#f5f5f5]">Impact Metrics</label>
             <button
               @click="addImpactMetric"
               type="button"
@@ -913,58 +906,58 @@ onUnmounted(() => {
           <!-- Volunteer Count and Hours Contributed -->
           <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label class="block text-sm font-medium mb-1">Volunteer Count</label>
+              <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Volunteer Count</label>
               <input
                 v-model.number="form.volunteer_count"
                 type="number"
                 min="0"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                class="w-full px-3 py-2 border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] focus:border-custom-green focus:outline-none"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium mb-1">Hours Contributed</label>
+              <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Hours Contributed</label>
               <input
                 v-model.number="form.hours_contributed"
                 type="number"
                 step="0.1"
                 min="0"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                class="w-full px-3 py-2 border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] focus:border-custom-green focus:outline-none"
               />
             </div>
           </div>
           
-          <div v-if="form.impact_metrics.length === 0" class="text-sm text-gray-500 italic mb-2">
+          <div v-if="form.impact_metrics.length === 0" class="text-sm text-[#d0d0d0] italic mb-2">
             No impact metrics added yet
           </div>
           
-          <div v-for="(metric, index) in form.impact_metrics" :key="index" class="bg-gray-50 p-3 rounded-md mb-2">
+          <div v-for="(metric, index) in form.impact_metrics" :key="index" class="bg-[rgba(26,26,26,0.6)] border border-[#3d4d36] p-3 rounded-md mb-2">
             <div class="grid grid-cols-12 gap-2 items-end">
               <div class="col-span-3">
-                <label class="block text-xs font-medium mb-1">Icon</label>
+                <label class="block text-xs font-medium mb-1 text-[#f5f5f5]">Icon</label>
                 <input
                   v-model="metric.icon"
                   type="text"
                   placeholder="🌱"
-                  class="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  class="w-full px-2 py-1 text-sm border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] focus:border-custom-green focus:outline-none"
                 />
               </div>
               <div class="col-span-4">
-                <label class="block text-xs font-medium mb-1">Label</label>
+                <label class="block text-xs font-medium mb-1 text-[#f5f5f5]">Label</label>
                 <input
                   v-model="metric.label"
                   type="text"
                   placeholder="Trees Planted"
-                  class="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  class="w-full px-2 py-1 text-sm border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] placeholder-[#d0d0d0] focus:border-custom-green focus:outline-none"
                   required
                 />
               </div>
               <div class="col-span-4">
-                <label class="block text-xs font-medium mb-1">Value</label>
+                <label class="block text-xs font-medium mb-1 text-[#f5f5f5]">Value</label>
                 <input
                   v-model="metric.value"
                   type="text"
                   placeholder="50"
-                  class="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  class="w-full px-2 py-1 text-sm border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] placeholder-[#d0d0d0] focus:border-custom-green focus:outline-none"
                   required
                 />
               </div>
@@ -981,7 +974,7 @@ onUnmounted(() => {
           </div>
                 </div>
 
-                <div v-if="error" class="text-red-600 text-sm">
+                <div v-if="error" class="text-red-400 text-sm">
                   Please fill in all required fields
                 </div>
 
@@ -990,14 +983,14 @@ onUnmounted(() => {
                     type="button"
                     @click="submit"
                     :disabled="!hasChanges || isSubmitting"
-                    class="px-4 py-2 bg-green-800 text-white font-medium rounded shadow-md hover:bg-green-900 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    class="px-4 py-2 bg-custom-green text-white font-medium rounded shadow-md hover:bg-darker-green disabled:bg-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed"
                   >
                     {{ isSubmitting ? 'Saving...' : submitText }}
                   </button>
                   <button
                     v-if="props.id"
                     @click="toggleShow"
-                    class="px-4 py-2 bg-gray-300 text-gray-700 font-medium rounded shadow-md hover:bg-gray-400"
+                    class="px-4 py-2 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] border border-[#3d4d36] font-medium rounded shadow-md hover:bg-[rgba(26,26,26,0.8)]"
                   >
                     Cancel
                   </button>
@@ -1139,4 +1132,81 @@ onUnmounted(() => {
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+/* Dark mode styles for date inputs */
+input[type="date"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #f5f5f5;
+}
+
+input[type="date"]::-webkit-datetime-edit-text:focus,
+input[type="date"]::-webkit-datetime-edit-month-field:focus,
+input[type="date"]::-webkit-datetime-edit-day-field:focus,
+input[type="date"]::-webkit-datetime-edit-year-field:focus {
+  background-color: rgba(138, 163, 124, 0.2);
+  color: #f5f5f5;
+}
+
+/* Firefox date input styling */
+input[type="date"] {
+  color: #f5f5f5;
+}
+
+input[type="date"]::-moz-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+/* Dark mode styles for TextInput component */
+:deep(.text-input-container input),
+:deep(.text-input) {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  color: #f5f5f5 !important;
+  border-color: #3d4d36 !important;
+}
+
+:deep(.text-input-container input::placeholder) {
+  color: #d0d0d0 !important;
+}
+
+:deep(.text-input-container input:focus) {
+  border-color: #8aa37c !important;
+  outline: none !important;
+}
+
+/* Dark mode styles for DropDown component */
+:deep(.dropdown-container select),
+:deep(.dropdown) {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  color: #f5f5f5 !important;
+  border-color: #3d4d36 !important;
+}
+
+:deep(.dropdown-container select:focus) {
+  border-color: #8aa37c !important;
+  outline: none !important;
+}
+
+:deep(.dropdown-container select option) {
+  background-color: rgba(26, 26, 26, 0.9) !important;
+  color: #f5f5f5 !important;
+}
+
+/* Dropdown arrow icon */
+:deep(.dropdown-wrapper svg) {
+  fill: #d0d0d0 !important;
+}
+</style>
 

@@ -1,5 +1,6 @@
 <script setup>
 import { Nav, Alert } from '@/components';
+import Footer from '@/components/Footer.vue';
 import { RouterView } from 'vue-router';
 import '@fortawesome/fontawesome-free/css/all.css'
 </script>
@@ -8,10 +9,10 @@ import '@fortawesome/fontawesome-free/css/all.css'
     <div class="app-container">
         <Nav />
         <Alert />
-        <div class="container pt-4 pb-4">
+        <div class="container px-0 pt-0 pb-4 md:px-4 md:pt-4">
             <RouterView />
         </div>
-    
+        <Footer />
     </div>
 </template>
 

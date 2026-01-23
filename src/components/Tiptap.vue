@@ -100,7 +100,7 @@ export default {
         },
         editorProps: {
           attributes: {
-            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none dark-mode-editor',
           },
         },
       })
@@ -125,13 +125,61 @@ export default {
 
 <style lang="scss">
 .tiptap {
-  border: 1px solid #ccc;
+  border: 1px solid #3d4d36;
   border-radius: 4px;
   padding: 1rem;
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
+  min-height: 200px;
 
   &:focus-within {
-    border-color: #4a90e2;
-    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+    border-color: #8aa37c;
+    box-shadow: 0 0 0 2px rgba(138, 163, 124, 0.2);
+  }
+
+  p {
+    color: #f5f5f5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #f5f5f5;
+  }
+
+  strong {
+    color: #f5f5f5;
+  }
+
+  em {
+    color: #f5f5f5;
+  }
+
+  code {
+    background-color: rgba(26, 26, 26, 0.8);
+    color: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+
+  pre {
+    background-color: rgba(26, 26, 26, 0.8);
+    color: #f5f5f5;
+    padding: 1rem;
+    border-radius: 4px;
+  }
+
+  blockquote {
+    border-left: 3px solid #8aa37c;
+    color: #d0d0d0;
+    padding-left: 1rem;
+    margin: 1rem 0;
+  }
+
+  ul, ol {
+    color: #f5f5f5;
+  }
+
+  li {
+    color: #f5f5f5;
   }
 
   /* List styles */
@@ -184,14 +232,68 @@ export default {
 
   &.ProseMirror {
     outline: none;
+    color: #f5f5f5;
+    background-color: rgba(26, 26, 26, 0.6);
+  }
+}
+
+/* Override prose styles for dark mode */
+:deep(.prose) {
+  color: #f5f5f5;
+  
+  p {
+    color: #f5f5f5;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: #f5f5f5;
+  }
+  
+  strong {
+    color: #f5f5f5;
+  }
+  
+  em {
+    color: #f5f5f5;
+  }
+  
+  code {
+    background-color: rgba(26, 26, 26, 0.8);
+    color: #f5f5f5;
+  }
+  
+  pre {
+    background-color: rgba(26, 26, 26, 0.8);
+    color: #f5f5f5;
+  }
+  
+  blockquote {
+    border-left-color: #8aa37c;
+    color: #d0d0d0;
+  }
+  
+  ul, ol {
+    color: #f5f5f5;
+  }
+  
+  li {
+    color: #f5f5f5;
+  }
+}
+
+.dark-mode-editor {
+  color: #f5f5f5;
+  
+  * {
+    color: inherit;
   }
 }
 
 .button-group {
   display: flex;
   flex-wrap: wrap;
-  background-color: #f1f1f1;
-  border: 1px solid #ccc;
+  background-color: rgba(26, 26, 26, 0.8);
+  border: 1px solid #3d4d36;
   border-bottom: none;
   border-radius: 4px 4px 0 0;
   padding: 5px;
@@ -199,7 +301,7 @@ export default {
   button {
     background-color: transparent;
     border: none;
-    color: #333;
+    color: #d0d0d0;
     cursor: pointer;
     font-size: 14px;
     margin: 2px;
@@ -207,15 +309,17 @@ export default {
     border-radius: 3px;
 
     &:hover {
-      background-color: #e1e1e1;
+      background-color: rgba(138, 163, 124, 0.2);
+      color: #f5f5f5;
     }
 
     &.is-active {
-      background-color: #d1d1d1;
+      background-color: rgba(138, 163, 124, 0.4);
+      color: #f5f5f5;
     }
 
     &:disabled {
-      color: #999;
+      color: #666;
       cursor: not-allowed;
     }
   }
@@ -224,5 +328,21 @@ export default {
 .tiptap {
   border-top: none;
   border-radius: 0 0 4px 4px;
+  background-color: rgba(26, 26, 26, 0.6) !important;
+}
+
+/* Ensure editor content wrapper has dark background */
+:deep(.editor-content),
+:deep(.ProseMirror) {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+}
+
+/* Ensure the container div also has dark background */
+.container {
+  background-color: transparent;
+}
+
+.container .tiptap {
+  background-color: rgba(26, 26, 26, 0.6) !important;
 }
 </style>

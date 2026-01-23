@@ -87,7 +87,7 @@ const selectedFontSizeStyle = computed(() =>
     <div class="text-input-wrapper relative flex flex-1">
       <input
         v-model="modelValue"
-        :class="`duration-300 transition-colors text-input w-full flex-1 bg-white outline-none border ${
+        :class="`duration-300 transition-colors text-input w-full flex-1 bg-white dark:bg-[rgba(26,26,26,0.6)] dark:text-[#f5f5f5] dark:border-[#3d4d36] outline-none border ${
           havePreEl ? '' : 'rounded-l'
         } ${
           haveSuEl ? '' : 'rounded-r'

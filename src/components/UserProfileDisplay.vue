@@ -85,7 +85,7 @@ const userBubbleColor = computed(() => {
         <div class="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900"></div>
       </div>
     </div>
-    <span class="ml-2 mb-2" v-if="props.showName">{{ fullName }}</span>
-    <span class="ml-2 mb-2" v-if="props.showEmail">{{ props.volunteer?.email }}</span>
+    <span class="ml-2 mb-2 text-white/80" v-if="props.showName">{{ fullName }}</span>
+    <span class="ml-2 mb-2 text-white/80" v-if="props.showEmail">{{ props.volunteer?.email }}</span>
   </div>
 </template>

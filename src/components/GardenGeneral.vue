@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useGardensStore, useAlertStore } from '@/stores';
-import ImageUpload from '@/components/form/ImageUpload.vue';
+import HeroImageCard from '@/components/form/HeroImageCard.vue';
 
 const props = defineProps({
   garden: {
@@ -71,99 +71,61 @@ const formatEventDate = (dateString) => {
 // Hero image handling
 const heroImage = ref(null);
 const isSavingHeroImage = ref(false);
-const baseUrl = `${import.meta.env.VITE_API_URL}`;
+const isInitialLoad = ref(true);
 
-// Helper to normalize image URL
-const normalizeImageUrl = (url) => {
-  if (!url) return '';
-  // If it's already a full URL, return as-is
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-  // If it's a relative URL and we're on localhost, prepend base URL
-  if (url.startsWith('/') && import.meta.env.VITE_API_URL === 'http://localhost:1337') {
-    return `${baseUrl}${url}`;
-  }
-  return url;
-};
-
-// Initialize hero_image from garden
+// Initialize hero_image from garden (for HeroImageCard v-model)
 watch(() => props.garden?.attributes?.hero_image, (newVal) => {
   if (newVal) {
-    // Handle Strapi format: { data: { id, attributes: { url, ... } } }
+    // Handle Strapi format: { data: { id, attributes: { ... } } }
     if (newVal.data) {
-      const url = newVal.data.attributes?.url || newVal.data.url || '';
-      heroImage.value = {
-        id: newVal.data.id,
-        url: normalizeImageUrl(url)
-      };
-    } else if (newVal.id || newVal.url) {
-      // Already normalized format
-      heroImage.value = {
-        id: newVal.id,
-        url: normalizeImageUrl(newVal.url || '')
-      };
+      heroImage.value = newVal.data;
     } else {
+      // Already in the format we need
       heroImage.value = newVal;
     }
   } else {
     heroImage.value = null;
   }
+  // Mark initial load as complete after first watch
+  if (isInitialLoad.value) {
+    isInitialLoad.value = false;
+  }
 }, { immediate: true, deep: true });
 
-// Save hero image when it changes
-const saveHeroImage = async (imageValue) => {
+// Save hero image when it changes (watch for HeroImageCard v-model updates)
+watch(() => heroImage.value, async (newImage, oldImage) => {
   if (!props.editor || !props.garden?.id) return;
+  
+  // Don't save on initial load
+  if (isInitialLoad.value) return;
+  
+  // Don't save if the value hasn't actually changed
+  const newId = newImage?.id || newImage?.data?.id;
+  const oldId = oldImage?.id || oldImage?.data?.id;
+  if (newId === oldId) return;
   
   try {
     isSavingHeroImage.value = true;
     
-    // If imageValue is provided, use it; otherwise use current heroImage
-    const imageToSave = imageValue || heroImage.value;
-    
     // Format the data for Strapi
+    const imageId = newImage?.id || newImage?.data?.id;
     const updateData = {
-      hero_image: imageToSave?.id ? { id: imageToSave.id } : null
+      hero_image: imageId ? { id: imageId } : null
     };
     
     await gardensStore.update(props.garden.id, updateData);
     
-    // Refresh garden data - the watch will update heroImage from the response
+    // Refresh garden data to get the updated hero_image
     await gardensStore.getSlug(route.params.slug);
-    
-    // Ensure heroImage is set even if the response format is different
-    // The watch should handle this, but we'll also set it directly as a fallback
-    if (imageToSave && !props.garden?.attributes?.hero_image) {
-      heroImage.value = {
-        id: imageToSave.id,
-        url: normalizeImageUrl(imageToSave.url || '')
-      };
-    }
     
     alertStore.success('Hero image updated successfully');
   } catch (error) {
     console.error('Error saving hero image:', error);
     alertStore.error('Failed to save hero image. Please try again.');
-    // On error, keep the current heroImage value so the image still displays
   } finally {
     isSavingHeroImage.value = false;
   }
-};
-
-// Handle hero image update from ImageUpload component
-const handleHeroImageUpdate = async (imageValue) => {
-  // Normalize the URL before setting
-  if (imageValue) {
-    heroImage.value = {
-      id: imageValue.id,
-      url: normalizeImageUrl(imageValue.url || '')
-    };
-  } else {
-    heroImage.value = null;
-  }
-  // Save to backend
-  await saveHeroImage(imageValue);
-};
+}, { deep: true });
 
 // Editable text fields
 const editingWelcomeText = ref(false);
@@ -484,14 +446,11 @@ const saveDescription = async () => {
         </div>
       </div>
       
-      <!-- Hero Image Upload Section (Editor Only) -->
+      <!-- Hero Image Section (Editor Only) -->
       <div v-if="editor" class="mt-6">
-        <h3 class="text-lg font-semibold mb-2 text-[#f5f5f5]">Hero Image</h3>
-        <ImageUpload 
-          :model-value="heroImage" 
-          placeholder="Drag and drop hero image or click to upload"
-          :upload-fn="(formData) => gardensStore.uploadImage(formData)"
-          @update:model-value="handleHeroImageUpdate"
+        <HeroImageCard
+          v-model="heroImage"
+          :gardenId="garden?.id"
         />
         <p v-if="isSavingHeroImage" class="text-sm text-[#d0d0d0] mt-2">Saving...</p>
       </div>

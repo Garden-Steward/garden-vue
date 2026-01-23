@@ -64,7 +64,11 @@ const toggleMobileMenu = () => {
 const handleClickOutside = (event) => {
   const menu = event.target.closest('.mobile-menu-container');
   const button = event.target.closest('.hamburger-button');
-  if (!menu && !button && isMobileMenuOpen.value) {
+  // Check if click is on the overlay (which already has its own click handler, but this ensures consistency)
+  const overlay = event.target.closest('.mobile-menu-overlay');
+  
+  // If clicking outside menu, button, and not on overlay (overlay has its own handler), close the menu
+  if (!menu && !button && !overlay && isMobileMenuOpen.value) {
     isMobileMenuOpen.value = false;
     document.body.style.overflow = '';
   }
@@ -112,7 +116,7 @@ onUnmounted(() => {
     <Teleport to="body">
       <div
         v-if="isMobileMenuOpen"
-        class="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        class="mobile-menu-overlay lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
         @click="toggleMobileMenu"
       ></div>
     </Teleport>

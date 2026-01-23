@@ -388,10 +388,6 @@ const visibleGalleryImages = computed(() => {
   return images.value.slice(0, visibleGalleryCount.value)
 })
 
-const visibleGalleryIndices = computed(() => {
-  return Array.from({ length: visibleGalleryCount.value }, (_, i) => i)
-})
-
 const hasMoreGalleryImages = computed(() => {
   return images.value.length > visibleGalleryCount.value
 })
@@ -682,11 +678,11 @@ watch(() => props.gardenId, async (newId) => {
     
     <!-- Gallery Grid -->
     <div v-if="images.length > 0" class="mb-4">
-      <p class="text-sm font-semibold mb-2">Current Gallery ({{ images.length }} photo{{ images.length !== 1 ? 's' : '' }})</p>
+      <p class="text-sm font-semibold mb-2 dark:text-white">Current Gallery ({{ images.length }} photo{{ images.length !== 1 ? 's' : '' }})</p>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         <div
-          v-for="index in visibleGalleryIndices"
-          :key="images[index]?.id ? `image-${images[index].id}` : `image-temp-${index}`"
+          v-for="(image, index) in visibleGalleryImages"
+          :key="image?.id ? `image-${image.id}` : `image-temp-${index}`"
           class="relative group aspect-square gallery-thumbnail cursor-move"
           :class="{ 
             'opacity-50 scale-95': draggedIndex === index,
@@ -702,7 +698,8 @@ watch(() => props.gardenId, async (newId) => {
           @dragend="handleDragEnd"
         >
           <img
-            :src="getImageUrl(images[index])"
+            v-if="image && getImageUrl(image)"
+            :src="getImageUrl(image)"
             :alt="`Gallery image ${index + 1}`"
             class="w-full h-full object-cover rounded-lg border-2 transition-all pointer-events-none"
             :class="{
@@ -746,7 +743,7 @@ watch(() => props.gardenId, async (newId) => {
         </button>
       </div>
       
-      <p class="text-xs text-gray-500 mt-2">
+      <p class="text-xs text-gray-500 mt-2 dark:text-white/80">
         <i class="fas fa-info-circle"></i> Drag images to reorder. Hover to delete.
       </p>
     </div>

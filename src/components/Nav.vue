@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, onMounted } from 'vue';
+import { ref, nextTick, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores';
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
 import SunIcon from '@/components/icons/Sun.svg?raw';
@@ -10,6 +10,8 @@ const authStore = useAuthStore();
 const showProfileOptions = ref(false);
 const isMobileMenuOpen = ref(false);
 const mobileMenu = ref(null);
+const profileMenuRef = ref(null);
+const profileButtonRef = ref(null);
 
 // Theme management
 const theme = ref('system'); // 'light', 'dark', or 'system'
@@ -78,12 +80,59 @@ const toggleMobileMenu = async () => {
         mobileMenu.value.style.transform = 'translateX(-100%)';
     }
 };
+
+// Close profile dropdown when clicking outside
+const handleClickOutside = (event) => {
+    // Check if click is outside profile menu and profile button
+    const profileMenu = event.target.closest('.profile-menu');
+    const profileButton = event.target.closest('.profile-menu-button');
+    
+    if (!profileMenu && !profileButton && showProfileOptions.value) {
+        showProfileOptions.value = false;
+    }
+    
+    // Check if click is outside mobile menu and mobile menu button
+    const mobileMenuElement = event.target.closest('.mobile-menu');
+    const mobileMenuButton = event.target.closest('.mobile-menu-button');
+    
+    if (!mobileMenuElement && !mobileMenuButton && isMobileMenuOpen.value) {
+        isMobileMenuOpen.value = false;
+        if (mobileMenu.value) {
+            mobileMenu.value.style.transform = 'translateX(-100%)';
+        }
+    }
+};
+
+// Handle Escape key to close menus
+const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+        if (showProfileOptions.value) {
+            showProfileOptions.value = false;
+        }
+        if (isMobileMenuOpen.value) {
+            isMobileMenuOpen.value = false;
+            if (mobileMenu.value) {
+                mobileMenu.value.style.transform = 'translateX(-100%)';
+            }
+        }
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+    window.addEventListener('keydown', handleEscape);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+    window.removeEventListener('keydown', handleEscape);
+});
 </script>
 
 <template>
     <!-- Profile menu outside navbar -->
     <transition name="fade">
-        <div v-if="showProfileOptions" class="profile-menu bg-custom-light p-2">
+        <div v-if="showProfileOptions" ref="profileMenuRef" class="profile-menu bg-custom-light p-2">
             <div v-if="authStore.user" class="user-info">
                 <div class="user-name">{{ authStore.user.username || (authStore.user.firstName && authStore.user.lastName ? `${authStore.user.firstName} ${authStore.user.lastName}` : 'User') }}</div>
             </div>
@@ -141,9 +190,6 @@ const toggleMobileMenu = async () => {
                 <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
                 <router-link to="/join" class="nav-item nav-link" @click="toggleMobileMenu">Join</router-link>
                 <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
-                <router-link to="/contribute" class="nav-item nav-link" @click="toggleMobileMenu">
-                    Contribute <i class="fab fa-github ml-1"></i>
-                </router-link>
                 <router-link to="/help" class="nav-item nav-link" @click="toggleMobileMenu">Help</router-link>
                 <router-link to="/login" class="nav-item nav-link" v-show="!authStore.user" @click="toggleMobileMenu">Login</router-link>
             </div>
@@ -164,9 +210,6 @@ const toggleMobileMenu = async () => {
                     <router-link to="/join" class="nav-item nav-link">Join</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
                     <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
-                    <router-link to="/contribute" class="nav-item nav-link">
-                        Contribute <i class="fab fa-github ml-1"></i>
-                    </router-link>
                     <router-link v-show="!authStore.user" to="/help" class="nav-item nav-link">Help</router-link>
                     <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link">Login</router-link>
     
@@ -174,6 +217,7 @@ const toggleMobileMenu = async () => {
             </div>
             <div v-if="authStore.user" class="profile-container">
                 <UserProfileDisplay 
+                    ref="profileButtonRef"
                     :volunteer="authStore.user" 
                     :show-email="false" 
                     :disable-tooltip="true"

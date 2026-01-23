@@ -288,8 +288,8 @@ const pastEvents = computed(() => {
 <template>
   <div class="bg-[#344a34] mx-auto min-h-screen">
     <!-- Garden Title Header -->
-    <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-4 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
-      <div class="max-w-7xl mx-auto">
+    <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
+      <div class="max-w-7xl mx-auto px-4 sm:px-0">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
             <h1 v-if="garden.attributes?.title" class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight pr-12 lg:pr-0">{{ garden.attributes.title }}</h1>

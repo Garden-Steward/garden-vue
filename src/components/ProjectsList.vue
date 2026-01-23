@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch, ref } from 'vue';
+import { computed, watch, ref, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useEventStore } from '@/stores';
 import Project from '@/components/modals/Project.vue';
@@ -24,6 +24,11 @@ const { volunteerDays } = storeToRefs(eventStore);
 const selectedCategory = ref('all');
 const selectedEvent = ref('all');
 const sortOrder = ref('desc'); // 'asc' or 'desc'
+
+// Custom dropdown state for Event filter
+const isEventDropdownOpen = ref(false);
+const eventDropdownRef = ref(null);
+const eventButtonRef = ref(null);
 
 // Fetch projects when garden changes
 watch(() => props.garden?.id, (newId) => {
@@ -108,6 +113,53 @@ const projectsList = computed(() => {
 
   return filtered;
 });
+
+// Get selected event display text
+const selectedEventText = computed(() => {
+  if (selectedEvent.value === 'all') {
+    return 'All Events';
+  }
+  const event = availableEvents.value.find(e => e.id === parseInt(selectedEvent.value));
+  return event ? (event.title || event.attributes?.title || 'Untitled Event') : 'All Events';
+});
+
+// Toggle event dropdown
+const toggleEventDropdown = () => {
+  isEventDropdownOpen.value = !isEventDropdownOpen.value;
+};
+
+// Select event
+const selectEvent = (eventId) => {
+  selectedEvent.value = eventId === 'all' ? 'all' : eventId.toString();
+  isEventDropdownOpen.value = false;
+};
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event) => {
+  const dropdown = event.target.closest('.event-dropdown-container');
+  const button = event.target.closest('.event-dropdown-button');
+  
+  if (!dropdown && !button && isEventDropdownOpen.value) {
+    isEventDropdownOpen.value = false;
+  }
+};
+
+// Handle Escape key
+const handleEscape = (e) => {
+  if (e.key === 'Escape' && isEventDropdownOpen.value) {
+    isEventDropdownOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+  window.addEventListener('keydown', handleEscape);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('keydown', handleEscape);
+});
 </script>
 
 <template>
@@ -129,17 +181,58 @@ const projectsList = computed(() => {
       </div>
 
       <!-- Event Filter -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 relative">
         <label class="text-sm font-medium text-[#f5f5f5]">Event:</label>
-        <select 
-          v-model="selectedEvent"
-          class="px-3 py-1.5 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
-        >
-          <option value="all" class="bg-[rgba(26,26,26,0.8)]">All Events</option>
-          <option v-for="event in availableEvents" :key="event.id" :value="event.id" class="bg-[rgba(26,26,26,0.8)]">
-            {{ event.title || event.attributes?.title || 'Untitled Event' }}
-          </option>
-        </select>
+        <div class="relative event-dropdown-container">
+          <button
+            ref="eventButtonRef"
+            @click="toggleEventDropdown"
+            class="event-dropdown-button px-3 py-1.5 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green min-w-[180px] text-left flex items-center justify-between"
+          >
+            <span>{{ selectedEventText }}</span>
+            <svg 
+              class="w-4 h-4 ml-2 transition-transform duration-200"
+              :class="{ 'rotate-180': isEventDropdownOpen }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          <!-- Dropdown Menu -->
+          <transition name="dropdown">
+            <div
+              v-if="isEventDropdownOpen"
+              ref="eventDropdownRef"
+              class="absolute top-full left-0 mt-1 w-full min-w-[180px] bg-[rgba(26,26,26,0.95)] border border-[#3d4d36]/50 rounded-md shadow-lg z-50 max-h-[300px] overflow-y-auto"
+            >
+              <button
+                @click="selectEvent('all')"
+                :class="[
+                  'w-full px-3 py-2 text-sm text-left text-[#f5f5f5] hover:bg-[rgba(138,163,124,0.3)] transition-colors flex items-center',
+                  selectedEvent === 'all' ? 'bg-[rgba(138,163,124,0.2)]' : ''
+                ]"
+              >
+                <span v-if="selectedEvent === 'all'" class="mr-2 text-custom-green">✓</span>
+                <span>All Events</span>
+              </button>
+              <button
+                v-for="event in availableEvents"
+                :key="event.id"
+                @click="selectEvent(event.id)"
+                :class="[
+                  'w-full px-3 py-2 text-sm text-left text-[#f5f5f5] hover:bg-[rgba(138,163,124,0.3)] transition-colors flex items-center',
+                  selectedEvent === 'all' || parseInt(selectedEvent) === event.id ? 'bg-[rgba(138,163,124,0.2)]' : ''
+                ]"
+              >
+                <span v-if="selectedEvent !== 'all' && parseInt(selectedEvent) === event.id" class="mr-2 text-custom-green">✓</span>
+                <span>{{ event.title || event.attributes?.title || 'Untitled Event' }}</span>
+              </button>
+            </div>
+          </transition>
+        </div>
       </div>
 
       <!-- Sort Order -->
@@ -182,4 +275,48 @@ const projectsList = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Dropdown transition */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease;
+  transform-origin: top;
+}
+
+.dropdown-enter-from {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+}
+
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+}
+
+/* Ensure dropdown doesn't overflow container */
+.event-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Custom scrollbar for dropdown */
+.event-dropdown-container div::-webkit-scrollbar {
+  width: 6px;
+}
+
+.event-dropdown-container div::-webkit-scrollbar-track {
+  background: rgba(26, 26, 26, 0.5);
+  border-radius: 3px;
+}
+
+.event-dropdown-container div::-webkit-scrollbar-thumb {
+  background: rgba(138, 163, 124, 0.5);
+  border-radius: 3px;
+}
+
+.event-dropdown-container div::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 163, 124, 0.7);
+}
+</style>
 
