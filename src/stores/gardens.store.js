@@ -26,9 +26,7 @@ export const useGardensStore = defineStore({
         },
         async getSlug(slug) {
             this.garden = { loading: true };
-            // fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}`)
-            // Request organization to be populated (backend /full endpoint should handle this or we can add populate)
-            fetchWrapper.get(`${baseUrl}/${slug}/full`)
+            fetchWrapper.get(`${baseUrl}/${slug}/full?populate=managers`)
                 .then(res => this.garden = res.data)
                 .catch(error => this.garden = { error })
         },

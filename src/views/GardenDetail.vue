@@ -447,17 +447,25 @@ const pastEvents = computed(() => {
         </div>
 
         <!-- Events Section -->
-        <div v-if="activeSection === 'events'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'events'" id="events" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">Events ({{ volunteerDays.days?.length || 0 }})</h2>
-            <button 
-              v-if="editor" 
-              type="button" 
-              class="px-4 py-2 bg-orange-700 text-white font-medium text-sm rounded shadow-md hover:bg-orange-800 focus:bg-orange-800 focus:outline-none focus:ring-0 transition duration-150 ease-in-out" 
-              @click="showDayModal = true"
-            >
-              Create Volunteer Day
-            </button>
+            <div class="flex items-center gap-3">
+              <router-link
+                :to="`/manage/gardens/${garden.attributes?.slug}/event-templates`"
+                class="px-4 py-2 bg-[rgba(26,26,26,0.6)] border border-[#3d4d36]/50 text-[#f5f5f5] font-medium text-sm rounded shadow-md hover:bg-[rgba(26,26,26,0.8)] hover:border-[#3d4d36] focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
+              >
+                Recurring Event Templates
+              </router-link>
+              <button 
+                v-if="editor" 
+                type="button" 
+                class="px-4 py-2 bg-orange-700 text-white font-medium text-sm rounded shadow-md hover:bg-orange-800 focus:bg-orange-800 focus:outline-none focus:ring-0 transition duration-150 ease-in-out" 
+                @click="showDayModal = true"
+              >
+                Create Volunteer Day
+              </button>
+            </div>
           </div>
 
           <VolunteerDayModal v-model:show="showDayModal" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" />

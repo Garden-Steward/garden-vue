@@ -47,6 +47,13 @@ const prettyDay = computed(() => {
   return format(new Date(event.value.attributes.startDatetime), 'PPP');
 });
 
+const templateInfo = computed(() => {
+  const t = event.value?.attributes?.recurring_template?.data;
+  if (!t) return null;
+  const name = t.attributes?.title_template ?? 'Unknown';
+  return { name };
+});
+
 watch(event, async (newEvent) => {
   console.log('newEvent: ', newEvent);
   if (newEvent?.attributes?.content) {
@@ -435,6 +442,13 @@ onBeforeUnmount(() => {
                   Done
                 </button>
               </div>
+              <!-- Template indicator -->
+              <div v-if="templateInfo" class="mt-2">
+                <span class="text-sm text-[#d0d0d0]">Template: </span>
+                <span class="inline-block px-2 py-1 text-sm font-medium text-white bg-darker-green rounded">
+                  {{ templateInfo.name }}
+                </span>
+              </div>
             </div>
             
             <!-- Two-column layout for date/time and ending time -->
@@ -465,6 +479,7 @@ onBeforeUnmount(() => {
                   The short description that will be sent in the SMS and displayed as the blurb on the public event page.
                 </div>
               </div>
+              
               <!-- SMS toggle moved here -->
               <div class="ml-auto flex items-center">
                 

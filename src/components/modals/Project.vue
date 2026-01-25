@@ -1209,4 +1209,3 @@ input[type="date"]::-moz-calendar-picker-indicator {
   fill: #d0d0d0 !important;
 }
 </style>
-
