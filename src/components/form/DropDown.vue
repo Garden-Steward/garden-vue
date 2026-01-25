@@ -3,7 +3,7 @@ import { computed, reactive, useSlots } from 'vue'
 
 const props = defineProps({
   modelValue: {
-    type: String,
+    type: [String, Number],
     default: '',
   },
   options: {
@@ -92,13 +92,16 @@ const selectedFontSizeStyle = computed(() =>
       <select
         v-model="modelValue"
         :disabled="disabled"
-        :class="`duration-300 transition-colors dropdown w-full bg-white outline-none border appearance-none ${
-          havePreEl ? '' : 'rounded-l'
-        } ${
-          haveSuEl ? '' : 'rounded-r'
-        } ${selectedBorderStyle} ${selectedOnHoverBorderStyle} ${selectedPaddingStyle} ${selectedFontSizeStyle} ${
-          disabled ? 'bg-green-100 dark:bg-gray-800 cursor-not-allowed' : ''
-        }`"
+        :class="[
+          'duration-300 transition-colors dropdown w-full bg-white dark:!bg-[rgba(26,26,26,0.6)] dark:!text-[#f5f5f5] dark:!border-[#3d4d36] outline-none border appearance-none',
+          havePreEl ? '' : 'rounded-l',
+          haveSuEl ? '' : 'rounded-r',
+          selectedBorderStyle,
+          selectedOnHoverBorderStyle,
+          selectedPaddingStyle,
+          selectedFontSizeStyle,
+          disabled ? 'bg-green-100 dark:!bg-gray-800 cursor-not-allowed' : ''
+        ]"
       >
         <option value="" disabled>{{ placeholder }}</option>
         <option 
@@ -109,7 +112,7 @@ const selectedFontSizeStyle = computed(() =>
           {{ option.label }}
         </option>
       </select>
-      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 select-none p-3">
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-[#f5f5f5] select-none p-3">
         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
           <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
         </svg>
@@ -134,5 +137,10 @@ select {
   -moz-appearance: none;
   text-indent: 1px;
   text-overflow: '';
+}
+
+select option {
+  background-color: rgba(26, 26, 26, 0.95);
+  color: #f5f5f5;
 }
 </style>

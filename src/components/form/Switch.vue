@@ -16,6 +16,10 @@ const props = defineProps({
     type: String,
     default: undefined,
   },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -59,8 +63,9 @@ onMounted(() => {
         :id="id"
         ref="input"
         type="checkbox"
-        class="switch-checkbox absolute block w-6 h-6 rounded-full bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 appearance-none cursor-pointer"
+        class="switch-checkbox absolute block w-6 h-6 rounded-full bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
         :checked="checked"
+        :disabled="disabled"
         @change="onInputChange"
       />
       <label

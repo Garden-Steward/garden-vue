@@ -12,3 +12,4 @@ export * from './instruction.store';
 export * from './messages.store';
 export * from './location-tracking.store';
 export * from './media.store';
+export * from './recurring-template.store';

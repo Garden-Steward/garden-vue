@@ -1,7 +1,9 @@
+<script>
+export default { inheritAttrs: false };
+</script>
 <script setup>
-import { computed, reactive, useSlots } from 'vue'
+import { computed, reactive, useSlots, useAttrs } from 'vue'
 
-// compiler macro
 const props = defineProps({
   modelValue: {
     type: String,
@@ -19,8 +21,17 @@ const props = defineProps({
     type: String,
     default: 'default',
   },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
+  inputClass: {
+    type: String,
+    default: '',
+  },
 })
 const emit = defineEmits(['update:modelValue'])
+const attrs = useAttrs()
 const slots = useSlots()
 
 // styles
@@ -68,6 +79,26 @@ const selectedPaddingStyle = computed(() =>
 const selectedFontSizeStyle = computed(() => 
   fontSizeStyles[props.size] || fontSizeStyles.md
 )
+
+const inputClasses = computed(() => {
+  const base = [
+    'duration-300 transition-colors text-input w-full flex-1 bg-white dark:!bg-[rgba(26,26,26,0.6)] dark:!text-[#f5f5f5] dark:!border-[#3d4d36] outline-none border',
+    havePreEl.value ? '' : 'rounded-l',
+    haveSuEl.value ? '' : 'rounded-r',
+    selectedBorderStyle.value,
+    selectedOnHoverBorderStyle.value,
+    selectedPaddingStyle.value,
+    selectedFontSizeStyle.value,
+    props.inputClass || '',
+    (typeof attrs.class === 'string' && attrs.class) || ''
+  ];
+  return base.filter(Boolean);
+})
+
+const inputAttrs = computed(() => {
+  const { class: _c, ...rest } = { ...attrs };
+  return rest;
+})
 </script>
 
 <template>
@@ -87,11 +118,9 @@ const selectedFontSizeStyle = computed(() =>
     <div class="text-input-wrapper relative flex flex-1">
       <input
         v-model="modelValue"
-        :class="`duration-300 transition-colors text-input w-full flex-1 bg-white dark:bg-[rgba(26,26,26,0.6)] dark:text-[#f5f5f5] dark:border-[#3d4d36] outline-none border ${
-          havePreEl ? '' : 'rounded-l'
-        } ${
-          haveSuEl ? '' : 'rounded-r'
-        } ${selectedBorderStyle} ${selectedOnHoverBorderStyle} ${selectedPaddingStyle} ${selectedFontSizeStyle}`"
+        v-bind="inputAttrs"
+        :disabled="disabled"
+        :class="inputClasses"
         :type="type"
         :placeholder="placeholder"
       />

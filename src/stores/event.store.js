@@ -5,6 +5,9 @@ import { useGardensStore, useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
 
+// Populate string for event queries - recurring_template uses simple populate (like VolunteerActivity)
+const eventPopulate = 'populate=recurring_template&populate[0]=garden&populate[1]=garden.managers&populate[2]=confirmed&populate[3]=hero_image&populate[4]=featured_gallery';
+
 export const useEventStore = defineStore({
     id: 'event',
     state: () => ({
@@ -99,10 +102,17 @@ export const useEventStore = defineStore({
         },
         async findById(id) {
             this.event = { loading: true };
-            // Test: Try dot notation for nested relations (like projects.store.js uses garden.organization)
-            // This avoids conflicts with array-based populate parameters
-            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=garden&populate[1]=garden.managers&populate[2]=confirmed&populate[3]=hero_image&populate[4]=featured_gallery`)
-                .then(res => this.event = res.data)
+            return fetchWrapper.get(`${baseUrl}/${id}?${eventPopulate}`)
+                .then(res => {
+                    // Debug: log recurring_template structure to verify populate is working
+                    if (res.data?.attributes?.recurring_template) {
+                        console.log('recurring_template in response:', res.data.attributes.recurring_template);
+                    } else {
+                        console.log('recurring_template NOT in response. Full event:', res.data);
+                    }
+                    this.event = res.data;
+                    return res.data;
+                })
                 .catch(this.handleError);
         },
         async getByGarden(slug, page = 1, pageSize = 15, append = false) {
@@ -179,7 +189,7 @@ export const useEventStore = defineStore({
                     }));
             }
 
-            return fetchWrapper.put(`${baseUrl}/${id}?populate=*`, { data: data })
+            return fetchWrapper.put(`${baseUrl}/${id}?${eventPopulate}`, { data: data })
                 .then(res => {
                     this.volunteerDay = res.data.attributes;
                     // Update the event in state if it matches

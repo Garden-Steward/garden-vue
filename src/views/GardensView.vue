@@ -33,8 +33,9 @@ const manageEventClick = (id) => {
     window.location=`/manage/events/${id}/edit`
 }
 
-// State for how many latest events to show
-const latestEventsToShow = ref(2);
+// State for how many events to show per section
+const latestEventsToShow = ref(3);
+const upcomingEventsToShow = ref(3);
 
 // Helper function to normalize event data (handle both Strapi format and normalized format)
 const normalizeEvent = (event) => {
@@ -67,7 +68,6 @@ const manageableEvents = computed(() => {
         return [];
     }
     
-    console.log('volunteerDays: ', volunteerDays.value);
     return volunteerDays.value.days
         .map(normalizeEvent)
         .filter(event => {
@@ -100,6 +100,21 @@ const upcomingEvents = computed(() => {
         })
         .sort((a, b) => new Date(a.startDatetime) - new Date(b.startDatetime));
 });
+
+// Get displayed upcoming events (limited by upcomingEventsToShow)
+const displayedUpcomingEvents = computed(() => {
+    return upcomingEvents.value.slice(0, upcomingEventsToShow.value);
+});
+
+// Check if there are more upcoming events to load
+const hasMoreUpcomingEvents = computed(() => {
+    return upcomingEvents.value.length > upcomingEventsToShow.value;
+});
+
+// Load more upcoming events
+const loadMoreUpcomingEvents = () => {
+    upcomingEventsToShow.value += 2;
+};
 
 // Get all past events (sorted by most recent first)
 const allPastEvents = computed(() => {
@@ -156,7 +171,7 @@ const loadMoreLatestEvents = () => {
                     <h2 v-if="upcomingEvents.length > 0" class="section-title">Upcoming Events</h2>
                     <div v-if="upcomingEvents.length > 0" class="events-list">
                         <div 
-                            v-for="event in upcomingEvents" 
+                            v-for="event in displayedUpcomingEvents" 
                             :key="event.id"
                             class="event-item"
                             @click="manageEventClick(event.id)"
@@ -168,6 +183,13 @@ const loadMoreLatestEvents = () => {
                             </div>
                         </div>
                     </div>
+                    <button 
+                        v-if="upcomingEvents.length > 0 && hasMoreUpcomingEvents"
+                        @click="loadMoreUpcomingEvents"
+                        class="btn-load-more"
+                    >
+                        Load More
+                    </button>
                     
                     <div v-if="upcomingEvents.length === 0 && latestEvents.length === 0 && !volunteerDays.loading" class="section-empty">
                         <p>No events scheduled at this time.</p>

@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, GardensPublicView, SetPassword, 
     InstructionPublic, GardenApplyForm, HelpView, 
-    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic } from '@/views';
+    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, EventTemplatesView } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
@@ -105,6 +105,12 @@ export const router = createRouter({
             path: '/manage/gardens',
             component: GardensView,
             name: 'manage-gardens-list',
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/manage/gardens/:slug/event-templates',
+            component: EventTemplatesView,
+            name: 'manage-garden-event-templates',
             meta: { requiresAuth: true }
         },
         {

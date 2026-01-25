@@ -64,8 +64,15 @@ function handleResponse(response) {
                 logout();
             }
 
-            const error = (data && data.error && data.error.message) || (data && data.message) || text || response.statusText;
-            return Promise.reject(error);
+            const msg = (data?.error?.message) || data?.message || text || response.statusText;
+            if (data?.error && typeof data.error === 'object') {
+                return Promise.reject({
+                    message: msg,
+                    details: data.error.details,
+                    status: data.error.status
+                });
+            }
+            return Promise.reject(msg);
         }
 
         return data;
