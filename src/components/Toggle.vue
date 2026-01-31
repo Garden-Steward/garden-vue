@@ -11,6 +11,10 @@ const props = defineProps({
   description: {
     type: String,
     default: ''
+  },
+  dark: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -31,8 +35,11 @@ defineOptions({
       <button
         type="button"
         :class="[
-          modelValue ? 'bg-purple-600' : 'bg-gray-200',
-          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2'
+          modelValue
+            ? dark ? 'bg-violet-400' : 'bg-purple-600'
+            : dark ? 'bg-gray-600' : 'bg-gray-200',
+          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2',
+          dark && 'focus:ring-offset-[#2d3e26]'
         ]"
         role="switch"
         :aria-checked="modelValue"
@@ -68,7 +75,7 @@ defineOptions({
             ]"
             aria-hidden="true"
           >
-            <svg class="h-3 w-3 text-purple-600" fill="currentColor" viewBox="0 0 12 12">
+            <svg class="h-3 w-3" :class="dark ? 'text-violet-200' : 'text-purple-600'" fill="currentColor" viewBox="0 0 12 12">
               <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
             </svg>
           </span>
@@ -76,8 +83,8 @@ defineOptions({
       </button>
     </div>
     <div class="ml-3">
-      <label v-if="label" class="text-sm font-medium text-purple-800">{{ label }}</label>
-      <p v-if="description" class="text-sm text-purple-600">{{ description }}</p>
+      <label v-if="label" :class="['text-sm font-medium', dark ? 'text-violet-200' : 'text-purple-800']">{{ label }}</label>
+      <p v-if="description" :class="['text-sm', dark ? 'text-violet-300' : 'text-purple-600']">{{ description }}</p>
     </div>
   </div>
 </template> 
