@@ -160,33 +160,37 @@ const getGardenFromEvent = (event) => {
   return event.garden?.data || event.garden;
 };
 
-// Get garden color for event banner
+// Get garden color for event (used for circle and badges)
 const getGardenBannerColor = (event) => {
   const garden = getGardenFromEvent(event);
   return getGardenColor(garden);
 };
 
-// Get rgba color values for banner overlay (opacity 0.9)
-const getBannerOverlayColor = (colorName) => {
-  // Map red to green for better banner appearance
-  if (colorName === 'red') {
-    colorName = 'green';
-  }
-  
+// Get organization name from event (via garden)
+const getOrganizationName = (event) => {
+  const garden = event?.garden?.data ?? event?.garden;
+  const org = garden?.organization;
+  if (org?.title) return org.title;
+  return getGardenName(event) || '';
+};
+
+// Solid color for garden circle (O) - no gradient
+const getGardenColorSolid = (colorName) => {
+  if (colorName === 'red') colorName = 'green';
   const colorMap = {
-    green: 'rgba(34, 197, 94, 0.9)',    // green-500
-    blue: 'rgba(59, 130, 246, 0.9)',    // blue-500
-    orange: 'rgba(249, 115, 22, 0.9)',  // orange-500
-    purple: 'rgba(168, 85, 247, 0.9)',  // purple-500
-    fuchsia: 'rgba(217, 70, 239, 0.9)', // fuchsia-500
-    emerald: 'rgba(16, 185, 129, 0.9)', // emerald-500
-    violet: 'rgba(139, 92, 246, 0.9)',  // violet-500
-    indigo: 'rgba(99, 102, 241, 0.9)',  // indigo-500
-    yellow: 'rgba(234, 179, 8, 0.9)',   // yellow-500
-    lime: 'rgba(132, 204, 22, 0.9)',    // lime-500
-    slate: 'rgba(100, 116, 139, 0.9)'   // slate-500
+    green: 'rgb(34, 197, 94)',
+    blue: 'rgb(59, 130, 246)',
+    orange: 'rgb(249, 115, 22)',
+    purple: 'rgb(168, 85, 247)',
+    fuchsia: 'rgb(217, 70, 239)',
+    emerald: 'rgb(16, 185, 129)',
+    violet: 'rgb(139, 92, 246)',
+    indigo: 'rgb(99, 102, 241)',
+    yellow: 'rgb(234, 179, 8)',
+    lime: 'rgb(132, 204, 22)',
+    slate: 'rgb(100, 116, 139)'
   };
-  return colorMap[colorName] || 'rgba(138, 163, 124, 0.9)'; // fallback to custom-green
+  return colorMap[colorName] || 'rgb(138, 163, 124)';
 };
 
 // Get rgba color values for date badge (opacity 0.3)
@@ -258,69 +262,37 @@ const truncateText = (text, maxLength) => {
         <div v-else class="space-y-8 w-full md:px-8">
           <div v-if="upcomingEvents.length">
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5] px-4 md:px-0">Upcoming Events:</h3>
-            <div class="space-y-4 md:space-y-2">
+            <div class="space-y-6 md:space-y-4">
               <div v-for="day in upcomingEvents" :key="day.id" 
                    class="px-4 md:px-0">
                 <div 
-                   class="flex flex-col md:flex-row border-r-4 border rounded md:rounded bg-[rgba(26,26,26,0.8)] border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"  
+                   class="flex flex-col sm:flex-row rounded md:rounded bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"  
                    @click="volunteerDayClick(day.id)">
-                  <!-- Mobile: Garden name above image, then full-width image with overlay -->
-                  <div class="md:hidden w-full">
-                    <!-- Garden Name above image -->
-                    <div 
-                      class="py-2 px-4 bg-gradient-to-r"
-                      :style="{ backgroundImage: `linear-gradient(to right, ${getBannerOverlayColor(getGardenBannerColor(day))}, #f7f1e3)` }"
-                    >
-                      <p class="text-lg font-semibold text-gray-900">{{ getGardenName(day) }}</p>
-                    </div>
-                  <!-- Full-width image with overlay -->
-                  <div>
-                    <div class="relative w-full h-64 overflow-hidden">
-                      <img 
-                        :src="getGardenImageThumbnail(day)" 
-                        :alt="getGardenName(day)"
-                        class="w-full h-full object-cover"
-                      />
-                      <!-- Date badge at top right -->
-                      <p 
-                        class="absolute top-2 right-2 text-sm font-medium rounded-md px-3 py-1 bg-black/90 text-white"
-                      >{{ displayDate(day.startDatetime) }}</p>
-                      <!-- Event Info Overlay at bottom -->
-                      <div class="absolute bottom-0 left-0 right-0 bg-black/80 px-4 py-3">
-                        <span class="text-xl font-bold text-white block mb-1">{{ day.title }}</span>
-                        <p class="text-sm mb-2 text-gray-200">{{ truncateText(day.blurb, 30) }}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <!-- Desktop: Original layout -->
-                <div class="hidden md:flex flex-shrink-0 w-48 md:w-64 aspect-square relative overflow-hidden border-[3px] border-custom-light">
-                  <img 
-                    :src="getGardenImageThumbnail(day)" 
-                    :alt="getGardenName(day)"
-                    class="w-full h-full object-cover"
-                  />
-                </div>
-                <div class="hidden md:flex flex-col flex-1 min-w-0">
-                  <!-- Garden Name Banner -->
-                  <div 
-                    class="px-4 py-2 bg-gradient-to-r"
-                    :style="{ backgroundImage: `linear-gradient(to right, ${getBannerOverlayColor(getGardenBannerColor(day))}, #f7f1e3)` }"
-                  >
-                    <p class="text-lg font-semibold text-gray-900 text-right">{{ getGardenName(day) }}</p>
-                  </div>
-                  <!-- Event Content -->
-                  <div class="flex-1 p-3">
-                    <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
-                    <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
+                  <!-- Content left: Date, Title, By, (O) Garden -->
+                  <div class="flex flex-col flex-1 min-w-0 p-4 order-2 sm:order-1">
                     <p 
-                      class="text-lg font-medium inline-block rounded-md px-3 py-1"
-                      :style="{ 
-                        backgroundColor: getBadgeColor(getGardenBannerColor(day)),
-                        color: getBadgeTextColor(getGardenBannerColor(day))
-                      }"
+                      class="text-sm font-medium mb-1"
+                      :style="{ color: getBadgeTextColor(getGardenBannerColor(day)) }"
                     >{{ displayDate(day.startDatetime) }}</p>
+                    <span class="text-xl font-bold text-[#f5f5f5] block mb-2">{{ day.title }}</span>
+                    <p class="text-sm text-[#d0d0d0] mb-1">By {{ getOrganizationName(day) }}</p>
+                    <div class="flex items-center gap-2">
+                      <span 
+                        class="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                        :style="{ backgroundColor: getGardenColorSolid(getGardenBannerColor(day)) }"
+                        aria-hidden="true"
+                      />
+                      <span class="text-sm text-[#d0d0d0]">{{ getGardenName(day) }}</span>
+                    </div>
+                    <p class="text-sm text-[#d0d0d0] mt-2 line-clamp-2">{{ day.blurb }}</p>
                   </div>
+                  <!-- Image right -->
+                  <div class="flex-shrink-0 w-full sm:w-36 md:w-44 aspect-video relative overflow-hidden order-1 sm:order-2 p-3 sm:p-4">
+                    <img 
+                      :src="getGardenImageThumbnail(day)" 
+                      :alt="getGardenName(day)"
+                      class="w-full h-full object-cover rounded"
+                    />
                   </div>
                 </div>
               </div>
@@ -329,69 +301,37 @@ const truncateText = (text, maxLength) => {
           
           <div v-if="futureEvents.length">
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5] px-4 md:px-0">Future Events:</h3>
-            <div class="space-y-4 md:space-y-2">
+            <div class="space-y-6 md:space-y-4">
               <div v-for="day in futureEvents" :key="day.id" 
                    class="px-4 md:px-0">
                 <div 
-                   class="flex flex-col md:flex-row border-r-4 border rounded md:rounded bg-[rgba(26,26,26,0.8)] border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"  
+                   class="flex flex-col sm:flex-row rounded md:rounded bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"  
                    @click="volunteerDayClick(day.id)">
-                  <!-- Mobile: Garden name above image, then full-width image with overlay -->
-                  <div class="md:hidden w-full">
-                    <!-- Garden Name above image -->
-                    <div 
-                      class="py-2 px-4 bg-gradient-to-r"
-                      :style="{ backgroundImage: `linear-gradient(to right, ${getBannerOverlayColor(getGardenBannerColor(day))}, #f7f1e3)` }"
-                    >
-                      <p class="text-lg font-semibold text-gray-900">{{ getGardenName(day) }}</p>
-                    </div>
-                    <!-- Full-width image with overlay -->
-                    <div>
-                      <div class="relative w-full h-64 overflow-hidden">
-                      <img 
-                        :src="getGardenImageThumbnail(day)" 
-                        :alt="getGardenName(day)"
-                        class="w-full h-full object-cover"
+                  <!-- Content left: Date, Title, By, (O) Garden -->
+                  <div class="flex flex-col flex-1 min-w-0 p-4 order-2 sm:order-1">
+                    <p 
+                      class="text-sm font-medium mb-1"
+                      :style="{ color: getBadgeTextColor(getGardenBannerColor(day)) }"
+                    >{{ displayDate(day.startDatetime) }}</p>
+                    <span class="text-xl font-bold text-[#f5f5f5] block mb-2">{{ day.title }}</span>
+                    <p class="text-sm text-[#d0d0d0] mb-1">By {{ getOrganizationName(day) }}</p>
+                    <div class="flex items-center gap-2">
+                      <span 
+                        class="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                        :style="{ backgroundColor: getGardenColorSolid(getGardenBannerColor(day)) }"
+                        aria-hidden="true"
                       />
-                      <!-- Date badge at top right -->
-                      <p 
-                        class="absolute top-2 right-2 text-sm font-medium rounded-md px-3 py-1 bg-black/90 text-white"
-                      >{{ displayDate(day.startDatetime) }}</p>
-                      <!-- Event Info Overlay at bottom -->
-                      <div class="absolute bottom-0 left-0 right-0 bg-black/80 px-4 py-3">
-                        <span class="text-xl font-bold text-white block mb-1">{{ day.title }}</span>
-                        <p class="text-sm mb-2 text-gray-200">{{ truncateText(day.blurb, 30) }}</p>
-                      </div>
+                      <span class="text-sm text-[#d0d0d0]">{{ getGardenName(day) }}</span>
                     </div>
+                    <p class="text-sm text-[#d0d0d0] mt-2 line-clamp-2">{{ day.blurb }}</p>
                   </div>
-                  </div>
-                  <!-- Desktop: Original layout -->
-                  <div class="hidden md:flex flex-shrink-0 w-48 md:w-64 aspect-square relative overflow-hidden border-[3px] border-custom-light">
+                  <!-- Image right -->
+                  <div class="flex-shrink-0 w-full sm:w-36 md:w-44 aspect-video relative overflow-hidden order-1 sm:order-2 p-3 sm:p-4">
                     <img 
                       :src="getGardenImageThumbnail(day)" 
                       :alt="getGardenName(day)"
-                      class="w-full h-full object-cover"
+                      class="w-full h-full object-cover rounded"
                     />
-                  </div>
-                  <div class="hidden md:flex flex-col flex-1 min-w-0">
-                    <!-- Garden Name Banner -->
-                    <div 
-                      class="px-4 py-2 bg-gradient-to-r"
-                      :style="{ backgroundImage: `linear-gradient(to right, ${getBannerOverlayColor(getGardenBannerColor(day))}, #f7f1e3)` }"
-                    >
-                      <p class="text-lg font-semibold text-gray-900 text-right">{{ getGardenName(day) }}</p>
-                    </div>
-                    <!-- Event Content -->
-                    <div class="flex-1 p-3">
-                      <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
-                      <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
-                      <p 
-                        class="text-lg font-medium inline-block rounded-md px-3 py-1"
-                        :style="{ 
-                          backgroundColor: getBadgeColor(getGardenBannerColor(day)),
-                          color: getBadgeTextColor(getGardenBannerColor(day))
-                        }"
-                      >{{ displayDate(day.startDatetime) }}</p>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -400,69 +340,37 @@ const truncateText = (text, maxLength) => {
           
           <div v-if="pastEvents.length">
             <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5] px-4 md:px-0">Recent Events:</h3>
-            <div class="space-y-4 md:space-y-2">
+            <div class="space-y-6 md:space-y-4">
               <div v-for="day in pastEvents" :key="day.id" 
                    class="px-4 md:px-0">
                 <div 
-                   class="flex flex-col md:flex-row border-r-4 border rounded md:rounded bg-[rgba(26,26,26,0.8)] border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(26,26,26,0.95)] transition-colors overflow-hidden"  
+                   class="flex flex-col sm:flex-row rounded md:rounded bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-[rgba(26,26,26,0.95)] transition-colors overflow-hidden"  
                    @click="volunteerDayClick(day.id)">
-                  <!-- Mobile: Garden name above image, then full-width image with overlay -->
-                  <div class="md:hidden w-full">
-                    <!-- Garden Name above image -->
-                    <div 
-                      class="py-2 px-4 bg-gradient-to-r"
-                      :style="{ backgroundImage: `linear-gradient(to right, ${getBannerOverlayColor(getGardenBannerColor(day))}, #f7f1e3)` }"
-                    >
-                      <p class="text-lg font-semibold text-gray-900">{{ getGardenName(day) }}</p>
-                    </div>
-                    <!-- Full-width image with overlay -->
-                    <div>
-                      <div class="relative w-full h-64 overflow-hidden">
-                      <img 
-                        :src="getGardenImageThumbnail(day)" 
-                        :alt="getGardenName(day)"
-                        class="w-full h-full object-cover"
+                  <!-- Content left: Date, Title, By, (O) Garden -->
+                  <div class="flex flex-col flex-1 min-w-0 p-4 order-2 sm:order-1">
+                    <p 
+                      class="text-sm font-medium mb-1"
+                      :style="{ color: getBadgeTextColor(getGardenBannerColor(day)) }"
+                    >{{ displayDate(day.startDatetime) }}</p>
+                    <span class="text-xl font-bold text-[#f5f5f5] block mb-2">{{ day.title }}</span>
+                    <p class="text-sm text-[#d0d0d0] mb-1">By {{ getOrganizationName(day) }}</p>
+                    <div class="flex items-center gap-2">
+                      <span 
+                        class="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                        :style="{ backgroundColor: getGardenColorSolid(getGardenBannerColor(day)) }"
+                        aria-hidden="true"
                       />
-                      <!-- Date badge at top right -->
-                      <p 
-                        class="absolute top-2 right-2 text-sm font-medium rounded-md px-3 py-1 bg-black/90 text-white"
-                      >{{ displayDate(day.startDatetime) }}</p>
-                      <!-- Event Info Overlay at bottom -->
-                      <div class="absolute bottom-0 left-0 right-0 bg-black/80 px-4 py-3">
-                        <span class="text-xl font-bold text-white block mb-1">{{ day.title }}</span>
-                        <p class="text-sm mb-2 text-gray-200">{{ truncateText(day.blurb, 30) }}</p>
-                      </div>
+                      <span class="text-sm text-[#d0d0d0]">{{ getGardenName(day) }}</span>
                     </div>
+                    <p class="text-sm text-[#d0d0d0] mt-2 line-clamp-2">{{ day.blurb }}</p>
                   </div>
-                  </div>
-                  <!-- Desktop: Original layout -->
-                  <div class="hidden md:flex flex-shrink-0 w-48 md:w-64 aspect-square relative overflow-hidden border-[3px] border-custom-light">
+                  <!-- Image right -->
+                  <div class="flex-shrink-0 w-full sm:w-36 md:w-44 aspect-video relative overflow-hidden order-1 sm:order-2 p-3 sm:p-4">
                     <img 
                       :src="getGardenImageThumbnail(day)" 
                       :alt="getGardenName(day)"
-                      class="w-full h-full object-cover"
+                      class="w-full h-full object-cover rounded"
                     />
-                  </div>
-                  <div class="hidden md:flex flex-col flex-1 min-w-0">
-                    <!-- Garden Name Banner -->
-                    <div 
-                      class="px-4 py-2 bg-gradient-to-r"
-                      :style="{ backgroundImage: `linear-gradient(to right, ${getBannerOverlayColor(getGardenBannerColor(day))}, #f7f1e3)` }"
-                    >
-                      <p class="text-lg font-semibold text-gray-900 text-right">{{ getGardenName(day) }}</p>
-                    </div>
-                    <!-- Event Content -->
-                    <div class="flex-1 p-3">
-                      <span class="text-xl font-bold text-[#f5f5f5]">{{ day.title }}</span>
-                      <p class="text-m mb-2 text-[#d0d0d0]">{{ day.blurb }}</p>
-                      <p 
-                        class="text-lg font-medium inline-block rounded-md px-3 py-1"
-                        :style="{ 
-                          backgroundColor: getBadgeColor(getGardenBannerColor(day)),
-                          color: getBadgeTextColor(getGardenBannerColor(day))
-                        }"
-                      >{{ displayDate(day.startDatetime) }}</p>
-                    </div>
                   </div>
                 </div>
               </div>

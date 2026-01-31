@@ -10,7 +10,7 @@ export const useRecurringTemplateStore = defineStore({
     state: () => ({
         templates: {},
         template: {},
-        preview: [],
+        previewItems: [],
         previewLoading: false,
         pagination: {
             page: 1,
@@ -109,12 +109,22 @@ export const useRecurringTemplateStore = defineStore({
 
         async preview(id, count = 6) {
             this.previewLoading = true;
-            this.preview = [];
+            this.previewItems = [];
             return fetchWrapper.get(`${baseUrl}/${id}/preview?count=${count}`)
                 .then(res => {
-                    this.preview = res.preview || res;
+                    const data = res?.data ?? res;
+                    const existing = (data.existing_instances || []).map(item => ({
+                        ...item,
+                        exists: true
+                    }));
+                    const upcoming = (data.upcoming_previews || []).map(item => ({
+                        title: item.title,
+                        date: item.time ? `${item.date}T${item.time}:00` : item.date,
+                        exists: false
+                    }));
+                    this.previewItems = [...existing, ...upcoming];
                     this.previewLoading = false;
-                    return this.preview;
+                    return this.previewItems;
                 })
                 .catch(err => {
                     this.previewLoading = false;
@@ -139,7 +149,7 @@ export const useRecurringTemplateStore = defineStore({
         },
 
         clearPreview() {
-            this.preview = [];
+            this.previewItems = [];
             this.previewLoading = false;
         }
     }

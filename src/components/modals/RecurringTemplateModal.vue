@@ -584,9 +584,9 @@ const showCard = computed(() => !!cardTitle.value);
             </button>
           </div>
           <div v-if="templateStore.previewLoading" class="text-center py-3 text-[#999]">Loading preview...</div>
-          <div v-else-if="templateStore.preview?.length" class="space-y-2">
+          <div v-else-if="templateStore.previewItems?.length" class="space-y-2">
             <div
-              v-for="(item, idx) in templateStore.preview"
+              v-for="(item, idx) in templateStore.previewItems"
               :key="idx"
               class="flex items-center gap-3 p-2 bg-[rgba(26,26,26,0.4)] rounded"
             >
