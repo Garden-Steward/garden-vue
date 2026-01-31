@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useGardenTaskStore, useAlertStore } from '@/stores';
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
 import FormToggle from '@/components/Toggle.vue';
-// import { bool } from "yup";
+import MediaSelector from '@/components/form/MediaSelector.vue';
 
 const props = defineProps({
   title: String,
@@ -44,8 +44,31 @@ const alertStore = useAlertStore();
 const show = ref(false);
 const copy = ref(false);
 const error = ref(false);
-const imagePreview = ref(null);
-const imageFile = ref(null);
+
+// Validation errors for required fields (when creating)
+const validationErrors = ref({
+  title: false,
+  type: false,
+  overview: false
+});
+
+function clearValidationError(field) {
+  if (validationErrors.value[field]) {
+    validationErrors.value = { ...validationErrors.value, [field]: false };
+  }
+}
+
+function validateForm() {
+  const titleValid = !!String(form.value.title || '').trim();
+  const typeValid = !!String(form.value.type || '').trim();
+  const overviewValid = !!String(form.value.overview || '').trim();
+  validationErrors.value = {
+    title: !titleValid,
+    type: !typeValid,
+    overview: !overviewValid
+  };
+  return titleValid && typeValid && overviewValid;
+}
 
 const form = ref({
   title: props.title || '',
@@ -70,6 +93,12 @@ const showCreateButton = computed(() => {
 
 watch(() => props.editor, (newVal) => {
   console.log('Editor prop changed:', newVal);
+});
+
+watch(show, (isVisible) => {
+  if (!isVisible) {
+    validationErrors.value = { title: false, type: false, overview: false };
+  }
 });
 
 const topic = computed(() => {
@@ -108,7 +137,6 @@ watch(() => props.status, (newVal) => {
 watch(() => props.primary_image, (newVal) => {
   if (newVal) {
     form.value.primary_image = newVal;
-    imagePreview.value = newVal.formats?.medium?.url;
   }
 });
 
@@ -119,9 +147,6 @@ watch(() => props.task, (newVal) => {
       ...form.value,
       primary_image: newVal.primary_image || null,
     };
-    if (newVal.primary_image?.formats?.medium) {
-      imagePreview.value = newVal.primary_image.formats.medium.url;
-    }
     initialForm.value = { ...form.value };
   }
 }, { deep: true });
@@ -146,7 +171,7 @@ const isDirty = computed(() => {
       return JSON.stringify(form.value[key]) !== JSON.stringify(initialForm.value[key]);
     }
     return form.value[key] !== initialForm.value[key];
-  }) || !!imageFile.value;
+  });
 });
 
 // Computed property for recurring task titles
@@ -195,25 +220,17 @@ function prepopulateFromRecurring(recurringTask) {
 }
 
 const submit = async () => {
+  if (!validateForm()) {
+    return;
+  }
   let message;
   copy.value = false;
   show.value = false;
   form.value.garden = props.garden;
   form.value.volunteer_day = props.dayId;
   try {
-    // Handle image upload first if there's a new image
-    if (imageFile.value) {
-      const formData = new FormData();
-      formData.append('files', imageFile.value);
-      
-      const uploadedImage = await gardenTaskStore.uploadImage(formData);
-      if (uploadedImage?.id) {
-        form.value.primary_image = {
-          id: uploadedImage.id
-        };
-      }
-    } else if (form.value.primary_image?.id || form.value.primary_image?.data?.id) {
-      // Ensure existing image is properly formatted
+    // Ensure primary_image is properly formatted for API (MediaSelector uploads/selects handle image beforehand)
+    if (form.value.primary_image?.id || form.value.primary_image?.data?.id) {
       form.value.primary_image = {
         id: form.value.primary_image?.id || form.value.primary_image.data?.id
       };
@@ -238,50 +255,28 @@ const submit = async () => {
     alertStore.success(message);
     // Update initialForm after successful submit
     initialForm.value = { ...form.value };
-    imageFile.value = null;
   } catch (error) {
     console.error('Error submitting task:', error);
     alertStore.error('Failed to save task');
   }
 };
 
-const handleFileUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    imageFile.value = file;
-    imagePreview.value = URL.createObjectURL(file);
-  }
-};
-
-const takePicture = async () => {
-  try {
-    await navigator.mediaDevices.getUserMedia({ video: true });
-    // Here you would typically open a modal/dialog with the camera stream
-    // For this example, we'll just use the file input as a fallback
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
-    input.onchange = (e) => handleFileUpload(e);
-    input.click();
-  } catch (err) {
-    console.error('Error accessing camera:', err);
-    alert('Unable to access camera. Please check permissions or use file upload instead.');
-  }
-};
-
 const primaryImageUrl = computed(() => {
-  // Preview of new image (if a new file is selected)
-  if (imagePreview.value) {
-    return imagePreview.value;
+  // MediaSelector format { id, url }
+  if (form.value.primary_image?.url) {
+    const url = form.value.primary_image.url;
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
   }
-  // Uploaded or edited image
+  // Strapi formats.medium
   if (form.value.primary_image?.formats?.medium?.url) {
     return form.value.primary_image.formats.medium.url;
   }
-  // Loaded from API
+  // Strapi data.attributes format
   if (form.value.primary_image?.data?.attributes?.formats?.medium?.url) {
     return form.value.primary_image.data.attributes.formats.medium.url;
+  }
+  if (form.value.primary_image?.data?.attributes?.url) {
+    return form.value.primary_image.data.attributes.url;
   }
   return null;
 });
@@ -386,16 +381,16 @@ const handleDelete = async () => {
     <!-- Show / hide the modal -->
     <div v-if="show" class="w-xl">
       <!-- The backdrop -->
-      <div class="fixed inset-0 bg-gray-900 opacity-40" @click="()=> {show = false;copy= false}"></div>
+      <div class="fixed inset-0 bg-black/60" @click="()=> {show = false;copy= false}"></div>
 
       <!-- *** START FORM *** -->
       <form @submit.prevent="submit">
       <div class="fixed inset-0 flex items-center justify-start overflow-x-hidden overflow-y-auto py-6" @click="()=> {show = false;copy= false}">
-        <div class="bg-white text-black grid grid-cols-1 md:w-1/2 w-[90%] gap-2 p-3 md:p-8 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto relative" @click.stop>
+        <div class="garden-task-modal-content grid grid-cols-1 md:w-1/2 w-[90%] gap-2 p-3 md:p-8 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto relative rounded-lg border border-[#3d4d36] shadow-xl" @click.stop>
           <!-- Close X button -->
           <button 
             type="button" 
-            class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+            class="absolute top-2 right-2 text-[#d0d0d0] hover:text-[#f5f5f5] focus:outline-none"
             @click="()=> {show = false;copy= false}"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,12 +401,12 @@ const handleDelete = async () => {
 
           <!-- Recurring Tasks Titles - only show when creating new task -->
           <div v-if="!props.id && recurringTaskTitles.length" class="mb-2">
-            <div class="font-semibold text-gray-700 mb-1">Available Templates:</div>
+            <div class="font-semibold text-[#f5f5f5] mb-1">Available Templates:</div>
             <div class="flex flex-wrap gap-2">
               <span
                 v-for="task in gardenTaskStore.recurringTasks"
                 :key="task.id"
-                class="bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm font-medium cursor-pointer shadow-sm border border-blue-200 hover:bg-blue-200 transition"
+                class="bg-[rgba(26,26,26,0.6)] text-[#8aa37c] rounded-full px-3 py-1 text-sm font-medium cursor-pointer shadow-sm border border-[#3d4d36] hover:bg-[rgba(26,26,26,0.8)] transition"
                 tabindex="0"
                 @click="prepopulateFromRecurring(task)"
               >
@@ -422,9 +417,9 @@ const handleDelete = async () => {
 
           <!-- Show instruction link -->
           <div v-if="taskInstruction" class="mb-2">
-              <span class="text-blue-900 font-semibold">Task has an instruction </span>
+              <span class="text-[#8aa37c] font-semibold">Task has an instruction </span>
               <a
-                class="text-blue-700 underline hover:text-blue-500"
+                class="text-[#8aa37c] underline hover:text-[#6b8560]"
                 :href="'/i/' + taskInstruction.attributes.slug"
                 target="_blank"
               >
@@ -434,11 +429,15 @@ const handleDelete = async () => {
 
           <div class="flex items-center gap-4 mb-3">
             <div class="flex-1">
-              <p class="pb-1">{{ topic }}</p>
+              <p class="pb-1 text-[#f5f5f5]">{{ topic }} <span class="text-red-400">*</span></p>
               <input 
-                class="p-1 rounded-md border w-full leading-tight" 
-                type="text" 
-                v-model="form.title" 
+                :class="[
+                  'garden-task-input p-1 rounded-md border w-full leading-tight bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] border-[#3d4d36] placeholder-[#9ca3af] focus:bg-[rgba(40,50,35,0.9)] focus:border-[#8aa37c] focus:outline-none focus:ring-1 focus:ring-[#8aa37c]/50',
+                  validationErrors.title ? 'border-2 border-red-500' : ''
+                ]"
+                type="text"
+                v-model="form.title"
+                @input="clearValidationError('title')"
               />
             </div>
           </div>
@@ -448,20 +447,21 @@ const handleDelete = async () => {
             <FormToggle
               v-model="form.is_group_task"
               label="Show Group Task Settings"
+              :dark="true"
             />
           </div>
 
           <!-- Group Task Options -->
-          <div v-if="form.is_group_task" class="bg-purple-50 p-4 rounded-lg mb-4 space-y-4">
+          <div v-if="form.is_group_task" class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg mb-4 space-y-4 border border-[#3d4d36]">
             <!-- Max Users -->
             <div class="flex items-center gap-4">
               <div class="flex items-center gap-1">
-                <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-5 h-5 text-[#8aa37c]" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                   <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
                 </svg>
-                <span class="text-purple-800 font-medium">Max Volunteers:</span>
+                <span class="text-[#f5f5f5] font-medium">Max Volunteers:</span>
               </div>
-              <select v-model="form.max_volunteers" class="rounded-md border p-1 w-20 bg-white">
+              <select v-model="form.max_volunteers" class="garden-task-input rounded-md border border-[#3d4d36] p-1 w-20 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5]">
                 <option>1</option>
                 <option>2</option>
                 <option>3</option>
@@ -476,110 +476,84 @@ const handleDelete = async () => {
               <FormToggle
                 v-model="form.complete_once"
                 label="Complete Once: Once complete, it's complete for everyone."
-                class="text-purple-800"
+                :dark="true"
               />
             </div>
           </div>
 
-          <p class="p-1 pb-0 mb-0 mt-0">Explain the task more:</p>
-          <textarea v-model="form.overview" class="form-control p-1 m-r-4 mb-1" rows="5"></textarea>
+          <p class="p-1 pb-0 mb-0 mt-0 text-[#f5f5f5]">Explain the task more: <span class="text-red-400">*</span></p>
+          <textarea
+            v-model="form.overview"
+            :class="[
+              'garden-task-input form-control px-3 py-2 m-r-4 mb-1 w-full rounded-md border bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] border-[#3d4d36] placeholder-[#9ca3af] focus:bg-[rgba(40,50,35,0.9)] focus:border-[#8aa37c] focus:outline-none focus:ring-1 focus:ring-[#8aa37c]/50',
+              validationErrors.overview ? 'border-2 border-red-500' : ''
+            ]"
+            rows="5"
+            @input="clearValidationError('overview')"
+          ></textarea>
 
           <div class="flex flex-col space-y-2 mb-4">
-            <label class="text-sm font-medium text-gray-700">Add Photo</label>
+            <label class="text-sm font-medium text-[#f5f5f5]">Add Photo</label>
             
-            <!-- Show existing image if available -->
+            <!-- Show selected/current image preview -->
             <img 
               v-if="primaryImageUrl" 
               :src="primaryImageUrl" 
               class="mt-2 max-w-xs rounded-lg shadow-md" 
-              alt="Current image"
+              alt="Task image"
             />
             
-            <!-- Show preview of new image -->
-            <img 
-              v-else-if="imagePreview" 
-              :src="imagePreview" 
-              class="mt-2 max-w-xs rounded-lg shadow-md" 
-              alt="Preview"
-            />
-            
-            <div class="flex space-x-2">
-              <label class="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
-                <svg class="h-5 w-5 mr-2 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                {{ form.primary_image?.data ? 'Change Photo' : 'Upload Photo' }}
-                <input 
-                  type="file" 
-                  class="hidden" 
-                  accept="image/*"
-                  @change="handleFileUpload"
-                >
-              </label>
-
-              <button 
-                type="button"
-                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
-                @click="takePicture"
-              >
-                <svg class="h-5 w-5 mr-2 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Take Photo
-              </button>
+            <!-- MediaSelector: Choose existing or upload new (with compression) -->
+            <div v-if="garden" class="mt-2">
+              <MediaSelector
+                v-model="form.primary_image"
+                :garden-id="garden"
+                :multiple="false"
+                :dark="true"
+                placeholder="Select or upload image"
+              />
             </div>
           </div>
 
-          <p class="p-1 pb-0 text-md text-gray-700 mb-0">What kind of task?:</p>
-          <select v-model="form.type" class="rounded-md border p-1 ml-1 text-lg">
-            <option class="text-lg py-1">General</option>
-            <option class="text-lg py-1">Water</option>
-            <option class="text-lg py-1">Weeding</option>
-            <option class="text-lg py-1">Planting</option>
-            <option class="text-lg py-1">Harvest</option>
+          <p class="p-1 pb-0 text-md text-[#f5f5f5] mb-0">What kind of task?: <span class="text-red-400">*</span></p>
+          <select
+            v-model="form.type"
+            :class="[
+              'garden-task-input rounded-md border p-1 ml-1 text-lg bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] border-[#3d4d36] focus:bg-[rgba(40,50,35,0.9)] focus:border-[#8aa37c] focus:outline-none focus:ring-1 focus:ring-[#8aa37c]/50',
+              validationErrors.type ? 'border-2 border-red-500' : ''
+            ]"
+            @change="clearValidationError('type')"
+          >
+            <option value="" class="text-lg py-1">Select task type...</option>
+            <option class="text-lg py-1" value="General">General</option>
+            <option class="text-lg py-1" value="Water">Water</option>
+            <option class="text-lg py-1" value="Weeding">Weeding</option>
+            <option class="text-lg py-1" value="Planting">Planting</option>
+            <option class="text-lg py-1" value="Harvest">Harvest</option>
           </select>
 
-          <div
-            class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
-            <div v-if="error" class="text-danger">Error loading garden task: {{error}}</div>
-            <div class="pr-4 flex flex-row-reverse flex-shrink-0 flex-wrap items-center gap-2 justify-end">
-              <button v-if="isDirty" class="px-6
-                py-2.5
-                bg-orange-700
-                text-white
-                font-medium
-                text-xs
-                leading-tight
-                uppercase
-                rounded
-                shadow-md
-                hover:bg-orange-800 hover:shadow-lg
-                focus:bg-orange-800 focus:shadow-lg focus:outline-none focus:ring-0
-                active:bg-orange-900 active:shadow-lg
-                transition
-                duration-150
-                ease-in-out" type="submit">{{ submitText }}</button>
-              <button v-if="props.id && props.status === 'INITIALIZED'" 
-                type="button" 
-                class="px-6
-                py-2.5
-                bg-red-600
-                text-white
-                font-medium
-                text-xs
-                leading-tight
-                uppercase
-                rounded
-                shadow-md
-                hover:bg-red-700 hover:shadow-lg
-                focus:bg-red-700 focus:shadow-lg focus:outline-none focus:ring-0
-                active:bg-red-800 active:shadow-lg
-                transition
-                duration-150
-                ease-in-out"
-                @click="handleDelete">
-                Delete Task
+          <div class="modal-footer flex flex-shrink-0 flex-col gap-3 p-4 border-t border-[#3d4d36] rounded-b-md">
+            <div v-if="validationErrors.title || validationErrors.type || validationErrors.overview" class="w-full text-red-400 text-sm">
+              Please fill in all required fields: Title, What kind of task, and Explain the task more.
+            </div>
+            <div v-if="error" class="w-full text-red-400 text-sm">Error loading garden task: {{error}}</div>
+            <div class="flex items-center justify-between w-full">
+              <div class="flex-1 min-w-0">
+                <button
+                  v-if="props.id && props.status === 'INITIALIZED'"
+                  type="button"
+                  class="text-red-400 hover:text-red-300 underline text-sm focus:outline-none"
+                  @click="handleDelete"
+                >
+                  Delete Task
+                </button>
+              </div>
+              <button
+                v-if="isDirty"
+                class="px-6 py-2.5 bg-orange-700 text-white font-medium text-xs leading-tight uppercase rounded shadow-md hover:bg-orange-800 hover:shadow-lg focus:bg-orange-800 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-orange-900 active:shadow-lg transition duration-150 ease-in-out"
+                type="submit"
+              >
+                {{ submitText }}
               </button>
             </div>
           </div>
@@ -591,6 +565,46 @@ const handleDelete = async () => {
 </template>
 
 <style scoped>
+.garden-task-modal-content {
+  background-color: #2d3e26;
+  color: #f5f5f5;
+}
+
+/* Keep form inputs dark on focus - override Bootstrap and browser defaults */
+.garden-task-modal-content .garden-task-input:focus {
+  background-color: rgba(40, 50, 35, 0.9) !important;
+}
+
+.garden-task-modal-content textarea.form-control:focus {
+  background-color: rgba(40, 50, 35, 0.9) !important;
+}
+
+/* Override autofill light background */
+.garden-task-modal-content .garden-task-input:-webkit-autofill,
+.garden-task-modal-content .garden-task-input:-webkit-autofill:focus,
+.garden-task-modal-content textarea:-webkit-autofill,
+.garden-task-modal-content textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f5f5f5;
+  -webkit-box-shadow: 0 0 0 1000px rgba(40, 50, 35, 0.95) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Remove white/light borders - keep dark borders only */
+.garden-task-modal-content .garden-task-input,
+.garden-task-modal-content input.garden-task-input,
+.garden-task-modal-content select.garden-task-input,
+.garden-task-modal-content textarea.garden-task-input {
+  border-color: #3d4d36 !important;
+}
+
+.garden-task-modal-content .garden-task-input:focus,
+.garden-task-modal-content input.garden-task-input:focus,
+.garden-task-modal-content select.garden-task-input:focus,
+.garden-task-modal-content textarea.garden-task-input:focus {
+  border-color: #8aa37c !important;
+  box-shadow: 0 0 0 1px rgba(138, 163, 124, 0.5) !important;
+}
+
 .text-peach-800 {
   color: #9B4E34;
 }

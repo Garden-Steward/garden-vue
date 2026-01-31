@@ -306,6 +306,7 @@ const goBackToGarden = () => {
     <PhoneLoginModal
       :show="showPhoneModal"
       :task="selectedTask"
+      :dark-mode="isDarkMode"
       @close="closePhoneModal"
       @success="handleSignUpSuccess"
     />

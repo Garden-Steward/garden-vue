@@ -21,14 +21,19 @@ const props = defineProps({
   placeholder: {
     type: String,
     default: 'Select media'
+  },
+  dark: {
+    type: Boolean,
+    default: false
   }
 })
 
 const mediaStore = useMediaStore()
 const alertStore = useAlertStore()
 const { compressImageWithDefaults, createCompressionStatus } = useImageCompression()
-const activeTab = ref('existing') // 'existing' or 'upload'
+const activeTab = ref('upload') // 'upload' (default) or 'existing'
 const fileInput = ref(null)
+const cameraInput = ref(null)
 const dragActive = ref(false)
 const isUploading = ref(false)
 const isCompressing = ref(false)
@@ -295,9 +300,13 @@ const handleChange = async (e) => {
   if (files?.[0]) {
     await uploadFile(files[0])
   }
-  // Reset input
-  if (fileInput.value) {
-    fileInput.value.value = ''
+  // Reset inputs
+  e.target.value = ''
+}
+
+const takePicture = () => {
+  if (cameraInput.value) {
+    cameraInput.value.click()
   }
 }
 
@@ -392,32 +401,36 @@ watch(activeTab, () => {
 </script>
 
 <template>
-  <div class="media-selector" @click.stop>
+  <div class="media-selector" :class="{ 'media-selector-dark': dark }" @click.stop>
     <!-- Tabs -->
-    <div class="flex border-b border-gray-300 mb-4" @click.stop>
-      <button
-        type="button"
-        @click.stop="activeTab = 'existing'"
-        :class="[
-          'px-4 py-2 font-medium text-sm transition-colors',
-          activeTab === 'existing'
-            ? 'border-b-2 border-green-600 text-green-600'
-            : 'text-gray-600 hover:text-gray-900'
-        ]"
-      >
-        Choose Existing
-      </button>
+    <div
+      class="flex border-b mb-4"
+      :class="dark ? 'border-[#3d4d36]' : 'border-gray-300'"
+      @click.stop
+    >
       <button
         type="button"
         @click.stop="activeTab = 'upload'"
         :class="[
           'px-4 py-2 font-medium text-sm transition-colors',
           activeTab === 'upload'
-            ? 'border-b-2 border-green-600 text-green-600'
-            : 'text-gray-600 hover:text-gray-900'
+            ? dark ? 'border-b-2 border-[#8aa37c] text-[#8aa37c]' : 'border-b-2 border-green-600 text-green-600'
+            : dark ? 'text-[#d0d0d0] hover:text-[#f5f5f5]' : 'text-gray-600 hover:text-gray-900'
         ]"
       >
         Upload New
+      </button>
+      <button
+        type="button"
+        @click.stop="activeTab = 'existing'"
+        :class="[
+          'px-4 py-2 font-medium text-sm transition-colors',
+          activeTab === 'existing'
+            ? dark ? 'border-b-2 border-[#8aa37c] text-[#8aa37c]' : 'border-b-2 border-green-600 text-green-600'
+            : dark ? 'text-[#d0d0d0] hover:text-[#f5f5f5]' : 'text-gray-600 hover:text-gray-900'
+        ]"
+      >
+        Choose Existing
       </button>
     </div>
 
@@ -495,12 +508,21 @@ watch(activeTab, () => {
 
     <!-- Upload Tab -->
     <div v-if="activeTab === 'upload'" class="upload-tab">
+      <input
+        ref="cameraInput"
+        type="file"
+        class="hidden"
+        accept="image/*"
+        capture="environment"
+        @change="handleChange"
+      />
       <div
         class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer mb-4 transition-colors"
-        :class="{
-          'border-green-500 bg-green-50': dragActive,
-          'border-gray-300 bg-gray-50': !dragActive
-        }"
+        :class="[
+          dark
+            ? dragActive ? 'border-[#8aa37c] bg-[rgba(138,163,124,0.15)]' : 'border-[#3d4d36] bg-[rgba(26,26,26,0.4)]'
+            : dragActive ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-50'
+        ]"
         @dragenter.stop="handleDrag"
         @dragleave.stop="handleDrag"
         @dragover.stop="handleDrag"
@@ -516,7 +538,7 @@ watch(activeTab, () => {
         />
         
         <!-- Compression Status -->
-        <div v-if="isCompressing || compressionStatus" class="text-gray-600 space-y-2">
+        <div v-if="isCompressing || compressionStatus" :class="dark ? 'text-[#d0d0d0]' : 'text-gray-600'" class="space-y-2">
           <div v-if="isCompressing" class="text-center">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-2"></div>
             <p class="text-sm">{{ compressionStatus?.message || 'Compressing image...' }}</p>
@@ -533,9 +555,11 @@ watch(activeTab, () => {
           <div v-else-if="compressionStatus && !isUploading" class="text-sm text-center">
             <div 
               class="px-3 py-2 rounded inline-block"
-              :class="compressionStatus.error 
-                ? 'bg-yellow-50 text-yellow-800 border border-yellow-200' 
-                : 'bg-green-50 text-green-800 border border-green-200'"
+              :class="[
+                compressionStatus.error
+                  ? dark ? 'bg-yellow-900/30 text-yellow-200 border border-yellow-700' : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+                  : dark ? 'bg-green-900/30 text-green-200 border border-green-700' : 'bg-green-50 text-green-800 border border-green-200'
+              ]"
             >
               <div class="font-medium">{{ compressionStatus.message }}</div>
             </div>
@@ -543,20 +567,39 @@ watch(activeTab, () => {
         </div>
         
         <!-- Upload Status -->
-        <div v-if="isUploading && !isCompressing" class="text-gray-600">
+        <div v-if="isUploading && !isCompressing" :class="dark ? 'text-[#d0d0d0]' : 'text-gray-600'">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div>
           <p>Uploading...</p>
         </div>
         
         <!-- Placeholder -->
-        <div v-else-if="!isCompressing && !isUploading && !compressionStatus" class="text-gray-600">
-          <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div v-else-if="!isCompressing && !isUploading && !compressionStatus" :class="dark ? 'text-[#d0d0d0]' : 'text-gray-600'">
+          <svg class="mx-auto h-12 w-12 mb-2" :class="dark ? 'text-[#6b7c5e]' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
           <p class="text-sm font-medium">{{ placeholder }}</p>
-          <p class="text-xs text-gray-500 mt-1">Click or drag to upload</p>
+          <p class="text-xs mt-1" :class="dark ? 'text-[#9ca3af]' : 'text-gray-500'">Click or drag to upload</p>
         </div>
       </div>
+      
+      <!-- Take Photo Button -->
+      <button
+        type="button"
+        @click.stop="takePicture"
+        :disabled="isCompressing || isUploading"
+        :class="[
+          'inline-flex items-center px-4 py-2 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+          dark
+            ? 'border border-[#6b8560] bg-[#dcfce7] text-gray-800 hover:bg-[#bbf7d0] focus:ring-[#8aa37c]'
+            : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-green-500'
+        ]"
+      >
+        <svg class="h-5 w-5 mr-2" :class="dark ? 'text-gray-600' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        Take Photo
+      </button>
     </div>
   </div>
 </template>

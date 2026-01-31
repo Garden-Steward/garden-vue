@@ -10,6 +10,10 @@ const props = defineProps({
   task: {
     type: Object,
     default: null
+  },
+  darkMode: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -89,23 +93,23 @@ const submit = async () => {
 
 <template>
   <Teleport to="#modals">
-    <div v-if="show" class="phone-modal-wrapper">
+    <div v-if="show" class="phone-modal-wrapper" :class="{ 'phone-modal-dark': darkMode }">
       <!-- Backdrop -->
       <div
-        class="fixed inset-0 bg-gray-900 bg-opacity-50 dark:bg-opacity-70 transition-opacity"
+        class="phone-modal-backdrop"
         @click="close"
       ></div>
 
       <!-- Modal -->
       <div class="fixed inset-0 flex items-center justify-center p-4" @click="close">
         <div
-          class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 relative transform transition-all"
+          class="phone-modal-content"
           @click.stop
         >
           <!-- Close button -->
           <button
             type="button"
-            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            class="phone-modal-close"
             @click="close"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,51 +119,47 @@ const submit = async () => {
 
           <!-- Header -->
           <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900 mb-4">
-              <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="phone-modal-icon">
+              <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
             </div>
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-              Sign Up for Task
-            </h2>
-            <p class="text-gray-600 dark:text-gray-300 mt-2">
-              Enter your phone number to sign up for <strong class="text-green-600 dark:text-green-400">{{ taskTitle }}</strong>
+            <h2 class="phone-modal-title">Sign Up for Task</h2>
+            <p class="phone-modal-subtitle">
+              Enter your phone number to sign up for <strong class="phone-modal-task">{{ taskTitle }}</strong>
             </p>
           </div>
 
           <!-- Form -->
           <form @submit.prevent="submit" class="space-y-4">
             <div>
-              <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Phone Number
-              </label>
+              <label for="phone" class="phone-modal-label">Phone Number</label>
               <input
                 id="phone"
                 type="tel"
                 :value="phoneNumber"
                 @input="handlePhoneInput"
                 placeholder="(555) 555-5555"
-                class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-lg"
-                :class="{ 'border-red-500 focus:ring-red-500': error }"
+                class="phone-modal-input"
+                :class="{ 'phone-modal-input-error': error }"
                 autocomplete="tel"
               />
-              <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-400">
+              <p v-if="error" class="phone-modal-error">
                 {{ error }}
               </p>
             </div>
 
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="phone-modal-info">
               You'll receive a text message to confirm your task assignment. Standard messaging rates may apply.
             </p>
 
             <button
               type="submit"
               :disabled="!isValidPhone || isSubmitting"
-              class="w-full py-3 px-4 rounded-lg font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              class="phone-modal-btn"
               :class="{
-                'bg-green-600 hover:bg-green-700': isValidPhone && !isSubmitting,
-                'bg-gray-400': !isValidPhone || isSubmitting
+                'phone-modal-btn-active': isValidPhone && !isSubmitting,
+                'phone-modal-btn-disabled': !isValidPhone || isSubmitting
               }"
             >
               <span v-if="isSubmitting" class="inline-flex items-center">
@@ -174,7 +174,7 @@ const submit = async () => {
           </form>
 
           <!-- Footer info -->
-          <p class="text-center text-xs text-gray-400 dark:text-gray-500 mt-4">
+          <p class="phone-modal-footer">
             By signing up, you agree to receive SMS messages about this task.
           </p>
         </div>
@@ -186,5 +186,210 @@ const submit = async () => {
 <style scoped>
 .phone-modal-wrapper {
   z-index: 10001;
+}
+
+/* Light mode (default) */
+.phone-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 24, 39, 0.5);
+  transition: background-color 0.3s ease;
+}
+
+.phone-modal-content {
+  background-color: #ffffff;
+  color: #111827;
+  border-radius: 0.75rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 28rem;
+  width: 100%;
+  padding: 1.5rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.phone-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: #9ca3af;
+  transition: color 0.2s;
+}
+.phone-modal-close:hover {
+  color: #4b5563;
+}
+
+.phone-modal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  background-color: #dcfce7;
+  color: #16a34a;
+  margin-bottom: 1rem;
+}
+
+.phone-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.phone-modal-subtitle {
+  color: #4b5563;
+  margin-top: 0.5rem;
+}
+
+.phone-modal-task {
+  color: #16a34a;
+}
+
+.phone-modal-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.phone-modal-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #111827;
+  font-size: 1.125rem;
+  transition: all 0.2s;
+}
+.phone-modal-input::placeholder {
+  color: #9ca3af;
+}
+.phone-modal-input:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #22c55e;
+}
+.phone-modal-input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5) !important;
+}
+
+.phone-modal-info {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.phone-modal-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.phone-modal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.phone-modal-btn-active {
+  background-color: #16a34a;
+}
+.phone-modal-btn-active:hover:not(:disabled) {
+  background-color: #15803d;
+}
+.phone-modal-btn-disabled {
+  background-color: #9ca3af;
+}
+
+.phone-modal-footer {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 1rem;
+}
+
+.phone-modal-error {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #dc2626;
+}
+
+/* Dark mode */
+.phone-modal-dark .phone-modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.phone-modal-dark .phone-modal-content {
+  background-color: #2d3e26;
+  color: #f5f5f5;
+  border: 1px solid #3d4d36;
+}
+
+.phone-modal-dark .phone-modal-close {
+  color: #9ca3af;
+}
+.phone-modal-dark .phone-modal-close:hover {
+  color: #f5f5f5;
+}
+
+.phone-modal-dark .phone-modal-icon {
+  background-color: rgba(34, 197, 94, 0.2);
+  border: 1px solid #3d4d36;
+  color: #8aa37c;
+}
+
+.phone-modal-dark .phone-modal-title {
+  color: #f5f5f5;
+}
+
+.phone-modal-dark .phone-modal-subtitle {
+  color: #d0d0d0;
+}
+
+.phone-modal-dark .phone-modal-task {
+  color: #8aa37c;
+}
+
+.phone-modal-dark .phone-modal-label {
+  color: #f5f5f5;
+}
+
+.phone-modal-dark .phone-modal-input {
+  background-color: rgba(26, 26, 26, 0.6);
+  border-color: #3d4d36;
+  color: #f5f5f5;
+}
+.phone-modal-dark .phone-modal-input::placeholder {
+  color: #6b7280;
+}
+.phone-modal-dark .phone-modal-input:focus {
+  box-shadow: 0 0 0 2px #8aa37c;
+}
+
+.phone-modal-dark .phone-modal-info {
+  color: #d0d0d0;
+}
+
+.phone-modal-dark .phone-modal-btn-active {
+  background-color: #8aa37c;
+}
+.phone-modal-dark .phone-modal-btn-active:hover:not(:disabled) {
+  background-color: #6b8560;
+}
+.phone-modal-dark .phone-modal-btn-disabled {
+  background-color: #4b5563;
+}
+
+.phone-modal-dark .phone-modal-footer {
+  color: rgba(208, 208, 208, 0.8);
+}
+
+.phone-modal-dark .phone-modal-error {
+  color: #f87171;
 }
 </style>
