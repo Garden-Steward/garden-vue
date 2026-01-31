@@ -19,3 +19,4 @@ export { default as ContributeView } from './ContributeView.vue';
 export { default as PrivacyView } from './PrivacyView.vue';
 export { default as ProjectPublic } from './ProjectPublic.vue';
 export { default as EventTemplatesView } from './EventTemplatesView.vue';
+export { default as GardenTasksPublic } from './GardenTasksPublic.vue';

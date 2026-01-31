@@ -5,6 +5,7 @@ import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks`;
 const recurringUrl = `${import.meta.env.VITE_API_URL}/api/recurring-tasks`;
+const smsAssignUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks/assign-sms`;
 
 export const useGardenTaskStore = defineStore({
     id: 'gardenTasks',
@@ -122,6 +123,40 @@ export const useGardenTaskStore = defineStore({
                     return true;
                 })
                 .catch(this.handleError);
+        },
+        async getTasksByGardenSlug(slug) {
+            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=recurring_task.instruction&populate[3]=primary_image&populate[4]=garden&filters[garden][slug][$eq]=${slug}&filters[status][$nei]=finished`)
+                .then(response => {
+                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(task => {
+                        if (task.attributes?.volunteers?.data) {
+                            task.attributes.volunteers = task.attributes.volunteers.data;
+                        } else if (!task.attributes?.volunteers) {
+                            task.attributes.volunteers = [];
+                        }
+                        return task;
+                    });
+                    this.gardenTasks = tasks;
+                    return tasks;
+                })
+                .catch(this.handleError);
+        },
+        async assignTaskViaSMS(taskId, phoneNumber) {
+            return fetchWrapper.post(smsAssignUrl, {
+                data: {
+                    taskId,
+                    phoneNumber
+                }
+            })
+                .then(response => {
+                    const alertStore = useAlertStore();
+                    alertStore.success('Task assignment request sent! Check your phone for confirmation.');
+                    return response;
+                })
+                .catch(error => {
+                    const alertStore = useAlertStore();
+                    alertStore.error(error.message || 'Failed to send SMS assignment');
+                    throw error;
+                });
         }
     }
   });
