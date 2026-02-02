@@ -357,7 +357,7 @@ onBeforeUnmount(() => {
           <div class="flex-1">
             <!-- Back link -->
             <router-link 
-              :to="`/manage/gardens/${event?.attributes?.garden?.data?.attributes?.slug}`"
+              :to="`/manage/gardens/${event?.attributes?.garden?.data?.attributes?.slug}#events`"
               class="inline-flex items-center text-white/90 hover:text-white mb-2"
             >
               <i class="fas fa-arrow-left mr-2"></i>
