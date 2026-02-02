@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, computed, defineOptions, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore } from '@/stores';
 import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
@@ -20,6 +20,7 @@ const campaignStore = useSMSCampaignStore();
 const interestStore = useUGInterestsStore();
 const alertStore = useAlertStore();
 const route = useRoute();
+const router = useRouter();
 const gardenTaskStore = useGardenTaskStore();
 const messagesStore = useMessagesStore();
 
@@ -254,34 +255,96 @@ const normalizeEvent = (day) => {
   return day;
 };
 
-// Separate events into upcoming and past
-const upcomingEvents = computed(() => {
+// Event table sort state — default: upcoming soonest first, then past (most recent first)
+const eventSortField = ref('default');
+const eventSortOrder = ref('asc');
+
+const toggleEventSort = (field) => {
+  if (eventSortField.value === field && field !== 'default') {
+    eventSortOrder.value = eventSortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    eventSortField.value = field;
+    eventSortOrder.value = field === 'title' ? 'asc' : 'desc';
+  }
+};
+
+// All events (past + upcoming) for single table, sorted
+const allEventsSorted = computed(() => {
   if (!volunteerDays.value?.days || !Array.isArray(volunteerDays.value.days)) return [];
-  
-  const now = new Date();
-  return volunteerDays.value.days
-    .map(normalizeEvent)
-    .filter(day => {
-      const startDatetime = day.startDatetime;
-      if (!startDatetime) return false;
-      const eventDate = new Date(startDatetime);
-      return eventDate >= now;
-    });
+  const list = volunteerDays.value.days.map(normalizeEvent).filter(day => day.startDatetime);
+  const field = eventSortField.value;
+  const order = eventSortOrder.value === 'asc' ? 1 : -1;
+  const now = Date.now();
+
+  if (field === 'default') {
+    const upcoming = list.filter(d => new Date(d.startDatetime).getTime() >= now).sort((a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime());
+    const past = list.filter(d => new Date(d.startDatetime).getTime() < now).sort((a, b) => new Date(b.startDatetime).getTime() - new Date(a.startDatetime).getTime());
+    return [...upcoming, ...past];
+  }
+
+  return [...list].sort((a, b) => {
+    if (field === 'title') {
+      const ta = (a.title || '').toLowerCase();
+      const tb = (b.title || '').toLowerCase();
+      return order * ta.localeCompare(tb);
+    }
+    const da = new Date(a.startDatetime).getTime();
+    const db = new Date(b.startDatetime).getTime();
+    return order * (da - db);
+  });
 });
 
-const pastEvents = computed(() => {
-  if (!volunteerDays.value?.days || !Array.isArray(volunteerDays.value.days)) return [];
-  
-  const now = new Date();
-  return volunteerDays.value.days
-    .map(normalizeEvent)
-    .filter(day => {
-      const startDatetime = day.startDatetime;
-      if (!startDatetime) return false;
-      const eventDate = new Date(startDatetime);
-      return eventDate < now;
-    });
-});
+// Hero image thumbnail URL for event (event's hero_image or garden fallback); null if none
+const getEventHeroThumbnail = (day) => {
+  let heroImage = day?.hero_image || day?.attributes?.hero_image;
+  if (!heroImage && garden.value?.attributes?.hero_image) {
+    heroImage = garden.value.attributes.hero_image;
+  }
+  if (!heroImage) return null;
+  let imageUrl = null;
+  if (heroImage?.data?.attributes?.formats?.small?.url) {
+    imageUrl = heroImage.data.attributes.formats.small.url;
+  } else if (heroImage?.formats?.small?.url) {
+    imageUrl = heroImage.formats.small.url;
+  } else if (heroImage?.data?.attributes?.formats?.thumbnail?.url) {
+    imageUrl = heroImage.data.attributes.formats.thumbnail.url;
+  } else if (heroImage?.formats?.thumbnail?.url) {
+    imageUrl = heroImage.formats.thumbnail.url;
+  } else if (heroImage?.data?.attributes?.url) {
+    imageUrl = heroImage.data.attributes.url;
+  } else if (heroImage?.url) {
+    imageUrl = heroImage.url;
+  }
+  if (!imageUrl) return null;
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  if (baseUrl === 'http://localhost:1337' && !imageUrl.includes('googleapis.com') && imageUrl.startsWith('/')) {
+    imageUrl = `${baseUrl}${imageUrl}`;
+  }
+  return imageUrl;
+};
+
+const isPastEvent = (day) => {
+  if (!day?.startDatetime) return false;
+  return new Date(day.startDatetime) < new Date();
+};
+
+const formatEventDate = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+// First 15 characters of recurring event template name (or empty if none)
+const getRecurringEventPreview = (day) => {
+  const rt = day?.recurring_template;
+  if (!rt) return '';
+  // API returns recurring_template as flat object with title_template, or Strapi format with data.attributes
+  const name = rt.title_template ?? rt.data?.attributes?.title_template ?? rt.attributes?.title_template ?? rt.title ?? '';
+  return String(name).slice(0, 15);
+};
+
+const openEventEditor = (day) => {
+  if (day?.id) router.push(`/manage/events/${day.id}/edit`);
+};
 
 </script>
 
@@ -482,31 +545,69 @@ const pastEvents = computed(() => {
 
           <VolunteerDayModal v-model:show="showDayModal" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" />
 
-          <!-- Upcoming Events -->
-          <div v-if="upcomingEvents.length > 0" class="grid grid-cols-1 gap-4">
-            <div v-for="day in upcomingEvents" :key="day.id">
-              <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" :smsLink="true" :key="garden.id"/>
-            </div>
-          </div>
-
-          <!-- Divider and Previous Events Header -->
-          <div v-if="pastEvents.length > 0" class="mt-8 mb-4">
-            <div class="flex items-center gap-4 mb-4">
-              <div class="flex-1 border-t-2 border-[#3d4d36]/50"></div>
-              <h3 class="text-xl font-light font-serif text-[#f5f5f5] px-4">Previous Events</h3>
-              <div class="flex-1 border-t-2 border-[#3d4d36]/50"></div>
-            </div>
-          </div>
-
-          <!-- Past Events -->
-          <div v-if="pastEvents.length > 0" class="grid grid-cols-1 gap-4">
-            <div v-for="day in pastEvents" :key="day.id">
-              <VolunteerDayModal v-bind="day" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" :smsLink="true" :key="garden.id"/>
-            </div>
+          <!-- Events table (past + upcoming, sortable) -->
+          <div v-if="allEventsSorted.length > 0" class="relative overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b-2 border-[#3d4d36]/50">
+                  <th class="w-14 py-3 px-2"></th>
+                  <th class="text-left py-3 px-4 text-[#f5f5f5]">
+                    <button @click="toggleEventSort('title')" class="cursor-pointer hover:text-blue-400 flex items-center gap-2 font-medium">
+                      Title {{ eventSortField === 'title' ? (eventSortOrder === 'asc' ? '▲' : '▼') : '' }}
+                    </button>
+                  </th>
+                  <th class="text-left py-3 px-4 text-[#f5f5f5]">
+                    <button @click="toggleEventSort('startDatetime')" class="cursor-pointer hover:text-blue-400 flex items-center gap-2 font-medium">
+                      Date {{ eventSortField === 'startDatetime' ? (eventSortOrder === 'asc' ? '▲' : '▼') : '' }}
+                    </button>
+                  </th>
+                  <th class="text-left py-3 px-4 text-[#f5f5f5] font-medium">Recurring</th>
+                  <th class="text-left py-3 px-4 text-[#f5f5f5] font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="day in allEventsSorted"
+                  :key="day.id"
+                  :class="[
+                    'border-b border-[#3d4d36]/30 cursor-pointer',
+                    isPastEvent(day)
+                      ? 'bg-[rgba(60,60,60,0.5)] text-[#b0b0b0]'
+                      : 'bg-[rgba(26,26,26,0.4)] text-[#f5f5f5] hover:bg-[rgba(26,26,26,0.6)]'
+                  ]"
+                  @click="openEventEditor(day)"
+                >
+                  <td class="py-2 px-2 w-14 align-middle">
+                    <img
+                      v-if="getEventHeroThumbnail(day)"
+                      :src="getEventHeroThumbnail(day)"
+                      :alt="day.title"
+                      class="w-12 h-12 object-cover rounded flex-shrink-0"
+                    />
+                    <span v-else class="inline-block w-12 h-12 rounded bg-[#3d4d36]/30" aria-hidden="true"></span>
+                  </td>
+                  <td class="py-3 px-4 font-medium">{{ day.title }}</td>
+                  <td class="py-3 px-4">{{ formatEventDate(day.startDatetime) }}</td>
+                  <td class="py-3 px-4">
+                    <span class="recurring-preview">{{ getRecurringEventPreview(day) }}</span>
+                  </td>
+                  <td class="py-3 px-4" @click.stop>
+                    <VolunteerDayModal
+                      v-bind="day"
+                      :garden="garden.id"
+                      :interests="garden.attributes.interests"
+                      :editor="editor"
+                      :smsLink="true"
+                      tableRow
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <!-- No Events Message -->
-          <div v-if="upcomingEvents.length === 0 && pastEvents.length === 0" class="text-[#d0d0d0] text-center py-8">
+          <div v-else-if="!volunteerDays.loading" class="text-[#d0d0d0] text-center py-8">
             No events scheduled yet.
           </div>
 
@@ -576,5 +677,12 @@ export default {
 <style scoped>
   .tr-class {
     @apply flex flex-col mb-4 sm:table-row
+  }
+  /* Fade out last ~2 characters of recurring template preview */
+  .recurring-preview {
+    display: inline-block;
+    max-width: 100%;
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
 </style>

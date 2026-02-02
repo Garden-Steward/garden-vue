@@ -134,7 +134,7 @@ export const useEventStore = defineStore({
             if (!append) {
                 this.volunteerDays = { loading: true };
             }
-            const url = `${baseUrl}/garden/${slug}?pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+            const url = `${baseUrl}/garden/${slug}?pagination[page]=${page}&pagination[pageSize]=${pageSize}&populate[0]=hero_image&populate[1]=recurring_template`;
             this.loadingPromise = fetchWrapper.get(url)
                 .then(res => {
                     this.currentGardenSlug = slug;

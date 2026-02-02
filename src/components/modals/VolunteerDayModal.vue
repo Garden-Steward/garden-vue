@@ -23,6 +23,7 @@ const props = defineProps({
   interest: String,
   editor: Boolean,
   smsLink: Boolean,
+  tableRow: Boolean,
   show: {
     type: Boolean,
     default: false
@@ -122,7 +123,8 @@ const showExisting = (id) => {
 
 <template>
 
-  <div v-if="title" class="border-r-3 border rounded p-2 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:bg-[rgba(26,26,26,0.8)] cursor-pointer transition-colors">
+  <!-- Card view (default) -->
+  <div v-if="title && !tableRow" class="border-r-3 border rounded p-2 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:bg-[rgba(26,26,26,0.8)] cursor-pointer transition-colors">
     <a @click.stop="$router.push(`/manage/events/${id}/edit`)" class="block no-underline hover:no-underline">
       <span class="text-md font-semibold text-[#f5f5f5]">{{ title }}</span>
       <br />
@@ -145,6 +147,23 @@ const showExisting = (id) => {
         Quick Edit
       </button>
     </div>
+  </div>
+
+  <!-- Table row: only action buttons (used inside Events table); Quick Edit opens VolunteerDayModal -->
+  <div v-else-if="title && tableRow" class="flex items-center gap-2 flex-wrap">
+    <button
+      v-if="smsLink"
+      @click.stop="$router.push(`/d/${id}`)"
+      class="bg-custom-green hover:bg-custom-green/80 text-white text-xs py-1 px-3 rounded"
+    >
+      Public Page
+    </button>
+    <button
+      @click.stop="showExisting(id)"
+      class="bg-[rgba(138,163,124,0.3)] hover:bg-[rgba(138,163,124,0.5)] text-[#f5f5f5] font-bold py-1 px-3 rounded text-xs"
+    >
+      Quick Edit
+    </button>
   </div>
 
   <!-- Render inside our `<div id="modals"></div>` in index.html -->
