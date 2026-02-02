@@ -18,9 +18,9 @@ const props = defineProps({
   day_of_month: Number,
   nth_occurrence: Number,
   day_of_week: Number,
-  default_start_time: String,
-  default_end_text: String,
-  default_blurb: String,
+  start_time: String,
+  end_text: String,
+  blurb: String,
   is_active: { type: Boolean, default: true },
   max_future_instances: { type: Number, default: 3 },
   garden: Number,
@@ -192,9 +192,9 @@ const form = ref({
   day_of_month: props.day_of_month ?? 1,
   nth_occurrence: props.nth_occurrence ?? 2,
   day_of_week: props.day_of_week ?? 6,
-  default_start_time: props.default_start_time || '09:00',
-  default_end_text: props.default_end_text || 'around noon',
-  default_blurb: props.default_blurb || '',
+  start_time: props.start_time || '09:00',
+  end_text: props.end_text || 'around noon',
+  blurb: props.blurb || '',
   is_active: props.is_active ?? true,
   max_future_instances: props.max_future_instances ?? 3
 });
@@ -239,7 +239,7 @@ watch(isVisible, (newVal) => {
   }
 });
 
-watch(() => [props.id, props.template_name, props.title_template, props.event_title_template, props.naming_convention, props.recurrence_type, props.day_of_month, props.nth_occurrence, props.day_of_week, props.default_start_time, props.default_end_text, props.default_blurb, props.is_active, props.max_future_instances], () => {
+watch(() => [props.id, props.template_name, props.title_template, props.event_title_template, props.naming_convention, props.recurrence_type, props.day_of_month, props.nth_occurrence, props.day_of_week, props.start_time, props.end_text, props.blurb, props.is_active, props.max_future_instances], () => {
   form.value = {
     id: props.id,
     template_name: props.template_name || props.title_template || '',
@@ -249,9 +249,9 @@ watch(() => [props.id, props.template_name, props.title_template, props.event_ti
     day_of_month: props.day_of_month ?? 1,
     nth_occurrence: props.nth_occurrence ?? 2,
     day_of_week: props.day_of_week ?? 6,
-    default_start_time: props.default_start_time || '09:00',
-    default_end_text: props.default_end_text || 'around noon',
-    default_blurb: props.default_blurb || '',
+    start_time: props.start_time || '09:00',
+    end_text: props.end_text || 'around noon',
+    blurb: props.blurb || '',
     is_active: props.is_active ?? true,
     max_future_instances: props.max_future_instances ?? 3
   };
@@ -270,31 +270,40 @@ async function saveTemplate() {
   isLoading.value = true;
 
   try {
-    const data = { ...form.value, garden: props.garden };
-    delete data.id;
-    
-    // Map template_name to title_template for API
-    data.title_template = data.template_name;
-    delete data.template_name;
-    
-    // Map naming convention
-    data.naming_convention = NAMING_TO_API[data.naming_convention] ?? data.naming_convention;
-    
-    // Map nth_occurrence
-    data.nth_occurrence = NTH_TO_API[data.nth_occurrence] ?? data.nth_occurrence;
-    
-    // Calculate first_occurrence_date for new templates (before mapping values)
+    // Format start_time for Strapi (expects HH:mm:ss.SSS; HTML time input gives HH:mm)
+    const rawTime = form.value.start_time?.trim() || null;
+    const start_time = rawTime
+      ? (rawTime.match(/^\d{1,2}:\d{2}$/) ? `${rawTime}:00.000` : rawTime)
+      : null;
+
+    // Build payload matching recurring-event-template schema only (no default_*, event_title_template, day_of_week)
+    const data = {
+      title_template: form.value.template_name || form.value.title_template || '',
+      naming_convention: NAMING_TO_API[form.value.naming_convention] ?? form.value.naming_convention,
+      recurrence_type: form.value.recurrence_type,
+      start_time,
+      end_text: form.value.end_text || null,
+      blurb: form.value.blurb || null,
+      garden: props.garden,
+      is_active: form.value.is_active,
+      max_future_instances: form.value.max_future_instances
+    };
+
+    if (form.value.recurrence_type === 'day_of_month') {
+      data.day_of_month = form.value.day_of_month;
+    } else {
+      data.nth_occurrence = NTH_TO_API[form.value.nth_occurrence] ?? form.value.nth_occurrence;
+      data.weekday = WEEKDAY_TO_API[form.value.day_of_week];
+    }
+
     if (!isEditing.value) {
       data.first_occurrence_date = calculateFirstOccurrenceDate(
         data.recurrence_type,
         data.day_of_month,
-        form.value.nth_occurrence, // Use original numeric value
-        form.value.day_of_week // Use original numeric value
+        form.value.nth_occurrence,
+        form.value.day_of_week
       );
     }
-    
-    // Map weekday (after calculating first_occurrence_date)
-    data.weekday = WEEKDAY_TO_API[data.day_of_week];
 
     if (isEditing.value) {
       await templateStore.update(form.value.id, data);
@@ -409,7 +418,7 @@ const showCard = computed(() => !!cardTitle.value);
     </div>
     <div class="mt-2 text-xs text-[#999]">
       <span>{{ max_future_instances }} upcoming events maintained</span>
-      <span v-if="default_start_time" class="ml-3">Starts at {{ default_start_time }}</span>
+      <span v-if="start_time" class="ml-3">Starts at {{ start_time }}</span>
     </div>
   </div>
 
@@ -526,7 +535,7 @@ const showCard = computed(() => !!cardTitle.value);
             <div>
               <label class="block text-xs text-[#999] mb-1">Start Time</label>
               <input
-                v-model="form.default_start_time"
+                v-model="form.start_time"
                 type="time"
                 :disabled="!editor"
                 class="w-full p-2 bg-[rgba(26,26,26,0.6)] dark:!bg-[rgba(26,26,26,0.6)] border border-[#3d4d36] rounded text-[#f5f5f5] disabled:opacity-60 disabled:cursor-not-allowed"
@@ -543,9 +552,9 @@ const showCard = computed(() => !!cardTitle.value);
             </div>
           </div>
           <div>
-            <label class="block text-xs text-[#999] mb-1">Default Blurb/Description</label>
+            <label class="block text-xs text-[#999] mb-1">Blurb</label>
             <textarea
-              v-model="form.default_blurb"
+              v-model="form.blurb"
               :disabled="!editor"
               rows="2"
               class="w-full p-2 bg-[rgba(26,26,26,0.6)] border border-[#3d4d36] rounded text-[#f5f5f5] disabled:opacity-60 disabled:cursor-not-allowed"

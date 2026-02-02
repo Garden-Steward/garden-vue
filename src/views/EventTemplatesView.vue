@@ -65,9 +65,9 @@ function normalizeTemplate(t) {
     event_title_template: attrs.title_template ?? attrs.event_title_template,
     day_of_week: typeof dow === 'number' ? dow : (dow != null ? WEEKDAY_MAP[dow] : undefined),
     nth_occurrence: typeof nth === 'number' ? nth : (nth != null ? NTH_MAP[nth] : undefined),
-    default_start_time: startTime ? String(startTime).slice(0, 5) : (attrs.default_start_time || '09:00'),
-    default_end_text: attrs.end_text ?? attrs.default_end_text ?? 'around noon',
-    default_blurb: attrs.blurb ?? attrs.default_blurb ?? '',
+    start_time: startTime ? String(startTime).slice(0, 5) : (attrs.start_time || '09:00'),
+    end_text: attrs.end_text ?? 'around noon',
+    blurb: attrs.blurb ?? '',
     naming_convention: NAMING_MAP[rawNaming] ?? rawNaming ?? 'month_year',
   };
 }

@@ -5,6 +5,23 @@ import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/recurring-event-templates`;
 
+/** Schema-valid fields for recurring-event-template (Strapi). Strip any extras before PUT/POST. */
+const SCHEMA_FIELDS = new Set([
+    'title_template', 'naming_convention', 'recurrence_type', 'day_of_month',
+    'nth_occurrence', 'weekday', 'start_time', 'end_text', 'blurb', 'content',
+    'garden', 'interest', 'accessibility', 'type', 'hero_image', 'is_active',
+    'first_occurrence_date', 'max_future_instances'
+]);
+
+function toSchemaPayload(data) {
+    if (!data || typeof data !== 'object') return data;
+    const out = {};
+    for (const key of Object.keys(data)) {
+        if (SCHEMA_FIELDS.has(key) && data[key] !== undefined) out[key] = data[key];
+    }
+    return out;
+}
+
 export const useRecurringTemplateStore = defineStore({
     id: 'recurringTemplate',
     state: () => ({
@@ -60,7 +77,7 @@ export const useRecurringTemplateStore = defineStore({
         },
 
         async create(data) {
-            return fetchWrapper.post(`${baseUrl}`, { data })
+            return fetchWrapper.post(`${baseUrl}`, { data: toSchemaPayload(data) })
                 .then(res => {
                     const newTemplate = res.data;
                     if (this.templates.items && Array.isArray(this.templates.items)) {
@@ -75,7 +92,7 @@ export const useRecurringTemplateStore = defineStore({
         },
 
         async update(id, data) {
-            return fetchWrapper.put(`${baseUrl}/${id}`, { data })
+            return fetchWrapper.put(`${baseUrl}/${id}`, { data: toSchemaPayload(data) })
                 .then(res => {
                     const updatedTemplate = res.data;
                     if (this.templates.items && Array.isArray(this.templates.items)) {
