@@ -544,7 +544,7 @@ const showCard = computed(() => !!cardTitle.value);
             <div>
               <label class="block text-xs text-[#999] mb-1">End Time Text</label>
               <TextInput
-                v-model="form.default_end_text"
+                v-model="form.end_text"
                 placeholder="e.g., around noon"
                 size="md"
                 :disabled="!editor"
