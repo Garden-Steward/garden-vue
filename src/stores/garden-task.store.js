@@ -45,17 +45,35 @@ export const useGardenTaskStore = defineStore({
             
             return fetchWrapper.put(`${baseUrl}/${id}?populate=primary_image`, { data: data })
                 .then(response => {
-                    if (response?.data?.attributes) {
-                        if (response.data.attributes.primary_image?.data) {
-                            const imageData = response.data.attributes.primary_image.data;
-                            response.data.attributes.primary_image = {
-                                ...imageData.attributes,
-                                id: imageData.id
-                            };
-                        }
-                        return response.data.attributes;
+                    if (!response?.data) return response;
+
+                    const resData = response.data;
+                    const attrs = { ...resData.attributes };
+
+                    // Normalize primary_image from Strapi { data: { id, attributes } } to flat { id, url, formats, ... }
+                    if (attrs.primary_image?.data) {
+                        const imageData = attrs.primary_image.data;
+                        attrs.primary_image = {
+                            ...(imageData.attributes || imageData),
+                            id: imageData.id
+                        };
                     }
-                    return response;
+
+                    // Update the single task in gardenTasks so UI (e.g. task cards) reflects the change
+                    const tasks = Array.isArray(this.gardenTasks) ? this.gardenTasks : [];
+                    const index = tasks.findIndex(t => t.id === resData.id || t.id === id);
+                    if (index !== -1) {
+                        const existing = tasks[index];
+                        const mergedAttrs = { ...existing.attributes, ...attrs };
+                        this.gardenTasks = tasks.map((t, i) =>
+                            i === index ? { id: resData.id, attributes: mergedAttrs } : t
+                        );
+                    } else {
+                        // Task not in list (e.g. different garden); still push so refs stay in sync
+                        this.gardenTasks = [...tasks, { id: resData.id, attributes: attrs }];
+                    }
+
+                    return attrs;
                 })
                 .catch(this.handleError);
         },

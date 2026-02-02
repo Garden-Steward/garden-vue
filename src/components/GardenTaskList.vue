@@ -82,6 +82,17 @@ const getRecurringTaskId = (recurringTask) => {
   return recurringTask?.id;
 };
 
+// Get instruction for a recurring task (Strapi: instruction.data or instruction with attributes)
+const getRecurringTaskInstruction = (recurringTask) => {
+  const instr = recurringTask?.attributes?.instruction;
+  if (!instr) return null;
+  const data = instr?.data ?? instr;
+  const attrs = data?.attributes ?? data;
+  const slug = attrs?.slug;
+  const title = attrs?.title;
+  return slug && title ? { title, slug } : null;
+};
+
 // Get scheduler entries for a specific recurring task
 const getSchedulerEntriesForTask = (recurringTask) => {
   if (!weekscheduler.value || typeof weekscheduler.value !== 'object') return [];
@@ -228,6 +239,9 @@ const dayEditMode = ref({});
 // Track which day is being deleted (for confirmation modal)
 const dayToDelete = ref({ taskId: null, day: null });
 
+// Track whether the recurring tasks section drawer is open (collapsed by default)
+const recurringDrawerOpen = ref(false);
+
 // Track which tasks have their drawer open
 const openDrawers = ref({});
 
@@ -341,21 +355,83 @@ const cancelRemoveDay = () => {
   dayToDelete.value = { taskId: null, day: null, schedId: null };
 };
 
-// Open edit modal for a task
+// Regular task card helpers (same style as public tasks page)
+const getTaskImage = (task) => {
+  const primaryImage = task?.attributes?.primary_image;
+  if (!primaryImage) return null;
+  const url = primaryImage.url
+    || primaryImage.formats?.medium?.url
+    || primaryImage.data?.attributes?.url
+    || primaryImage.data?.attributes?.formats?.medium?.url;
+  if (!url) return null;
+  return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || ''}${url}`;
+};
+
+const getVolunteerCount = (task) => {
+  const volunteers = task?.attributes?.volunteers;
+  if (Array.isArray(volunteers)) return volunteers.length;
+  if (volunteers?.data && Array.isArray(volunteers.data)) return volunteers.data.length;
+  return 0;
+};
+
+const formatTaskStatus = (status) => {
+  if (status === 'INITIALIZED') return 'Ready';
+  if (status === 'IN_PROGRESS') return 'In Progress';
+  return status || '';
+};
+
+const getTypeBadgeClasses = (type) => {
+  switch (type?.toLowerCase()) {
+    case 'water':
+      return 'bg-blue-900/40 text-blue-200';
+    case 'weeding':
+      return 'bg-yellow-900/40 text-yellow-200';
+    case 'planting':
+      return 'bg-green-900/40 text-green-200';
+    case 'harvest':
+      return 'bg-orange-900/40 text-orange-200';
+    default:
+      return 'bg-[rgba(138,163,124,0.3)] text-[#8aa37c]';
+  }
+};
+
+const getStatusBadgeClasses = (status) => {
+  switch (String(status).toUpperCase()) {
+    case 'INITIALIZED':
+      return 'bg-purple-900/40 text-purple-200';
+    case 'IN_PROGRESS':
+      return 'bg-blue-900/40 text-blue-200';
+    default:
+      return 'bg-[rgba(26,26,26,0.8)] text-[#d0d0d0] border border-[#3d4d36]/50';
+  }
+};
+
+// Refs to GardenTask modal instances (regular tasks) for opening programmatically
+const regularTaskModalRefs = ref({});
+
+// Open edit modal for a regular task (call exposed openModal on the component)
 const openEditModal = (taskId) => {
+  const modalRef = regularTaskModalRefs.value[taskId];
+  if (modalRef?.openModal) {
+    modalRef.openModal();
+    return;
+  }
+  // Fallback: trigger click on hidden card (e.g. for recurring tasks)
   openTaskModals.value[taskId] = true;
-  // Use nextTick to ensure the component is rendered, then find and click the card
   nextTick(() => {
-    setTimeout(() => {
-      // Find the hidden GardenTask card and click it
-      const hiddenContainer = document.querySelector(`[data-task-id="${taskId}"]`);
-      if (hiddenContainer) {
-        const card = hiddenContainer.querySelector('.bg-purple-50, .cursor-pointer');
-        if (card) {
-          card.click();
-        }
-      }
-    }, 100);
+    const container = document.querySelector(`[data-task-id="${taskId}"]`);
+    const trigger = container?.querySelector('[data-garden-task-trigger]');
+    if (trigger) trigger.click();
+  });
+};
+
+// Recurring task modal: open by clicking hidden trigger (no refs in this list)
+const openRecurringEditModal = (taskId) => {
+  openTaskModals.value[taskId] = true;
+  nextTick(() => {
+    const container = document.querySelector(`[data-recurring-task-id="${taskId}"]`);
+    const trigger = container?.querySelector('[data-garden-task-trigger]');
+    if (trigger) trigger.click();
   });
 };
 </script>
@@ -363,14 +439,34 @@ const openEditModal = (taskId) => {
 <template>
   <div class="bg-[#2d3e26] p-1 md:p-6 rounded-lg shadow-md mb-4">
     
-    <!-- Recurring Tasks Section (with scheduling) -->
-    <div v-if="recurringTasks.length > 0" class="mb-8">
-      <h3 class="text-xl font-bold mb-4 text-[#f5f5f5]">Recurring Tasks</h3>
-      
-      <div class="space-y-4">
-        <div v-for="recurringTask in recurringTasks" :key="recurringTask.id" class="ml-3">
-          <!-- Display recurring task info -->
-          <div class="bg-[rgba(26,26,26,0.6)] rounded-lg border border-[#3d4d36]/50 mb-2 overflow-hidden">
+    <!-- Recurring Tasks Section (one outer container, lighter green; tasks inside, no borders) -->
+    <div v-if="recurringTasks.length > 0" class="mb-8 rounded-lg border border-[#3d4d36]/50 overflow-hidden bg-[#2d3e26]">
+      <div
+        class="flex flex-wrap items-center justify-between gap-4 p-4 cursor-pointer hover:bg-[rgba(0,0,0,0.08)] transition-colors"
+        @click="recurringDrawerOpen = !recurringDrawerOpen"
+      >
+        <h3 class="text-xl font-bold text-[#f5f5f5]">
+          Recurring Tasks
+          <span class="font-normal text-base text-[#8aa37c] ml-2">({{ recurringTasks.length }} active)</span>
+        </h3>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-[#d0d0d0]">{{ recurringDrawerOpen ? 'Hide' : 'Show' }}</span>
+          <svg
+            class="w-5 h-5 text-[#d0d0d0] transition-transform"
+            :class="{ 'rotate-180': recurringDrawerOpen }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+
+      <div v-show="recurringDrawerOpen" class="px-4 pb-4 pt-0 space-y-3">
+        <div v-for="recurringTask in recurringTasks" :key="recurringTask.id">
+          <!-- Recurring task row (no border, sits inside outer container) -->
+          <div class="bg-[rgba(26,26,26,0.35)] rounded-lg overflow-hidden">
             <!-- Always visible header -->
             <div 
               class="p-4 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
@@ -397,9 +493,53 @@ const openEditModal = (taskId) => {
                   </svg>
                 </div>
               </div>
+              <!-- Day badges in same container as title -->
+              <div class="flex flex-wrap gap-2 items-center mt-3" @click.stop>
+                <button
+                  v-for="day in getDaysForTask(recurringTask)"
+                  :key="day"
+                  @click="!dayEditMode[recurringTask.id] && handleDayClick(recurringTask, day)"
+                  :class="[
+                    'px-3 py-1 rounded-full text-sm font-medium transition-colors flex items-center gap-1',
+                    selectedTaskId === recurringTask.id && selectedDay === day
+                      ? 'bg-[rgba(138,163,124,0.5)] text-white'
+                      : dayHasVolunteers(recurringTask, day)
+                        ? 'bg-[rgba(138,163,124,0.3)] text-[#8aa37c] hover:bg-[rgba(138,163,124,0.4)]'
+                        : 'bg-[rgba(26,26,26,0.8)] text-[#d0d0d0] hover:bg-[rgba(26,26,26,1)] border border-[#3d4d36]/50',
+                    dayEditMode[recurringTask.id] ? 'cursor-default' : 'cursor-pointer'
+                  ]"
+                >
+                  {{ day }}
+                  <button
+                    v-if="dayEditMode[recurringTask.id] && editor"
+                    @click.stop="removeDay(recurringTask, day)"
+                    class="ml-1 text-red-400 hover:text-red-300"
+                    title="Remove day"
+                  >
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                  </button>
+                </button>
+                <button
+                  v-if="editor && !dayEditMode[recurringTask.id]"
+                  @click.stop="toggleAddDayForm(recurringTask.id)"
+                  class="px-3 py-1 rounded-full text-sm font-medium bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] hover:bg-[rgba(26,26,26,1)] border border-[#3d4d36]/50 transition-colors flex items-center justify-center w-8 h-8"
+                  title="Add day"
+                >
+                  <span class="text-lg font-bold leading-none">+</span>
+                </button>
+                <button
+                  v-if="editor"
+                  @click="toggleDayEditMode(recurringTask.id)"
+                  class="text-sm text-blue-400 hover:text-blue-300 underline"
+                >
+                  {{ dayEditMode[recurringTask.id] ? 'Done' : 'Edit' }}
+                </button>
+              </div>
             </div>
             
-            <!-- Drawer content (description, last updated, Edit button, Add Day) -->
+            <!-- Drawer content (description, instruction link, last updated, Edit button) -->
             <div 
               v-if="openDrawers[recurringTask.id]"
               class="px-4 pb-4 border-t border-[#3d4d36]/50 pt-4 space-y-3"
@@ -407,13 +547,24 @@ const openEditModal = (taskId) => {
               <div v-if="recurringTask.attributes?.overview" class="text-sm text-[#d0d0d0]">
                 {{ recurringTask.attributes.overview }}
               </div>
+              <div v-if="getRecurringTaskInstruction(recurringTask)" class="text-sm">
+                <span class="text-[#d0d0d0]">Instructions: </span>
+                <a
+                  :href="'/i/' + getRecurringTaskInstruction(recurringTask).slug"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-[#8aa37c] underline hover:text-[#6b8560]"
+                >
+                  {{ getRecurringTaskInstruction(recurringTask).title }}
+                </a>
+              </div>
               <div v-if="recurringTask.attributes?.updatedAt" class="text-xs text-[#999]">
                 Last updated: {{ formatDate(recurringTask.attributes.updatedAt) }}
               </div>
               
               <div v-if="editor" class="pt-2">
                 <button
-                  @click.stop="openEditModal(recurringTask.id)"
+                  @click.stop="openRecurringEditModal(recurringTask.id)"
                   class="px-4 py-2 bg-custom-green text-white rounded-lg hover:bg-darker-green transition-colors text-sm font-medium"
                 >
                   Edit
@@ -423,7 +574,7 @@ const openEditModal = (taskId) => {
           </div>
           
           <!-- Edit modal for recurring task - always render but hide the card -->
-          <div :data-task-id="recurringTask.id" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;">
+          <div :data-recurring-task-id="recurringTask.id" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;">
             <GardenTask
               v-bind="recurringTask.attributes"
               :id="recurringTask.id"
@@ -432,60 +583,13 @@ const openEditModal = (taskId) => {
             />
           </div>
           
-          <!-- Day tags and volunteer management for recurring tasks -->
-          <div class="mt-3 ml-0 bg-[rgba(26,26,26,0.6)] rounded-lg p-4 border border-[#3d4d36]/50">
-            <!-- Day tags with Edit option -->
-            <div class="mb-3">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex flex-wrap gap-2 items-center">
-                  <button
-                    v-for="day in getDaysForTask(recurringTask)"
-                    :key="day"
-                    @click="!dayEditMode[recurringTask.id] && handleDayClick(recurringTask, day)"
-                    :class="[
-                      'px-3 py-1 rounded-full text-sm font-medium transition-colors flex items-center gap-1',
-                      selectedTaskId === recurringTask.id && selectedDay === day
-                        ? 'bg-[rgba(138,163,124,0.5)] text-white'
-                        : dayHasVolunteers(recurringTask, day)
-                          ? 'bg-[rgba(138,163,124,0.3)] text-[#8aa37c] hover:bg-[rgba(138,163,124,0.4)]'
-                          : 'bg-[rgba(26,26,26,0.8)] text-[#d0d0d0] hover:bg-[rgba(26,26,26,1)] border border-[#3d4d36]/50',
-                      dayEditMode[recurringTask.id] ? 'cursor-default' : 'cursor-pointer'
-                    ]"
-                  >
-                    {{ day }}
-                    <button
-                      v-if="dayEditMode[recurringTask.id] && editor"
-                      @click.stop="removeDay(recurringTask, day)"
-                      class="ml-1 text-red-400 hover:text-red-300"
-                      title="Remove day"
-                    >
-                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                      </svg>
-                    </button>
-                  </button>
-                  
-                  <!-- Add Day button (+) -->
-                  <button
-                    v-if="editor && !dayEditMode[recurringTask.id]"
-                    @click.stop="toggleAddDayForm(recurringTask.id)"
-                    class="px-3 py-1 rounded-full text-sm font-medium bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] hover:bg-[rgba(26,26,26,1)] border border-[#3d4d36]/50 transition-colors flex items-center justify-center w-8 h-8"
-                    title="Add day"
-                  >
-                    <span class="text-lg font-bold leading-none">+</span>
-                  </button>
-                </div>
-                <button
-                  v-if="editor"
-                  @click="toggleDayEditMode(recurringTask.id)"
-                  class="text-sm text-blue-400 hover:text-blue-300 underline"
-                >
-                  {{ dayEditMode[recurringTask.id] ? 'Done' : 'Edit' }}
-                </button>
-              </div>
-              
-              <!-- Add Day form (shown when + is clicked) -->
-              <div v-if="showAddDayForm[recurringTask.id] && editor" class="mt-2 p-3 bg-[rgba(26,26,26,0.8)] rounded-lg border border-[#3d4d36]/50">
+          <!-- Add Day form and volunteer management - only show when there's content -->
+          <div
+            v-if="showAddDayForm[recurringTask.id] || (selectedTaskId === recurringTask.id && selectedDay)"
+            class="mt-3 ml-0 bg-[rgba(26,26,26,0.35)] rounded-lg p-4"
+          >
+            <!-- Add Day form (shown when + is clicked) -->
+              <div v-if="showAddDayForm[recurringTask.id] && editor" class="mb-4 p-3 bg-[rgba(26,26,26,0.8)] rounded-lg border border-[#3d4d36]/50">
                 <div class="flex items-start gap-2">
                   <select
                     v-model="newDaySelection[recurringTask.id]"
@@ -518,7 +622,6 @@ const openEditModal = (taskId) => {
                   </div>
                 </div>
               </div>
-            </div>
             
             <!-- Selected day volunteers display -->
             <div v-if="selectedTaskId === recurringTask.id && selectedDay" class="mt-4 border-t border-[#3d4d36]/50 pt-4">
@@ -587,98 +690,109 @@ const openEditModal = (taskId) => {
       </div>
     </div>
     
-    <!-- Regular Tasks Section (simple list) -->
-    <div v-if="regularTasks.length > 0" class="mt-8">
-      <h3 class="text-xl font-bold mb-4 text-[#f5f5f5]">Tasks</h3>
-      
-      <!-- Headers for desktop -->
-      <div class="hidden md:grid md:grid-cols-12 md:gap-4 mb-2">
-        <div class="col-span-4"></div>
-        <div class="col-span-4"></div>
-        <div class="col-span-4 flex justify-between text-sm text-[#d0d0d0]">
-          <span>Status</span>
-          <span>Category</span>
-        </div>
+    <!-- Regular Tasks Section (card grid, same style as public tasks page) -->
+    <div v-if="editor || regularTasks.length > 0" class="mt-8">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <h3 class="text-xl font-bold text-[#f5f5f5]">Tasks</h3>
+        <GardenTask v-if="editor" :garden="garden.id" :editor="editor" />
       </div>
       
-      <div class="space-y-4">
-        <div v-for="task in regularTasks" :key="task.id" class="ml-3">
-          <!-- Task info card -->
-          <div class="bg-[rgba(26,26,26,0.6)] rounded-lg border border-[#3d4d36]/50 mb-2 overflow-hidden">
-            <!-- Always visible header -->
-            <div 
-              class="p-4 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
-              @click="toggleDrawer(task.id)"
-            >
-              <div class="flex items-center justify-between">
-                <div class="text-lg font-medium text-[#f5f5f5]">
-                  {{ task.attributes?.title }}
-                </div>
-                <div class="flex gap-2 items-center">
-                  <span 
-                    class="px-3 py-1 rounded-full text-sm font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
-                  >
-                    {{ task.attributes?.type || 'General' }}
-                  </span>
-                  <svg 
-                    class="w-5 h-5 text-[#d0d0d0] transition-transform"
-                    :class="{ 'rotate-180': openDrawers[task.id] }"
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Drawer content (description, last updated, Edit button) -->
-            <div 
-              v-if="openDrawers[task.id]"
-              class="px-4 pb-4 border-t border-[#3d4d36]/50 pt-4 space-y-3"
-            >
-              <div v-if="task.attributes?.overview" class="text-sm text-[#d0d0d0]">
-                {{ task.attributes.overview }}
-              </div>
-              <div v-if="task.attributes?.updatedAt" class="text-xs text-[#999]">
-                Last updated: {{ formatDate(task.attributes.updatedAt) }}
-              </div>
-              <div v-if="editor" class="pt-2">
-                <button
-                  @click.stop="openEditModal(task.id)"
-                  class="px-4 py-2 bg-custom-green text-white rounded-lg hover:bg-darker-green transition-colors text-sm font-medium"
-                >
-                  Edit
-                </button>
-              </div>
+      <div v-if="regularTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 ml-3">
+        <div
+          v-for="task in regularTasks"
+          :key="task.id"
+          role="button"
+          tabindex="0"
+          class="bg-[rgba(26,26,26,0.6)] rounded-xl border border-[#3d4d36]/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-custom-green focus:ring-offset-2 focus:ring-offset-[#2d3e26]"
+          :class="{ 'hover:border-[#8aa37c]/50': editor }"
+          @click="editor && openEditModal(task.id)"
+          @keydown.enter="editor && openEditModal(task.id)"
+          @keydown.space.prevent="editor && openEditModal(task.id)"
+        >
+          <!-- Task image -->
+          <div class="w-full h-44 overflow-hidden bg-[#1f2d1a]">
+            <img
+              v-if="getTaskImage(task)"
+              :src="getTaskImage(task)"
+              :alt="task.attributes?.title || 'Task'"
+              class="w-full h-full object-cover"
+            />
+            <div v-else class="w-full h-full flex items-center justify-center">
+              <svg class="w-12 h-12 text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
           </div>
-          
-          <!-- Edit modal for regular task - always render but hide the card -->
-          <div :data-task-id="task.id" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;">
-            <GardenTask
-              v-bind="task.attributes" 
-              :id="task.id"
-              :garden="garden.id"
-              :editor="editor"
-            />
+
+          <!-- Task content -->
+          <div class="p-4 space-y-3">
+            <!-- Badges -->
+            <div class="flex flex-wrap gap-2">
+              <span :class="getStatusBadgeClasses(task.attributes?.status)" class="px-3 py-1 rounded-full text-xs font-semibold">
+                {{ formatTaskStatus(task.attributes?.status) }}
+              </span>
+              <span v-if="task.attributes?.type" :class="getTypeBadgeClasses(task.attributes?.type)" class="px-3 py-1 rounded-full text-xs font-semibold">
+                {{ task.attributes?.type }}
+              </span>
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-lg font-semibold text-[#f5f5f5] leading-tight">
+              {{ task.attributes?.title }}
+            </h3>
+
+            <!-- Overview -->
+            <p v-if="task.attributes?.overview" class="text-sm text-[#d0d0d0] line-clamp-3">
+              {{ task.attributes.overview.length > 120 ? task.attributes.overview.substring(0, 120) + '...' : task.attributes.overview }}
+            </p>
+
+            <!-- Volunteer count -->
+            <div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-[rgba(0,0,0,0.2)]">
+              <svg class="w-5 h-5 text-[#8aa37c] shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+              </svg>
+              <span class="text-sm font-medium text-[#d0d0d0]">
+                {{ getVolunteerCount(task) }} / {{ task.attributes?.max_volunteers ?? 1 }} volunteers
+              </span>
+            </div>
+
+            <!-- Edit button (opens GardenTask modal) -->
+            <button
+              v-if="editor"
+              type="button"
+              class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-semibold text-white bg-custom-green hover:bg-darker-green rounded-lg transition-colors"
+              @click.stop="openEditModal(task.id)"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit
+            </button>
           </div>
         </div>
+      </div>
+
+      <!-- GardenTask modals for editing (opened via ref.openModal()) -->
+      <div
+        v-for="task in regularTasks"
+        :key="'modal-' + task.id"
+        :data-regular-task-id="task.id"
+        class="absolute left-[-9999px] opacity-0 pointer-events-none w-0 h-0 overflow-hidden"
+        aria-hidden="true"
+      >
+        <GardenTask
+          :ref="(el) => { if (el) regularTaskModalRefs[task.id] = el }"
+          v-bind="task.attributes"
+          :id="task.id"
+          :garden="garden.id"
+          :editor="editor"
+        />
       </div>
     </div>
     
     <!-- Empty state -->
-    <div v-if="recurringTasks.length === 0 && regularTasks.length === 0" class="text-[#d0d0d0] italic">
+    <div v-if="recurringTasks.length === 0 && regularTasks.length === 0 && !editor" class="text-[#d0d0d0] italic">
       No tasks available at this time
-    </div>
-
-    <!-- Create new task button for editors -->
-    <div v-if="editor" class="mt-4">
-      <GardenTask 
-        :garden="garden.id"
-        :editor="editor"
-      />
     </div>
     
     <!-- Confirmation modal for removing day -->

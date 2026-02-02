@@ -298,10 +298,16 @@ const handleDelete = async () => {
     }
 };
 
+// Expose so parent can open modal programmatically (e.g. GardenTaskList)
+function openModal() {
+  show.value = true;
+}
+defineExpose({ openModal });
+
 </script>
 
 <template>
-  <div v-if="id" class="bg-purple-50 hover:bg-purple-100 cursor-pointer rounded-lg p-2 pr-0 mb-3 border border-purple-100" @click="show = true">
+  <div v-if="id" class="bg-purple-50 hover:bg-purple-100 cursor-pointer rounded-lg p-2 pr-0 mb-3 border border-purple-100" data-garden-task-trigger @click="show = true">
     <a class="hover:text-purple-700">
       <div class="flex flex-col md:grid md:grid-cols-12 md:gap-4 items-center w-full">
         <!-- Header: Title -->
@@ -354,26 +360,13 @@ const handleDelete = async () => {
   </div>
   
   <div v-else-if="showCreateButton">
-    <button type="button" class="px-6
-                p-2.5
-                bg-slate-600
-                text-white
-                font-medium
-                text-xs
-                leading-tight
-                uppercase
-                rounded
-                shadow-md
-                hover:bg-slate-700 hover:shadow-lg
-                focus:bg-slate-700 focus:shadow-lg focus:outline-none focus:ring-0
-                active:bg-slate-800 active:shadow-lg
-                transition
-                duration-150
-                ease-in-out
-                float-right
-                text-sm" @click="show = true">
-                Create Task
-              </button>
+    <button
+      type="button"
+      class="px-5 py-2.5 bg-orange-600 text-white font-semibold text-sm rounded-lg shadow-md hover:bg-orange-700 focus:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-[#2d3e26] active:bg-orange-800 transition duration-150 ease-in-out"
+      @click="show = true"
+    >
+      Create Task
+    </button>
   </div>
 
   <!-- Render inside our `<div id="modals"></div>` in index.html -->
