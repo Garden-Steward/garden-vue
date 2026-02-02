@@ -54,7 +54,7 @@ watch(event, (newVal) => {
     renderedContent = md.render(newVal.attributes?.content);
   }
   if (newVal.attributes?.confirmed) {
-    isRSVPed.value = newVal.attributes?.confirmed.data.some(item => item.id === user?.id);
+    isRSVPed.value = newVal.attributes?.confirmed.data.some(item => item.id === user.value?.id);
   }
 });
 
@@ -65,8 +65,8 @@ const rsvpEvent = async (e) => {
     return;
   }
 
-  if (user) {
-    await eventStore.rsvpEvent({userId:user.id, id:route.params.id})
+  if (user.value) {
+    await eventStore.rsvpEvent({ userId: user.value.id, id: route.params.id })
   } else {
     showModal.value = true;
   }
