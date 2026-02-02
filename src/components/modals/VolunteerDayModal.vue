@@ -122,13 +122,13 @@ const showExisting = (id) => {
 
 <template>
 
-  <div v-if="title" class="border-r-3 border rounded p-2 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:bg-[rgba(26,26,26,0.8)] cursor-pointer transition-colors">
+  <div v-if="title" class="border-r-3 border rounded p-2 bg-slate-100 hover:bg-slate-200 cursor-pointer transition-colors">
     <a @click.stop="$router.push(`/manage/events/${id}/edit`)" class="block no-underline hover:no-underline">
-      <span class="text-md font-semibold text-[#f5f5f5]">{{ title }}</span>
+      <span class="text-md font-semibold">{{ title }}</span>
       <br />
-      <span class="text-sm text-[#d0d0d0]">{{ prettyDay }}</span>
+      <span class="text-sm">{{ prettyDay }}</span>
       <br />
-      <span class="text-sm text-[#d0d0d0]">{{ new Date(startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</span>
+      <span class="text-sm">{{ new Date(startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</span>
     </a>
     <div class="flex justify-end mt-2">
       <button
@@ -140,7 +140,7 @@ const showExisting = (id) => {
       </button>
       <button
         @click.stop="showExisting(id)"
-        class="bg-[rgba(138,163,124,0.3)] hover:bg-[rgba(138,163,124,0.5)] text-[#f5f5f5] font-bold py-1 px-3 rounded mr-2 text-xs"
+        class="bg-custom-peach hover:bg-custom-peach/80 text-black font-bold py-1 px-3 rounded mr-2 text-xs"
       >
         Quick Edit
       </button>
@@ -193,7 +193,7 @@ const showExisting = (id) => {
             class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md" v-if="props.editor">
             <span class="px-6
               py-2.5
-              bg-orange-700
+              bg-blue-600
               text-white
               font-medium
               text-xs
@@ -201,9 +201,9 @@ const showExisting = (id) => {
               uppercase
               rounded
               shadow-md
-              hover:bg-orange-800 hover:shadow-lg
-              focus:bg-orange-800 focus:shadow-lg focus:outline-none focus:ring-0
-              active:bg-orange-900 active:shadow-lg
+              hover:bg-blue-700 hover:shadow-lg
+              focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0
+              active:bg-blue-800 active:shadow-lg
               transition
               duration-150
               cursor-pointer
