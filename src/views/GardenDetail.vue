@@ -2,7 +2,7 @@
 import { onMounted, ref, computed, defineOptions, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore } from '@/stores';
+import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore, useLocationTrackingStore } from '@/stores';
 import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
 import SmsCampaignModal from '@/components/modals/SmsCampaignModal.vue';
 import Volunteer from '@/components/VolunteerDetail.vue';
@@ -12,6 +12,7 @@ import Project from '@/components/modals/Project.vue';
 import GardenSidebar from '@/components/GardenSidebar.vue';
 import GardenGeneral from '@/components/GardenGeneral.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import PlantsCatalog from '@/components/PlantsCatalog.vue';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
@@ -62,7 +63,7 @@ const activeSection = ref('general');
 const initializeFromHash = () => {
   const hash = route.hash.replace('#', '');
   if (hash) {
-    const validSections = ['general', 'events', 'volunteers', 'projects', 'tasks', 'sms', 'messages'];
+    const validSections = ['general', 'events', 'volunteers', 'projects', 'tasks', 'plants', 'sms', 'messages'];
     if (validSections.includes(hash)) {
       activeSection.value = hash;
     }
@@ -82,7 +83,7 @@ const setActiveSection = (section) => {
 watch(() => route.hash, (newHash) => {
   const hash = newHash.replace('#', '');
   if (hash) {
-    const validSections = ['general', 'events', 'volunteers', 'projects', 'tasks', 'sms', 'messages'];
+    const validSections = ['general', 'events', 'volunteers', 'projects', 'tasks', 'plants', 'sms', 'messages'];
     if (validSections.includes(hash) && activeSection.value !== hash) {
       activeSection.value = hash;
     }
@@ -520,6 +521,9 @@ const openEventEditor = (day) => {
           </div>
           <GardenTaskList :garden="garden" :editor="editor" />
         </div>
+
+        <!-- Plants Section -->
+        <PlantsCatalog v-if="activeSection === 'plants'" :garden="garden" />
 
         <!-- Events Section -->
         <div v-if="activeSection === 'events'" id="events" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
