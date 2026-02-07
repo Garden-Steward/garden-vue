@@ -66,10 +66,10 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
+    <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light dark:bg-[#344a34] rounded-lg font-roboto min-h-screen">
 
       <div class="back-to-blog">
-        <RouterLink to="/blog">
+        <RouterLink to="/blog" class="text-gray-600 dark:text-[#d0d0d0] hover:text-gray-900 dark:hover:text-[#f5f5f5]">
           <span class="arrow">&#8592;</span> Back to Blog
         </RouterLink>
       </div>
@@ -77,7 +77,7 @@ onMounted(async () => {
       <div v-if="!blog.loading">
         <div class="category-wrapper">
           <div class="category-container">
-            <div class="bg-white text-gray-800 px-2 py-2 inline-block rounded border border-gray-800 position-relative" style="z-index: 2;">
+            <div class="bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-[#f5f5f5] px-2 py-2 inline-block rounded border border-gray-800 dark:border-[#3d4d36] position-relative" style="z-index: 2;">
               <div>
                 {{ blog?.category?.title }}
               </div>
@@ -87,17 +87,17 @@ onMounted(async () => {
         </div>
 
         <div class="flex-1 flex flex-col items-center justify-center my-3">
-          <h1 class="text-3xl sm:text-4xl font-bold text-black">{{ blog?.title }}</h1>
-          <h2 class="text-xl text-gray-600 mt-2">
+          <h1 class="text-3xl sm:text-4xl font-bold text-black dark:text-[#f5f5f5]">{{ blog?.title }}</h1>
+          <h2 class="text-xl text-gray-600 dark:text-[#d0d0d0] mt-2">
             {{ blog?.subtitle }}
           </h2>
         </div>
 
-        <div class="flex-1 flex bg-cover bg-center h-96 bg-cover" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
+        <div class="flex-1 flex bg-cover bg-center h-96 bg-cover rounded-lg" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
           <div class="flex-1"></div>
         </div>
         <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 sm:py-12 py-2 rounded-lg">
-          <div class="blog-content">
+          <div class="blog-content text-gray-800 dark:text-[#d0d0d0]">
               <StrapiBlocks :content="blog?.content" :modifiers="modifiers" :blocks="blocks" />
           </div>
           <div v-if="blog?.video" class="w-full h-full">
@@ -107,8 +107,8 @@ onMounted(async () => {
       </div>
 
       <!-- Display the length of the content and the formatted date -->
-      <div class="text-center text-gray-600 mt-5">
-        <hr class="border-gray-800">
+      <div class="text-center text-gray-600 dark:text-[#d0d0d0] mt-5">
+        <hr class="border-gray-800 dark:border-[#3d4d36]">
         <div class="text-left mb-3">
           {{ formattedDate }}
         </div>
@@ -123,19 +123,19 @@ onMounted(async () => {
       </div>
 
       <div class="flex justify-between mt-6">
-        <a v-if="blog?.prev_blog_post" :href="blog?.prev_blog_post" :key="latestBlogId" class="btn btn-primary bg-custom-green border border-custom-green">
+        <a v-if="blog?.prev_blog_post" :href="blog?.prev_blog_post" :key="latestBlogId" class="btn btn-primary bg-custom-green border border-custom-green text-white">
           Previous
         </a>
         <div v-else class="btn btn-primary bg-custom-green border border-custom-green invisible">
           Previous
         </div>
-        <a v-if="blog?.random_post" :href="blog?.random_post" :key="latestBlogId" class="btn btn-secondary bg-custom-green border border-custom-green">
+        <a v-if="blog?.random_post" :href="blog?.random_post" :key="latestBlogId" class="btn btn-secondary bg-custom-green border border-custom-green text-white">
           Random
         </a>
         <div v-else class="btn btn-secondary bg-custom-green border border-custom-green invisible">
           Random
         </div>
-        <a v-if="blog?.next_blog_post" :href="blog?.next_blog_post" :key="latestBlogId" class="btn btn-primary bg-custom-green border border-custom-green">
+        <a v-if="blog?.next_blog_post" :href="blog?.next_blog_post" :key="latestBlogId" class="btn btn-primary bg-custom-green border border-custom-green text-white">
           Next
         </a>
         <div v-else class="btn btn-primary bg-custom-green border border-custom-green invisible">
@@ -151,7 +151,7 @@ onMounted(async () => {
 
 <style>
 .blog-content p {
-    margin-top: 8px; /* Adjust the value as needed */
+    margin-top: 8px;
     font-size: 1.1rem;
     line-height: 1.7;
 }
@@ -168,7 +168,7 @@ onMounted(async () => {
     justify-content: center;
     align-items: center;
     margin: 8px auto 25px;
-    height: 50px; /* Adjust height as needed */
+    height: 50px;
     color: white;
 }
 .category-wrapper {
@@ -178,12 +178,12 @@ onMounted(async () => {
 
 .category-container {
     position: relative;
-    display: inline-block; /* This will make the container only as wide as its content */
+    display: inline-block;
 }
 
 .decorative-div {
     position: absolute;
-    width: calc(100% + 4px); /* Slightly larger than the category container */
+    width: calc(100% + 4px);
     height: calc(100% + 4px);
     border-radius: 5px;
     z-index: 1;
@@ -206,7 +206,6 @@ iframe {
     display: inline-flex;
     align-items: center;
     font-size: 1rem;
-    color: #4a5568; /* Dark gray color, adjust as needed */
     text-decoration: none;
 }
 
@@ -217,9 +216,13 @@ iframe {
 .author-sink {
   margin-top: -20px;
   padding: 20px;
-  background-color: #FFDAB9; /* Peach color */
+  background-color: #FFDAB9;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dark .author-sink {
+  background-color: #2d3e26;
 }
 
 .author-image {
@@ -228,21 +231,33 @@ iframe {
 }
 
 .author-title {
-  font-size: 0.875rem; /* Smaller font size */
-  line-height: 1.2; /* Smaller line spacing */
-  color: #4a5568; /* Dark gray color */
+  font-size: 0.875rem;
+  line-height: 1.2;
+  color: #4a5568;
+}
+
+.dark .author-title {
+  color: #d0d0d0;
 }
 
 .author-name {
-  font-size: 1rem; /* Smaller font size */
-  line-height: 1.2; /* Smaller line spacing */
-  color: #2d3748; /* Darker gray color */
-  margin-bottom: 0.5rem; /* Adjust margin as needed */
+  font-size: 1rem;
+  line-height: 1.2;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.dark .author-name {
+  color: #f5f5f5;
 }
 
 .author-bio {
-  font-size: 0.875rem; /* Smaller font size */
-  line-height: 1.4; /* Smaller line spacing */
-  color: #4a5568; /* Dark gray color */
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #4a5568;
+}
+
+.dark .author-bio {
+  color: #d0d0d0;
 }
 </style>
