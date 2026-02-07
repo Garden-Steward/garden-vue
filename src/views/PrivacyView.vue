@@ -21,11 +21,11 @@
             </div>
 
             <div class="mb-6">
-                <h2 class="text-xl font-bold mb-3">2. Information We Collect</h2>
+                <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">2. Information We Collect</h2>
                 
-                <h3 class="text-lg font-semibold mb-2 mt-4">2.1 Information You Provide</h3>
-                <p class="mb-2">When you register or use Garden Steward, we collect:</p>
-                <ul class="list-disc pl-6 mb-4 space-y-1">
+                <h3 class="text-lg font-semibold mb-2 mt-4 dark:text-[#f5f5f5]">2.1 Information You Provide</h3>
+                <p class="mb-2 dark:text-[#d0d0d0]">When you register or use Garden Steward, we collect:</p>
+                <ul class="list-disc pl-6 mb-4 space-y-1 dark:text-[#d0d0d0]">
                     <li><strong>Name</strong> (first and last name)</li>
                     <li><strong>Email address</strong></li>
                     <li><strong>Phone number</strong> (for SMS notifications)</li>
@@ -171,17 +171,17 @@
             </div>
 
             <div class="mb-6">
-                <h2 class="text-xl font-bold mb-3">13. Jurisdiction</h2>
-                <p class="mb-4">
+                <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">13. Jurisdiction</h2>
+                <p class="mb-4 dark:text-[#d0d0d0]">
                     This Privacy Policy is governed by the laws of the State of California, United States, where Garden Steward is primarily operated in partnership with the Oakland Urban Farming Project.
                 </p>
             </div>
 
-            <div class="mb-6 p-4 bg-white rounded-lg border border-gray-200">
-                <p class="mb-2 text-sm">
+            <div class="mb-6 p-4 bg-white dark:bg-[#344a34] rounded-lg border border-gray-200 dark:border-gray-600">
+                <p class="mb-2 text-sm dark:text-[#d0d0d0]">
                     <strong>Note:</strong> This is a basic privacy policy template. For legal compliance with GDPR, CCPA, or other specific regulations, consult with a legal professional.
                 </p>
-                <p class="text-sm">
+                <p class="text-sm dark:text-[#d0d0d0]">
                     <strong>License:</strong> Garden Steward is released under the MIT License. See our GitHub repository for details.
                 </p>
             </div>
