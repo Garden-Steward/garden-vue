@@ -7,6 +7,7 @@ import ProjectsIcon from './icons/Projects.svg?raw';
 import TasksIcon from './icons/Tasks.svg?raw';
 import SmsIcon from './icons/Sms.svg?raw';
 import MessagesIcon from './icons/Messages.svg?raw';
+import PlantsIcon from './icons/Plants.svg?raw';
 
 defineProps({
   activeSection: {
@@ -27,6 +28,7 @@ const iconMap = {
   volunteers: VolunteersIcon,
   projects: ProjectsIcon,
   tasks: TasksIcon,
+  plants: PlantsIcon,
   sms: SmsIcon,
   messages: MessagesIcon,
 };
@@ -38,6 +40,7 @@ const navItems = [
   { id: 'volunteers', label: 'Volunteers' },
   { id: 'projects', label: 'Projects' },
   { id: 'tasks', label: 'Tasks' },
+  { id: 'plants', label: 'Plants' },
   { id: 'sms', label: 'SMS Campaigns' },
   { id: 'messages', label: 'Task Messages' },
 ];
