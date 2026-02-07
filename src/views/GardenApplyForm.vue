@@ -186,7 +186,7 @@ function prevStep() {
 </script>
 
 <template>
-  <div class="bg-custom-light rounded-md p-5 min-h-[500px]">
+  <div class="bg-custom-light dark:bg-[#2d3e26] rounded-md p-5 min-h-[500px]">
     <!-- Thank You Message (shown after successful submission) -->
     <div v-if="isSubmitted" class="flex flex-col items-center justify-center min-h-[400px] text-center">
       <div class="max-w-2xl mx-auto">
@@ -195,8 +195,8 @@ function prevStep() {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
-        <h1 class="text-3xl font-bold mb-4 text-green-600">Thank You!</h1>
-        <p class="text-xl text-gray-700 leading-relaxed">
+        <h1 class="text-3xl font-bold mb-4 text-green-600 dark:text-green-400">Thank You!</h1>
+        <p class="text-xl text-gray-700 dark:text-[#d0d0d0] leading-relaxed">
           Thank you for submitting your community project to Garden Steward! Give us a moment to check it out and we'll be in touch!
         </p>
       </div>
@@ -204,8 +204,8 @@ function prevStep() {
 
     <!-- Form (shown before submission) -->
     <div v-else>
-      <h1 class="text-3xl font-bold mb-2">The Garden Steward Coop Network</h1>
-      <h4 class="text-lg mb-8">Do you have a garden project you'd like to manage through Garden Steward? Join our network!</h4>
+      <h1 class="text-3xl font-bold mb-2 dark:text-[#f5f5f5]">The Garden Steward Coop Network</h1>
+      <h4 class="text-lg mb-8 dark:text-[#d0d0d0]">Do you have a garden project you'd like to manage through Garden Steward? Join our network!</h4>
       
       <!-- Progress indicator -->
       <div class="mb-8">
@@ -217,14 +217,14 @@ function prevStep() {
           >
             <div 
               class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300"
-              :class="index <= currentStep ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'"
+              :class="index <= currentStep ? 'bg-green-600 text-white dark:bg-green-500' : 'bg-gray-300 text-gray-600 dark:bg-gray-600 dark:text-gray-300'"
             >
               <span class="text-sm font-semibold">{{ index + 1 }}</span>
             </div>
             <div 
               v-if="index < visibleSteps.length - 1"
               class="w-12 h-1 transition-all duration-300"
-              :class="index < currentStep ? 'bg-green-600' : 'bg-gray-300'"
+              :class="index < currentStep ? 'bg-green-600 dark:bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"
             ></div>
           </div>
         </div>
@@ -237,13 +237,13 @@ function prevStep() {
           <div class="spinner-border text-green-600 mb-4" role="status">
             <span class="sr-only">Loading...</span>
           </div>
-          <p class="text-lg text-gray-700">Submitting your application...</p>
+          <p class="text-lg text-gray-700 dark:text-[#d0d0d0]">Submitting your application...</p>
         </div>
         
         <transition v-else name="slide-fade" mode="out-in">
         <!-- Project Type Question -->
         <div v-if="currentStep === 0" :key="'step-0'" class="question-content">
-          <h2 class="text-2xl font-semibold mb-6 text-center">{{ currentQuestion.question }}</h2>
+          <h2 class="text-2xl font-semibold mb-6 text-center dark:text-[#f5f5f5]">{{ currentQuestion.question }}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
             <button
               v-for="type in projectTypes"
@@ -251,8 +251,8 @@ function prevStep() {
               @click="selectProjectType(type)"
               class="project-type-btn p-6 rounded-lg border-2 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
               :class="formData.projectType === type 
-                ? 'border-green-600 bg-green-50 text-green-800' 
-                : 'border-gray-300 bg-white text-gray-700 hover:border-green-400'"
+                ? 'border-green-600 bg-green-50 text-green-800 dark:border-green-500 dark:bg-green-800/20 dark:text-green-300' 
+                : 'border-gray-300 bg-white text-gray-700 hover:border-green-400 dark:border-gray-600 dark:bg-[#344a34] dark:text-[#d0d0d0] dark:hover:border-green-500'"
             >
               <span class="text-lg font-medium">{{ type }}</span>
             </button>
@@ -261,7 +261,7 @@ function prevStep() {
 
         <!-- Project Title Question -->
         <div v-else-if="currentQuestion && currentQuestion.id === 'projectName'" :key="'step-1'" class="question-content">
-          <h2 class="text-2xl font-semibold mb-6 text-center">{{ currentQuestion.question }}</h2>
+          <h2 class="text-2xl font-semibold mb-6 text-center dark:text-[#f5f5f5]">{{ currentQuestion.question }}</h2>
           <div class="max-w-md mx-auto">
             <input
               v-model="formData.title"
