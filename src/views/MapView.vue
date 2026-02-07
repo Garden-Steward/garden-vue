@@ -1,10 +1,10 @@
 <template>
   <div v-if="!locationTrackings.loading">
-    <h1>Pollinator Pathways</h1>
+    <h1 class="dark:text-[#f5f5f5]">Pollinator Pathways</h1>
     <LeafletMap ref="leafletMap" :locationTrackings="locationTrackings" :centerCoordinates="centerCoordinates" @select-location="selectLocation" />
     <div>
       <div v-if="selectedLocation">
-        <h2>{{ selectedLocation.label }}</h2>
+        <h2 class="dark:text-[#f5f5f5]">{{ selectedLocation.label }}</h2>
         <img :src="selectedLocation.small_image" alt="Selected Plant Image" class="h-50">
       </div>
 
