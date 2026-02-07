@@ -303,7 +303,7 @@ function prevStep() {
 
           <!-- Location Input (if not Oakland) -->
           <div v-else>
-            <h2 class="text-2xl font-semibold mb-6 text-center">Where is this project located?</h2>
+            <h2 class="text-2xl font-semibold mb-6 text-center dark:text-[#f5f5f5]">Where is this project located?</h2>
             <div class="max-w-md mx-auto">
               <input
                 v-model="formData.cityName"
