@@ -212,7 +212,7 @@ const handleKeyPress = (event) => {
     </div>
       <!-- Modal -->
       <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-[#2d3e26] p-6 rounded-lg shadow-lg w-3/4 md:w-1/4">
+        <div class="bg-white dark:!bg-[#2d3e26] p-6 rounded-lg shadow-lg w-3/4 md:w-1/4">
           <h3 class="md:text-xl mb-4 text-lg text-gray-900 dark:text-[#f5f5f5]">Garden Steward manages events through SMS. You will be asked to sign up for SMS Updates for {{ event?.attributes?.garden?.data.attributes?.title }} as a part of RSVPing for this event. </h3>
           
           <input 

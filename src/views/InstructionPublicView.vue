@@ -87,7 +87,7 @@ instSTore.findSlug(route.params.slug);
       
       <!-- Modal -->
       <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-[#344a34] p-6 rounded-lg shadow-lg">
+        <div class="bg-white dark:!bg-[#344a34] p-6 rounded-lg shadow-lg">
           <h2 class="text-xl font-bold mb-4 dark:text-[#f5f5f5]">Enter Your Phone Number</h2>
           <input 
             v-model="phoneNumber" 

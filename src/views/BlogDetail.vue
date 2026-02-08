@@ -77,7 +77,7 @@ onMounted(async () => {
       <div v-if="!blog.loading">
         <div class="category-wrapper">
           <div class="category-container">
-            <div class="bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-[#f5f5f5] px-2 py-2 inline-block rounded border border-gray-800 dark:border-[#3d4d36] position-relative" style="z-index: 2;">
+            <div class="bg-white dark:!bg-[#1a1a1a] text-gray-800 dark:text-[#f5f5f5] px-2 py-2 inline-block rounded border border-gray-800 dark:border-[#3d4d36] position-relative" style="z-index: 2;">
               <div>
                 {{ blog?.category?.title }}
               </div>
@@ -261,3 +261,4 @@ iframe {
   color: #d0d0d0;
 }
 </style>
+

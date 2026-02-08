@@ -645,7 +645,7 @@ const getProjectHeroImage = (project) => {
 
       <!-- Modal container - centered -->
       <div class="fixed inset-0 flex items-center justify-center overflow-x-hidden overflow-y-auto py-6" @click="closeDonationModal">
-        <div class="donation-modal-container bg-white dark:bg-[#2d3e26] text-black dark:text-white grid grid-cols-1 md:w-1/2 w-[90%] gap-2 p-6 md:p-10 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto relative rounded-md shadow-xl" @click.stop>
+        <div class="donation-modal-container bg-white dark:!bg-[#2d3e26] text-black dark:text-white grid grid-cols-1 md:w-1/2 w-[90%] gap-2 p-6 md:p-10 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto relative rounded-md shadow-xl" @click.stop>
           <!-- Close X button -->
           <button 
             @click="closeDonationModal"
@@ -1511,4 +1511,5 @@ const getProjectHeroImage = (project) => {
 }
 
 </style>
+
 

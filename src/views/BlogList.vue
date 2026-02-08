@@ -53,7 +53,7 @@ const truncateExcerpt = (excerpt) => {
               <div class="p-6 flex-1 relative">
                 <div class="relative inline-block" v-if="blog?.attributes?.category?.data">
                   <div class="absolute -bottom-2 -left-2 bg-custom-green rounded border border-custom-green" style="width: calc(100% + 4px); height: calc(100% + 4px); z-index: 1;"></div>
-                  <div class="bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-[#f5f5f5] px-2 py-2 inline-block rounded border border-gray-800 dark:border-[#3d4d36] position-relative" style="z-index: 2;">
+                  <div class="bg-white dark:!bg-[#1a1a1a] text-gray-800 dark:text-[#f5f5f5] px-2 py-2 inline-block rounded border border-gray-800 dark:border-[#3d4d36] position-relative" style="z-index: 2;">
                     {{ blog?.attributes?.category?.data?.attributes?.title }}
                   </div>
                 </div>
@@ -94,3 +94,4 @@ const truncateExcerpt = (excerpt) => {
   100% { transform: rotate(360deg); }
 }
 </style>
+
