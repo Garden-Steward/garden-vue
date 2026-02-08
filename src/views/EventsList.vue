@@ -247,11 +247,11 @@ const truncateText = (text, maxLength) => {
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row stew font-roboto bg-[#2d3e26] min-h-screen">
+  <div class="flex flex-col md:flex-row stew font-roboto bg-custom-light dark:bg-[#2d3e26] min-h-screen">
     <div class="flex-1">
       <div class="px-4 py-2 md:px-8 md:py-4"> <!-- Conditional padding for non-mobile screens -->
-        <h1 class="text-2xl font-bold mb-4 font-roboto sm:text-3xl text-[#f5f5f5]">Garden Steward Events</h1>
-        <p class="text-md mb-4 font-roboto text-[#d0d0d0]">Hub to local, group harvesting, land restoration, garden events.</p>
+        <h1 class="text-2xl font-bold mb-4 font-roboto sm:text-3xl text-gray-900 dark:text-[#f5f5f5]">Garden Steward Events</h1>
+        <p class="text-md mb-4 font-roboto text-gray-700 dark:text-[#d0d0d0]">Hub to local, group harvesting, land restoration, garden events.</p>
       </div>
       <div class="flex justify-center items-center">
         <!-- Loading spinner -->
@@ -261,12 +261,12 @@ const truncateText = (text, maxLength) => {
         <!-- Events list -->
         <div v-else class="space-y-8 w-full md:px-8">
           <div v-if="upcomingEvents.length">
-            <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5] px-4 md:px-0">Upcoming Events:</h3>
+            <h3 class="text-2xl font-bold mb-2 mt-2 text-gray-900 dark:text-[#f5f5f5] px-4 md:px-0">Upcoming Events:</h3>
             <div class="space-y-6 md:space-y-4">
               <div v-for="day in upcomingEvents" :key="day.id" 
                    class="px-4 md:px-0">
                 <div 
-                   class="flex flex-col sm:flex-row rounded md:rounded bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"  
+                   class="flex flex-col sm:flex-row rounded md:rounded bg-white dark:bg-[rgba(26,26,26,0.8)] cursor-pointer dark:hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden  
                    @click="volunteerDayClick(day.id)">
                   <!-- Content left: Date, Title, By, (O) Garden -->
                   <div class="flex flex-col flex-1 min-w-0 p-4 order-2 sm:order-1">
@@ -274,17 +274,17 @@ const truncateText = (text, maxLength) => {
                       class="text-sm font-medium mb-1"
                       :style="{ color: getBadgeTextColor(getGardenBannerColor(day)) }"
                     >{{ displayDate(day.startDatetime) }}</p>
-                    <span class="text-xl font-bold text-[#f5f5f5] block mb-2">{{ day.title }}</span>
-                    <p class="text-sm text-[#d0d0d0] mb-1">By {{ getOrganizationName(day) }}</p>
+                    <span class="text-xl font-bold text-gray-900 dark:text-[#f5f5f5] block mb-2">{{ day.title }}</span>
+                    <p class="text-sm text-gray-600 dark:text-[#d0d0d0] mb-1">By {{ getOrganizationName(day) }}</p>
                     <div class="flex items-center gap-2">
                       <span 
                         class="inline-block w-3 h-3 rounded-full flex-shrink-0"
                         :style="{ backgroundColor: getGardenColorSolid(getGardenBannerColor(day)) }"
                         aria-hidden="true"
                       />
-                      <span class="text-sm text-[#d0d0d0]">{{ getGardenName(day) }}</span>
+                      <span class="text-sm text-gray-600 dark:text-[#d0d0d0]">{{ getGardenName(day) }}</span>
                     </div>
-                    <p class="text-sm text-[#d0d0d0] mt-2 line-clamp-2">{{ day.blurb }}</p>
+                    <p class="text-sm text-gray-600 dark:text-[#d0d0d0] mt-2 line-clamp-2">{{ day.blurb }}</p>
                   </div>
                   <!-- Image right -->
                   <div class="flex-shrink-0 w-full sm:w-36 md:w-44 aspect-video relative overflow-hidden order-1 sm:order-2 p-3 sm:p-4">
@@ -300,12 +300,12 @@ const truncateText = (text, maxLength) => {
           </div>
           
           <div v-if="futureEvents.length">
-            <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5] px-4 md:px-0">Future Events:</h3>
+            <h3 class="text-2xl font-bold mb-2 mt-2 text-gray-900 dark:text-[#f5f5f5] px-4 md:px-0">Future Events:</h3>
             <div class="space-y-6 md:space-y-4">
               <div v-for="day in futureEvents" :key="day.id" 
                    class="px-4 md:px-0">
                 <div 
-                   class="flex flex-col sm:flex-row rounded md:rounded bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"  
+                   class="flex flex-col sm:flex-row rounded md:rounded bg-white dark:bg-[rgba(26,26,26,0.8)] cursor-pointer dark:hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden  
                    @click="volunteerDayClick(day.id)">
                   <!-- Content left: Date, Title, By, (O) Garden -->
                   <div class="flex flex-col flex-1 min-w-0 p-4 order-2 sm:order-1">
@@ -313,17 +313,17 @@ const truncateText = (text, maxLength) => {
                       class="text-sm font-medium mb-1"
                       :style="{ color: getBadgeTextColor(getGardenBannerColor(day)) }"
                     >{{ displayDate(day.startDatetime) }}</p>
-                    <span class="text-xl font-bold text-[#f5f5f5] block mb-2">{{ day.title }}</span>
-                    <p class="text-sm text-[#d0d0d0] mb-1">By {{ getOrganizationName(day) }}</p>
+                    <span class="text-xl font-bold text-gray-900 dark:text-[#f5f5f5] block mb-2">{{ day.title }}</span>
+                    <p class="text-sm text-gray-600 dark:text-[#d0d0d0] mb-1">By {{ getOrganizationName(day) }}</p>
                     <div class="flex items-center gap-2">
                       <span 
                         class="inline-block w-3 h-3 rounded-full flex-shrink-0"
                         :style="{ backgroundColor: getGardenColorSolid(getGardenBannerColor(day)) }"
                         aria-hidden="true"
                       />
-                      <span class="text-sm text-[#d0d0d0]">{{ getGardenName(day) }}</span>
+                      <span class="text-sm text-gray-600 dark:text-[#d0d0d0]">{{ getGardenName(day) }}</span>
                     </div>
-                    <p class="text-sm text-[#d0d0d0] mt-2 line-clamp-2">{{ day.blurb }}</p>
+                    <p class="text-sm text-gray-600 dark:text-[#d0d0d0] mt-2 line-clamp-2">{{ day.blurb }}</p>
                   </div>
                   <!-- Image right -->
                   <div class="flex-shrink-0 w-full sm:w-36 md:w-44 aspect-video relative overflow-hidden order-1 sm:order-2 p-3 sm:p-4">
@@ -339,12 +339,12 @@ const truncateText = (text, maxLength) => {
           </div>
           
           <div v-if="pastEvents.length">
-            <h3 class="text-2xl font-bold mb-2 mt-2 text-[#f5f5f5] px-4 md:px-0">Recent Events:</h3>
+            <h3 class="text-2xl font-bold mb-2 mt-2 text-gray-900 dark:text-[#f5f5f5] px-4 md:px-0">Recent Events:</h3>
             <div class="space-y-6 md:space-y-4">
               <div v-for="day in pastEvents" :key="day.id" 
                    class="px-4 md:px-0">
                 <div 
-                   class="flex flex-col sm:flex-row rounded md:rounded bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-[rgba(26,26,26,0.95)] transition-colors overflow-hidden"  
+                   class="flex flex-col sm:flex-row rounded md:rounded bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-gray-50 dark:hover:bg-[rgba(26,26,26,0.95)] transition-colors overflow-hidden  
                    @click="volunteerDayClick(day.id)">
                   <!-- Content left: Date, Title, By, (O) Garden -->
                   <div class="flex flex-col flex-1 min-w-0 p-4 order-2 sm:order-1">
@@ -352,17 +352,17 @@ const truncateText = (text, maxLength) => {
                       class="text-sm font-medium mb-1"
                       :style="{ color: getBadgeTextColor(getGardenBannerColor(day)) }"
                     >{{ displayDate(day.startDatetime) }}</p>
-                    <span class="text-xl font-bold text-[#f5f5f5] block mb-2">{{ day.title }}</span>
-                    <p class="text-sm text-[#d0d0d0] mb-1">By {{ getOrganizationName(day) }}</p>
+                    <span class="text-xl font-bold text-gray-900 dark:text-[#f5f5f5] block mb-2">{{ day.title }}</span>
+                    <p class="text-sm text-gray-600 dark:text-[#d0d0d0] mb-1">By {{ getOrganizationName(day) }}</p>
                     <div class="flex items-center gap-2">
                       <span 
                         class="inline-block w-3 h-3 rounded-full flex-shrink-0"
                         :style="{ backgroundColor: getGardenColorSolid(getGardenBannerColor(day)) }"
                         aria-hidden="true"
                       />
-                      <span class="text-sm text-[#d0d0d0]">{{ getGardenName(day) }}</span>
+                      <span class="text-sm text-gray-600 dark:text-[#d0d0d0]">{{ getGardenName(day) }}</span>
                     </div>
-                    <p class="text-sm text-[#d0d0d0] mt-2 line-clamp-2">{{ day.blurb }}</p>
+                    <p class="text-sm text-gray-600 dark:text-[#d0d0d0] mt-2 line-clamp-2">{{ day.blurb }}</p>
                   </div>
                   <!-- Image right -->
                   <div class="flex-shrink-0 w-full sm:w-36 md:w-44 aspect-video relative overflow-hidden order-1 sm:order-2 p-3 sm:p-4">
@@ -377,7 +377,7 @@ const truncateText = (text, maxLength) => {
             </div>
           </div>
           <div v-if="error" class="px-4 md:px-0">
-            <p class="text-m text-[#d0d0d0]">{{ error }}</p>
+            <p class="text-m text-gray-600 dark:text-[#d0d0d0]">{{ error }}</p>
           </div>
           
           <!-- Load More Button -->
@@ -427,3 +427,13 @@ const truncateText = (text, maxLength) => {
 }
 
 </style>
+
+
+
+
+
+
+
+
+
+
