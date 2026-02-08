@@ -35,9 +35,9 @@ const gardenClick = (slug) => {
 </script>
 
 <template>
-    <div class="bg-custom-light p-5 rounded-lg mx-auto">
-        <h1 class="text-3xl font-bold mb-5 leading-tight">Gardens</h1>
-        <p class="text-lg mb-5">Explore our community gardens and learn about the amazing work happening in your neighborhood.</p>
+    <div class="bg-custom-light dark:bg-[#344a34] p-5 rounded-lg mx-auto min-h-screen">
+        <h1 class="text-3xl font-bold mb-5 leading-tight text-gray-900 dark:text-[#f5f5f5]">Gardens</h1>
+        <p class="text-lg mb-5 text-gray-700 dark:text-[#d0d0d0]">Explore our community gardens and learn about the amazing work happening in your neighborhood.</p>
 
         <div v-if="gardens.loading" class="spinner-border spinner-border-sm"></div>
         <div v-if="gardens.error" class="text-danger">Error loading gardens: {{gardens.error}}</div>
@@ -46,7 +46,7 @@ const gardenClick = (slug) => {
             <div 
                 v-for="garden in gardens" 
                 :key="garden.id" 
-                class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                class="bg-white dark:!bg-[#2d3e26] rounded-lg shadow-md overflow-hidden hover:shadow-lg dark:hover:shadow-[#1a1a1a]/50 transition-shadow cursor-pointer border border-transparent dark:border-[#3d4d36]/50"
                 @click="gardenClick(garden.attributes.slug)"
             >
                 <div class="h-48 overflow-hidden">
@@ -57,15 +57,14 @@ const gardenClick = (slug) => {
                     />
                 </div>
                 <div class="p-4">
-                    <h3 class="text-xl font-bold mb-2 leading-snug">{{ garden.attributes?.title }}</h3>
-                    <p v-if="garden.attributes?.blurb" class="text-gray-600 mb-2">{{ garden.attributes.blurb }}</p>
+                    <h3 class="text-xl font-bold mb-2 leading-snug text-gray-900 dark:text-[#f5f5f5]">{{ garden.attributes?.title }}</h3>
+                    <p v-if="garden.attributes?.blurb" class="text-gray-600 dark:text-[#d0d0d0] mb-2">{{ garden.attributes.blurb }}</p>
                 </div>
             </div>
         </div>
         
         <div v-if="gardens && !gardens.loading && !gardens.error && (!Array.isArray(gardens) || gardens.length === 0)" class="text-center py-8">
-            <p class="text-gray-600">No gardens available at this time.</p>
+            <p class="text-gray-600 dark:text-[#d0d0d0]">No gardens available at this time.</p>
         </div>
     </div>
 </template>
-

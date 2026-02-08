@@ -133,14 +133,14 @@ const handleKeyPress = (event) => {
 </script>
 
 <template>
-    <div id="event-view">
-      <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light rounded-lg font-roboto">
+    <div id="event-view" class="min-h-screen bg-[#344a34]">
+      <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light dark:bg-[#344a34] rounded-lg font-roboto">
 
         <div class="w-full h-[350px] overflow-hidden rounded-lg mb-6">
           <img id="heroImage" alt="Hero Image" class="w-full h-full object-cover object-center" :src="heroImage">
         </div>
         <div class="flex justify-between items-start mb-6">
-          <h1 class="text-3xl font-bold">{{ event?.attributes?.title }}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-[#f5f5f5]">{{ event?.attributes?.title }}</h1>
           <router-link 
             v-if="user && isManager && event?.id"
             :to="`/manage/events/${event.id}/edit`"
@@ -149,11 +149,11 @@ const handleKeyPress = (event) => {
             Edit Event
           </router-link>
         </div>
-        <h4 class="text-lg font-bold mb-6">{{ processDate(event?.attributes?.startDatetime) }}</h4>
-        <div v-if="event?.attributes?.blurb" class="text-left brief-box">
+        <h4 class="text-lg font-bold mb-6 text-gray-700 dark:text-[#d0d0d0]">{{ processDate(event?.attributes?.startDatetime) }}</h4>
+        <div v-if="event?.attributes?.blurb" class="text-left brief-box dark:bg-[#2d3e26] dark:text-[#f5f5f5]">
             <div v-html="event?.attributes?.blurb"></div>
         </div>
-        <div class="text-left" v-if="event?.attributes?.content">
+        <div class="text-left text-gray-800 dark:text-[#d0d0d0]" v-if="event?.attributes?.content">
             <div v-html="renderedContent"></div>
         </div>
         
@@ -212,8 +212,8 @@ const handleKeyPress = (event) => {
     </div>
       <!-- Modal -->
       <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-3/4 md:w-1/4">
-          <h3 class="md:text-xl mb-4 text-lg">Garden Steward manages events through SMS. You will be asked to sign up for SMS Updates for {{ event?.attributes?.garden?.data.attributes?.title }} as a part of RSVPing for this event. </h3>
+        <div class="bg-white dark:!bg-[#2d3e26] p-6 rounded-lg shadow-lg w-3/4 md:w-1/4">
+          <h3 class="md:text-xl mb-4 text-lg text-gray-900 dark:text-[#f5f5f5]">Garden Steward manages events through SMS. You will be asked to sign up for SMS Updates for {{ event?.attributes?.garden?.data.attributes?.title }} as a part of RSVPing for this event. </h3>
           
           <input 
             :value="phoneNumber"
@@ -221,13 +221,13 @@ const handleKeyPress = (event) => {
             @keypress="handleKeyPress"
             type="tel" 
             placeholder="(123) 456-7890" 
-            class="w-full p-2 border border-gray-300 rounded mb-2"
+            class="w-full p-2 border border-gray-300 dark:border-[#3d4d36] dark:bg-[#1a1a1a] dark:text-[#f5f5f5] rounded mb-2"
             maxlength="14"
           >
-          <p class="text-sm mb-4">You can STOP SMS at any point by replying with STOP.</p>
+          <p class="text-sm mb-4 text-gray-600 dark:text-[#d0d0d0]">You can STOP SMS at any point by replying with STOP.</p>
           <p v-if="phoneError" class="text-red-500 text-sm mb-2">{{ phoneError }}</p>
           <div class="flex justify-end">
-            <button @click="closeModal" class="mr-2 px-4 py-2 bg-gray-200 rounded">Cancel</button>
+            <button @click="closeModal" class="mr-2 px-4 py-2 bg-gray-200 dark:bg-[#3d4d36] dark:text-[#f5f5f5] rounded">Cancel</button>
             <button @click="submitPhoneNumber" class="px-4 py-2 bg-green-700 text-white rounded">Submit</button>
           </div>
         </div>

@@ -1,4 +1,18 @@
 <script setup>
+// Theme toggle positioning
+const themeDropdownRef = ref(null);
+
+const getThemeDropdownStyle = () => {
+    const toggle = document.querySelector('.theme-toggle-button');
+    if (toggle) {
+        const rect = toggle.getBoundingClientRect();
+        return {
+            top: `${rect.bottom + 8}px`,
+            right: `${window.innerWidth - rect.right}px`
+        };
+    }
+    return { top: '0px', right: '0px' };
+};
 import { ref, nextTick, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores';
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
@@ -9,6 +23,7 @@ import SystemIcon from '@/components/icons/System.svg?raw';
 const authStore = useAuthStore();
 const showProfileOptions = ref(false);
 const isMobileMenuOpen = ref(false);
+const showThemeDropdown = ref(false);
 const mobileMenu = ref(null);
 const profileMenuRef = ref(null);
 const profileButtonRef = ref(null);
@@ -25,7 +40,7 @@ const getSystemPreference = () => {
 
 const applyTheme = (themeValue) => {
     let shouldBeDark = false;
-    
+
     if (themeValue === 'dark') {
         shouldBeDark = true;
     } else if (themeValue === 'light') {
@@ -33,7 +48,7 @@ const applyTheme = (themeValue) => {
     } else { // 'system'
         shouldBeDark = getSystemPreference();
     }
-    
+
     if (shouldBeDark) {
         document.documentElement.classList.add('dark');
     } else {
@@ -54,7 +69,7 @@ onMounted(() => {
         theme.value = savedTheme;
     }
     applyTheme(theme.value);
-    
+
     // Watch for system preference changes when theme is 'system'
     if (typeof window !== 'undefined' && window.matchMedia) {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -69,6 +84,10 @@ onMounted(() => {
 
 const toggleProfileOptions = () => {
     showProfileOptions.value = !showProfileOptions.value;
+};
+
+const toggleThemeDropdown = () => {
+    showThemeDropdown.value = !showThemeDropdown.value;
 };
 
 const toggleMobileMenu = async () => {
@@ -86,15 +105,23 @@ const handleClickOutside = (event) => {
     // Check if click is outside profile menu and profile button
     const profileMenu = event.target.closest('.profile-menu');
     const profileButton = event.target.closest('.profile-menu-button');
-    
+
     if (!profileMenu && !profileButton && showProfileOptions.value) {
         showProfileOptions.value = false;
     }
-    
+
+    // Check if click is outside theme dropdown and theme toggle
+    const themeDropdown = event.target.closest('.theme-dropdown');
+    const themeToggle = event.target.closest('.theme-toggle-button');
+
+    if (!themeDropdown && !themeToggle && showThemeDropdown.value) {
+        showThemeDropdown.value = false;
+    }
+
     // Check if click is outside mobile menu and mobile menu button
     const mobileMenuElement = event.target.closest('.mobile-menu');
     const mobileMenuButton = event.target.closest('.mobile-menu-button');
-    
+
     if (!mobileMenuElement && !mobileMenuButton && isMobileMenuOpen.value) {
         isMobileMenuOpen.value = false;
         if (mobileMenu.value) {
@@ -139,22 +166,22 @@ onUnmounted(() => {
             <div class="theme-settings">
                 <div class="theme-settings-label">Theme Settings</div>
                 <div class="theme-options">
-                    <button 
-                        @click="setTheme('light')" 
+                    <button
+                        @click="setTheme('light')"
                         :class="['theme-option', { active: theme === 'light' }]"
                         title="Light Mode"
                     >
                         <span v-html="SunIcon" class="theme-icon"></span>
                     </button>
-                    <button 
-                        @click="setTheme('dark')" 
+                    <button
+                        @click="setTheme('dark')"
                         :class="['theme-option', { active: theme === 'dark' }]"
                         title="Dark Mode"
                     >
                         <span v-html="MoonIcon" class="theme-icon"></span>
                     </button>
-                    <button 
-                        @click="setTheme('system')" 
+                    <button
+                        @click="setTheme('system')"
                         :class="['theme-option', { active: theme === 'system' }]"
                         title="System Preference"
                     >
@@ -162,7 +189,7 @@ onUnmounted(() => {
                     </button>
                 </div>
             </div>
-            <button @click="() => { authStore.logout(); showProfileOptions = false; }" 
+            <button @click="() => { authStore.logout(); showProfileOptions = false; }"
                     class="btn btn-link nav-item nav-link">
                 Logout
             </button>
@@ -190,8 +217,23 @@ onUnmounted(() => {
                 <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
                 <router-link to="/join" class="nav-item nav-link" @click="toggleMobileMenu">Join</router-link>
                 <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
+                <router-link to="/manifesto" class="nav-item nav-link" @click="toggleMobileMenu">Manifesto</router-link>
                 <router-link to="/help" class="nav-item nav-link" @click="toggleMobileMenu">Help</router-link>
                 <router-link to="/login" class="nav-item nav-link" v-show="!authStore.user" @click="toggleMobileMenu">Login</router-link>
+
+                <!-- Mobile Theme Options -->
+                <div class="mobile-theme-options">
+                    <span class="text-sm opacity-75 mr-2">Theme:</span>
+                    <button @click="setTheme('light')" :class="['theme-option', { active: theme === 'light' }]" title="Light Mode">
+                        <span v-html="SunIcon" class="theme-icon"></span>
+                    </button>
+                    <button @click="setTheme('dark')" :class="['theme-option', { active: theme === 'dark' }]" title="Dark Mode">
+                        <span v-html="MoonIcon" class="theme-icon"></span>
+                    </button>
+                    <button @click="setTheme('system')" :class="['theme-option', { active: theme === 'system' }]" title="System">
+                        <span v-html="SystemIcon" class="theme-icon"></span>
+                    </button>
+                </div>
             </div>
 
             <button class="sidemenu__btn" v-on:click="navOpen=!navOpen" v-bind:class="{active:navOpen}">
@@ -210,23 +252,72 @@ onUnmounted(() => {
                     <router-link to="/join" class="nav-item nav-link">Join</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
                     <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
+                    <router-link to="/manifesto" class="nav-item nav-link">Manifesto</router-link>
                     <router-link v-show="!authStore.user" to="/help" class="nav-item nav-link">Help</router-link>
-                    <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link">Login</router-link>
-    
+
                 </div>
             </div>
+
+            <!-- Right side: Theme toggle and Login (or Profile) -->
+            <div class="nav-right-section">
+                <!-- Theme Toggle (only for logged out users - logged in users have it in profile dropdown) -->
+                <div v-show="!authStore.user" class="theme-toggle-container">
+                    <button 
+                        @click="toggleThemeDropdown" 
+                        class="theme-toggle-button"
+                        title="Theme Settings"
+                    >
+                        <span v-if="theme === 'dark'" v-html="MoonIcon" class="theme-icon"></span>
+                        <span v-else-if="theme === 'light'" v-html="SunIcon" class="theme-icon"></span>
+                        <span v-else v-html="SystemIcon" class="theme-icon"></span>
+                    </button>
+                </div>
+                
+                <!-- Login / Profile -->
+                <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link login-link">Login</router-link>
+            </div>
+            
+            <!-- Theme Dropdown (teleported to body to avoid clipping) -->
+            <Teleport to="body">
+                <div v-show="showThemeDropdown" class="theme-dropdown" :style="getThemeDropdownStyle()">
+                    <div class="theme-settings-label">Theme</div>
+                    <div class="theme-options">
+                        <button 
+                            @click="setTheme('light'); showThemeDropdown = false" 
+                            :class="['theme-option', { active: theme === 'light' }]"
+                            title="Light Mode"
+                        >
+                            <span v-html="SunIcon" class="theme-icon"></span>
+                        </button>
+                        <button 
+                            @click="setTheme('dark'); showThemeDropdown = false" 
+                            :class="['theme-option', { active: theme === 'dark' }]"
+                            title="Dark Mode"
+                        >
+                            <span v-html="MoonIcon" class="theme-icon"></span>
+                        </button>
+                        <button 
+                            @click="setTheme('system'); showThemeDropdown = false" 
+                            :class="['theme-option', { active: theme === 'system' }]"
+                            title="System Preference"
+                        >
+                            <span v-html="SystemIcon" class="theme-icon"></span>
+                        </button>
+                    </div>
+                </div>
+            </Teleport>
             <div v-if="authStore.user" class="profile-container">
-                <UserProfileDisplay 
+                <UserProfileDisplay
                     ref="profileButtonRef"
-                    :volunteer="authStore.user" 
-                    :show-email="false" 
+                    :volunteer="authStore.user"
+                    :show-email="false"
                     :disable-tooltip="true"
-                    @click="toggleProfileOptions" 
+                    @click="toggleProfileOptions"
                     class="relative cursor-pointer profile-menu-button"
                 />
             </div>
 
-        </div>  
+        </div>
     </nav>
 </template>
 
@@ -237,12 +328,61 @@ onUnmounted(() => {
 }
 .profile-container {
     position: absolute;
-    right: 15px;
+    right: 180px; /* Account for theme toggle and login on the right */
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     align-items: center;
     z-index: 1500;
+}
+.nav-right-section {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 1500;
+}
+.theme-toggle-container {
+    position: relative;
+}
+.theme-toggle-button {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    color: #fff;
+}
+.theme-toggle-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #fff;
+    transform: scale(1.05);
+}
+.theme-toggle-button .theme-icon {
+    width: 18px;
+    height: 18px;
+}
+.theme-dropdown {
+    position: fixed;
+    min-width: 150px;
+    background: white;
+    border: 1px solid #8aa37c;
+    border-radius: 5px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 9999999;
+    padding: 12px;
+}
+.login-link {
+    font-size: 1.1rem;
 }
 .profile-menu {
     position: fixed;
@@ -364,8 +504,8 @@ onUnmounted(() => {
     padding: 0.5rem 1rem; /* Add consistent padding */
     width: 100%;
     max-width: 100vw; /* Ensure navbar doesn't exceed viewport width */
-    overflow-x: hidden; /* Prevent horizontal scrolling */
-    z-index: 9999;
+    z-index: 1000;
+    overflow: visible;
 }
 
 .logo-image {
@@ -429,6 +569,18 @@ onUnmounted(() => {
     color: #fff !important; /* Keeps the text color white, as previously defined */
     border-bottom: 0px;
 }
+.mobile-theme-options {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 10px;
+}
+.mobile-theme-options .theme-option {
+    width: 36px;
+    height: 36px;
+    margin-right: 8px;
+}
 
 /* Mobile logo - hidden by default, shown in media query */
 .mobile-logo {
@@ -455,7 +607,7 @@ onUnmounted(() => {
         display: block; /* Makes the image a block element to center it */
         margin: 0 auto; /* Auto margin for horizontal centering */
     }
-    
+
     /* Ensure mobile logo doesn't get squished */
     .mobile-logo .logo-img {
         max-width: 216px; /* Increased by another 20% from 180px */
