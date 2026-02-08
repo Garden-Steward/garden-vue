@@ -41,7 +41,7 @@
             <div class="mb-6">
                 <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">Repositories</h2>
                 <div class="space-y-3">
-                    <div class="p-4 bg-white dark:bg-[#344a34] rounded-lg border border-gray-200 dark:border-gray-600">
+                    <div class="p-4 bg-white dark:!bg-[#344a34] rounded-lg border border-gray-200 dark:border-gray-600">
                         <h3 class="font-semibold mb-2 dark:text-[#f5f5f5]">Frontend Repository</h3>
                         <p class="text-sm mb-2 dark:text-[#d0d0d0]">The Vue 3 frontend application for Garden Steward</p>
                         <a href="https://github.com/Garden-Steward/garden-vue" 
@@ -51,7 +51,7 @@
                             View on GitHub →
                         </a>
                     </div>
-                    <div class="p-4 bg-white dark:bg-[#344a34] rounded-lg border border-gray-200 dark:border-gray-600">
+                    <div class="p-4 bg-white dark:!bg-[#344a34] rounded-lg border border-gray-200 dark:border-gray-600">
                         <h3 class="font-semibold mb-2 dark:text-[#f5f5f5]">Backend Repository</h3>
                         <p class="text-sm mb-2 dark:text-[#d0d0d0]">The steward-bank backend API built with Strapi, featuring PostgreSQL, Twilio SMS integration, and Google Cloud Storage</p>
                         <a href="https://github.com/Garden-Steward/steward-bank" 
@@ -67,19 +67,19 @@
             <div class="mb-6">
                 <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">Technology Stack</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div class="p-3 bg-white dark:bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
+                    <div class="p-3 bg-white dark:!bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
                         <h3 class="font-semibold text-sm mb-1 dark:text-[#f5f5f5]">Frontend</h3>
                         <p class="text-sm dark:text-[#d0d0d0]">Vue 3, Pinia, Vue Router, Tailwind CSS, Vite</p>
                     </div>
-                    <div class="p-3 bg-white dark:bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
+                    <div class="p-3 bg-white dark:!bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
                         <h3 class="font-semibold text-sm mb-1 dark:text-[#f5f5f5]">Backend</h3>
                         <p class="text-sm dark:text-[#d0d0d0]">Strapi, PostgreSQL, Google Cloud Storage</p>
                     </div>
-                    <div class="p-3 bg-white dark:bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
+                    <div class="p-3 bg-white dark:!bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
                         <h3 class="font-semibold text-sm mb-1 dark:text-[#f5f5f5]">SMS</h3>
                         <p class="text-sm dark:text-[#d0d0d0]">Twilio</p>
                     </div>
-                    <div class="p-3 bg-white dark:bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
+                    <div class="p-3 bg-white dark:!bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
                         <h3 class="font-semibold text-sm mb-1 dark:text-[#f5f5f5]">Deployment</h3>
                         <p class="text-sm dark:text-[#d0d0d0]">Firebase Hosting</p>
                     </div>
@@ -136,4 +136,5 @@
     list-style-type: decimal;
 }
 </style>
+
 

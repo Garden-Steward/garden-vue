@@ -46,7 +46,7 @@ const gardenClick = (slug) => {
             <div 
                 v-for="garden in gardens" 
                 :key="garden.id" 
-                class="bg-white dark:bg-[#2d3e26] rounded-lg shadow-md overflow-hidden hover:shadow-lg dark:hover:shadow-[#1a1a1a]/50 transition-shadow cursor-pointer border border-transparent dark:border-[#3d4d36]/50"
+                class="bg-white dark:!bg-[#2d3e26] rounded-lg shadow-md overflow-hidden hover:shadow-lg dark:hover:shadow-[#1a1a1a]/50 transition-shadow cursor-pointer border border-transparent dark:border-[#3d4d36]/50"
                 @click="gardenClick(garden.attributes.slug)"
             >
                 <div class="h-48 overflow-hidden">

@@ -177,7 +177,7 @@
                 </p>
             </div>
 
-            <div class="mb-6 p-4 bg-white dark:bg-[#344a34] rounded-lg border border-gray-200 dark:border-gray-600">
+            <div class="mb-6 p-4 bg-white dark:!bg-[#344a34] rounded-lg border border-gray-200 dark:border-gray-600">
                 <p class="mb-2 text-sm dark:text-[#d0d0d0]">
                     <strong>Note:</strong> This is a basic privacy policy template. For legal compliance with GDPR, CCPA, or other specific regulations, consult with a legal professional.
                 </p>
@@ -194,4 +194,5 @@
     list-style-type: disc;
 }
 </style>
+
 
