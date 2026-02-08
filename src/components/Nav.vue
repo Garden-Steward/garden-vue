@@ -1,4 +1,18 @@
 <script setup>
+// Theme toggle positioning
+const themeDropdownRef = ref(null);
+
+const getThemeDropdownStyle = () => {
+    const toggle = document.querySelector('.theme-toggle-button');
+    if (toggle) {
+        const rect = toggle.getBoundingClientRect();
+        return {
+            top: `${rect.bottom + 8}px`,
+            right: `${window.innerWidth - rect.right}px`
+        };
+    }
+    return { top: '0px', right: '0px' };
+};
 import { ref, nextTick, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores';
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
@@ -257,39 +271,41 @@ onUnmounted(() => {
                         <span v-else-if="theme === 'light'" v-html="SunIcon" class="theme-icon"></span>
                         <span v-else v-html="SystemIcon" class="theme-icon"></span>
                     </button>
-                    
-                    <!-- Theme Dropdown -->
-                    <div v-show="showThemeDropdown" class="theme-dropdown">
-                        <div class="theme-settings-label">Theme</div>
-                        <div class="theme-options">
-                            <button 
-                                @click="setTheme('light')" 
-                                :class="['theme-option', { active: theme === 'light' }]"
-                                title="Light Mode"
-                            >
-                                <span v-html="SunIcon" class="theme-icon"></span>
-                            </button>
-                            <button 
-                                @click="setTheme('dark')" 
-                                :class="['theme-option', { active: theme === 'dark' }]"
-                                title="Dark Mode"
-                            >
-                                <span v-html="MoonIcon" class="theme-icon"></span>
-                            </button>
-                            <button 
-                                @click="setTheme('system')" 
-                                :class="['theme-option', { active: theme === 'system' }]"
-                                title="System Preference"
-                            >
-                                <span v-html="SystemIcon" class="theme-icon"></span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
                 
                 <!-- Login / Profile -->
                 <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link login-link">Login</router-link>
             </div>
+            
+            <!-- Theme Dropdown (teleported to body to avoid clipping) -->
+            <Teleport to="body">
+                <div v-show="showThemeDropdown" class="theme-dropdown" :style="getThemeDropdownStyle()">
+                    <div class="theme-settings-label">Theme</div>
+                    <div class="theme-options">
+                        <button 
+                            @click="setTheme('light'); showThemeDropdown = false" 
+                            :class="['theme-option', { active: theme === 'light' }]"
+                            title="Light Mode"
+                        >
+                            <span v-html="SunIcon" class="theme-icon"></span>
+                        </button>
+                        <button 
+                            @click="setTheme('dark'); showThemeDropdown = false" 
+                            :class="['theme-option', { active: theme === 'dark' }]"
+                            title="Dark Mode"
+                        >
+                            <span v-html="MoonIcon" class="theme-icon"></span>
+                        </button>
+                        <button 
+                            @click="setTheme('system'); showThemeDropdown = false" 
+                            :class="['theme-option', { active: theme === 'system' }]"
+                            title="System Preference"
+                        >
+                            <span v-html="SystemIcon" class="theme-icon"></span>
+                        </button>
+                    </div>
+                </div>
+            </Teleport>
             <div v-if="authStore.user" class="profile-container">
                 <UserProfileDisplay
                     ref="profileButtonRef"
@@ -356,17 +372,14 @@ onUnmounted(() => {
     height: 18px;
 }
 .theme-dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
+    position: fixed;
     min-width: 150px;
     background: white;
     border: 1px solid #8aa37c;
     border-radius: 5px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 100000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 9999999;
     padding: 12px;
-    margin-top: 8px;
 }
 .login-link {
     font-size: 1.1rem;
@@ -491,8 +504,8 @@ onUnmounted(() => {
     padding: 0.5rem 1rem; /* Add consistent padding */
     width: 100%;
     max-width: 100vw; /* Ensure navbar doesn't exceed viewport width */
-    overflow-x: hidden; /* Prevent horizontal scrolling */
     z-index: 1000;
+    overflow: visible;
 }
 
 .logo-image {
