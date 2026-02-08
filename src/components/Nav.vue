@@ -246,10 +246,10 @@ onUnmounted(() => {
 
             <!-- Right side: Theme toggle and Login (or Profile) -->
             <div class="nav-right-section">
-                <!-- Theme Toggle (visible to all) -->
-                <div class="theme-toggle-container">
-                    <button
-                        @click="toggleThemeDropdown"
+                <!-- Theme Toggle (only for logged out users - logged in users have it in profile dropdown) -->
+                <div v-show="!authStore.user" class="theme-toggle-container">
+                    <button 
+                        @click="toggleThemeDropdown" 
                         class="theme-toggle-button"
                         title="Theme Settings"
                     >
@@ -257,27 +257,27 @@ onUnmounted(() => {
                         <span v-else-if="theme === 'light'" v-html="SunIcon" class="theme-icon"></span>
                         <span v-else v-html="SystemIcon" class="theme-icon"></span>
                     </button>
-
+                    
                     <!-- Theme Dropdown -->
                     <div v-show="showThemeDropdown" class="theme-dropdown">
                         <div class="theme-settings-label">Theme</div>
                         <div class="theme-options">
-                            <button
-                                @click="setTheme('light')"
+                            <button 
+                                @click="setTheme('light')" 
                                 :class="['theme-option', { active: theme === 'light' }]"
                                 title="Light Mode"
                             >
                                 <span v-html="SunIcon" class="theme-icon"></span>
                             </button>
-                            <button
-                                @click="setTheme('dark')"
+                            <button 
+                                @click="setTheme('dark')" 
                                 :class="['theme-option', { active: theme === 'dark' }]"
                                 title="Dark Mode"
                             >
                                 <span v-html="MoonIcon" class="theme-icon"></span>
                             </button>
-                            <button
-                                @click="setTheme('system')"
+                            <button 
+                                @click="setTheme('system')" 
                                 :class="['theme-option', { active: theme === 'system' }]"
                                 title="System Preference"
                             >
@@ -286,7 +286,7 @@ onUnmounted(() => {
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Login / Profile -->
                 <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link login-link">Login</router-link>
             </div>
@@ -363,8 +363,8 @@ onUnmounted(() => {
     background: white;
     border: 1px solid #8aa37c;
     border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    z-index: 99999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100000;
     padding: 12px;
     margin-top: 8px;
 }
@@ -492,7 +492,7 @@ onUnmounted(() => {
     width: 100%;
     max-width: 100vw; /* Ensure navbar doesn't exceed viewport width */
     overflow-x: hidden; /* Prevent horizontal scrolling */
-    z-index: 9999;
+    z-index: 1000;
 }
 
 .logo-image {
@@ -552,7 +552,7 @@ onUnmounted(() => {
     border-bottom: 2px solid #fff;
 }
 .mobile-menu .router-link-exact-active.image {
-    font-weight: bold; /* Makes the font weight bold */ 
+    font-weight: bold; /* Makes the font weight bold */
     color: #fff !important; /* Keeps the text color white, as previously defined */
     border-bottom: 0px;
 }
