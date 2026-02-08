@@ -23,5 +23,20 @@
             </a>
           </div>
       </div>
+
+      <!-- Manifesto Highlight Section -->
+      <div class="mt-8 p-6 bg-[#344a34] rounded-lg dark:bg-[#2d3e26]">
+        <h2 class="text-2xl text-center mb-4 text-[#f5f5f5] dark:text-[#f5f5f5]">Our Manifesto</h2>
+        <p class="text-lg text-center mb-4 text-[#d0d0d0] dark:text-[#d0d0d0]">
+          "We are life seeking fulfillment. We rose on a planet bustling in biodiversity..."
+        </p>
+        <div class="text-center">
+          <a href="/manifesto" 
+             class="inline-block hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
+            Read Our Full Manifesto
+          </a>
+        </div>
+      </div>
+
     </div>
 </template>

@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, GardensPublicView, SetPassword,
     InstructionPublic, GardenApplyForm, HelpView,
-    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, EventTemplatesView, GardenTasksPublic } from '@/views';
+    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, EventTemplatesView, GardenTasksPublic, ManifestoView } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
@@ -49,6 +49,11 @@ export const router = createRouter({
         {
             path: '/contribute',
             component: ContributeView
+        },
+        {
+            path: '/manifesto',
+            component: ManifestoView,
+            name: 'manifesto'
         },
         {
             path: '/privacy',
@@ -150,6 +155,7 @@ router.beforeEach(async (to) => {
         '/events', 
         '/join', 
         '/contribute',
+        '/manifesto',
         '/map',
         '/privacy',
         '/gardens'
