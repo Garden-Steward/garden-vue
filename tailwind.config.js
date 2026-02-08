@@ -43,5 +43,12 @@ module.exports = {
     {
       pattern: /bg-(red|green|blue|orange|purple|fuchsia|emerald|violet|indigo|yellow|lime|slate|bg-custom-light|bg-custom-green)-(100|500|600|700|800|900)/, // You can display all the colors that you need
     },
+    // Dark mode custom colors
+    'dark:bg-[#2d3e26]',
+    'dark:bg-[#344a34]',
+    'dark:text-[#f5f5f5]',
+    'dark:text-[#d0d0d0]',
+    'dark:border-gray-600',
+    'dark:hover:text-green-300',
   ],
   }
