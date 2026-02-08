@@ -266,7 +266,7 @@ const truncateText = (text, maxLength) => {
               <div v-for="day in upcomingEvents" :key="day.id" 
                    class="px-4 md:px-0">
                 <div 
-                   class="flex flex-col sm:flex-row rounded md:rounded bg-white dark:bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-gray-50 dark:hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"
+                   class="flex flex-col sm:flex-row rounded md:rounded bg-white dark:!bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-gray-50 dark:hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"
                    @click="volunteerDayClick(day.id)">
                   <!-- Content left: Date, Title, By, (O) Garden -->
                   <div class="flex flex-col flex-1 min-w-0 p-4 order-2 sm:order-1">
@@ -305,7 +305,7 @@ const truncateText = (text, maxLength) => {
               <div v-for="day in futureEvents" :key="day.id" 
                    class="px-4 md:px-0">
                 <div 
-                   class="flex flex-col sm:flex-row rounded md:rounded bg-white dark:bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-gray-50 dark:hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"
+                   class="flex flex-col sm:flex-row rounded md:rounded bg-white dark:!bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-gray-50 dark:hover:bg-[rgba(15,15,15,0.95)] transition-colors overflow-hidden"
                    @click="volunteerDayClick(day.id)">
                   <!-- Content left: Date, Title, By, (O) Garden -->
                   <div class="flex flex-col flex-1 min-w-0 p-4 order-2 sm:order-1">
@@ -344,7 +344,7 @@ const truncateText = (text, maxLength) => {
               <div v-for="day in pastEvents" :key="day.id" 
                    class="px-4 md:px-0">
                 <div 
-                   class="flex flex-col sm:flex-row rounded md:rounded bg-white dark:bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-gray-50 dark:hover:bg-[rgba(26,26,26,0.95)] transition-colors overflow-hidden"
+                   class="flex flex-col sm:flex-row rounded md:rounded bg-white dark:!bg-[rgba(26,26,26,0.8)] cursor-pointer hover:bg-gray-50 dark:hover:bg-[rgba(26,26,26,0.95)] transition-colors overflow-hidden"
                    @click="volunteerDayClick(day.id)">
                   <!-- Content left: Date, Title, By, (O) Garden -->
                   <div class="flex flex-col flex-1 min-w-0 p-4 order-2 sm:order-1">
@@ -427,6 +427,7 @@ const truncateText = (text, maxLength) => {
 }
 
 </style>
+
 
 
 
