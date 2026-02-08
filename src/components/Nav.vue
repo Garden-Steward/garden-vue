@@ -210,6 +210,7 @@ onUnmounted(() => {
                     <router-link to="/join" class="nav-item nav-link">Join</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
                     <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
+                    <router-link to="/manifesto" class="nav-item nav-link">Manifesto</router-link>
                     <router-link v-show="!authStore.user" to="/help" class="nav-item nav-link">Help</router-link>
                     <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link">Login</router-link>
     
