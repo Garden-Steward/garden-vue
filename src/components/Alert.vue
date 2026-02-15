@@ -31,7 +31,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div v-if="alert" class="container">
+    <div v-if="alert" class="container alert-container">
         <div class="m-3">
             <div class="alert alert-dismissable" :class="alert.type">
                 <button @click="alertStore.clear()" class="btn btn-link close">&times;</button>
@@ -40,3 +40,18 @@ onBeforeUnmount(() => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.alert-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100000;
+  pointer-events: none;
+}
+
+.alert-container .alert {
+  pointer-events: auto;
+}
+</style>

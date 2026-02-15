@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, GardensPublicView, SetPassword,
     InstructionPublic, GardenApplyForm, HelpView,
-    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, EventTemplatesView, GardenTasksPublic, ManifestoView } from '@/views';
+    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
@@ -71,6 +71,11 @@ export const router = createRouter({
             path: '/gardens/:gardenSlug/p/:projectSlug',
             component: ProjectPublic,
             name: 'project-public'
+        },
+        {
+            path: '/gardens/:slug/tasks/:taskId',
+            component: TaskDetailPublic,
+            name: 'task-detail-public'
         },
         {
             path: '/gardens/:slug/tasks',

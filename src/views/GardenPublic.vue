@@ -1428,11 +1428,7 @@ const getProjectHeroImage = (project) => {
   }
   
   .dark-mode-toggle {
-    width: 45px;
-    height: 45px;
-    top: 75px;
-    right: 15px;
-    font-size: 18px;
+    display: none;
   }
   
   .project-layout {

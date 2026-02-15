@@ -582,11 +582,13 @@ defineExpose({ openModal });
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Remove white/light borders - keep dark borders only */
+/* Force light text in all form inputs */
 .garden-task-modal-content .garden-task-input,
 .garden-task-modal-content input.garden-task-input,
 .garden-task-modal-content select.garden-task-input,
-.garden-task-modal-content textarea.garden-task-input {
+.garden-task-modal-content textarea.garden-task-input,
+.garden-task-modal-content textarea.form-control {
+  color: #f5f5f5 !important;
   border-color: #3d4d36 !important;
 }
 

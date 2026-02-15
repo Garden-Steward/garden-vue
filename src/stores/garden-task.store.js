@@ -5,7 +5,6 @@ import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks`;
 const recurringUrl = `${import.meta.env.VITE_API_URL}/api/recurring-tasks`;
-const smsAssignUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks/assign-sms`;
 
 export const useGardenTaskStore = defineStore({
     id: 'gardenTasks',
@@ -20,8 +19,26 @@ export const useGardenTaskStore = defineStore({
             alertStore.error(err);
             console.log("Garden Task Error: ", err)
         },
+        async findById(id) {
+            this.gardenTask = { loading: true };
+            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=volunteers&populate[1]=primary_image&populate[2]=instruction&populate[3]=garden`)
+                .then(response => {
+                    const task = response.data;
+                    if (task?.attributes?.volunteers?.data) {
+                        task.attributes.volunteers = task.attributes.volunteers.data;
+                    } else if (!task?.attributes?.volunteers) {
+                        task.attributes.volunteers = [];
+                    }
+                    this.gardenTask = task;
+                    return task;
+                })
+                .catch(error => {
+                    this.gardenTask = { error };
+                    this.handleError(error);
+                });
+        },
         async getGardenTasks(gardenId) {
-            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=recurring_task.instruction&populate[3]=primary_image&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished`)
+            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=instruction&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished`)
                 .then(response => {
                     const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(task => {
                         if (task.attributes?.volunteers?.data) {
@@ -143,7 +160,7 @@ export const useGardenTaskStore = defineStore({
                 .catch(this.handleError);
         },
         async getTasksByGardenSlug(slug) {
-            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=recurring_task.instruction&populate[3]=primary_image&populate[4]=garden&filters[garden][slug][$eq]=${slug}&filters[status][$nei]=finished`)
+            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=garden&populate[4]=instruction&filters[garden][slug][$eq]=${slug}&filters[status][$nei]=finished`)
                 .then(response => {
                     const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(task => {
                         if (task.attributes?.volunteers?.data) {
@@ -159,15 +176,12 @@ export const useGardenTaskStore = defineStore({
                 .catch(this.handleError);
         },
         async assignTaskViaSMS(taskId, phoneNumber) {
-            return fetchWrapper.post(smsAssignUrl, {
+            return fetchWrapper.post(`${baseUrl}/rsvp/${taskId}`, {
                 data: {
-                    taskId,
                     phoneNumber
                 }
             })
                 .then(response => {
-                    const alertStore = useAlertStore();
-                    alertStore.success('Task assignment request sent! Check your phone for confirmation.');
                     return response;
                 })
                 .catch(error => {

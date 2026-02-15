@@ -80,9 +80,20 @@ const submit = async () => {
   try {
     // Extract just digits for the API
     const cleanPhone = phoneNumber.value.replace(/\D/g, '');
-    await gardenTaskStore.assignTaskViaSMS(props.task.id, cleanPhone);
+    const response = await gardenTaskStore.assignTaskViaSMS(props.task.id, cleanPhone);
+
+    // Close modal first
     emit('success');
     close();
+
+    // Then show alert after modal is closed
+    setTimeout(() => {
+      if (response.success === true) {
+        alertStore.success('Found your account! Look forward to a message');
+      } else {
+        alertStore.success('Task assignment request sent! Check your phone for confirmation.');
+      }
+    }, 100);
   } catch (err) {
     error.value = err.message || 'Failed to send assignment request';
   } finally {
