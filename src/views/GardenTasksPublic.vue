@@ -30,6 +30,7 @@ const isDarkMode = ref(false);
 
 // Phone modal state
 const showPhoneModal = ref(false);
+const showTaskModal = ref(false);
 const selectedTask = ref(null);
 
 // Loading state
@@ -76,13 +77,20 @@ watch(() => garden.value?.id, async (gardenId) => {
 }, { immediate: true });
 
 // Filter tasks - only show active tasks (not finished, abandoned, or skipped)
+// Sort by most recent first (createdAt descending)
 const activeTasks = computed(() => {
   if (!gardenTasks.value || !Array.isArray(gardenTasks.value)) return [];
 
-  return gardenTasks.value.filter(task => {
-    const status = task.attributes?.status;
-    return status && !['FINISHED', 'ABANDONED', 'SKIPPED'].includes(status.toUpperCase());
-  });
+  return gardenTasks.value
+    .filter(task => {
+      const status = task.attributes?.status;
+      return status && !['FINISHED', 'ABANDONED', 'SKIPPED'].includes(status.toUpperCase());
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.attributes?.createdAt || 0);
+      const dateB = new Date(b.attributes?.createdAt || 0);
+      return dateB - dateA; // Most recent first
+    });
 });
 
 // Get task image
@@ -151,16 +159,13 @@ const hasAvailableSpots = (task) => {
 
 // Handle sign up click
 const handleSignUp = (task) => {
-  if (user.value) {
-    // User is logged in - could implement direct assignment here
-    // For now, still use phone modal or redirect to login
-    selectedTask.value = task;
-    showPhoneModal.value = true;
-  } else {
-    // User not logged in - show phone modal
-    selectedTask.value = task;
-    showPhoneModal.value = true;
-  }
+  selectedTask.value = task;
+  showTaskModal.value = true;
+};
+
+const closeTaskModal = () => {
+  showTaskModal.value = false;
+  selectedTask.value = null;
 };
 
 const closePhoneModal = () => {
@@ -289,13 +294,40 @@ const goBackToGarden = () => {
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
               </svg>
-              Sign Up for This Task
+              Learn More
             </button>
             <div v-else class="task-full">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
               Task is Full
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Detail Modal (Learn More) -->
+    <div v-if="showTaskModal" class="modal-overlay" @click="closeTaskModal">
+      <div class="task-modal" @click.stop>
+        <button class="modal-close" @click="closeTaskModal">×</button>
+        <div class="modal-content">
+          <div v-if="selectedTask?.attributes">
+            <h2 class="modal-title">{{ selectedTask.attributes.title }}</h2>
+            
+            <div v-if="selectedTask.attributes.current_section" class="modal-section">
+              <h3>What You'll Do</h3>
+              <div v-html="selectedTask.attributes.current_section"></div>
+            </div>
+            
+            <div v-if="selectedTask.attributes.tools_section" class="modal-section">
+              <h3>Tools Needed</h3>
+              <div v-html="selectedTask.attributes.tools_section"></div>
+            </div>
+            
+            <div v-if="selectedTask.attributes.resources_section" class="modal-section">
+              <h3>Resources</h3>
+              <div v-html="selectedTask.attributes.resources_section"></div>
             </div>
           </div>
         </div>
