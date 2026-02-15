@@ -59,13 +59,20 @@ watch(() => garden.value?.id, async (gardenId) => {
 }, { immediate: true });
 
 // Filter tasks - only show active tasks (not finished, abandoned, or skipped)
+// Sort by most recent first (createdAt descending)
 const activeTasks = computed(() => {
   if (!gardenTasks.value || !Array.isArray(gardenTasks.value)) return [];
 
-  return gardenTasks.value.filter(task => {
-    const status = task.attributes?.status;
-    return status && !['FINISHED', 'ABANDONED', 'SKIPPED'].includes(status.toUpperCase());
-  });
+  return gardenTasks.value
+    .filter(task => {
+      const status = task.attributes?.status;
+      return status && !['FINISHED', 'ABANDONED', 'SKIPPED'].includes(status.toUpperCase());
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.attributes?.createdAt || 0);
+      const dateB = new Date(b.attributes?.createdAt || 0);
+      return dateB - dateA; // Most recent first
+    });
 });
 
 // Get task image
