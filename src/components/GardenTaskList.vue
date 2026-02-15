@@ -93,6 +93,14 @@ const getRecurringTaskInstruction = (recurringTask) => {
   return slug && title ? { title, slug } : null;
 };
 
+// Get instruction for a regular garden task
+const getTaskInstruction = (task) => {
+  const instr = task?.attributes?.instruction?.data;
+  if (!instr) return null;
+  const attrs = instr.attributes || instr;
+  return (attrs?.slug && attrs?.title) ? { title: attrs.title, slug: attrs.slug } : null;
+};
+
 // Get scheduler entries for a specific recurring task
 const getSchedulerEntriesForTask = (recurringTask) => {
   if (!weekscheduler.value || typeof weekscheduler.value !== 'object') return [];
@@ -710,7 +718,7 @@ const openRecurringEditModal = (taskId) => {
           @keydown.space.prevent="editor && openEditModal(task.id)"
         >
           <!-- Task image -->
-          <div class="w-full h-44 overflow-hidden bg-[#1f2d1a]">
+          <div class="m-4 rounded-xl aspect-[4/3] overflow-hidden bg-[#1f2d1a]">
             <img
               v-if="getTaskImage(task)"
               :src="getTaskImage(task)"
@@ -745,6 +753,18 @@ const openRecurringEditModal = (taskId) => {
             <p v-if="task.attributes?.overview" class="text-sm text-[#d0d0d0] line-clamp-3">
               {{ task.attributes.overview.length > 120 ? task.attributes.overview.substring(0, 120) + '...' : task.attributes.overview }}
             </p>
+
+            <!-- Instruction link -->
+            <div v-if="getTaskInstruction(task)" class="text-sm" @click.stop>
+              <a
+                :href="'/i/' + getTaskInstruction(task).slug"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-[#8aa37c] underline hover:text-[#6b8560]"
+              >
+                {{ getTaskInstruction(task).title }}
+              </a>
+            </div>
 
             <!-- Volunteer count -->
             <div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-[rgba(0,0,0,0.2)]">

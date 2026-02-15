@@ -1,10 +1,8 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
-import { useGardensStore, useGardenTaskStore, useAuthStore } from '@/stores';
+import { useGardensStore, useGardenTaskStore } from '@/stores';
 import { computed, ref, onMounted, watch } from 'vue';
-import { getRandomDefaultImage, getImageOrDefault } from '@/helpers/image-utils';
-import PhoneLoginModal from '@/components/modals/PhoneLoginModal.vue';
 import SunIcon from '@/components/icons/Sun.svg?raw';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
@@ -12,11 +10,8 @@ const route = useRoute();
 const router = useRouter();
 const gardensStore = useGardensStore();
 const gardenTaskStore = useGardenTaskStore();
-const authStore = useAuthStore();
-
 const { garden } = storeToRefs(gardensStore);
 const { gardenTasks } = storeToRefs(gardenTaskStore);
-const { user } = storeToRefs(authStore);
 
 // Dark mode state
 const getSystemPreference = () => {
@@ -28,24 +23,12 @@ const getSystemPreference = () => {
 
 const isDarkMode = ref(false);
 
-// Phone modal state
-const showPhoneModal = ref(false);
-const selectedTask = ref(null);
-
 // Loading state
 const isLoading = ref(true);
 
-// Initialize dark mode
+// Initialize dark mode from system preference
 onMounted(() => {
-  const savedTheme = localStorage.getItem('garden-public-theme');
-  let shouldBeDark = false;
-
-  if (savedTheme === 'dark' || savedTheme === 'light') {
-    shouldBeDark = savedTheme === 'dark';
-  } else {
-    shouldBeDark = getSystemPreference();
-  }
-
+  const shouldBeDark = getSystemPreference();
   isDarkMode.value = shouldBeDark;
   applyDarkMode(shouldBeDark);
 });
@@ -142,37 +125,6 @@ const getVolunteerCount = (task) => {
   return 0;
 };
 
-// Check if task has available spots
-const hasAvailableSpots = (task) => {
-  const maxVolunteers = task.attributes?.max_volunteers || 1;
-  const currentCount = getVolunteerCount(task);
-  return currentCount < maxVolunteers;
-};
-
-// Handle sign up click
-const handleSignUp = (task) => {
-  if (user.value) {
-    // User is logged in - could implement direct assignment here
-    // For now, still use phone modal or redirect to login
-    selectedTask.value = task;
-    showPhoneModal.value = true;
-  } else {
-    // User not logged in - show phone modal
-    selectedTask.value = task;
-    showPhoneModal.value = true;
-  }
-};
-
-const closePhoneModal = () => {
-  showPhoneModal.value = false;
-  selectedTask.value = null;
-};
-
-const handleSignUpSuccess = () => {
-  // Refresh tasks to show updated volunteer count
-  gardenTaskStore.getTasksByGardenSlug(route.params.slug);
-};
-
 // Navigate back to garden page
 const goBackToGarden = () => {
   router.push(`/gardens/${route.params.slug}`);
@@ -230,10 +182,11 @@ const goBackToGarden = () => {
 
       <!-- Tasks Grid -->
       <div v-else class="tasks-grid">
-        <div
+        <a
           v-for="task in activeTasks"
           :key="task.id"
-          class="task-card"
+          :href="'/gardens/' + route.params.slug + '/tasks/' + task.id"
+          class="task-card task-card--clickable"
         >
           <!-- Task Image -->
           <div class="task-image-container">
@@ -280,36 +233,11 @@ const goBackToGarden = () => {
               </span>
             </div>
 
-            <!-- Sign Up Button -->
-            <button
-              v-if="hasAvailableSpots(task)"
-              @click="handleSignUp(task)"
-              class="signup-button"
-            >
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-              Sign Up for This Task
-            </button>
-            <div v-else class="task-full">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              Task is Full
-            </div>
           </div>
-        </div>
+        </a>
       </div>
     </div>
 
-    <!-- Phone Modal -->
-    <PhoneLoginModal
-      :show="showPhoneModal"
-      :task="selectedTask"
-      :dark-mode="isDarkMode"
-      @close="closePhoneModal"
-      @success="handleSignUpSuccess"
-    />
   </div>
 </template>
 
@@ -556,8 +484,9 @@ const goBackToGarden = () => {
 
 /* Task Image */
 .task-image-container {
-  width: 100%;
-  height: 200px;
+  margin: 16px;
+  border-radius: 12px;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background-color: #f3f4f6;
 }
@@ -658,46 +587,15 @@ const goBackToGarden = () => {
   color: #d1d5db;
 }
 
-/* Sign Up Button */
-.signup-button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 20px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #ffffff;
-  background-color: #8aa37c;
-  border: none;
-  border-radius: 10px;
+/* Clickable card link reset */
+a.task-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+a.task-card--clickable {
   cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.signup-button:hover {
-  background-color: #6c8a6a;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
-}
-
-/* Task Full */
-.task-full {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 20px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #6b7280;
-  background-color: #e5e7eb;
-  border-radius: 10px;
-}
-
-.dark .task-full {
-  color: #9ca3af;
-  background-color: #374151;
 }
 
 /* Responsive */
@@ -707,11 +605,7 @@ const goBackToGarden = () => {
   }
 
   .dark-mode-toggle {
-    width: 45px;
-    height: 45px;
-    top: 75px;
-    right: 15px;
-    font-size: 18px;
+    display: none;
   }
 
   .tasks-title {
