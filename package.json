@@ -34,7 +34,7 @@
         "browser-image-compression": "^2.0.2",
         "date-fns": "^2.29.3",
         "leaflet": "^1.9.4",
-        "markdown-it": "^14.0.0",
+        "markdown-it": "^14.1.1",
         "markdown-it-attrs": "^4.1.6",
         "pinia": "^2.0.13",
         "tiptap-markdown": "^0.8.10",
