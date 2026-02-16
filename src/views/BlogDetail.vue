@@ -43,12 +43,13 @@ blogStore.findSlug(route.params.slug);
 // Reactive properties for button links
 let latestBlogId = blog?._id;
 
-// Computed property to format the publishedAt date
+// Computed property to format the date - uses article_date if available, falls back to publishedAt
 const formattedDate = computed(() => {
-  if (!blog.value?.publishedAt) return '';
+  const dateToUse = blog.value?.article_date || blog.value?.publishedAt;
+  if (!dateToUse) return '';
   console.log(blog)
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
-  return new Date(blog.value.publishedAt).toLocaleDateString(undefined, options);
+  return new Date(dateToUse).toLocaleDateString(undefined, options);
 });
 
 // Watch for changes in the blog content and process images
