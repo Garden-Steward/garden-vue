@@ -96,7 +96,7 @@ onUnmounted(() => {
 
 <template>
   <div v-if="getGalleryImages.length > 0" class="gallery-container">
-    <h2 v-if="title" class="gallery-title">{{ title }}</h2>
+    <h2 v-if="title" class="gallery-title dark:text-[#c9d966]">{{ title }}</h2>
     <div class="gallery-grid">
       <div
         v-for="(image, index) in getGalleryImages"
