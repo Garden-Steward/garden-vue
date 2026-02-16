@@ -650,4 +650,15 @@ onUnmounted(() => {
         display: none;
     }
 }
+
+/* Mobile: Fix profile icon positioning */
+@media (max-width: 1024px) {
+    .profile-container {
+        position: fixed;
+        right: 15px;
+        top: 12px;
+        transform: none;
+        z-index: 1500;
+    }
+}
 </style>
