@@ -140,7 +140,7 @@ const handleKeyPress = (event) => {
           <img id="heroImage" alt="Hero Image" class="w-full h-full object-cover object-center" :src="heroImage">
         </div>
         <div class="flex justify-between items-start mb-6">
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-[#f5f5f5]">{{ event?.attributes?.title }}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-[#c9d966]">{{ event?.attributes?.title }}</h1>
           <router-link 
             v-if="user && isManager && event?.id"
             :to="`/manage/events/${event.id}/edit`"
@@ -149,11 +149,11 @@ const handleKeyPress = (event) => {
             Edit Event
           </router-link>
         </div>
-        <h4 class="text-lg font-bold mb-6 text-gray-700 dark:text-[#d0d0d0]">{{ processDate(event?.attributes?.startDatetime) }}</h4>
-        <div v-if="event?.attributes?.blurb" class="text-left brief-box dark:bg-[#2d3e26] dark:text-[#f5f5f5]">
+        <h4 class="text-lg font-bold mb-6 text-gray-700 dark:text-[#e8e8e8]">{{ processDate(event?.attributes?.startDatetime) }}</h4>
+        <div v-if="event?.attributes?.blurb" class="text-left brief-box dark:bg-[#2d3e26] dark:text-[#e8e8e8]">
             <div v-html="event?.attributes?.blurb"></div>
         </div>
-        <div class="text-left text-gray-800 dark:text-[#d0d0d0]" v-if="event?.attributes?.content">
+        <div class="text-left text-gray-800 dark:text-[#e8e8e8]" v-if="event?.attributes?.content">
             <div v-html="renderedContent"></div>
         </div>
         
@@ -164,11 +164,11 @@ const handleKeyPress = (event) => {
           :photo-album-url="event?.attributes?.photo_album_url"
         />
         
-        <div v-if="user?.id" class="text-left mt-5">
+        <div v-if="user?.id" class="text-left mt-5 dark:text-[#e8e8e8]">
             <div v-if="!isRSVPed && !isEventPast" style="font-size: 1.2rem; font-weight: bold;" class="mb-2">Hello {{ user?.firstName }} {{ user?.lastName }}
               <p>Would you like to RSVP for this event?</p>
             </div>
-            <p v-if="isEventPast" class="text-gray-600 font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
+            <p v-if="isEventPast" class="text-gray-600 dark:text-[#b8b8b8] font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
             <a v-if="event?.attributes?.partiful_link && !isEventPast" :href="event.attributes.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
               {{ isRSVPed ? 'RSVP Initiated' : 'RSVP via Partiful' }}
             </a>
@@ -180,8 +180,8 @@ const handleKeyPress = (event) => {
 
 
         <!-- Conditional rendering of the agreement button -->
-        <div v-else class="mt-6">
-          <p v-if="isEventPast" class="text-gray-600 font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
+        <div v-else class="mt-6 dark:text-[#e8e8e8]">
+          <p v-if="isEventPast" class="text-gray-600 dark:text-[#b8b8b8] font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
           <a v-if="event?.attributes?.partiful_link && !isEventPast" :href="event.attributes.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block text-white font-bold py-2 px-4 rounded text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
             {{ isRSVPed ? 'RSVP Initiated' : 'RSVP via Partiful' }}
           </a>
@@ -213,7 +213,7 @@ const handleKeyPress = (event) => {
       <!-- Modal -->
       <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white dark:!bg-[#2d3e26] p-6 rounded-lg shadow-lg w-3/4 md:w-1/4">
-          <h3 class="md:text-xl mb-4 text-lg text-gray-900 dark:text-[#f5f5f5]">Garden Steward manages events through SMS. You will be asked to sign up for SMS Updates for {{ event?.attributes?.garden?.data.attributes?.title }} as a part of RSVPing for this event. </h3>
+          <h3 class="md:text-xl mb-4 text-lg text-gray-900 dark:text-[#e8e8e8]">Garden Steward manages events through SMS. You will be asked to sign up for SMS Updates for {{ event?.attributes?.garden?.data.attributes?.title }} as a part of RSVPing for this event. </h3>
           
           <input 
             :value="phoneNumber"
@@ -221,13 +221,13 @@ const handleKeyPress = (event) => {
             @keypress="handleKeyPress"
             type="tel" 
             placeholder="(123) 456-7890" 
-            class="w-full p-2 border border-gray-300 dark:border-[#3d4d36] dark:bg-[#1a1a1a] dark:text-[#f5f5f5] rounded mb-2"
+            class="w-full p-2 border border-gray-300 dark:border-[#3d4d36] dark:bg-[#1a1a1a] dark:text-[#e8e8e8] rounded mb-2"
             maxlength="14"
           >
-          <p class="text-sm mb-4 text-gray-600 dark:text-[#d0d0d0]">You can STOP SMS at any point by replying with STOP.</p>
+          <p class="text-sm mb-4 text-gray-600 dark:text-[#b8b8b8]">You can STOP SMS at any point by replying with STOP.</p>
           <p v-if="phoneError" class="text-red-500 text-sm mb-2">{{ phoneError }}</p>
           <div class="flex justify-end">
-            <button @click="closeModal" class="mr-2 px-4 py-2 bg-gray-200 dark:bg-[#3d4d36] dark:text-[#f5f5f5] rounded">Cancel</button>
+            <button @click="closeModal" class="mr-2 px-4 py-2 bg-gray-200 dark:bg-[#3d4d36] dark:text-[#e8e8e8] rounded">Cancel</button>
             <button @click="submitPhoneNumber" class="px-4 py-2 bg-green-700 text-white rounded">Submit</button>
           </div>
         </div>
