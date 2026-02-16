@@ -525,6 +525,20 @@ defineExpose({ openModal });
             <option class="text-lg py-1" value="Harvest">Harvest</option>
           </select>
 
+          <!-- Status selector - only show when editing -->
+          <div v-if="props.id" class="mt-4">
+            <p class="p-1 pb-0 text-md text-[#f5f5f5] mb-0">Task Status:</p>
+            <select
+              v-model="form.status"
+              class="garden-task-input rounded-md border p-1 ml-1 text-lg bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] border-[#3d4d36] focus:bg-[rgba(40,50,35,0.9)] focus:border-[#8aa37c] focus:outline-none focus:ring-1 focus:ring-[#8aa37c]/50"
+            >
+              <option value="INITIALIZED">Initialized</option>
+              <option value="STARTED">Started</option>
+              <option value="FINISHED">Finished</option>
+              <option value="ISSUE">Issue</option>
+            </select>
+          </div>
+
           <div class="modal-footer flex flex-shrink-0 flex-col gap-3 p-4 border-t border-[#3d4d36] rounded-b-md">
             <div v-if="validationErrors.title || validationErrors.type || validationErrors.overview" class="w-full text-red-400 text-sm">
               Please fill in all required fields: Title, What kind of task, and Explain the task more.
