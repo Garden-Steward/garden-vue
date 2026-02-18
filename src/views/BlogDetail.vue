@@ -97,7 +97,7 @@ onMounted(async () => {
         <div class="flex-1 flex bg-cover bg-center h-96 bg-cover rounded-lg" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
           <div class="flex-1"></div>
         </div>
-        <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 sm:py-12 py-2 rounded-lg">
+        <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 rounded-lg" :class="{ 'sm:py-12 py-2': blog.hero_display, 'sm:py-6 py-4': !blog.hero_display }">
           <div class="blog-content text-gray-800 dark:text-[#d0d0d0]">
               <StrapiBlocks :content="blog?.content" :modifiers="modifiers" :blocks="blocks" />
           </div>
