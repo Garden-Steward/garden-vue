@@ -29,6 +29,13 @@ let heroImage = function(blog) {
 const truncateExcerpt = (excerpt) => {
     return `${excerpt?.substring(0, 150)}...`;
 };
+
+const formatBlogDate = (blog) => {
+  const dateToUse = blog.attributes?.article_date || blog.attributes?.publishedAt;
+  if (!dateToUse) return '';
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateToUse).toLocaleDateString(undefined, options);
+};
 </script>
 
 <template>
@@ -59,7 +66,10 @@ const truncateExcerpt = (excerpt) => {
                 </div>
                 <h2 class="text-2xl font-semibold py-3 mt-2 text-gray-900 dark:text-[#f5f5f5]">{{ blog.attributes?.title }}</h2>
                 <p class="text-gray-600 dark:text-[#d0d0d0] text-lg mt-1">{{ truncateExcerpt(blog.attributes?.excerpt) }}</p>
-                <p class="text-gray-600 dark:text-[#8aa37c] text-lg">Continue Reading</p>
+                <div class="flex justify-between items-center mt-4">
+                  <p class="text-gray-600 dark:text-[#8aa37c] text-lg">Continue Reading</p>
+                  <p class="text-gray-500 dark:text-[#8aa37c] text-sm">{{ formatBlogDate(blog) }}</p>
+                </div>
               </div>
             </a>
           </div>
