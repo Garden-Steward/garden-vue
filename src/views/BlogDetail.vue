@@ -14,10 +14,11 @@ const baseUrl = `${import.meta.env.VITE_API_URL}`;
 
 let heroImage = function(blog) {
   console.log('hero', blog.hero)
-  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.hero?.url.includes('googleapis.com')) {
-    return `${baseUrl}${blog.hero?.url}`;
+  if (!blog.hero?.url) return '';
+  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.hero.url.includes('googleapis.com')) {
+    return `${baseUrl}${blog.hero.url}`;
   } else {
-    return blog.hero?.url;
+    return blog.hero.url;
   }
 }
 
@@ -94,7 +95,7 @@ onMounted(async () => {
           </h2>
         </div>
 
-        <div class="flex-1 flex bg-cover bg-center h-96 bg-cover rounded-lg" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }" v-if="blog.hero_display">
+        <div v-if="blog.hero_display && blog.hero" class="flex-1 flex bg-cover bg-center h-96 bg-cover rounded-lg" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }">
           <div class="flex-1"></div>
         </div>
         <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 rounded-lg" :class="{ 'sm:py-12 py-2': blog.hero_display, 'sm:py-6 py-4': !blog.hero_display }">
