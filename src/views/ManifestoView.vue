@@ -1,5 +1,5 @@
 <script setup>
-const audioUrl = 'https://storage.googleapis.com/steward_upload/uploads/audio_manifesto_f185ad49_9617_44ae_b3ab_9bf308088677.m4a'
+const audioUrl = 'https://storage.googleapis.com/steward_upload/uploads/980476cd_fcd3_427b_9df2_154f321fe807_81cfd49aa1/980476cd_fcd3_427b_9df2_154f321fe807_81cfd49aa1.mp3'
 
 const manifestoText = `We are life seeking fulfillment.
 
