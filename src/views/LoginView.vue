@@ -1,13 +1,17 @@
 <script setup>
+import { ref } from 'vue';
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
 import { useAuthStore } from '@/stores';
+import PhoneRegistration from '@/components/PhoneRegistration.vue';
 
 const schema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
     password: Yup.string().required('Password is required')
 });
+
+const showRegisterModal = ref(false);
 
 function onSubmit(values, { setErrors }) {
     const authStore = useAuthStore();
@@ -16,6 +20,14 @@ function onSubmit(values, { setErrors }) {
 
     return authStore.login(username, password)
         .catch(error => setErrors({ apiError: error }));
+}
+
+function openRegisterModal() {
+    showRegisterModal.value = true;
+}
+
+function closeRegisterModal() {
+    showRegisterModal.value = false;
 }
 
 </script>
@@ -50,8 +62,11 @@ function onSubmit(values, { setErrors }) {
             </div>
             <div v-if="errors.apiError" class="alert alert-danger mt-3 mb-0">{{errors.apiError}}</div>
         </Form>
-        <div><a href="set-password" class="hover:underline text-green-700 hover:text-green-900">Set Password</a></div>
+        <div><button @click="openRegisterModal" class="hover:underline text-green-700 hover:text-green-900 bg-none border-none cursor-pointer p-0">Register</button></div>
     </div>
+
+    <!-- Phone Registration Modal -->
+    <PhoneRegistration :isOpen="showRegisterModal" @close="closeRegisterModal" />
 </template>
 
 <style>
