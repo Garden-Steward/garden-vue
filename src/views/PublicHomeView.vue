@@ -18,7 +18,7 @@
             <a href="https://github.com/Garden-Steward" 
                target="_blank" 
                rel="noopener noreferrer"
-               class="hover:underline text-slate-50 mt-3 btn btn-secondary bg-custom-green hover:bg-custom-green border-white">
+               class="hover:underline text-white mt-3 btn btn-secondary bg-custom-green hover:bg-custom-green border-white">
               Explore the code on GitHub
             </a>
           </div>
@@ -32,7 +32,7 @@
         </p>
         <div class="text-center">
           <a href="/manifesto" 
-             class="inline-block hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
+             class="inline-block hover:underline text-white mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
             Read Our Full Manifesto
           </a>
         </div>
