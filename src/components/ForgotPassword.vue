@@ -278,12 +278,12 @@ input::placeholder {
 }
 
 .btn-primary {
-  background: #4ade80;
-  color: #0f172a;
+  background: #8aa37c;
+  color: #ffffff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #22c55e;
+  background: #6c8a6a;
   transform: translateY(-2px);
 }
 
@@ -293,13 +293,13 @@ input::placeholder {
 }
 
 .btn-secondary {
-  background: rgba(74, 222, 128, 0.2);
-  color: #4ade80;
+  background: rgba(138, 163, 124, 0.2);
+  color: #8aa37c;
   margin-top: 12px;
 }
 
 .btn-secondary:hover {
-  background: rgba(74, 222, 128, 0.3);
+  background: rgba(138, 163, 124, 0.3);
 }
 
 .help-text {

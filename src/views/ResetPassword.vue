@@ -262,8 +262,8 @@ p {
   width: 48px;
   height: 48px;
   margin: 0 auto 24px;
-  border: 4px solid rgba(74, 222, 128, 0.2);
-  border-top: 4px solid #4ade80;
+  border: 4px solid rgba(138, 163, 124, 0.2);
+  border-top: 4px solid #8aa37c;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -344,8 +344,8 @@ input::placeholder {
 .btn-primary {
   width: 100%;
   padding: 12px;
-  background: #4ade80;
-  color: #0f172a;
+  background: #8aa37c;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -358,7 +358,7 @@ input::placeholder {
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #22c55e;
+  background: #6c8a6a;
   transform: translateY(-2px);
 }
 
