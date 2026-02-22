@@ -328,7 +328,7 @@ onUnmounted(() => {
 }
 .profile-container {
     position: absolute;
-    right: 180px; /* Account for theme toggle and login on the right */
+    right: 15px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
