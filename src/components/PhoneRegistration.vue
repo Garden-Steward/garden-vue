@@ -4,6 +4,7 @@
       <button class="close-btn" @click="closeModal">×</button>
       
       <h2>Welcome to Garden Steward</h2>
+      <p class="notice">We're currently only allowing registrations of existing garden members in our SMS outreach. If you already receive Garden Steward texts you're in the right place!</p>
       <p class="subtitle">Enter your phone number to get started</p>
 
       <!-- Phone Input Step -->
@@ -13,11 +14,11 @@
             <label for="phone">Garden Steward Phone Number</label>
             <input
               id="phone"
-              v-model="phoneNumber"
+              :value="phoneNumber"
               type="tel"
               placeholder="(555) 123-4567"
               required
-              @input="clearError"
+              @input="handlePhoneInput"
             />
           </div>
 
@@ -37,8 +38,8 @@
       <div v-if="step === 'verification-sent'" class="confirmation-step">
         <div class="check-icon">✓</div>
         <h3>Verification Email Sent</h3>
-        <p>We've sent a verification link to your email address. Click the link to create your password.</p>
-        <button @click="resetForm" class="btn-secondary">Back to Phone Entry</button>
+        <p>We've sent a verification link to <strong>{{ maskedEmail }}</strong>. Click the link to create your password.</p>
+        <button @click="closeModal" class="btn-secondary">Back to Login</button>
       </div>
     </div>
   </div>
@@ -57,6 +58,7 @@ export default {
     return {
       step: 'phone',
       phoneNumber: '',
+      maskedEmail: '',
       error: '',
       isLoading: false
     };
@@ -67,24 +69,25 @@ export default {
       this.isLoading = true;
 
       try {
-        const response = await fetch(`${process.env.VUE_APP_API_URL}/auth/phone-signup`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/phone-signup`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            phoneNumber: this.phoneNumber
+            phoneNumber: this.phoneNumber.replace(/\D/g, '')
           })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          this.error = data.message || 'An error occurred. Please try again.';
+          this.error = data.error?.message || 'An error occurred. Please try again.';
           return;
         }
 
         // Success - show confirmation
+        this.maskedEmail = data.email || '';
         this.step = 'verification-sent';
       } catch (err) {
         this.error = 'Unable to connect. Please check your internet and try again.';
@@ -92,6 +95,22 @@ export default {
       } finally {
         this.isLoading = false;
       }
+    },
+
+    formatPhoneNumber(value) {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 3) {
+        return digits;
+      } else if (digits.length <= 6) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      } else {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+      }
+    },
+
+    handlePhoneInput(event) {
+      this.phoneNumber = this.formatPhoneNumber(event.target.value);
+      this.error = '';
     },
 
     clearError() {
@@ -111,6 +130,7 @@ export default {
 
     resetForm() {
       this.phoneNumber = '';
+      this.maskedEmail = '';
       this.error = '';
       this.step = 'phone';
     }
@@ -161,6 +181,18 @@ h2 {
   color: #e4e4e4;
   margin-bottom: 8px;
   text-align: center;
+}
+
+.notice {
+  background: rgba(74, 222, 128, 0.08);
+  border-left: 3px solid #4ade80;
+  color: #9ca3af;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  text-align: left;
 }
 
 .subtitle {

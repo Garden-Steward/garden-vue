@@ -12,8 +12,36 @@
       <div v-else-if="state === 'verification-failed'" class="state-container error">
         <div class="error-icon">✗</div>
         <h2>Verification Failed</h2>
+        <p v-if="errorStatus" class="error-status">{{ errorStatus }}</p>
         <p>{{ errorMessage }}</p>
-        <router-link to="/login" class="btn-primary">Back to Login</router-link>
+
+        <div class="resend-section">
+          <p v-if="resendSuccess" class="resend-sent">✓ Verification email sent to <strong>{{ resendMaskedEmail }}</strong>. Check your inbox.</p>
+          <p class="resend-label">Enter your phone number to resend a new verification link:</p>
+          <form @submit.prevent="resendVerification">
+            <div class="form-group">
+              <input
+                :value="resendPhone"
+                type="tel"
+                placeholder="(555) 123-4567"
+                required
+                :disabled="resendCooldown > 0"
+                @input="handleResendPhoneInput"
+                class="resend-input"
+              />
+            </div>
+            <div v-if="resendError" class="error-message">
+              <span v-if="resendErrorStatus" class="resend-error-status">{{ resendErrorStatus }} — </span>{{ resendError }}
+            </div>
+            <button type="submit" :disabled="resendLoading || resendCooldown > 0" class="btn-resend">
+              <template v-if="resendLoading">Sending...</template>
+              <template v-else-if="resendCooldown > 0">Resend available in {{ resendCooldown }}s</template>
+              <template v-else>Resend Verification Email</template>
+            </button>
+          </form>
+        </div>
+
+        <router-link to="/login" class="btn-secondary-link">Back to Login</router-link>
       </div>
 
       <!-- Password Creation -->
@@ -77,14 +105,26 @@ export default {
       confirmPassword: '',
       error: '',
       errorMessage: '',
+      errorStatus: null,
       isLoading: false,
       userId: null,
-      token: null
+      token: null,
+      resendPhone: '',
+      resendLoading: false,
+      resendError: '',
+      resendErrorStatus: null,
+      resendSuccess: false,
+      resendMaskedEmail: '',
+      resendCooldown: 0,
+      resendTimer: null
     };
   },
   mounted() {
     this.extractParams();
     this.verifyEmail();
+  },
+  beforeUnmount() {
+    if (this.resendTimer) clearInterval(this.resendTimer);
   },
   methods: {
     extractParams() {
@@ -102,7 +142,7 @@ export default {
       if (!this.token || !this.userId) return;
 
       try {
-        const response = await fetch(`${process.env.VUE_APP_API_URL}/auth/verify-email`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify-email`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -117,7 +157,8 @@ export default {
 
         if (!response.ok) {
           this.state = 'verification-failed';
-          this.errorMessage = data.message || 'Email verification failed. Please try again.';
+          this.errorStatus = data.error?.status || response.status;
+          this.errorMessage = data.error?.message || 'Email verification failed. Please try again.';
           return;
         }
 
@@ -147,7 +188,7 @@ export default {
       this.isLoading = true;
 
       try {
-        const response = await fetch(`${process.env.VUE_APP_API_URL}/auth/set-password`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/set-password`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -162,7 +203,7 @@ export default {
         const data = await response.json();
 
         if (!response.ok) {
-          this.error = data.message || 'Failed to set password. Please try again.';
+          this.error = data.error?.message || 'Failed to set password. Please try again.';
           return;
         }
 
@@ -183,6 +224,51 @@ export default {
 
     clearError() {
       this.error = '';
+    },
+
+    formatPhoneNumber(value) {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+    },
+
+    handleResendPhoneInput(event) {
+      this.resendPhone = this.formatPhoneNumber(event.target.value);
+      this.resendError = '';
+    },
+
+    async resendVerification() {
+      this.resendError = '';
+      this.resendErrorStatus = null;
+      this.resendLoading = true;
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/phone-signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumber: this.resendPhone.replace(/\D/g, '') })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          this.resendErrorStatus = data.error?.status || response.status;
+          this.resendError = data.error?.message || 'Failed to resend. Please try again.';
+          return;
+        }
+        this.resendMaskedEmail = data.email || '';
+        this.resendSuccess = true;
+        this.resendCooldown = 60;
+        this.resendTimer = setInterval(() => {
+          this.resendCooldown--;
+          if (this.resendCooldown <= 0) {
+            clearInterval(this.resendTimer);
+            this.resendTimer = null;
+          }
+        }, 1000);
+      } catch (err) {
+        this.resendError = 'Unable to connect. Please check your internet and try again.';
+      } finally {
+        this.resendLoading = false;
+      }
     }
   }
 };
@@ -263,6 +349,95 @@ p {
 
 .error {
   color: #ef4444;
+}
+
+.error-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ef4444;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.resend-section {
+  margin-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
+  text-align: left;
+}
+
+.resend-label {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+.resend-input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(74, 222, 128, 0.3);
+  border-radius: 8px;
+  color: #e4e4e4;
+  font-size: 1rem;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.resend-input:focus {
+  outline: none;
+  border-color: #4ade80;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-resend {
+  width: 100%;
+  padding: 10px;
+  background: rgba(138, 163, 124, 0.2);
+  color: #8aa37c;
+  border: 1px solid rgba(138, 163, 124, 0.4);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-resend:hover:not(:disabled) {
+  background: rgba(138, 163, 124, 0.35);
+}
+
+.btn-resend:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.resend-confirmation {
+  margin-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
+}
+
+.resend-sent {
+  color: #4ade80;
+  font-weight: 500;
+  margin-bottom: 0;
+}
+
+.resend-error-status {
+  font-weight: 700;
+}
+
+.btn-secondary-link {
+  display: inline-block;
+  margin-top: 20px;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.btn-secondary-link:hover {
+  color: #e4e4e4;
 }
 
 .form-group {
