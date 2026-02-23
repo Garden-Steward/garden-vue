@@ -475,14 +475,15 @@ const openEventEditor = (day) => {
                 </tr>
               </thead>
               <tbody>
-                <Volunteer 
-                  v-for="volunteer in sortedVolunteers" 
-                  :key="volunteer.id" 
-                  v-bind="volunteer.attributes" 
-                  :id="volunteer.id" 
-                  :interests="garden.attributes.interests" 
-                  :garden="garden.id" 
+                <Volunteer
+                  v-for="volunteer in sortedVolunteers"
+                  :key="volunteer.id"
+                  v-bind="volunteer.attributes"
+                  :id="volunteer.id"
+                  :interests="garden.attributes.interests"
+                  :garden="garden.id"
                   :editor="editor"
+                  :managerIds="garden.attributes.managers?.data?.map(m => m.id) || []"
                 />
               </tbody>
             </table>

@@ -24,7 +24,15 @@ const props = defineProps({
   paused: Boolean,
   interests: Array,
   u_g_interests: Object,
-  editor: Boolean
+  editor: Boolean,
+  managerIds: {
+    type: Array,
+    default: () => []
+  },
+  role: {
+    type: Object,
+    default: null
+  }
 })
 defineOptions({ inheritAttrs: false })
 
@@ -42,6 +50,16 @@ if (props.u_g_interests.data) {
 }
 const prettyDay = format(new Date(props.createdAt), 'yyyy-MM-dd');
 const displayName = computed(() => (props.firstName || props.lastName) ? `${props.firstName} ${props.lastName}` : props.phoneNumber);
+const isManager = computed(() => props.managerIds.includes(props.id));
+const roleName = computed(() => {
+  if (!props.role) return null;
+  // Handle Strapi nested format: { data: { attributes: { name } } }
+  if (props.role.data?.attributes?.name) return props.role.data.attributes.name;
+  // Handle flat format: { name }
+  if (props.role.name) return props.role.name;
+  return null;
+});
+const isAuthenticated = computed(() => roleName.value === 'Authenticated');
 
 const interestTags = computed(() => {
   return props.interests
@@ -82,7 +100,7 @@ const requestRegistration = (id) => {
       class="tr-class"
       @click="toggleExpand"
     >
-      <td class="td-class text-[#f5f5f5]">{{ displayName }}</td>
+      <td class="td-class text-[#f5f5f5]">{{ displayName }} <span v-if="isManager" class="manager-badge">Manager</span><span v-if="isAuthenticated" class="auth-badge">Authenticated</span></td>
       <td class="td-class text-[#f5f5f5]">{{ prettyDay }}</td>
       <td class="td-class text-[#f5f5f5]">{{ interestTags }}</td>
 </tr>
@@ -119,5 +137,15 @@ const requestRegistration = (id) => {
   }
   .tr-class {
     @apply flex flex-col mb-4 sm:table-row
+  }
+  .manager-badge {
+    @apply text-xs font-semibold px-2 py-0.5 rounded ml-2;
+    background-color: #3d4d36;
+    color: #fde047;
+  }
+  .auth-badge {
+    @apply text-xs font-semibold px-2 py-0.5 rounded ml-2;
+    background-color: #9a3412;
+    color: #fff;
   }
 </style>
