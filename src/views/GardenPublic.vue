@@ -5,6 +5,7 @@ import { useGardensStore, useEventStore, useAuthStore, useProjectsStore } from '
 import { computed, ref, onMounted, watch, nextTick } from 'vue';
 import { getRandomDefaultImage, getImageOrDefault } from '@/helpers/image-utils';
 import VolunteerActivity from '@/components/VolunteerActivity.vue';
+import LeafletMap from '@/components/LeafletMap.vue';
 import SunIcon from '@/components/icons/Sun.svg?raw';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
@@ -409,6 +410,35 @@ const getProjectHeroImage = (project) => {
   
   return getImageOrDefault(imageUrl);
 };
+
+// Get garden coordinates for map
+const gardenCoordinates = computed(() => {
+  const attrs = garden.value?.attributes;
+  
+  // Check if we have lat/lon
+  const latitude = attrs?.latitude || attrs?.lat;
+  const longitude = attrs?.longitude || attrs?.lon;
+  
+  if (latitude && longitude) {
+    return {
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude)
+    };
+  }
+  
+  return null;
+});
+
+// Get location trackings array for map (single garden location)
+const mapLocationTrackings = computed(() => {
+  if (!gardenCoordinates.value) return [];
+  
+  return [{
+    latitude: gardenCoordinates.value.latitude,
+    longitude: gardenCoordinates.value.longitude,
+    label: garden.value?.attributes?.title || 'Garden Location'
+  }];
+});
 </script>
 
 <template>
@@ -441,6 +471,14 @@ const getProjectHeroImage = (project) => {
       <div v-if="garden.attributes" class="garden-header">
         <h1 class="garden-title">{{ garden.attributes.title }}</h1>
         <p v-if="garden.attributes.blurb" class="garden-blurb">{{ garden.attributes.blurb }}</p>
+        
+        <!-- Garden Map (if coordinates exist) -->
+        <div v-if="gardenCoordinates && mapLocationTrackings.length > 0" class="garden-map-container">
+          <LeafletMap 
+            :location-trackings="mapLocationTrackings"
+            :center-coordinates="gardenCoordinates"
+          />
+        </div>
       </div>
       <div v-else-if="garden.loading" class="garden-header">
         <div class="garden-title h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
@@ -835,6 +873,20 @@ const getProjectHeroImage = (project) => {
 
 .dark .garden-blurb {
   color: #d0d0d0;
+}
+
+/* Garden Map Container */
+.garden-map-container {
+  max-height: 300px;
+  margin-top: 30px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.dark .garden-map-container {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Actions */
