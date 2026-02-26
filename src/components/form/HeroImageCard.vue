@@ -117,11 +117,11 @@ const toggleSelector = () => {
     
     <!-- Show current image if it exists and selector is not shown -->
     <div v-if="hasCurrentImage && !showSelector" class="current-image-container">
-      <div class="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+      <div class="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 hero-image-wrapper">
         <img 
           :src="currentImageUrl" 
           :alt="label"
-          class="w-full h-auto max-h-96 object-cover"
+          class="w-full h-auto object-cover hero-image-display"
         />
       </div>
       <button
@@ -170,6 +170,29 @@ const toggleSelector = () => {
 
 .current-image-container {
   width: 100%;
+}
+
+.hero-image-wrapper {
+  width: 100%;
+}
+
+/* Portrait tablets (< 1024px width): Full width, no height constraint */
+@media (max-width: 1023px) {
+  .hero-image-display {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}
+
+/* Landscape tablets and larger (>= 1024px): Max height constraint */
+@media (min-width: 1024px) {
+  .hero-image-display {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 384px;
+  }
 }
 
 .current-image-container img {
