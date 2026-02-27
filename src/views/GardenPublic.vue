@@ -1486,6 +1486,34 @@ const getProjectHeroImage = (project) => {
   }
 }
 
+/* Garden Map Container */
+.garden-map-container {
+  width: 100%;
+  height: 300px;
+  margin: 24px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark .garden-map-container {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  .garden-map-container {
+    height: 250px;
+    margin: 16px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .garden-map-container {
+    height: 200px;
+    margin: 12px 0;
+  }
+}
+
 /* Donation Modal Styling */
 .donation-modal-backdrop {
   transition: all 0.3s ease;

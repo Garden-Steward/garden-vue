@@ -5,6 +5,7 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 // Import the SVG as a string
 import pinSvg from './icons/Pin.svg?raw';
