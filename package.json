@@ -1,6 +1,9 @@
 {
     "name": "garden-steward-vue",
     "version": "1.0.0",
+    "engines": {
+        "node": "20.19.0"
+    },
     "resolutions": {
         "node-forge": "^1.3.2",
         "jws": "^4.0.1",
