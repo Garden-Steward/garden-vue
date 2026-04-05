@@ -1,29 +1,99 @@
 <script setup>
-const audioUrl = 'https://storage.googleapis.com/steward_upload/uploads/980476cd_fcd3_427b_9df2_154f321fe807_81cfd49aa1/980476cd_fcd3_427b_9df2_154f321fe807_81cfd49aa1.mp3'
+const audioUrl = 'https://storage.googleapis.com/steward_upload/uploads/manifesto_audio_391eee28a7/manifesto_audio_391eee28a7.m4a'
 
-const manifestoText = `We are life seeking fulfillment.
+const manifestoText = `We are life-seeking fulfillment.
 
-We rose on a planet bustling in biodiversity, an ever-evolving harmonic creation of new life. The sheer quantity of unique animal, insect, plant, fungal life is mind-bending. Biodiversity is the outcome of life succeeding. Life supports life in countless ways, giving it the capacity to find openings for ever newer forms of life to exist.
+We arose on a planet bustling in biodiversity, an ever-evolving harmonic creation of new life.
 
-This is our purpose.
+The sheer quantity of unique animal, insect, plant, and fungal life is mind-bending.
 
-As life, as animals, as humans, as citizens, as community members, as individuals, as nature, to seek fulfillment, to feel fulfilled, is to support life to thrive, to be in service, to be diverse, to be untethered, unbound from the fences, concrete, trash we're covered in.
+Life supports life, upon which, ever new forms of life exist.
 
-We imprisoned ourselves in private interest. Humans suffer in equal measure with the earth. We have a stake in this, and there are things we can do regularly to remove all of it, all of us, from captivity.
+Evolution creates Biodiversity.
 
-There are so many actions to take. We can live a life of purpose. I want to discover people with that same itch, people ready to get involved, put their hands on something real, steward the land, to plant, enhance life, to bring back ecosystems, to rebuild around and live amongst the beautiful resurgence of flora and fauna in our watershed.
+Biodiversity is life succeeding.
 
-We share land. We share life.
+This is our purpose as life, as animals, as humans, as community, as nature.
 
-All we have to do is restore the land little bit by little bit. And I offer my service to this already bustling movement. The idea that we can do this, that life can thrive once again, like it did when we were the latest addition to diversity, this generation can be the first to really flip that switch, and we're tired of our broken and shallow system. And we have more capacity than ever before. Awareness is spreading.
+To seek fulfillment, to feel fulfilled, is to support life to thrive.
 
-We will connect with the ancient, hear what it has to teach. It's always been teaching. We just need to start learning how to listen. We need to learn to listen with our hearts.
+Service is our means to fulfillment in this life.
 
-We cannot continue to forget our place in nature. If there's anything to take pride in, it is we are nature. We are the product of biodiversity, nature succeeding, life succeeding.
+When we see and experience diversity we witness the success of life.
 
-We can succeed. I believe in humans. And we have the tools to do it now.
+When the various shapes of life commingle, we create beauty, and our momentum of creation creates.
 
-Just believe and act.`
+This is how all species, including us, came to be.
+
+Life is tethered in chains and needs to be set free.
+
+It's okay for us to acknowledge our current actions are the problem. It's the only way we can fix it.
+
+Earth suffers from the gluttony of Private Interest.
+
+Humans suffer in equal measure with the Earth.
+
+We have a stake in this.
+
+There are things we can do every day to remove all of it, all of us, from captivity.
+
+The actions to take can easily overwhelm. It's just small steps, consistently.
+
+In action, in service, we live a life of purpose.
+
+We must gather and organize around our land.
+
+Harness this energy, this momentum towards renewal.
+
+Our communities are ready to get involved, put their hands on something real.
+
+Steward the land. Bring back ecosystems. Create bounty of food and medicine.
+
+Rebuild. Wonder.
+
+We imagine, and we make it.
+
+How about a bountiful resurgence of the native flora and fauna?
+
+It's more than possible.
+
+Let's look to our watersheds.
+
+We share water, we share land, we share life.
+
+We must protect the water, restore the land, and prioritize biodiversity.
+
+I offer my service to this already bustling movement.
+
+I believe we can do this.
+
+That the whole of life can thrive like when humans were the newest bio on the block.
+
+With enough people it tips and turns.
+
+This is the mix of generations that will finally flip that switch.
+
+We're tired of this shallow, broken, inherited system.
+
+The readiness to change is at quorum.
+
+We have more knowledge and capabilities than ever before.
+
+There is growing awareness of our deep roots of being.
+
+We will reconnect the civilized with the ancient and allow it to enter and heal and teach once again.
+
+For this, we need to deemphasize our minds and learn to lead and listen from our hearts.
+
+There is no waiting.
+
+We are here at the rediscovery and renewal. People are catching up.
+
+We are in the untethering of the nature-within-us and-around-us.
+
+We are nature.
+
+We must act as nature.`
 </script>
 
 <template>
@@ -37,7 +107,7 @@ Just believe and act.`
         <source :src="audioUrl" type="audio/mp4">
         Your browser does not support the audio element.
       </audio>
-      <p class="text-[#d0d0d0] text-sm mt-3 dark:text-[#d0d0d0]">Recorded February 2026</p>
+      <p class="text-[#d0d0d0] text-sm mt-3 dark:text-[#d0d0d0]">Recorded April 2026</p>
     </div>
     
     <!-- Manifesto Text -->

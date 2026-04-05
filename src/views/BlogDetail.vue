@@ -32,6 +32,20 @@ let authorImage = function(blog) {
   }
 }
 
+let coAuthorImage = function(coAuthor) {
+  if (!coAuthor) return '';
+  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && coAuthor?.profilePhoto?.url && !coAuthor.profilePhoto.url.includes('googleapis.com')) {
+    return `${baseUrl}${coAuthor.profilePhoto.formats?.medium?.url}`;
+  } else if (coAuthor?.profilePhoto?.formats?.medium?.url) {
+    return coAuthor.profilePhoto.formats.medium.url;
+  } else if (coAuthor?.profilePhoto?.url) {
+    return coAuthor.profilePhoto.url;
+  } else {
+    // Default to turtle image for Rowan
+    return 'https://storage.googleapis.com/steward_upload/uploads/rowan_turtle_f1c21b843f/rowan_turtle_f1c21b843f.jpg';
+  }
+}
+
 // Watch for changes in the route parameters
 watch(() => route.params.slug, (newSlug) => {
   blogStore.findSlug(newSlug);
@@ -115,12 +129,43 @@ onMounted(async () => {
           {{ formattedDate }}
         </div>
       </div>
-      <div class="about-the-author mt-6 mb-3 ml-auto author-sink"> 
+      <!-- Single Author -->
+      <div v-if="!blog?.co_author" class="about-the-author mt-6 mb-3 ml-auto author-sink"> 
         <img :src="authorImage(blog)" alt="Author Image" class="author-image w-20 h-20 rounded-full mr-4">
         <div>
             <h3 class="author-title">Garden Steward Author</h3>
             <h4 class="author-name">{{ blog?.author?.firstName }} {{ blog?.author?.lastName }}</h4>
             <p class="author-bio">{{ blog?.author?.bio }}</p>
+        </div>
+      </div>
+
+      <!-- Dual Authors (Cameron + Rowan) -->
+      <div v-else class="about-the-authors mt-6 mb-3 ml-auto author-sink dual-authors">
+        <div class="collaboration-header">
+          <h3 class="collaboration-title">✨ A Joint Collaboration</h3>
+          <p class="collaboration-description">Written by Cameron with Rowan, a solar-powered AI assistant trained to help advance Garden Steward's mission.</p>
+        </div>
+        
+        <div class="authors-grid">
+          <!-- Cameron -->
+          <div class="author-block">
+            <img :src="authorImage(blog)" alt="Cameron Preston" class="author-image w-24 h-24 rounded-full">
+            <div class="author-info">
+              <h4 class="author-name">{{ blog?.author?.firstName }} {{ blog?.author?.lastName }}</h4>
+              <h3 class="author-title">Garden Steward Creator</h3>
+              <p class="author-bio">{{ blog?.author?.bio }}</p>
+            </div>
+          </div>
+          
+          <!-- Rowan -->
+          <div class="author-block">
+            <img :src="coAuthorImage(blog.co_author)" alt="Rowan" class="author-image w-24 h-24 rounded-full">
+            <div class="author-info">
+              <h4 class="author-name">{{ blog?.co_author?.firstName || 'Rowan' }} {{ blog?.co_author?.lastName || 'AI Assistant' }}</h4>
+              <h3 class="author-title">AI Research & Writing</h3>
+              <p class="author-bio">{{ blog?.co_author?.bio || 'Solar-powered AI trained to assist with Garden Steward\'s ecological research and documentation.' }}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -260,6 +305,110 @@ iframe {
 }
 
 .dark .author-bio {
+  color: #d0d0d0;
+}
+
+/* Dual Authors Styles */
+.dual-authors {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+.collaboration-header {
+  text-align: center;
+  padding: 20px;
+  background-color: #FFDAB9;
+  border-radius: 8px 8px 0 0;
+}
+
+.dark .collaboration-header {
+  background-color: #2d3e26;
+}
+
+.collaboration-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+
+.dark .collaboration-title {
+  color: #f5f5f5;
+}
+
+.collaboration-description {
+  font-size: 0.95rem;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+.dark .collaboration-description {
+  color: #d0d0d0;
+}
+
+.authors-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  background-color: #FFDAB9;
+  border-radius: 0 0 8px 8px;
+}
+
+.dark .authors-grid {
+  background-color: #2d3e26;
+}
+
+@media (max-width: 640px) {
+  .authors-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+.author-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.author-block .author-image {
+  margin-bottom: 12px;
+  border: 3px solid #6b7d5c;
+}
+
+.author-block .author-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 4px;
+}
+
+.dark .author-block .author-name {
+  color: #f5f5f5;
+}
+
+.author-block .author-title {
+  font-size: 0.85rem;
+  color: #6b7d5c;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.dark .author-block .author-title {
+  color: #a8d5a8;
+}
+
+.author-block .author-bio {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #4a5568;
+}
+
+.dark .author-block .author-bio {
   color: #d0d0d0;
 }
 </style>
