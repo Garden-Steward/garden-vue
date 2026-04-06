@@ -131,27 +131,27 @@ onMounted(async () => {
         </div>
       </div>
       <!-- Single Author (only show if author exists and no co-author) -->
-      <div v-if="blog?.author && !blog?.co_author" class="about-the-author mt-6 mb-3 ml-auto author-sink"> 
+      <div v-if="blog?.author?.data && !blog?.co_author?.data" class="about-the-author mt-6 mb-3 ml-auto author-sink"> 
         <img :src="authorImage(blog)" alt="Author Image" class="author-image w-20 h-20 rounded-full mr-4">
         <div>
             <h3 class="author-title">Garden Steward Author</h3>
-            <h4 class="author-name">{{ blog?.author?.firstName }} {{ blog?.author?.lastName }}</h4>
-            <p class="author-bio">{{ blog?.author?.bio }}</p>
+            <h4 class="author-name">{{ blog?.author?.data?.firstName }} {{ blog?.author?.data?.lastName }}</h4>
+            <p class="author-bio">{{ blog?.author?.data?.bio }}</p>
         </div>
       </div>
 
       <!-- Co-Author Only (Rowan) - Centered -->
-      <div v-else-if="blog?.co_author && !blog?.author" class="about-the-author mt-6 mb-3 author-sink single-coauthor-centered">
-        <img :src="coAuthorImage(blog.co_author)" alt="Rowan" class="author-image-centered w-20 h-20 rounded-full">
+      <div v-else-if="blog?.co_author?.data && !blog?.author?.data" class="about-the-author mt-6 mb-3 author-sink single-coauthor-centered">
+        <img :src="coAuthorImage(blog.co_author.data)" alt="Rowan" class="author-image-centered w-20 h-20 rounded-full">
         <div class="centered-text">
-            <h4 class="author-name">{{ blog?.co_author?.firstName || 'Rowan' }}</h4>
+            <h4 class="author-name">{{ blog?.co_author?.data?.firstName || 'Rowan' }}</h4>
             <h3 class="author-title">Research & Writing</h3>
-            <p class="author-bio">{{ blog?.co_author?.bio || 'AI-assisted research and documentation.' }}</p>
+            <p class="author-bio">{{ blog?.co_author?.data?.bio || 'AI-assisted research and documentation.' }}</p>
         </div>
       </div>
 
       <!-- Dual Authors (Cameron + Rowan) -->
-      <div v-else-if="blog?.author && blog?.co_author" class="about-the-authors mt-6 mb-3 ml-auto author-sink dual-authors">
+      <div v-else-if="blog?.author?.data && blog?.co_author?.data" class="about-the-authors mt-6 mb-3 ml-auto author-sink dual-authors">
         <div class="collaboration-header">
           <h3 class="collaboration-title">✨ A Joint Collaboration</h3>
           <p class="collaboration-description">Written by Cameron with Rowan, a solar-powered AI assistant trained to help advance Garden Steward's mission.</p>
@@ -162,19 +162,19 @@ onMounted(async () => {
           <div class="author-block">
             <img :src="authorImage(blog)" alt="Cameron Preston" class="author-image w-24 h-24 rounded-full">
             <div class="author-info">
-              <h4 class="author-name">{{ blog?.author?.firstName }} {{ blog?.author?.lastName }}</h4>
+              <h4 class="author-name">{{ blog?.author?.data?.firstName }} {{ blog?.author?.data?.lastName }}</h4>
               <h3 class="author-title">Garden Steward Creator</h3>
-              <p class="author-bio">{{ blog?.author?.bio }}</p>
+              <p class="author-bio">{{ blog?.author?.data?.bio }}</p>
             </div>
           </div>
           
           <!-- Rowan -->
           <div class="author-block">
-            <img :src="coAuthorImage(blog.co_author)" alt="Rowan" class="author-image w-24 h-24 rounded-full">
+            <img :src="coAuthorImage(blog.co_author.data)" alt="Rowan" class="author-image w-24 h-24 rounded-full">
             <div class="author-info">
-              <h4 class="author-name">{{ blog?.co_author?.firstName || 'Rowan' }}</h4>
+              <h4 class="author-name">{{ blog?.co_author?.data?.firstName || 'Rowan' }}</h4>
               <h3 class="author-title">Research & Writing</h3>
-              <p class="author-bio">{{ blog?.co_author?.bio || 'AI-assisted research and documentation.' }}</p>
+              <p class="author-bio">{{ blog?.co_author?.data?.bio || 'AI-assisted research and documentation.' }}</p>
             </div>
           </div>
         </div>
