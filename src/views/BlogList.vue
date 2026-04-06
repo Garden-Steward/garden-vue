@@ -43,7 +43,7 @@ const formatBlogDate = (blog) => {
     <div class="flex-1">
       <div class="px-4 py-2 md:px-8 md:py-4">
         <h1 class="text-2xl font-bold mb-4 font-roboto sm:text-3xl text-gray-900 dark:text-[#f5f5f5]">Welcome to the Garden Steward Blog</h1>
-        <p class="text-md mb-4 font-roboto text-gray-700 dark:text-[#d0d0d0]">Hi there, I'm Cameron and I'm the founder of Garden Steward, and co-founder of the Oakland Urban Farming Project. I'm on a mission to create abundance through urban gardens. I'm developing an app to help manage the garden projects so anyone, anywhere will easily be able to contribute and manage gardens in their community.</p>
+        <p class="text-md mb-4 font-roboto text-gray-700 dark:text-[#d0d0d0]">Garden Steward is an open-source platform designed to help communities coordinate local gardening and land stewardship initiatives. Whether you're building food forests, managing community gardens, or organizing grassroots land restoration, these resources and stories explore what it takes to grow abundance together.</p>
       </div>
       <div class="flex justify-center items-center">
         <!-- Loading spinner -->

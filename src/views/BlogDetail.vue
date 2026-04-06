@@ -23,12 +23,13 @@ let heroImage = function(blog) {
 }
 
 let authorImage = function(blog) {
-  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.author?.profilePhoto?.url.includes('googleapis.com')) {
+  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && blog.author?.profilePhoto?.url && !blog.author.profilePhoto.url.includes('googleapis.com')) {
     return `${baseUrl}${blog.author?.profilePhoto?.formats?.medium?.url}`;
-  } else if (blog.author?.profilePhoto) {
+  } else if (blog.author?.profilePhoto?.formats?.medium?.url) {
     return blog.author?.profilePhoto?.formats?.medium?.url;
   } else {
-    return 'https://storage.googleapis.com/steward_upload/uploads/medium_bobble_head_fe053501c3/medium_bobble_head_fe053501c3.png';
+    // No personal defaults for open source - use Rowan's turtle image if author is missing
+    return 'https://storage.googleapis.com/steward_upload/uploads/rowan_turtle_f1c21b843f/rowan_turtle_f1c21b843f.jpg';
   }
 }
 
@@ -129,8 +130,8 @@ onMounted(async () => {
           {{ formattedDate }}
         </div>
       </div>
-      <!-- Single Author -->
-      <div v-if="!blog?.co_author" class="about-the-author mt-6 mb-3 ml-auto author-sink"> 
+      <!-- Single Author (only show if author exists and no co-author) -->
+      <div v-if="blog?.author && !blog?.co_author" class="about-the-author mt-6 mb-3 ml-auto author-sink"> 
         <img :src="authorImage(blog)" alt="Author Image" class="author-image w-20 h-20 rounded-full mr-4">
         <div>
             <h3 class="author-title">Garden Steward Author</h3>
