@@ -140,8 +140,18 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- Co-Author Only (Rowan) - Centered -->
+      <div v-else-if="blog?.co_author && !blog?.author" class="about-the-author mt-6 mb-3 author-sink single-coauthor-centered">
+        <img :src="coAuthorImage(blog.co_author)" alt="Rowan" class="author-image-centered w-20 h-20 rounded-full">
+        <div class="centered-text">
+            <h4 class="author-name">{{ blog?.co_author?.firstName || 'Rowan' }}</h4>
+            <h3 class="author-title">Research & Writing</h3>
+            <p class="author-bio">{{ blog?.co_author?.bio || 'AI-assisted research and documentation.' }}</p>
+        </div>
+      </div>
+
       <!-- Dual Authors (Cameron + Rowan) -->
-      <div v-else class="about-the-authors mt-6 mb-3 ml-auto author-sink dual-authors">
+      <div v-else-if="blog?.author && blog?.co_author" class="about-the-authors mt-6 mb-3 ml-auto author-sink dual-authors">
         <div class="collaboration-header">
           <h3 class="collaboration-title">✨ A Joint Collaboration</h3>
           <p class="collaboration-description">Written by Cameron with Rowan, a solar-powered AI assistant trained to help advance Garden Steward's mission.</p>
@@ -162,9 +172,9 @@ onMounted(async () => {
           <div class="author-block">
             <img :src="coAuthorImage(blog.co_author)" alt="Rowan" class="author-image w-24 h-24 rounded-full">
             <div class="author-info">
-              <h4 class="author-name">{{ blog?.co_author?.firstName || 'Rowan' }} {{ blog?.co_author?.lastName || 'AI Assistant' }}</h4>
-              <h3 class="author-title">AI Research & Writing</h3>
-              <p class="author-bio">{{ blog?.co_author?.bio || 'Solar-powered AI trained to assist with Garden Steward\'s ecological research and documentation.' }}</p>
+              <h4 class="author-name">{{ blog?.co_author?.firstName || 'Rowan' }}</h4>
+              <h3 class="author-title">Research & Writing</h3>
+              <p class="author-bio">{{ blog?.co_author?.bio || 'AI-assisted research and documentation.' }}</p>
             </div>
           </div>
         </div>
@@ -276,6 +286,26 @@ iframe {
 .author-image {
   float: left;
   margin-right: 15px;
+}
+
+/* Single Co-Author Centered Layout */
+.single-coauthor-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.author-image-centered {
+  display: block;
+  margin: 0 auto 15px;
+  border: 3px solid #6b7d5c;
+}
+
+.centered-text {
+  width: 100%;
 }
 
 .author-title {
