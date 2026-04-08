@@ -56,5 +56,21 @@ export const useInterestsStore = defineStore({
         this.all[idx] = { ...this.all[idx], gardenIds: ids };
       }
     },
+
+    /**
+     * Remove gardenId from interest's gardens relation (Strapi REST: full id list on update).
+     */
+    async removeGardenFromInterest(interestId, gardenId) {
+      const res = await fetchWrapper.get(`${baseUrl}/${interestId}?populate=gardens`);
+      const row = res.data;
+      const ids = gardenIdsFromStrapiEntry(row).filter((id) => id !== gardenId);
+      await fetchWrapper.put(`${baseUrl}/${interestId}?populate=gardens`, {
+        data: { gardens: ids },
+      });
+      const idx = this.all.findIndex((i) => i.id === interestId);
+      if (idx !== -1) {
+        this.all[idx] = { ...this.all[idx], gardenIds: ids };
+      }
+    },
   },
 });

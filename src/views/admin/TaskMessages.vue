@@ -27,7 +27,7 @@ const groupedMessages = computed(() => {
       groups.set(taskId, {
         taskId,
         taskTitle: message.garden_task?.title || 'Messages without task',
-        user: message.garden_task?.volunteers[0]?.username || 'Anonymous',
+        user: message.garden_task?.volunteers[0]?.username || 'Anonymous volunteer',
         messages: []
       });
     }
@@ -102,9 +102,9 @@ const getStatusColor = (status) => {
     </div>
 
     <div v-else class="space-y-6">
-      <div v-for="group in groupedMessages" :key="group.taskId" class="bg-white rounded-lg shadow p-4">
+      <div v-for="group in groupedMessages" :key="group.taskId" class="rounded-lg shadow p-4 border border-[#c4d4b8] bg-[#eef4e8]">
         <div 
-          class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded-lg"
+          class="flex items-center gap-2 cursor-pointer hover:bg-[#e2eadc] p-1 rounded-lg transition-colors"
           @click="toggleTask(group.taskId)"
         >
           <div class="flex-1">
@@ -134,34 +134,37 @@ const getStatusColor = (status) => {
         </div>
         
         <Vue3SlideUpDown v-model="openTasks[group.taskId]">
-          <div class="space-y-4">
-            <div v-for="message in group.messages" :key="message.id" 
-                 class="border-b last:border-b-0 pb-4 last:pb-0 hover:bg-gray-50">
-              <div class="flex justify-between items-start">
-                <div class="flex-1">
-                  <div class="flex items-center gap-2 mb-2">
-                    <span class="font-medium">
-                      {{ message.user?.username || 'Anonymous' }}
+          <div class="space-y-3 mt-3">
+            <div
+              v-for="message in group.messages"
+              :key="message.id"
+              class="rounded-lg border border-[#a8c49a]/80 bg-[#e8f2e0] p-3 shadow-sm hover:bg-[#dff0d4] transition-colors border-l-4 border-l-[#7a9b68]"
+            >
+              <div class="flex justify-between items-start gap-3">
+                <div class="flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <span class="font-semibold text-[#1a2617]">
+                      {{ message.user?.username || 'Anonymous volunteer' }}
                     </span>
-                    <span :class="[getTypeColor(message.type), 'px-2 py-1 rounded-full text-xs']">
+                    <span :class="[getTypeColor(message.type), 'px-2 py-1 rounded-full text-xs font-medium border border-black/10']">
                       {{ message.type }}
                     </span>
                   </div>
-                  <p class="text-gray-600">{{ message.body }}</p>
-                  <p v-if="message.previous" class="text-gray-400 text-sm mt-2">
-                    Previous: {{ message.previous }}
+                  <p class="text-[#2d3e26]">{{ message.body }}</p>
+                  <p v-if="message.previous" class="text-[#3d4d36] text-sm mt-2 italic">
+                    Response to use message: {{ message.previous }}
                   </p>
                 </div>
-                <span class="text-sm text-gray-400">{{ formatDate(message.createdAt) }}</span>
+                <span class="text-sm text-[#3d4d36] shrink-0">{{ formatDate(message.createdAt) }}</span>
               </div>
 
               <!-- Related Event (if exists) -->
-              <div v-if="message.event" class="mt-2 text-sm text-gray-500">
+              <div v-if="message.event" class="mt-2 text-sm text-[#2d3e26]">
                 Related Event: {{ message.event.title }}
               </div>
 
               <!-- Meta Data (if exists) -->
-              <div v-if="message.meta_data" class="mt-2 text-xs text-gray-400">
+              <div v-if="message.meta_data" class="mt-2 text-xs text-[#3d4d36]">
                 <pre class="whitespace-pre-wrap">{{ JSON.stringify(message.meta_data, null, 2) }}</pre>
               </div>
             </div>

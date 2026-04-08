@@ -27,6 +27,8 @@ const alertStore = useAlertStore();
 const { loading } = storeToRefs(interestsStore);
 
 const selectedToAdd = ref('');
+const editingInterests = ref(false);
+const removingInterestId = ref(null);
 
 watch(
   () => [props.active, props.editor, props.gardenId],
@@ -36,6 +38,13 @@ watch(
     }
   },
   { immediate: true }
+);
+
+watch(
+  () => props.active,
+  (active) => {
+    if (!active) editingInterests.value = false;
+  }
 );
 
 const addableInterests = computed(() =>
@@ -62,6 +71,21 @@ const onSelectInterest = async () => {
   } catch (e) {
     console.error(e);
     alertStore.error(typeof e === 'string' ? e : e?.message || 'Failed to add interest.');
+  }
+};
+
+const removeInterest = async (interestId) => {
+  if (removingInterestId.value != null) return;
+  removingInterestId.value = interestId;
+  try {
+    await interestsStore.removeGardenFromInterest(interestId, props.gardenId);
+    await gardensStore.getSlug(route.params.slug);
+    alertStore.success('Interest removed from this garden.');
+  } catch (e) {
+    console.error(e);
+    alertStore.error(typeof e === 'string' ? e : e?.message || 'Failed to remove interest.');
+  } finally {
+    removingInterestId.value = null;
   }
 };
 </script>
@@ -94,14 +118,38 @@ const onSelectInterest = async () => {
         </div>
       </div>
       <div class="flex-1 min-w-0">
-        <p class="text-xs uppercase tracking-wide text-[#9a9a9a] mb-2">Current interests</p>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
+          <p class="text-xs uppercase tracking-wide text-[#9a9a9a]">Current interests</p>
+          <button
+            v-if="editor && displayInterests.length"
+            type="button"
+            class="text-sm text-blue-400 hover:text-blue-300 underline"
+            @click="editingInterests = !editingInterests"
+          >
+            {{ editingInterests ? 'Done' : 'Edit' }}
+          </button>
+        </div>
         <div v-if="displayInterests.length" class="flex flex-wrap gap-2">
           <span
             v-for="interest in displayInterests"
             :key="interest.id"
-            class="inline-flex items-center rounded-full bg-[#3d4d36]/60 text-[#f5f5f5] px-3 py-1 text-sm"
+            class="inline-flex items-center rounded-full bg-[#3d4d36]/60 text-[#f5f5f5] py-1 text-sm"
+            :class="[
+              editor && editingInterests ? 'gap-1 pl-3 pr-1' : 'px-3',
+              { 'opacity-60': removingInterestId === interest.id }
+            ]"
           >
-            {{ interest.tag }}
+            <span>{{ interest.tag }}</span>
+            <button
+              v-if="editor && editingInterests"
+              type="button"
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#f5f5f5] hover:bg-[rgba(0,0,0,0.25)] focus:outline-none focus:ring-2 focus:ring-[#8aa37c]/50 disabled:opacity-40"
+              :disabled="removingInterestId != null"
+              :aria-label="`Remove ${interest.tag} from this garden`"
+              @click.stop="removeInterest(interest.id)"
+            >
+              <span class="text-base font-light leading-none" aria-hidden="true">×</span>
+            </button>
           </span>
         </div>
         <p v-else-if="!displayInterests.length" class="text-[#a0a0a0] text-sm">

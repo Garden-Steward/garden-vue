@@ -174,7 +174,7 @@ const groupedMessages = computed(() => {
       groups.set(taskId, {
         taskId,
         taskTitle: message.garden_task?.title || 'Messages without task',
-        user: message.garden_task?.volunteers?.[0]?.username || 'Anonymous',
+        user: message.garden_task?.volunteers?.[0]?.username || 'Anonymous volunteer',
         messages: []
       });
     }
@@ -218,18 +218,18 @@ const getTypeColor = (type) => {
   return colors[type] || 'bg-gray-100 text-gray-800';
 };
 
-// Get message border color helper
+// Left accent on light message cards — muted greens (readable on pea-green tiles)
 const getMessageBorderColor = (type) => {
   const colors = {
-    question: 'border-blue-500',
-    followup: 'border-purple-500',
-    reply: 'border-green-500',
-    notification: 'border-yellow-500',
-    complete: 'border-teal-500',
-    registration: 'border-indigo-500',
-    error: 'border-red-500'
+    question: 'border-l-[#6d8f78]',
+    followup: 'border-l-[#7a8f6d]',
+    reply: 'border-l-[#5d8a6a]',
+    notification: 'border-l-[#8f9a6d]',
+    complete: 'border-l-[#5d8f82]',
+    registration: 'border-l-[#6d7d8f]',
+    error: 'border-l-[#9a6d6d]'
   };
-  return colors[type] || 'border-gray-300';
+  return colors[type] || 'border-l-[#7a9b68]';
 };
 
 // Get status color helper
@@ -405,44 +405,44 @@ const openEventEditor = (day) => {
           </div>
 
           <div v-else class="space-y-4">
-            <div v-for="group in groupedMessages" :key="group.taskId" class="bg-[rgba(26,26,26,0.6)] rounded-lg p-4 border border-[#3d4d36]/50">
+            <div v-for="group in groupedMessages" :key="group.taskId" class="rounded-lg p-4 border border-[#8aa37c]/50 bg-[#d2e4c8] shadow-sm">
               <div class="flex items-center gap-2 mb-3">
-                <h3 class="text-lg font-semibold text-[#f5f5f5]">{{ group.taskTitle }}</h3>
+                <h3 class="text-lg font-semibold text-[#1a2617]">{{ group.taskTitle }}</h3>
                 <span v-if="group.taskId !== 'no-task'" 
-                      :class="[getStatusColor(group.messages[0]?.garden_task?.status), 'px-2 py-1 rounded-full text-xs']">
+                      :class="[getStatusColor(group.messages[0]?.garden_task?.status), 'px-2 py-1 rounded-full text-xs border border-black/10']">
                   {{ group.messages[0]?.garden_task?.status || 'UNKNOWN' }}
                 </span>
-                <span class="text-sm text-[#d0d0d0]">
+                <span class="text-sm text-[#3d4d36]">
                   ({{ group.messages.length }} message{{ group.messages.length === 1 ? '' : 's' }})
                 </span>
               </div>
-              <div class="text-sm text-[#d0d0d0] mb-3">
+              <div class="text-sm text-[#3d4d36] mb-3">
                 <div>To: {{ group.user }}</div>
                 <div>First message: {{ formatDate(group.messages[group.messages.length - 1]?.createdAt) }}</div>
               </div>
               
               <div class="space-y-3 mt-4">
                 <div v-for="message in group.messages" :key="message.id" 
-                     class="bg-[rgba(26,26,26,0.8)] rounded p-3 border-l-4" 
+                     class="rounded-lg p-3 border border-[#a8c49a]/80 bg-[#e8f2e0] shadow-sm border-l-4 hover:bg-[#dff0d4] transition-colors" 
                      :class="getMessageBorderColor(message.type)">
-                  <div class="flex justify-between items-start mb-2">
-                    <div class="flex items-center gap-2">
-                      <span class="font-medium text-sm text-[#f5f5f5]">
-                        {{ message.user?.username || 'Anonymous' }}
+                  <div class="flex justify-between items-start mb-2 gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="font-semibold text-sm text-[#1a2617]">
+                        {{ message.user?.username || 'Anonymous volunteer' }}
                       </span>
-                      <span :class="[getTypeColor(message.type), 'px-2 py-1 rounded-full text-xs']">
+                      <span :class="[getTypeColor(message.type), 'px-2 py-1 rounded-full text-xs font-medium border border-black/10']">
                         {{ message.type }}
                       </span>
                     </div>
-                    <span class="text-xs text-[#d0d0d0]">{{ formatDate(message.createdAt) }}</span>
+                    <span class="text-xs text-[#3d4d36] shrink-0">{{ formatDate(message.createdAt) }}</span>
                   </div>
-                  <p class="text-[#d0d0d0] text-sm">{{ message.body }}</p>
-                  <p v-if="message.previous" class="text-[#999] text-xs mt-2 italic">
-                    Previous: {{ message.previous }}
+                  <p class="text-[#2d3e26] text-sm">{{ message.body }}</p>
+                  <p v-if="message.previous" class="text-[#3d4d36] text-xs mt-2 italic">
+                    Response to use message: {{ message.previous }}
                   </p>
                   
                   <!-- Related Event (if exists) -->
-                  <div v-if="message.event" class="mt-2 text-xs text-[#d0d0d0]">
+                  <div v-if="message.event" class="mt-2 text-xs text-[#2d3e26]">
                     Related Event: {{ message.event.title }}
                   </div>
                 </div>
