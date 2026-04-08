@@ -27,6 +27,10 @@ const props = defineProps({
   noGardenMessage: {
     type: String,
     default: 'Garden must be set before selecting media'
+  },
+  hideLabel: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -111,7 +115,11 @@ const toggleSelector = () => {
 
 <template>
   <div class="hero-image-card mb-4">
-    <label :for="`heroImage-${gardenId || 'default'}`" class="block text-sm font-medium mb-1">
+    <label
+      v-if="!hideLabel"
+      :for="`heroImage-${gardenId || 'default'}`"
+      class="block text-sm font-medium mb-1"
+    >
       {{ label }}
     </label>
     

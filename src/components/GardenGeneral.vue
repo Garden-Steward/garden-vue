@@ -296,11 +296,12 @@ const saveDescription = async () => {
 
       <!-- Latest Events Section -->
       <div>
-        <h3 class="text-lg font-semibold mb-2 text-[#f5f5f5]">Upcoming Events</h3>
-        <div v-if="latestEvents.length === 0" class="text-[#d0d0d0] text-sm">
+        <h3 class="text-lg font-semibold leading-tight text-[#f5f5f5] m-0">Upcoming Events</h3>
+        <div class="mt-1.5 h-px w-full bg-[rgba(138,163,124,0.4)]" aria-hidden="true" />
+        <div v-if="latestEvents.length === 0" class="text-[#d0d0d0] text-sm mt-6">
           No upcoming events scheduled.
         </div>
-        <div v-else class="space-y-2">
+        <div v-else class="space-y-2 mt-6">
           <div 
             v-for="event in latestEvents" 
             :key="event.id || event.startDatetime"
@@ -319,20 +320,22 @@ const saveDescription = async () => {
 
       <!-- Blurb Section -->
       <div>
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-lg font-semibold text-[#f5f5f5]">Garden Blurb</h3>
+        <div class="flex items-start justify-between gap-3">
+          <h3 class="text-lg font-semibold leading-tight text-[#f5f5f5] m-0">Garden Blurb</h3>
           <button 
             v-if="editor && !editingBlurb" 
+            type="button"
             @click="startEditingBlurb"
-            class="text-sm text-blue-400 hover:text-blue-300 underline"
+            class="shrink-0 text-sm text-blue-400 hover:text-blue-300 underline"
           >
             Edit
           </button>
         </div>
-        <div v-if="!editingBlurb">
+        <div class="mt-1.5 h-px w-full bg-[rgba(138,163,124,0.4)]" aria-hidden="true" />
+        <div v-if="!editingBlurb" class="mt-6">
           <p class="text-[#d0d0d0]">{{ garden.attributes.blurb || 'No blurb available.' }}</p>
         </div>
-        <div v-else class="space-y-2">
+        <div v-else class="space-y-2 mt-6">
           <textarea
             v-model="blurbValue"
             rows="3"
@@ -360,23 +363,25 @@ const saveDescription = async () => {
 
       <!-- Description Section (About This Garden) -->
       <div>
-        <div class="flex items-center justify-between mb-2">
-          <div>
-            <h3 class="text-lg font-semibold text-[#f5f5f5]">Description</h3>
-            <p class="text-sm text-[#d0d0d0] italic">This text appears in the "About This Garden" section on the public page</p>
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex flex-col gap-0.5">
+            <h3 class="text-lg font-semibold leading-tight text-[#f5f5f5] m-0">Description</h3>
+            <p class="text-sm text-[#a8b89e] italic leading-snug m-0">This text appears in the "About This Garden" section on the public page</p>
           </div>
           <button 
             v-if="editor && !editingDescription" 
+            type="button"
             @click="startEditingDescription"
-            class="text-sm text-blue-400 hover:text-blue-300 underline"
+            class="shrink-0 text-sm text-blue-400 hover:text-blue-300 underline"
           >
             Edit
           </button>
         </div>
-        <div v-if="!editingDescription">
+        <div class="mt-1.5 h-px w-full bg-[rgba(138,163,124,0.4)]" aria-hidden="true" />
+        <div v-if="!editingDescription" class="mt-6">
           <p class="text-[#d0d0d0] whitespace-pre-wrap">{{ garden.attributes.description || 'No description available.' }}</p>
         </div>
-        <div v-else class="space-y-2">
+        <div v-else class="space-y-2 mt-6">
           <textarea
             v-model="descriptionValue"
             rows="6"
@@ -404,23 +409,25 @@ const saveDescription = async () => {
 
       <!-- Welcome Text Section (for SMS list signup) -->
       <div>
-        <div class="flex items-center justify-between mb-2">
-          <div>
-            <h3 class="text-lg font-semibold text-[#f5f5f5]">Welcome Text</h3>
-            <p class="text-sm text-[#d0d0d0] italic">This text is shown to people when they join the SMS list</p>
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex flex-col gap-0.5">
+            <h3 class="text-lg font-semibold leading-tight text-[#f5f5f5] m-0">Welcome Text</h3>
+            <p class="text-sm text-[#a8b89e] italic leading-snug m-0">This text is shown to people when they join the SMS list</p>
           </div>
           <button 
             v-if="editor && !editingWelcomeText" 
+            type="button"
             @click="startEditingWelcomeText"
-            class="text-sm text-blue-400 hover:text-blue-300 underline"
+            class="shrink-0 text-sm text-blue-400 hover:text-blue-300 underline"
           >
             Edit
           </button>
         </div>
-        <div v-if="!editingWelcomeText">
+        <div class="mt-1.5 h-px w-full bg-[rgba(138,163,124,0.4)]" aria-hidden="true" />
+        <div v-if="!editingWelcomeText" class="mt-6">
           <p class="text-[#d0d0d0]">{{ garden.attributes.welcome_text || 'No welcome text available.' }}</p>
         </div>
-        <div v-else class="space-y-2">
+        <div v-else class="space-y-2 mt-6">
           <textarea
             v-model="welcomeTextValue"
             rows="4"
@@ -448,9 +455,18 @@ const saveDescription = async () => {
       
       <!-- Hero Image Section (Editor Only) -->
       <div v-if="editor" class="mt-6">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex flex-col gap-0.5">
+            <h3 class="text-lg font-semibold leading-tight text-[#f5f5f5] m-0">Hero Image</h3>
+            <p class="text-sm text-[#a8b89e] italic leading-snug m-0">Displayed at the top of your public garden page</p>
+          </div>
+        </div>
+        <div class="mt-1.5 h-px w-full bg-[rgba(138,163,124,0.4)]" aria-hidden="true" />
         <HeroImageCard
           v-model="heroImage"
           :gardenId="garden?.id"
+          hide-label
+          class="mt-6"
         />
         <p v-if="isSavingHeroImage" class="text-sm text-[#d0d0d0] mt-2">Saving...</p>
       </div>

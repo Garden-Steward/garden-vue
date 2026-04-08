@@ -13,6 +13,7 @@ import GardenSidebar from '@/components/GardenSidebar.vue';
 import GardenGeneral from '@/components/GardenGeneral.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import PlantsCatalog from '@/components/PlantsCatalog.vue';
+import GardenVolunteerInterestsSection from '@/components/GardenVolunteerInterestsSection.vue';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
@@ -456,6 +457,14 @@ const openEventEditor = (day) => {
             <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">Volunteers ({{ garden.attributes.volunteers?.data?.length || 0 }})</h2>
             <a v-if="editor" @click="clearTemp" class="text-sm text-blue-400 hover:text-blue-300 cursor-pointer">Clear Temps</a>
           </div>
+
+          <GardenVolunteerInterestsSection
+            v-if="garden?.id"
+            :garden-id="garden.id"
+            :current-interests="garden.attributes.interests || []"
+            :editor="editor"
+            :active="activeSection === 'volunteers'"
+          />
           
           <div v-if="garden.attributes.volunteers?.data?.length" class="relative">
             <table class="w-full">
@@ -636,11 +645,12 @@ const openEventEditor = (day) => {
         <div v-if="activeSection === 'sms'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
-            <SmsCampaignModal v-if="editor" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor">
-              <button class="px-4 py-2 bg-orange-700 text-white font-medium text-sm rounded shadow-md hover:bg-orange-800 focus:bg-orange-800 focus:outline-none focus:ring-0 transition duration-150 ease-in-out">
-                Create a new Group SMS
-              </button>
-            </SmsCampaignModal>
+            <SmsCampaignModal
+              v-if="editor"
+              :garden="garden.id"
+              :interests="garden.attributes.interests"
+              :editor="editor"
+            />
           </div>
 
           <div v-if="smsCampaigns?.length" class="grid grid-cols-1 gap-4">
@@ -674,7 +684,8 @@ export default {
     ProjectsList,
     GardenSidebar,
     GardenGeneral,
-    LoadingSpinner
+    LoadingSpinner,
+    GardenVolunteerInterestsSection
   }
 };
 </script>

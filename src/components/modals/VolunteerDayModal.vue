@@ -177,39 +177,41 @@ const showExisting = (id) => {
 
       <form>
 
-      <div class="fixed inset-0 flex items-center justify-center">
-        <div class="dark:bg-[#d2bc9b] bg-white text-black grid grid-cols-1 gap-2 p-3 w-full md:w-1/2 sm:m-1 m-3 rounded-md">
+      <div class="fixed inset-0 flex items-center justify-center z-30">
+        <div
+          class="grid grid-cols-1 gap-2 p-4 w-full md:w-1/2 sm:m-1 m-3 rounded-lg border border-[#5a6f50] shadow-2xl bg-[#d2e4c8] text-[#1a2617]"
+        >
           <slot></slot>
 
           <label class="pb-1 block">{{ topic }}</label>
           <input type="hidden" v-model="form.id" />
-          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.title" :disabled="!props.editor"/>
+          <input class="w-full p-2 mb-3 rounded-md border border-[#3d4d36] bg-[#2d3e26] text-[#f5f5f5] placeholder-[#a8b89e] shadow-inner focus:outline-none focus:ring-2 focus:ring-[#8aa37c]/35 focus:border-[#8aa37c] hover:bg-[#2d3e26] focus:bg-[#2d3e26] active:bg-[#2d3e26] disabled:opacity-60" type="text" v-model="form.title" :disabled="!props.editor"/>
           <div>
             <label class="pb-1 block">Send to group: </label>
-            <select v-model="form.interest" class="rounded-md border p-1 ml-1" :disabled="!props.editor">
+            <select v-model="form.interest" class="rounded-md border border-[#3d4d36] bg-[#2d3e26] text-[#f5f5f5] p-2 ml-1 shadow-inner focus:outline-none focus:ring-2 focus:ring-[#8aa37c]/35 focus:border-[#8aa37c] hover:bg-[#2d3e26] focus:bg-[#2d3e26] active:bg-[#2d3e26] disabled:opacity-60" :disabled="!props.editor">
               <option>Everyone</option>
               <option v-for="interest in interests" :key="interest.id" :value="interest.tag">{{ interest.tag }}</option>
             </select>
           </div>
           
           <label class="p-1">Event Information:</label>
-          <textarea v-model="form.blurb" class="form-control p-1 m-r-4 mb-1" :disabled="!props.editor"></textarea>
+          <textarea v-model="form.blurb" class="volunteer-day-textarea w-full p-2 m-r-4 mb-1 rounded-md border border-[#3d4d36] bg-[#2d3e26] text-[#f5f5f5] shadow-inner caret-[#f5f5f5] focus:outline-none focus:ring-2 focus:ring-[#8aa37c]/35 focus:border-[#8aa37c] hover:bg-[#2d3e26] focus:bg-[#2d3e26] active:bg-[#2d3e26] disabled:opacity-60 resize-y min-h-[5rem]" :disabled="!props.editor"></textarea>
           
           <label class="p-1">Start Date & Time:</label>
           <VueDatePicker v-model="form.startDatetime" class="mb-2" week-start="0" :disabled="!props.editor"></VueDatePicker>
 
           <p class="p-1">Ending Time ("around noon"):</p>
-          <input class="p-1 mb-3 rounded-md border" type="text" v-model="form.endText" placeholder="around..." :disabled="!props.editor"/>
+          <input class="w-full p-2 mb-3 rounded-md border border-[#3d4d36] bg-[#2d3e26] text-[#f5f5f5] placeholder-[#a8b89e] shadow-inner focus:outline-none focus:ring-2 focus:ring-[#8aa37c]/35 focus:border-[#8aa37c] hover:bg-[#2d3e26] focus:bg-[#2d3e26] active:bg-[#2d3e26] disabled:opacity-60" type="text" v-model="form.endText" placeholder="around..." :disabled="!props.editor"/>
           <br />
           <label class="relative inline-flex items-center mb-3 cursor-pointer">
             <input type="checkbox" value="" class="sr-only peer" v-model="form.disabled" :disabled="!props.editor">
-            <div class="w-11 h-6 bg-blue-600 dark:bg-blue-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 peer-checked:bg-gray-800 dark:peer-checked:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
-            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-800">{{ form.disabled ? 'Auto-Send Disabled' : 'Auto-Send Enabled' }}</span>
+            <div class="w-11 h-6 bg-[#8aa37c] rounded-full peer peer-focus:ring-4 peer-focus:ring-custom-green/40 peer-checked:bg-[#4a5c42] peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-[#6d8262] after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            <span class="ml-3 text-sm font-medium text-[#1a2617]">{{ form.disabled ? 'Auto-Send Disabled' : 'Auto-Send Enabled' }}</span>
           </label>
 
 
           <div
-            class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md" v-if="props.editor">
+            class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-[#5a6f50]/50 rounded-b-md" v-if="props.editor">
             <span class="px-6
               py-2.5
               bg-orange-700
@@ -296,3 +298,13 @@ const showExisting = (id) => {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.volunteer-day-textarea:-webkit-autofill,
+.volunteer-day-textarea:-webkit-autofill:hover,
+.volunteer-day-textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #2d3e26 inset;
+  -webkit-text-fill-color: #f5f5f5;
+  caret-color: #f5f5f5;
+}
+</style>
