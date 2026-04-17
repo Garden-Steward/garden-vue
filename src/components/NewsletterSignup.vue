@@ -1,8 +1,3 @@
-<script setup>
-// Replace EMBED_URL with the src from your Beehiiv embed code once published
-const EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
-</script>
-
 <template>
   <section class="newsletter-section">
     <div class="newsletter-card">
@@ -12,19 +7,14 @@ const EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
         Seasonal updates, nature inspirations, and project updates — straight to your inbox.
       </p>
 
-      <div class="embed-wrapper">
-        <iframe
-          v-if="EMBED_URL"
-          :src="EMBED_URL"
-          data-test-id="beehiiv-embed"
-          frameborder="0"
-          scrolling="no"
-          class="beehiiv-iframe"
-        />
-        <p v-else class="embed-missing">
-          Set <code>VITE_BEEHIIV_EMBED_URL</code> in your .env to your Beehiiv embed src.
-        </p>
-      </div>
+      <a
+        href="https://garden-steward.beehiiv.com/subscribe"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="subscribe-btn"
+      >
+        Join the Newsletter
+      </a>
 
       <p class="newsletter-fine">No spam. Unsubscribe any time.</p>
     </div>
@@ -41,11 +31,11 @@ const EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
 
 .newsletter-card {
   width: 100%;
-  max-width: 580px;
+  max-width: 520px;
   background: #ffffff;
   border: 1px solid rgba(138, 163, 124, 0.25);
   border-radius: 16px;
-  padding: 2.5rem 2rem 1.75rem;
+  padding: 2.5rem 2rem;
   text-align: center;
   box-shadow: 0 4px 24px rgba(138, 163, 124, 0.15);
   transition: box-shadow 0.3s ease;
@@ -55,9 +45,7 @@ const EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
   box-shadow: 0 8px 32px rgba(138, 163, 124, 0.22);
 }
 
-:global(.dark) .newsletter-section {
-  background-color: #2d3e26;
-}
+:global(.dark) .newsletter-section { background-color: #2d3e26; }
 :global(.dark) .newsletter-card {
   background: #344a34;
   border-color: rgba(138, 163, 124, 0.2);
@@ -71,6 +59,7 @@ const EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
 }
 
 .newsletter-heading {
+  font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.75rem;
   font-weight: 700;
   color: #376451;
@@ -78,45 +67,36 @@ const EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
   letter-spacing: -0.01em;
 }
 
-:global(.dark) .newsletter-heading {
-  color: #f5f5f5;
-}
+:global(.dark) .newsletter-heading { color: #f5f5f5; }
 
 .newsletter-sub {
   font-size: 1rem;
   color: #555;
   line-height: 1.6;
-  margin: 0 0 1.5rem;
+  margin: 0 auto 1.75rem;
+  max-width: 380px;
 }
 
-:global(.dark) .newsletter-sub {
-  color: #d0d0d0;
-}
+:global(.dark) .newsletter-sub { color: #d0d0d0; }
 
-.embed-wrapper {
-  width: 100%;
-}
-
-.beehiiv-iframe {
-  width: 100%;
-  height: 52px;
-  border: none;
-  display: block;
-}
-
-.embed-missing {
-  font-size: 0.85rem;
-  color: #C2410C;
-  background: #fff5f0;
-  border: 1px solid #fca89a;
+.subscribe-btn {
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #8aa37c;
   border-radius: 8px;
-  padding: 0.75rem 1rem;
-  text-align: left;
+  text-decoration: none;
+  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.embed-missing code {
-  font-family: monospace;
-  font-size: 0.8rem;
+.subscribe-btn:hover {
+  background: #6c8a6a;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
+  text-decoration: none;
 }
 
 .newsletter-fine {
@@ -125,13 +105,10 @@ const EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
   color: #999;
 }
 
-:global(.dark) .newsletter-fine {
-  color: #6b7280;
-}
+:global(.dark) .newsletter-fine { color: #6b7280; }
 
 @media (max-width: 480px) {
-  .newsletter-card {
-    padding: 2rem 1.25rem 1.5rem;
-  }
+  .newsletter-card { padding: 2rem 1.25rem; }
+  .subscribe-btn { display: block; }
 }
 </style>
