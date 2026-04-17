@@ -1,9 +1,7 @@
 <script setup>
-import NewsletterSignup from '@/components/NewsletterSignup.vue'
 </script>
 
 <template>
-  <NewsletterSignup />
   <footer class="footer-container">
     <div class="text-center mt-4">
       <p>
