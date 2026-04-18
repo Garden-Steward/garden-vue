@@ -5,21 +5,24 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
 <template>
   <div class="home-wrapper">
 
-    <!-- Hero -->
+    <!-- Hero heading — full width -->
     <div class="hero-section">
       <p class="hero-eyebrow">Welcome to</p>
       <h1 class="hero-title">Garden Steward</h1>
       <p class="hero-tagline">Community-grown tools for urban agriculture</p>
+    </div>
 
+    <!-- Image + Newsletter side-by-side on desktop -->
+    <div class="hero-row">
       <img
         src="https://storage.googleapis.com/steward_upload/uploads/tutorial_group_harvest_2b80cd2b7e/tutorial_group_harvest_2b80cd2b7e.png"
         alt="Community harvest at Garden Steward"
         class="hero-image"
       />
+      <div class="newsletter-col">
+        <NewsletterSignup />
+      </div>
     </div>
-
-    <!-- Newsletter CTA — primary above-fold ask -->
-    <NewsletterSignup />
 
     <!-- About -->
     <div class="content-section">
@@ -76,7 +79,7 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
   min-height: 100vh;
 }
 
-/* ── Hero ──────────────────────────────────────────── */
+/* ── Hero heading ──────────────────────────────────── */
 .hero-section {
   text-align: center;
   padding: 3.5rem 1.5rem 2rem;
@@ -106,16 +109,43 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
 .hero-tagline {
   font-size: 1.1rem;
   color: #6b7280;
-  margin: 0 0 2rem;
+  margin: 0;
   font-weight: 400;
+}
+
+/* ── Image + Newsletter row ────────────────────────── */
+.hero-row {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  max-width: 1000px;
+  margin: 2.5rem auto 0;
+  padding: 0 2rem;
 }
 
 .hero-image {
   width: 100%;
-  max-width: 500px;
+  max-width: 440px;
+  flex-shrink: 0;
   border-radius: 16px;
   display: block;
-  margin: 0 auto;
+}
+
+.newsletter-col {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .hero-row {
+    flex-direction: column;
+    padding: 0 1.25rem;
+    gap: 0;
+  }
+
+  .hero-image {
+    max-width: 100%;
+  }
 }
 
 /* ── Content block ─────────────────────────────────── */

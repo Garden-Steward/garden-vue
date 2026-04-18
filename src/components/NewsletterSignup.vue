@@ -23,31 +23,30 @@
 
 <style scoped>
 .newsletter-section {
-  padding: 3rem 1.25rem;
+  padding: 1.5rem 0;
   display: flex;
   justify-content: center;
-  background-color: #f7f1e3;
+  background: transparent;
 }
 
 .newsletter-card {
   width: 100%;
-  max-width: 520px;
-  background: #ffffff;
-  border: 1px solid rgba(138, 163, 124, 0.25);
+  background: #ede5d0;
+  border: 1px solid rgba(138, 163, 124, 0.2);
   border-radius: 16px;
   padding: 2.5rem 2rem;
   text-align: center;
-  box-shadow: 0 4px 24px rgba(138, 163, 124, 0.15);
+  box-shadow: 0 2px 12px rgba(138, 163, 124, 0.12);
   transition: box-shadow 0.3s ease;
 }
 
 .newsletter-card:hover {
-  box-shadow: 0 8px 32px rgba(138, 163, 124, 0.22);
+  box-shadow: 0 6px 24px rgba(138, 163, 124, 0.2);
 }
 
-:global(.dark) .newsletter-section { background-color: #2d3e26; }
+:global(.dark) .newsletter-section { background: transparent; }
 :global(.dark) .newsletter-card {
-  background: #344a34;
+  background: #293d29;
   border-color: rgba(138, 163, 124, 0.2);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
