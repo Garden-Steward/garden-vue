@@ -3,22 +3,22 @@
 
 <template>
     <div class="bg-custom-light dark:bg-[#2d3e26] p-5 rounded-lg md:w-2/3 lg:w-3/4 mx-auto">
-        <div class="text-lg mt-6 max-w-xl w-full mx-auto mt-8 mb-4">
-            <h1 class="text-2xl text-center mb-6 dark:text-[#f5f5f5]">Contribute to Garden Steward</h1>
+        <div class="text-lg max-w-xl w-full mx-auto mt-8 mb-4 dark:text-white">
+            <h1 class="text-2xl text-center mb-6 dark:text-white">Contribute to Garden Steward</h1>
             
             <div class="mb-6">
-                <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">About the Project</h2>
-                <p class="mb-4 dark:text-[#d0d0d0]">
+                <h2 class="text-xl font-bold mb-3 dark:text-white">About the Project</h2>
+                <p class="mb-4 dark:text-white">
                     Garden Steward is an open-source, community-driven project that helps organize and manage community gardens through SMS-first communication. We're always looking for developers, designers, and community organizers to help improve the platform!
                 </p>
             </div>
 
             <div class="mb-6">
-                <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">Architecture Overview</h2>
-                <p class="mb-3 dark:text-[#d0d0d0]">
+                <h2 class="text-xl font-bold mb-3 dark:text-white">Architecture Overview</h2>
+                <p class="mb-3 dark:text-white">
                     Garden Steward is built with a modern, decoupled architecture:
                 </p>
-                <ul class="list-disc pl-6 mb-4 space-y-2 dark:text-[#d0d0d0]">
+                <ul class="list-disc pl-6 mb-4 space-y-2 dark:text-white">
                     <li><strong>Frontend (garden-vue)</strong>: Vue 3 application with Pinia for state management, Vue Router for navigation, and Tailwind CSS for styling</li>
                     <li><strong>Backend (steward-bank)</strong>: Strapi-based API with PostgreSQL for data persistence, Google Cloud Storage for media, and Twilio for SMS integration</li>
                     <li><strong>SMS Integration</strong>: Twilio integration for SMS-first communication</li>
@@ -26,11 +26,11 @@
             </div>
 
             <div class="mb-6">
-                <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">Getting Started</h2>
-                <p class="mb-3 dark:text-[#d0d0d0]">
+                <h2 class="text-xl font-bold mb-3 dark:text-white">Getting Started</h2>
+                <p class="mb-3 dark:text-white">
                     Ready to start organizing community engagement? Here's how you can get involved:
                 </p>
-                <ol class="list-decimal pl-6 mb-4 space-y-2 dark:text-[#d0d0d0]">
+                <ol class="list-decimal pl-6 mb-4 space-y-2 dark:text-white">
                     <li><strong>Connect Your Twilio Account</strong>: Set up your own phone line by connecting your Twilio account to start organizing community engagement right away!</li>
                     <li><strong>Explore the Codebase</strong>: Check out our repositories on GitHub to understand the codebase structure</li>
                     <li><strong>Pick an Issue</strong>: Look for open issues labeled "good first issue" or areas you'd like to contribute to</li>
@@ -39,25 +39,25 @@
             </div>
 
             <div class="mb-6">
-                <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">Repositories</h2>
+                <h2 class="text-xl font-bold mb-3 dark:text-white">Repositories</h2>
                 <div class="space-y-3">
                     <div class="p-4 bg-white dark:!bg-[#344a34] rounded-lg border border-gray-200 dark:border-gray-600">
-                        <h3 class="font-semibold mb-2 dark:text-[#f5f5f5]">Frontend Repository</h3>
-                        <p class="text-sm mb-2 dark:text-[#d0d0d0]">The Vue 3 frontend application for Garden Steward</p>
+                        <h3 class="font-semibold mb-2 dark:text-white">Frontend Repository</h3>
+                        <p class="text-sm mb-2 dark:text-white">The Vue 3 frontend application for Garden Steward</p>
                         <a href="https://github.com/Garden-Steward/garden-vue" 
                            target="_blank" 
                            rel="noopener noreferrer"
-                           class="text-green-700 hover:text-green-900 hover:underline font-medium">
+                           class="text-green-700 hover:text-green-900 hover:underline font-medium dark:text-white dark:hover:text-gray-200">
                             View on GitHub →
                         </a>
                     </div>
                     <div class="p-4 bg-white dark:!bg-[#344a34] rounded-lg border border-gray-200 dark:border-gray-600">
-                        <h3 class="font-semibold mb-2 dark:text-[#f5f5f5]">Backend Repository</h3>
-                        <p class="text-sm mb-2 dark:text-[#d0d0d0]">The steward-bank backend API built with Strapi, featuring PostgreSQL, Twilio SMS integration, and Google Cloud Storage</p>
+                        <h3 class="font-semibold mb-2 dark:text-white">Backend Repository</h3>
+                        <p class="text-sm mb-2 dark:text-white">The steward-bank backend API built with Strapi, featuring PostgreSQL, Twilio SMS integration, and Google Cloud Storage</p>
                         <a href="https://github.com/Garden-Steward/steward-bank" 
                            target="_blank" 
                            rel="noopener noreferrer"
-                           class="text-green-700 hover:text-green-900 hover:underline font-medium">
+                           class="text-green-700 hover:text-green-900 hover:underline font-medium dark:text-white dark:hover:text-gray-200">
                             View on GitHub →
                         </a>
                     </div>
@@ -65,33 +65,33 @@
             </div>
 
             <div class="mb-6">
-                <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">Technology Stack</h2>
+                <h2 class="text-xl font-bold mb-3 dark:text-white">Technology Stack</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div class="p-3 bg-white dark:!bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
-                        <h3 class="font-semibold text-sm mb-1 dark:text-[#f5f5f5]">Frontend</h3>
-                        <p class="text-sm dark:text-[#d0d0d0]">Vue 3, Pinia, Vue Router, Tailwind CSS, Vite</p>
+                        <h3 class="font-semibold text-sm mb-1 dark:text-white">Frontend</h3>
+                        <p class="text-sm dark:text-white">Vue 3, Pinia, Vue Router, Tailwind CSS, Vite</p>
                     </div>
                     <div class="p-3 bg-white dark:!bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
-                        <h3 class="font-semibold text-sm mb-1 dark:text-[#f5f5f5]">Backend</h3>
-                        <p class="text-sm dark:text-[#d0d0d0]">Strapi, PostgreSQL, Google Cloud Storage</p>
+                        <h3 class="font-semibold text-sm mb-1 dark:text-white">Backend</h3>
+                        <p class="text-sm dark:text-white">Strapi, PostgreSQL, Google Cloud Storage</p>
                     </div>
                     <div class="p-3 bg-white dark:!bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
-                        <h3 class="font-semibold text-sm mb-1 dark:text-[#f5f5f5]">SMS</h3>
-                        <p class="text-sm dark:text-[#d0d0d0]">Twilio</p>
+                        <h3 class="font-semibold text-sm mb-1 dark:text-white">SMS</h3>
+                        <p class="text-sm dark:text-white">Twilio</p>
                     </div>
                     <div class="p-3 bg-white dark:!bg-[#344a34] rounded border border-gray-200 dark:border-gray-600">
-                        <h3 class="font-semibold text-sm mb-1 dark:text-[#f5f5f5]">Deployment</h3>
-                        <p class="text-sm dark:text-[#d0d0d0]">Firebase Hosting</p>
+                        <h3 class="font-semibold text-sm mb-1 dark:text-white">Deployment</h3>
+                        <p class="text-sm dark:text-white">Firebase Hosting</p>
                     </div>
                 </div>
             </div>
 
             <div class="mb-6">
-                <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">How to Contribute</h2>
-                <p class="mb-3 dark:text-[#d0d0d0]">
+                <h2 class="text-xl font-bold mb-3 dark:text-white">How to Contribute</h2>
+                <p class="mb-3 dark:text-white">
                     We welcome contributions of all kinds! Here are some ways you can help:
                 </p>
-                <ul class="list-disc pl-6 mb-4 space-y-2 dark:text-[#d0d0d0]">
+                <ul class="list-disc pl-6 mb-4 space-y-2 dark:text-white">
                     <li>Report bugs or suggest new features</li>
                     <li>Submit code improvements or new features</li>
                     <li>Improve documentation</li>
@@ -101,12 +101,12 @@
             </div>
 
             <div class="mb-6">
-                <h2 class="text-xl font-bold mb-3 dark:text-[#f5f5f5]">Questions or Need Help?</h2>
-                <p class="mb-3 dark:text-[#d0d0d0]">
+                <h2 class="text-xl font-bold mb-3 dark:text-white">Questions or Need Help?</h2>
+                <p class="mb-3 dark:text-white">
                     Have questions about contributing? We'd love to hear from you!
                 </p>
-                <p class="dark:text-[#d0d0d0]">
-                    Email: <a href="mailto:volunteer@oufp.org" class="text-green-700 hover:text-green-900 hover:underline dark:text-green-400 dark:hover:text-green-300">volunteer@oufp.org</a>
+                <p class="dark:text-white">
+                    Email: <a href="mailto:volunteer@oufp.org" class="text-green-700 hover:text-green-900 hover:underline dark:text-white dark:hover:text-gray-200 dark:hover:underline">volunteer@oufp.org</a>
                 </p>
             </div>
 
@@ -114,13 +114,13 @@
                 <a href="https://github.com/Garden-Steward/garden-vue" 
                    target="_blank" 
                    rel="noopener noreferrer"
-                   class="inline-block mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
+                   class="inline-block mt-3 rounded-md px-5 py-2.5 font-medium text-white bg-custom-green border-0 hover:bg-darker-green active:bg-darker-green focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors">
                     View Frontend on GitHub
                 </a>
                 <a href="https://github.com/Garden-Steward/steward-bank" 
                    target="_blank" 
                    rel="noopener noreferrer"
-                   class="inline-block mt-3 btn btn-secondary bg-custom-green hover:bg-custom-green border-white">
+                   class="inline-block mt-3 rounded-md px-5 py-2.5 font-medium text-white bg-custom-green border-0 hover:bg-darker-green active:bg-darker-green focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors">
                     View Backend on GitHub
                 </a>
             </div>

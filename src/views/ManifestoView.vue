@@ -49,7 +49,7 @@ Our communities are ready to get involved, put their hands on something real.
 
 Steward the land. Bring back ecosystems. Create bounty of food and medicine.
 
-Rebuild. Wonder.
+Rebuild wonder.
 
 We imagine, and we make it.
 
