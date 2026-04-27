@@ -25,6 +25,14 @@ const props = defineProps({
   dark: {
     type: Boolean,
     default: false
+  },
+  // When true (default), in single-selection mode the tabs and upload/grid
+  // UI are hidden once an image is selected, and a preview with an X-to-remove
+  // button is shown instead. Set to false to keep the tabs visible alongside
+  // the parent's own preview (e.g. HeroImageCard).
+  autoHideOnSelect: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -96,6 +104,37 @@ const hasMoreItems = computed(() => {
 // Load more items
 const loadMore = () => {
   visibleItemsCount.value += itemsPerPage
+}
+
+// True when the parent has a single selection (used to auto-hide the picker)
+const hasSelection = computed(() => {
+  if (props.multiple) return false
+  const v = props.modelValue
+  if (v === null || v === undefined) return false
+  if (typeof v === 'object') {
+    return !!(v.id || v.data?.id)
+  }
+  return !!v
+})
+
+// Show the auto-hide preview (with X-to-remove) instead of the tabs
+const showSelectedPreview = computed(() => {
+  return props.autoHideOnSelect && !props.multiple && hasSelection.value
+})
+
+// URL of the currently selected image (single mode), used for the preview
+const selectedImageUrl = computed(() => {
+  if (props.multiple || !props.modelValue) return ''
+  // Direct { url, id } shape (what MediaSelector emits)
+  if (props.modelValue.url) {
+    return normalizeImageUrl(props.modelValue.url)
+  }
+  return getImageUrl(props.modelValue)
+})
+
+// Clear the current selection and bring back the picker
+const clearSelection = () => {
+  emit('update:modelValue', props.multiple ? [] : null)
 }
 
 // Check if a media item is selected
@@ -401,11 +440,36 @@ watch(activeTab, () => {
 </script>
 
 <template>
-  <div class="media-selector" :class="{ 'media-selector-dark': dark }" @click.stop>
+  <div
+    class="media-selector"
+    :class="{ 'media-selector-dark': dark }"
+    @click.stop
+  >
+    <!-- Selected Preview (single-selection auto-hide mode) -->
+    <div v-if="showSelectedPreview" class="selected-preview" @click.stop>
+      <img
+        :src="selectedImageUrl"
+        alt="Selected image"
+        class="selected-preview-image"
+      />
+      <button
+        type="button"
+        class="selected-preview-remove"
+        :class="{ 'selected-preview-remove-dark': dark }"
+        @click.stop="clearSelection"
+        aria-label="Remove image"
+        title="Remove image"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
     <!-- Tabs -->
     <div
-      class="flex border-b mb-4"
-      :class="dark ? 'border-[#3d4d36]' : 'border-gray-300'"
+      v-if="!showSelectedPreview"
+      class="flex border-b mb-4 border-gray-300 dark:border-[#3d4d36]"
       @click.stop
     >
       <button
@@ -414,8 +478,8 @@ watch(activeTab, () => {
         :class="[
           'px-4 py-2 font-medium text-sm transition-colors',
           activeTab === 'upload'
-            ? dark ? 'border-b-2 border-[#8aa37c] text-[#8aa37c]' : 'border-b-2 border-green-600 text-green-600'
-            : dark ? 'text-[#d0d0d0] hover:text-[#f5f5f5]' : 'text-gray-600 hover:text-gray-900'
+            ? 'border-b-2 border-green-600 text-green-600 dark:border-[#8aa37c] dark:text-[#8aa37c]'
+            : 'text-gray-600 hover:text-gray-900 dark:text-[#d0d0d0] dark:hover:text-[#f5f5f5]'
         ]"
       >
         Upload New
@@ -426,8 +490,8 @@ watch(activeTab, () => {
         :class="[
           'px-4 py-2 font-medium text-sm transition-colors',
           activeTab === 'existing'
-            ? dark ? 'border-b-2 border-[#8aa37c] text-[#8aa37c]' : 'border-b-2 border-green-600 text-green-600'
-            : dark ? 'text-[#d0d0d0] hover:text-[#f5f5f5]' : 'text-gray-600 hover:text-gray-900'
+            ? 'border-b-2 border-green-600 text-green-600 dark:border-[#8aa37c] dark:text-[#8aa37c]'
+            : 'text-gray-600 hover:text-gray-900 dark:text-[#d0d0d0] dark:hover:text-[#f5f5f5]'
         ]"
       >
         Choose Existing
@@ -435,10 +499,10 @@ watch(activeTab, () => {
     </div>
 
     <!-- Existing Media Tab -->
-    <div v-if="activeTab === 'existing'" class="existing-media-tab">
+    <div v-if="!showSelectedPreview && activeTab === 'existing'" class="existing-media-tab">
       <!-- Loading State -->
-      <div v-if="mediaStore.loading" class="text-center py-8 text-gray-600">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div>
+      <div v-if="mediaStore.loading" class="text-center py-8 text-gray-600 dark:text-[#d0d0d0]">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-[#8aa37c] mb-2"></div>
         <p>Loading media...</p>
       </div>
 
@@ -459,8 +523,8 @@ watch(activeTab, () => {
           <div
             class="aspect-square rounded-lg overflow-hidden border-2 transition-all"
             :class="{
-              'border-green-500 ring-2 ring-green-200': isSelected(mediaItem),
-              'border-gray-300 hover:border-green-400': !isSelected(mediaItem)
+              'border-green-500 ring-2 ring-green-200 dark:ring-green-900/40': isSelected(mediaItem),
+              'border-gray-300 hover:border-green-400 dark:border-[#3d4d36] dark:hover:border-[#8aa37c]': !isSelected(mediaItem)
             }"
           >
             <img
@@ -501,13 +565,13 @@ watch(activeTab, () => {
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="displayedMedia.length === 0" class="text-center py-8 text-gray-500">
+      <div v-else-if="displayedMedia.length === 0" class="text-center py-8 text-gray-500 dark:text-[#9ca3af]">
         <p>No media available for this garden</p>
       </div>
     </div>
 
     <!-- Upload Tab -->
-    <div v-if="activeTab === 'upload'" class="upload-tab">
+    <div v-if="!showSelectedPreview && activeTab === 'upload'" class="upload-tab">
       <input
         ref="cameraInput"
         type="file"
@@ -517,11 +581,11 @@ watch(activeTab, () => {
         @change="handleChange"
       />
       <div
-        class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer mb-4 transition-colors"
+        class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer mb-4 transition-colors border-gray-300 bg-gray-50 dark:border-[#3d4d36] dark:bg-[rgba(26,26,26,0.55)]"
         :class="[
-          dark
-            ? dragActive ? 'border-[#8aa37c] bg-[rgba(138,163,124,0.15)]' : 'border-[#3d4d36] bg-[rgba(26,26,26,0.4)]'
-            : dragActive ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-50'
+          dragActive
+            ? 'border-green-500 bg-green-50 dark:border-[#8aa37c] dark:bg-[rgba(138,163,124,0.15)]'
+            : ''
         ]"
         @dragenter.stop="handleDrag"
         @dragleave.stop="handleDrag"
@@ -538,18 +602,18 @@ watch(activeTab, () => {
         />
         
         <!-- Compression Status -->
-        <div v-if="isCompressing || compressionStatus" :class="dark ? 'text-[#d0d0d0]' : 'text-gray-600'" class="space-y-2">
+        <div v-if="isCompressing || compressionStatus" class="space-y-2 text-gray-600 dark:text-[#d0d0d0]">
           <div v-if="isCompressing" class="text-center">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-2"></div>
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 dark:border-purple-400 mb-2"></div>
             <p class="text-sm">{{ compressionStatus?.message || 'Compressing image...' }}</p>
             <div v-if="compressionStatus?.progress !== undefined" class="mt-2 max-w-xs mx-auto">
-              <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="w-full bg-gray-200 dark:bg-[#3d4d36] rounded-full h-2">
                 <div 
-                  class="bg-purple-600 h-2 rounded-full transition-all duration-300" 
+                  class="bg-purple-600 dark:bg-purple-500 h-2 rounded-full transition-all duration-300" 
                   :style="{ width: compressionStatus.progress + '%' }"
                 ></div>
               </div>
-              <div class="text-xs text-gray-500 mt-1">{{ compressionStatus.progress }}%</div>
+              <div class="text-xs text-gray-500 dark:text-[#9ca3af] mt-1">{{ compressionStatus.progress }}%</div>
             </div>
           </div>
           <div v-else-if="compressionStatus && !isUploading" class="text-sm text-center">
@@ -557,8 +621,8 @@ watch(activeTab, () => {
               class="px-3 py-2 rounded inline-block"
               :class="[
                 compressionStatus.error
-                  ? dark ? 'bg-yellow-900/30 text-yellow-200 border border-yellow-700' : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
-                  : dark ? 'bg-green-900/30 text-green-200 border border-green-700' : 'bg-green-50 text-green-800 border border-green-200'
+                  ? 'bg-yellow-50 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-200 dark:border-yellow-700'
+                  : 'bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-200 dark:border-green-700'
               ]"
             >
               <div class="font-medium">{{ compressionStatus.message }}</div>
@@ -567,18 +631,18 @@ watch(activeTab, () => {
         </div>
         
         <!-- Upload Status -->
-        <div v-if="isUploading && !isCompressing" :class="dark ? 'text-[#d0d0d0]' : 'text-gray-600'">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div>
+        <div v-if="isUploading && !isCompressing" class="text-gray-600 dark:text-[#d0d0d0]">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-[#8aa37c] mb-2"></div>
           <p>Uploading...</p>
         </div>
         
         <!-- Placeholder -->
-        <div v-else-if="!isCompressing && !isUploading && !compressionStatus" :class="dark ? 'text-[#d0d0d0]' : 'text-gray-600'">
-          <svg class="mx-auto h-12 w-12 mb-2" :class="dark ? 'text-[#6b7c5e]' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div v-else-if="!isCompressing && !isUploading && !compressionStatus" class="text-gray-600 dark:text-[#d0d0d0]">
+          <svg class="mx-auto h-12 w-12 mb-2 text-gray-400 dark:text-[#8aa37c]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
           <p class="text-sm font-medium">{{ placeholder }}</p>
-          <p class="text-xs mt-1" :class="dark ? 'text-[#9ca3af]' : 'text-gray-500'">Click or drag to upload</p>
+          <p class="text-xs mt-1 text-gray-500 dark:text-[#9ca3af]">Click or drag to upload</p>
         </div>
       </div>
       
@@ -587,14 +651,9 @@ watch(activeTab, () => {
         type="button"
         @click.stop="takePicture"
         :disabled="isCompressing || isUploading"
-        :class="[
-          'inline-flex items-center px-4 py-2 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
-          dark
-            ? 'border border-[#6b8560] bg-[#dcfce7] text-gray-800 hover:bg-[#bbf7d0] focus:ring-[#8aa37c]'
-            : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-green-500'
-        ]"
+        class="media-selector-take-photo inline-flex items-center px-4 py-2 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-darker-green dark:bg-custom-green dark:text-white dark:hover:bg-darker-green dark:hover:border-darker-green dark:focus:ring-[#a8c49a] dark:focus:ring-offset-[#2d3e26]"
       >
-        <svg class="h-5 w-5 mr-2" :class="dark ? 'text-gray-600' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="media-selector-take-photo-icon h-5 w-5 mr-2 text-gray-400 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
@@ -607,6 +666,64 @@ watch(activeTab, () => {
 <style scoped>
 .media-selector {
   width: 100%;
+}
+
+/* ── Selected preview (auto-hide mode) ─────────────── */
+.selected-preview {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.selected-preview-image {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.selected-preview-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #344a34;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  padding: 0;
+}
+
+.selected-preview-remove:hover {
+  background-color: #ffffff;
+  color: #c2410c;
+  transform: scale(1.05);
+}
+
+.selected-preview-remove:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(138, 163, 124, 0.5);
+}
+
+.selected-preview-remove-dark {
+  background-color: rgba(26, 26, 26, 0.85);
+  color: #f5f5f5;
+  border-color: rgba(245, 245, 245, 0.2);
+}
+
+.selected-preview-remove-dark:hover {
+  background-color: rgba(26, 26, 26, 1);
+  color: #fda4af;
 }
 
 /* Hero image grid - limit height on desktop */
@@ -636,7 +753,38 @@ watch(activeTab, () => {
     background: #555;
   }
 }
+
+:global(.dark) .hero-image-grid::-webkit-scrollbar-track {
+  background: rgba(26, 26, 26, 0.5);
+}
+
+:global(.dark) .hero-image-grid::-webkit-scrollbar-thumb {
+  background: #5a6b52;
+}
+
+:global(.dark) .hero-image-grid::-webkit-scrollbar-thumb:hover {
+  background: #8aa37c;
+}
 </style>
 
+<!-- Force Take Photo styling in dark mode (parent modals may use color/bg !important). -->
+<style>
+html.dark .media-selector-take-photo,
+.dark .media-selector-take-photo {
+  background-color: #8aa37c !important;
+  color: #ffffff !important;
+  border-color: #6c8a6a !important;
+}
 
+html.dark .media-selector-take-photo:hover:not(:disabled),
+.dark .media-selector-take-photo:hover:not(:disabled) {
+  background-color: #6c8a6a !important;
+  border-color: #5a7360 !important;
+}
+
+html.dark .media-selector-take-photo-icon,
+.dark .media-selector-take-photo-icon {
+  color: #ffffff !important;
+}
+</style>
 

@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useSMSCampaignStore, useAlertStore } from '@/stores';
 import { format } from 'date-fns'
 import UserProfileDisplay from "../UserProfileDisplay.vue";
+import { getCampaignBadgeClasses, getCampaignTypeLabel } from '@/_config/GardenConfig';
 
 export default {
     props: {
@@ -43,33 +44,8 @@ export default {
         const bodyExcerpt = computed(() => {
             return props.body?.slice(0, 50);
         });
-        /** e.g. recurring-task → "Recurring Task", marketing_blast → "Marketing Blast" */
-        const typeLabel = computed(() => {
-            const raw = props.type;
-            if (!raw || typeof raw !== 'string') return '';
-            return raw
-                .replace(/[_-]+/g, ' ')
-                .trim()
-                .split(/\s+/)
-                .filter(Boolean)
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-                .join(' ');
-        });
-        const normalizedCampaignType = computed(() =>
-            (props.type || '').toLowerCase().replace(/_/g, '-')
-        );
-        const typeBadgeClass = computed(() => {
-            const base =
-                'inline-block shrink-0 rounded-full uppercase tracking-wide px-2.5 py-2 text-sm font-semibold leading-tight shadow-sm ';
-            const t = normalizedCampaignType.value;
-            if (t === 'rsvp') {
-                return base + 'bg-violet-700 text-violet-50 border border-violet-900/40';
-            }
-            if (t === 'recurring-task') {
-                return base + 'bg-[#2a4030] text-[#f5f5f5] border border-[#1f3024]';
-            }
-            return base + 'bg-darker-green text-white border border-[#5a6f50]/60';
-        });
+        const typeLabel = computed(() => getCampaignTypeLabel(props.type));
+        const typeBadgeClass = computed(() => getCampaignBadgeClasses(props.type));
         const copyRSVPNumbers = async () => {
             // Ensure there's no trailing comma by not adding a comma after the last phone number
             const phoneNumbers = props.confirmed.map(conf => conf.phoneNumber).join(',');

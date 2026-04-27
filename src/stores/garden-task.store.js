@@ -139,6 +139,20 @@ export const useGardenTaskStore = defineStore({
                     this.recurringTasks = response.data;
                 })
         },
+        async registerRecurring(data) {
+            if (data.primary_image?.id) {
+                data.primary_image = { id: data.primary_image.id };
+            }
+            return fetchWrapper.post(`${recurringUrl}?populate=*`, { data })
+                .then(response => {
+                    if (response?.data) {
+                        const list = Array.isArray(this.recurringTasks) ? this.recurringTasks : [];
+                        this.recurringTasks = [...list, response.data];
+                    }
+                    return response?.data;
+                })
+                .catch(this.handleError);
+        },
         async delete(id) {
             // First get the task to check its status
             const task = this.gardenTasks.find(t => t.id === id);

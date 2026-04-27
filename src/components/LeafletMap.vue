@@ -86,4 +86,23 @@ watch(() => props.centerCoordinates, (newCoords) => {
   width: 500px; /* Set a larger width for the image */
   height: auto; /* Maintain aspect ratio */
 }
+
+/* Leaflet popups & tooltips keep their default white background even in dark
+   mode, so the page-wrapper's light text color (#f5f5f5) was rendering as
+   white-on-white. Lock them to a dark text color regardless of theme. */
+.leaflet-popup-content,
+.leaflet-popup-content .popup-content,
+.leaflet-popup-content a,
+.leaflet-tooltip {
+  color: #1a1a1a !important;
+}
+
+html.dark .leaflet-popup-content-wrapper,
+html.dark .leaflet-tooltip {
+  background-color: #ffffff;
+}
+
+html.dark .leaflet-popup-tip {
+  background-color: #ffffff;
+}
 </style>

@@ -49,6 +49,46 @@ const showEventSelector = ref(false);
 const isSubmitting = ref(false);
 const visibleGalleryImages = ref(4);
 
+// Multi-step state (only used when creating a new project)
+const currentStep = ref(1);
+const totalSteps = 5;
+
+const validationErrors = ref({
+  title: false,
+  short_description: false
+});
+
+function clearValidationError(field) {
+  if (validationErrors.value[field]) {
+    validationErrors.value = { ...validationErrors.value, [field]: false };
+  }
+}
+
+function canAdvance(step) {
+  if (step === 2) return !!String(form.value.title || '').trim();
+  if (step === 4) return !!String(form.value.short_description || '').trim();
+  return true;
+}
+
+function goNext() {
+  if (!canAdvance(currentStep.value)) {
+    if (currentStep.value === 2) {
+      validationErrors.value = { ...validationErrors.value, title: true };
+    }
+    if (currentStep.value === 4) {
+      validationErrors.value = { ...validationErrors.value, short_description: true };
+    }
+    return;
+  }
+  if (currentStep.value < totalSteps) {
+    currentStep.value += 1;
+  }
+}
+
+function goBack() {
+  if (currentStep.value > 1) currentStep.value -= 1;
+}
+
 const categoryOptions = [
   { value: 'Infrastructure', label: 'Infrastructure' },
   { value: 'Art', label: 'Art' },
@@ -94,6 +134,11 @@ const hasChanges = ref(false);
 // Watch for show value to reset originalFormData when form opens (similar to EventEditor.vue)
 watch(show, async (isShowing) => {
   if (isShowing) {
+    // Reset multi-step state when opening for creation
+    if (!props.id) {
+      currentStep.value = 1;
+      validationErrors.value = { title: false, short_description: false };
+    }
     // Wait for next tick to ensure all reactive updates are complete
     await nextTick();
     // Store original data for comparison when form opens (only once per open)
@@ -105,6 +150,9 @@ watch(show, async (isShowing) => {
       originalFormData.value = deepCloneForm(form.value);
       hasChanges.value = false;
     }
+  } else {
+    // Reset validation errors when closing
+    validationErrors.value = { title: false, short_description: false };
   }
 });
 
@@ -701,6 +749,188 @@ onUnmounted(() => {
                 </svg>
               </button>
 
+              <!-- ============================================ -->
+              <!-- MULTI-STEP CREATE FLOW (mobile-first)         -->
+              <!-- ============================================ -->
+              <template v-if="!props.id">
+                <h2 class="text-xl font-semibold text-center mb-2 pr-6 text-[#f5f5f5]">Create a Project</h2>
+
+                <!-- Progress indicator -->
+                <div class="flex items-center justify-center gap-1.5 mb-4 select-none">
+                  <template v-for="n in totalSteps" :key="`proj-progress-${n}`">
+                    <div
+                      class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
+                      :class="n <= currentStep ? 'proj-step-active' : 'proj-step-inactive'"
+                    >{{ n }}</div>
+                    <div
+                      v-if="n < totalSteps"
+                      class="w-6 h-0.5 transition-colors"
+                      :class="n < currentStep ? 'proj-step-bar-active' : 'proj-step-bar-inactive'"
+                    ></div>
+                  </template>
+                </div>
+
+                <!-- Step 1: Hero Photo -->
+                <div v-if="currentStep === 1" class="proj-step space-y-3">
+                  <p class="text-[#f5f5f5] font-semibold text-center">Add a photo</p>
+                  <p class="text-[#d0d0d0] text-sm text-center">A great hero image makes the project shine. You can skip this and add it later.</p>
+                  <HeroImageCard
+                    v-if="form.garden"
+                    v-model="form.hero_image"
+                    :gardenId="form.garden"
+                    label="Hero image"
+                  />
+                  <div v-else class="text-[#d0d0d0] text-sm text-center italic">
+                    Garden must be set before uploading media.
+                  </div>
+                </div>
+
+                <!-- Step 2: Title -->
+                <div v-else-if="currentStep === 2" class="proj-step space-y-3">
+                  <p class="text-[#f5f5f5] font-semibold text-center">What's the project called?</p>
+                  <input
+                    v-model="form.title"
+                    type="text"
+                    placeholder="e.g. Spring Mural Restoration"
+                    :class="[
+                      'w-full px-4 py-3 text-base rounded-md border bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] placeholder-[#d0d0d0] focus:outline-none focus:border-custom-green',
+                      validationErrors.title ? 'border-2 !border-red-500' : 'border-[#3d4d36]'
+                    ]"
+                    @input="clearValidationError('title')"
+                    @keydown.enter.prevent="goNext"
+                    autofocus
+                  />
+                  <p class="text-xs text-[#d0d0d0] text-center">
+                    slug: <span class="font-bold">{{ form.slug || 'slug-will-be-generated' }}</span>
+                  </p>
+                </div>
+
+                <!-- Step 3: Category -->
+                <div v-else-if="currentStep === 3" class="proj-step space-y-3">
+                  <p class="text-[#f5f5f5] font-semibold text-center">Pick a category</p>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button
+                      v-for="opt in categoryOptions"
+                      :key="opt.value"
+                      type="button"
+                      class="proj-type-btn px-4 py-3 rounded-lg border-2 text-base font-medium transition"
+                      :class="form.category === opt.value ? 'proj-type-btn-active' : ''"
+                      @click="form.category = opt.value"
+                    >
+                      {{ opt.label }}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Step 4: Short Description -->
+                <div v-else-if="currentStep === 4" class="proj-step space-y-3">
+                  <p class="text-[#f5f5f5] font-semibold text-center">Briefly describe the project</p>
+                  <textarea
+                    v-model="form.short_description"
+                    maxlength="350"
+                    rows="5"
+                    placeholder="A short summary that will appear on cards and in lists..."
+                    :class="[
+                      'w-full px-4 py-3 text-base rounded-md border bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] placeholder-[#d0d0d0] focus:outline-none focus:border-custom-green',
+                      validationErrors.short_description ? 'border-2 !border-red-500' : 'border-[#3d4d36]'
+                    ]"
+                    @input="clearValidationError('short_description')"
+                    autofocus
+                  ></textarea>
+                  <p class="text-xs text-[#d0d0d0] text-right">{{ form.short_description?.length || 0 }}/350</p>
+                </div>
+
+                <!-- Step 5: Optional details + submit -->
+                <div v-else-if="currentStep === 5" class="proj-step space-y-4">
+                  <p class="text-[#f5f5f5] font-semibold text-center">Almost done</p>
+
+                  <!-- Featured toggle -->
+                  <div class="bg-[rgba(26,26,26,0.4)] border border-[#3d4d36] rounded-lg p-3 flex items-center justify-between">
+                    <div>
+                      <p class="text-[#f5f5f5] font-medium">Feature this project</p>
+                      <p class="text-xs text-[#d0d0d0]">Featured projects show up prominently on the garden page.</p>
+                    </div>
+                    <FormToggle v-model="form.featured" />
+                  </div>
+
+                  <!-- Optional dates -->
+                  <div class="bg-[rgba(26,26,26,0.4)] border border-[#3d4d36] rounded-lg p-3 space-y-3">
+                    <div v-if="!showDateFields">
+                      <button
+                        type="button"
+                        class="text-custom-green hover:text-darker-green underline text-sm font-medium"
+                        @click="showDateFields = true"
+                      >
+                        + Add project dates (optional)
+                      </button>
+                    </div>
+                    <div v-else class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-medium mb-1 text-[#f5f5f5]">Start Date</label>
+                        <input
+                          v-model="form.date_start"
+                          type="date"
+                          class="w-full px-3 py-2 border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] focus:border-custom-green focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1 text-[#f5f5f5]">End Date</label>
+                        <input
+                          v-model="form.date_end"
+                          type="date"
+                          class="w-full px-3 py-2 border border-[#3d4d36] rounded-md bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] focus:border-custom-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <p class="text-xs text-[#d0d0d0] text-center italic">
+                    You can add a long description, gallery, related events, and impact metrics after creating.
+                  </p>
+                </div>
+
+                <!-- Footer: back / next / submit -->
+                <div class="flex flex-col gap-3 pt-4 mt-2 border-t border-[#3d4d36]">
+                  <div v-if="error" class="w-full text-red-400 text-sm text-center">
+                    Please fill in all required fields
+                  </div>
+                  <div class="flex items-center justify-between gap-3">
+                    <button
+                      v-if="currentStep > 1"
+                      type="button"
+                      class="proj-back-btn px-4 py-2 rounded-md text-sm font-medium"
+                      @click="goBack"
+                    >
+                      ← Back
+                    </button>
+                    <span v-else class="text-sm text-[#d0d0d0] opacity-70">Step {{ currentStep }} of {{ totalSteps }}</span>
+
+                    <button
+                      v-if="currentStep < totalSteps"
+                      type="button"
+                      class="px-6 py-2.5 bg-custom-green text-white font-medium text-sm rounded shadow-md hover:bg-darker-green transition"
+                      :class="{ 'opacity-50 cursor-not-allowed': !canAdvance(currentStep) }"
+                      :disabled="!canAdvance(currentStep)"
+                      @click="goNext"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      v-else
+                      type="submit"
+                      :disabled="isSubmitting"
+                      class="px-6 py-2.5 bg-custom-green text-white font-medium text-sm rounded shadow-md hover:bg-darker-green disabled:bg-gray-600 disabled:cursor-not-allowed transition"
+                    >
+                      {{ isSubmitting ? 'Creating...' : 'Create Project' }}
+                    </button>
+                  </div>
+                </div>
+              </template>
+
+              <!-- ============================================ -->
+              <!-- EDIT FLOW (single page, existing layout)     -->
+              <!-- ============================================ -->
+              <template v-else>
               <div class="space-y-4">
         <!-- Title and Category row -->
         <div class="grid grid-cols-3 gap-4">
@@ -996,6 +1226,7 @@ onUnmounted(() => {
                   </button>
                 </div>
               </div>
+              </template>
             </div>
           </div>
         </form>
@@ -1134,6 +1365,55 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* ── Multi-step create flow ─────────────────────────── */
+.proj-step-active {
+  background-color: #8aa37c;
+  color: #ffffff;
+}
+.proj-step-inactive {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #d0d0d0;
+}
+.proj-step-bar-active {
+  background-color: #8aa37c;
+}
+.proj-step-bar-inactive {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.proj-step {
+  animation: proj-step-fade 0.25s ease-out;
+}
+@keyframes proj-step-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.proj-type-btn {
+  background-color: rgba(26, 26, 26, 0.6);
+  border-color: #3d4d36;
+  color: #f5f5f5;
+}
+.proj-type-btn:hover {
+  border-color: #8aa37c;
+  background-color: rgba(138, 163, 124, 0.18);
+}
+.proj-type-btn-active {
+  border-color: #8aa37c;
+  background-color: rgba(138, 163, 124, 0.28);
+  color: #ffffff;
+}
+
+.proj-back-btn {
+  background-color: transparent;
+  color: #d0d0d0;
+  border: 1px solid #3d4d36;
+}
+.proj-back-btn:hover {
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
+}
+
 /* Dark mode styles for date inputs */
 input[type="date"] {
   color-scheme: dark;

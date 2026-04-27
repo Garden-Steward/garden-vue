@@ -381,6 +381,11 @@ onUnmounted(() => {
     z-index: 9999999;
     padding: 12px;
 }
+.dark .theme-dropdown {
+    background: #1f2d1f;
+    border-color: #3d4d36;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
 .login-link {
     font-size: 1.1rem;
 }
@@ -395,6 +400,11 @@ onUnmounted(() => {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     z-index: 99999;
 }
+.dark .profile-menu {
+    background: #1f2d1f;
+    border-color: #3d4d36;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
 .profile-menu .nav-link {
     color: #333;
     margin: 0;
@@ -404,10 +414,19 @@ onUnmounted(() => {
 .profile-menu .nav-link:hover {
     background-color: #f5f5f5;
 }
+.dark .profile-menu .nav-link {
+    color: #f5f5f5;
+}
+.dark .profile-menu .nav-link:hover {
+    background-color: rgba(61, 77, 54, 0.45);
+}
 .user-info {
     padding: 12px 16px;
     border-bottom: 1px solid #e0e0e0;
     margin-bottom: 8px;
+}
+.dark .user-info {
+    border-bottom-color: #3d4d36;
 }
 .user-name {
     font-size: 1rem;
@@ -415,16 +434,25 @@ onUnmounted(() => {
     color: #333;
     word-break: break-word;
 }
+.dark .user-name {
+    color: #f5f5f5;
+}
 .theme-settings {
     padding: 8px 16px;
     border-bottom: 1px solid #e0e0e0;
     margin-bottom: 8px;
+}
+.dark .theme-settings {
+    border-bottom-color: #3d4d36;
 }
 .theme-settings-label {
     font-size: 0.875rem;
     font-weight: 600;
     color: #333;
     margin-bottom: 8px;
+}
+.dark .theme-settings-label {
+    color: #d0d0d0;
 }
 .theme-options {
     display: flex;
@@ -447,6 +475,9 @@ onUnmounted(() => {
 .theme-option:hover {
     background-color: #f5f5f5;
     transform: scale(1.05);
+}
+.dark .theme-option:hover {
+    background-color: rgba(61, 77, 54, 0.45);
 }
 .theme-option.active {
     background-color: #8aa37c;
@@ -654,7 +685,7 @@ onUnmounted(() => {
 /* Mobile: Fix profile icon positioning */
 @media (max-width: 1024px) {
     .profile-container {
-        position: fixed;
+        position: absolute;
         right: 15px;
         top: 12px;
         transform: none;

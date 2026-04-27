@@ -23,15 +23,17 @@ const getSystemPreference = () => {
   return false;
 };
 
-const isDarkMode = ref(false);
-
-onMounted(() => {
-  const shouldBeDark = getSystemPreference();
-  isDarkMode.value = shouldBeDark;
-  applyDarkMode(shouldBeDark);
-});
+const resolveInitialDarkMode = () => {
+  if (typeof window === 'undefined') return false;
+  const savedTheme = localStorage.getItem('garden-public-theme');
+  if (savedTheme === 'dark' || savedTheme === 'light') {
+    return savedTheme === 'dark';
+  }
+  return getSystemPreference();
+};
 
 const applyDarkMode = (dark) => {
+  if (typeof document === 'undefined') return;
   if (dark) {
     document.documentElement.classList.add('dark');
   } else {
@@ -39,9 +41,20 @@ const applyDarkMode = (dark) => {
   }
 };
 
+// Apply synchronously during setup so the first paint already matches
+// the user's saved preference (no dark→light flash on reload).
+const initialDarkMode = resolveInitialDarkMode();
+applyDarkMode(initialDarkMode);
+const isDarkMode = ref(initialDarkMode);
+
+onMounted(() => {
+  applyDarkMode(isDarkMode.value);
+});
+
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value;
   applyDarkMode(isDarkMode.value);
+  localStorage.setItem('garden-public-theme', isDarkMode.value ? 'dark' : 'light');
 };
 
 // Fetch task

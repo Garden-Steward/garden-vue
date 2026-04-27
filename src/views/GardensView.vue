@@ -165,11 +165,17 @@ const loadMoreLatestEvents = () => {
 </script>
 
 <template>
-    <div class="bg-custom-light p-5 rounded-lg mx-auto">
-        <h1 class="text-lg font-bold mb-5">Hi {{user?.firstName}}!</h1>
+    <div class="manage-gardens-wrapper">
+        <header class="gardens-hero">
+            <p class="gardens-eyebrow">Your Gardens</p>
+            <h1 class="gardens-title">Hi {{ user?.firstName }}!</h1>
+            <p class="gardens-tagline">
+                Manage your gardens, events, and volunteer schedules.
+            </p>
+        </header>
 
         <!-- Gardens You Manage -->
-        <h3 class="text-2xl font-bold mb-2 mt-4">Gardens you Manage ({{ managedGardens.length }})</h3>
+        <h3 class="gardens-section-heading">Gardens you Manage ({{ managedGardens.length }})</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2" v-if="managedGardens.length">
             <div v-for="garden in managedGardens" :key="garden.id"
                 class="garden-card garden-card--managed"
@@ -192,7 +198,7 @@ const loadMoreLatestEvents = () => {
         </div>
 
         <!-- Gardens You Are a Member Of -->
-        <h3 class="text-2xl font-bold mb-2 mt-6">Gardens you are a member of ({{ memberGardens.length }})</h3>
+        <h3 class="gardens-section-heading mt-6">Gardens you are a member of ({{ memberGardens.length }})</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2" v-if="memberGardens.length">
             <div v-for="garden in memberGardens" :key="garden.id"
                 class="garden-card garden-card--greyed">
@@ -204,7 +210,7 @@ const loadMoreLatestEvents = () => {
         <p v-else-if="!gardens.loading" class="text-gray-500 italic m-3">You are not a member of any other gardens.</p>
 
         <!-- Other Gardens -->
-        <h3 class="text-2xl font-bold mb-2 mt-6">Other Gardens ({{ otherGardens.length }})</h3>
+        <h3 class="gardens-section-heading mt-6">Other Gardens ({{ otherGardens.length }})</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2" v-if="otherGardens.length">
             <div v-for="garden in otherGardens" :key="garden.id"
                 class="garden-card garden-card--greyed">
@@ -287,25 +293,78 @@ const loadMoreLatestEvents = () => {
 </template>
 
 <style scoped>
+/* ── Page wrapper (light by default, homepage palette) ── */
+.manage-gardens-wrapper {
+    background-color: #f7f1e3;
+    border-radius: 16px;
+    padding: 2.5rem 1.5rem;
+    margin: 0 auto;
+    min-height: 100%;
+}
+
+/* ── Hero ──────────────────────────────────────────── */
+.gardens-hero {
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto 2rem;
+}
+
+.gardens-eyebrow {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #8aa37c;
+    margin: 0 0 0.4rem;
+}
+
+.gardens-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    color: #376451;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem;
+}
+
+.gardens-tagline {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* ── Section headings ──────────────────────────────── */
+.gardens-section-heading {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #344a34;
+    margin: 1.25rem 0 0.75rem;
+}
+
 /* Garden Cards */
 .garden-card {
     margin: 0.75rem;
     padding: 1rem;
     border-right-width: 4px;
     border-width: 1px;
-    border-radius: 0.25rem;
+    border-radius: 0.5rem;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .garden-card--managed {
-    background-color: white;
-    border-color: #e5e7eb;
+    background-color: #ffffff;
+    border-color: #e2dccb;
+    color: #344a34;
 }
 
 .garden-card--managed:hover {
-    opacity: 0.7;
-    background-color: #fde047;
+    background-color: #f3ece0;
+    border-color: #8aa37c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(138, 163, 124, 0.2);
 }
 
 .garden-card--greyed {
@@ -444,4 +503,84 @@ const loadMoreLatestEvents = () => {
         gap: 30px;
     }
 }
+
+</style>
+
+<!--
+  Dark-mode overrides moved out of <style scoped> on purpose.
+
+  When the scoped root element itself (`.manage-gardens-wrapper`) is the
+  target, Vue's :global() compilation is unreliable for property
+  inheritance like `background-color`. Using a non-scoped block with
+  `html.dark` gets us higher specificity AND sidesteps the scoped-root
+  edge case, so the dark theme applies consistently.
+-->
+<style>
+html.dark .manage-gardens-wrapper {
+    background-color: #2d3e26;
+}
+
+html.dark .gardens-title {
+    color: #c8dbbf;
+}
+
+html.dark .gardens-tagline {
+    color: #a0a8a0;
+}
+
+html.dark .gardens-section-heading {
+    color: #c8dbbf;
+}
+
+html.dark .garden-card--managed {
+    background-color: #344a34;
+    border-color: #3d4d36;
+    color: #f5f5f5;
+}
+
+html.dark .garden-card--managed:hover {
+    background-color: #3d4d36;
+    border-color: #8aa37c;
+}
+
+html.dark .garden-card--greyed {
+    background-color: rgba(26, 26, 26, 0.4);
+    border-color: #3d4d36;
+    color: #a0a8a0;
+}
+
+html.dark .garden-card--greyed .text-xl {
+    color: #a0a8a0;
+}
+
+html.dark .garden-section {
+    background-color: rgba(26, 26, 26, 0.4);
+}
+
+html.dark .two-column-section {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+html.dark .garden-section .section-title,
+html.dark .section-title,
+html.dark .event-item .event-title,
+html.dark .event-title {
+    color: #c8dbbf !important;
+}
+
+html.dark .event-item {
+    background-color: rgba(138, 163, 124, 0.18);
+}
+
+html.dark .event-item:hover {
+    background-color: rgba(138, 163, 124, 0.3);
+}
+
+html.dark .event-description {
+    color: #d0d0d0;
+}
+
+/* The light rule for .event-date hard-codes white via !important;
+   in dark mode that's actually fine (white on dark green is legible),
+   so we leave it alone. */
 </style>

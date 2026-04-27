@@ -144,7 +144,7 @@ const toggleSelector = () => {
     
     <!-- Show selector when toggled or when no image exists -->
     <div v-if="showSelector || !hasCurrentImage">
-      <MediaSelector 
+      <MediaSelector
         v-if="gardenId"
         :id="`heroImage-${gardenId}`"
         :model-value="modelValue"
@@ -152,6 +152,7 @@ const toggleSelector = () => {
         :gardenId="gardenId"
         :multiple="false"
         :placeholder="placeholder"
+        :auto-hide-on-select="false"
       />
       
       <div v-else class="text-gray-500 text-sm">

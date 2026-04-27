@@ -21,25 +21,39 @@ const getSystemPreference = () => {
   return false;
 };
 
-const isDarkMode = ref(false);
-
-// Loading state
-const isLoading = ref(true);
-
-// Initialize dark mode from system preference
-onMounted(() => {
-  const shouldBeDark = getSystemPreference();
-  isDarkMode.value = shouldBeDark;
-  applyDarkMode(shouldBeDark);
-});
+const resolveInitialDarkMode = () => {
+  if (typeof window === 'undefined') return false;
+  const savedTheme = localStorage.getItem('garden-public-theme');
+  if (savedTheme === 'dark' || savedTheme === 'light') {
+    return savedTheme === 'dark';
+  }
+  return getSystemPreference();
+};
 
 const applyDarkMode = (dark) => {
+  if (typeof document === 'undefined') return;
   if (dark) {
     document.documentElement.classList.add('dark');
   } else {
     document.documentElement.classList.remove('dark');
   }
 };
+
+// Resolve & apply synchronously during setup so the very first paint
+// matches the user's saved preference (avoids a dark→light flash on
+// reload when the user has explicitly chosen light).
+const initialDarkMode = resolveInitialDarkMode();
+applyDarkMode(initialDarkMode);
+const isDarkMode = ref(initialDarkMode);
+
+// Loading state
+const isLoading = ref(true);
+
+onMounted(() => {
+  // Re-apply on mount in case another view toggled the html class
+  // between setup and mount.
+  applyDarkMode(isDarkMode.value);
+});
 
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value;
@@ -132,9 +146,50 @@ const getVolunteerCount = (task) => {
   return 0;
 };
 
+// Whether the task has remaining open spots
+const hasAvailableSpots = (task) => {
+  const max = task.attributes?.max_volunteers || 1;
+  return getVolunteerCount(task) < max;
+};
+
 // Navigate back to garden page
 const goBackToGarden = () => {
   router.push(`/gardens/${route.params.slug}`);
+};
+
+// Mobile: which task cards are expanded inline (collapsed by default on mobile)
+const expandedTasks = ref({});
+
+const toggleTaskExpanded = (taskId) => {
+  expandedTasks.value[taskId] = !expandedTasks.value[taskId];
+};
+
+const isMobileViewport = () =>
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+
+// On mobile, the compact header taps toggle expand/collapse instead of navigating.
+// On desktop the compact header is hidden, so this handler is a no-op there.
+const onCompactHeaderClick = (event, taskId) => {
+  if (isMobileViewport()) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleTaskExpanded(taskId);
+  }
+};
+
+// Get a small thumbnail URL (preferring smaller formats first) for the compact mobile header.
+const getTaskThumbnail = (task) => {
+  const primaryImage = task.attributes?.primary_image;
+  if (!primaryImage) return null;
+
+  const formats = primaryImage.formats || primaryImage.data?.attributes?.formats;
+  return (
+    formats?.thumbnail?.url ||
+    formats?.small?.url ||
+    primaryImage.url ||
+    primaryImage.data?.attributes?.url ||
+    null
+  );
 };
 </script>
 
@@ -194,52 +249,119 @@ const goBackToGarden = () => {
           :key="task.id"
           :href="'/gardens/' + route.params.slug + '/tasks/' + task.id"
           class="task-card task-card--clickable"
+          :class="{ 'task-card--expanded': expandedTasks[task.id] }"
         >
-          <!-- Task Image -->
-          <div class="task-image-container">
-            <img
-              v-if="getTaskImage(task)"
-              :src="getTaskImage(task)"
-              :alt="task.attributes?.title || 'Task image'"
-              class="task-image"
-            />
-            <div v-else class="task-image-placeholder">
-              <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+          <!-- Mobile compact header: small thumbnail + title + category. Tap to expand. -->
+          <div
+            class="task-compact-header"
+            role="button"
+            tabindex="0"
+            :aria-expanded="!!expandedTasks[task.id]"
+            @click="onCompactHeaderClick($event, task.id)"
+            @keydown.enter="onCompactHeaderClick($event, task.id)"
+            @keydown.space.prevent="onCompactHeaderClick($event, task.id)"
+          >
+            <div class="task-compact-thumb">
+              <img
+                v-if="getTaskThumbnail(task)"
+                :src="getTaskThumbnail(task)"
+                :alt="task.attributes?.title || 'Task image'"
+              />
+              <div v-else class="task-compact-thumb-placeholder">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
             </div>
-          </div>
-
-          <!-- Task Content -->
-          <div class="task-content">
-            <!-- Badges -->
-            <div class="task-badges">
-              <span :class="getStatusBadgeClasses(task.attributes?.status)" class="task-badge">
-                {{ formatStatus(task.attributes?.status) }}
-              </span>
-              <span v-if="task.attributes?.type" :class="getTypeBadgeClasses(task.attributes?.type)" class="task-badge">
+            <div class="task-compact-meta">
+              <h3 class="task-compact-title">{{ task.attributes?.title }}</h3>
+              <span
+                v-if="task.attributes?.type"
+                :class="getTypeBadgeClasses(task.attributes?.type)"
+                class="task-badge task-compact-badge"
+              >
                 {{ task.attributes?.type }}
               </span>
             </div>
+            <svg
+              class="task-compact-chevron"
+              :class="{ 'task-compact-chevron--open': expandedTasks[task.id] }"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
 
-            <!-- Title -->
-            <h3 class="task-title">{{ task.attributes?.title }}</h3>
-
-            <!-- Overview -->
-            <p v-if="task.attributes?.overview" class="task-overview">
-              {{ task.attributes.overview.length > 150 ? task.attributes.overview.substring(0, 150) + '...' : task.attributes.overview }}
-            </p>
-
-            <!-- Volunteer Info -->
-            <div class="task-volunteers">
-              <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
-              </svg>
-              <span class="volunteer-count">
-                {{ getVolunteerCount(task) }} / {{ task.attributes?.max_volunteers || 1 }} volunteers
-              </span>
+          <!-- Detail body: always visible on desktop; on mobile only when expanded -->
+          <div class="task-detail-body" :class="{ 'task-detail-body--collapsed': !expandedTasks[task.id] }">
+            <!-- Task Image -->
+            <div class="task-image-container">
+              <img
+                v-if="getTaskImage(task)"
+                :src="getTaskImage(task)"
+                :alt="task.attributes?.title || 'Task image'"
+                class="task-image"
+              />
+              <div v-else class="task-image-placeholder">
+                <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
             </div>
 
+            <!-- Task Content -->
+            <div class="task-content">
+              <!-- Badges -->
+              <div class="task-badges">
+                <span :class="getStatusBadgeClasses(task.attributes?.status)" class="task-badge">
+                  {{ formatStatus(task.attributes?.status) }}
+                </span>
+                <span v-if="task.attributes?.type" :class="getTypeBadgeClasses(task.attributes?.type)" class="task-badge">
+                  {{ task.attributes?.type }}
+                </span>
+              </div>
+
+              <!-- Title -->
+              <h3 class="task-title">{{ task.attributes?.title }}</h3>
+
+              <!-- Overview -->
+              <p v-if="task.attributes?.overview" class="task-overview">
+                {{ task.attributes.overview.length > 150 ? task.attributes.overview.substring(0, 150) + '...' : task.attributes.overview }}
+              </p>
+
+              <!-- Volunteer Info -->
+              <div class="task-volunteers">
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+                </svg>
+                <span class="volunteer-count">
+                  {{ getVolunteerCount(task) }} / {{ task.attributes?.max_volunteers || 1 }} volunteers
+                </span>
+              </div>
+
+              <!-- Sign Up CTA (the wrapping <a> handles navigation to the task detail page,
+                   which runs the actual signup flow). Using <span> because <button> inside
+                   <a> is invalid HTML. -->
+              <span
+                v-if="hasAvailableSpots(task)"
+                class="signup-cta"
+                role="button"
+                aria-label="Sign up for this task"
+              >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                Sign Up for This Task
+              </span>
+              <span v-else class="task-full-cta">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Task is Full
+              </span>
+            </div>
           </div>
         </a>
       </div>
@@ -257,8 +379,8 @@ const goBackToGarden = () => {
   width: 100vw;
   height: 100vh;
   overflow-y: auto;
-  background-color: #f9fafb;
-  color: #1a1a1a;
+  background-color: #f7f1e3;
+  color: #344a34;
   transition: background-color 0.3s ease, color 0.3s ease;
   z-index: 10000;
   margin: 0;
@@ -373,10 +495,12 @@ const goBackToGarden = () => {
 }
 
 .tasks-title {
-  font-size: 2.5rem;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.75rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
   margin-bottom: 12px;
-  color: #1a1a1a;
+  color: #376451;
   transition: color 0.3s ease;
 }
 
@@ -413,7 +537,8 @@ const goBackToGarden = () => {
 .no-tasks {
   text-align: center;
   padding: 60px 20px;
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: #ffffff;
+  border: 1px solid #e2dccb;
   border-radius: 16px;
   max-width: 500px;
   margin: 0 auto;
@@ -421,6 +546,7 @@ const goBackToGarden = () => {
 
 .dark .no-tasks {
   background-color: rgba(26, 26, 26, 0.5);
+  border-color: rgba(138, 163, 124, 0.25);
 }
 
 .no-tasks-icon {
@@ -430,8 +556,8 @@ const goBackToGarden = () => {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: #e5e7eb;
-  color: #9ca3af;
+  background-color: #efe9d6;
+  color: #8aa37c;
   margin-bottom: 20px;
 }
 
@@ -443,7 +569,7 @@ const goBackToGarden = () => {
 .no-tasks-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #344a34;
   margin-bottom: 8px;
 }
 
@@ -469,23 +595,27 @@ const goBackToGarden = () => {
 /* Task Card */
 .task-card {
   background-color: #ffffff;
+  border: 1px solid #e2dccb;
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 10px rgba(55, 100, 81, 0.08);
   transition: all 0.3s ease;
 }
 
 .task-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border-color: #c9bfa1;
+  box-shadow: 0 8px 24px rgba(55, 100, 81, 0.14);
 }
 
 .dark .task-card {
   background-color: #2d3e26;
+  border-color: rgba(138, 163, 124, 0.25);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .dark .task-card:hover {
+  border-color: rgba(138, 163, 124, 0.5);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
@@ -495,7 +625,7 @@ const goBackToGarden = () => {
   border-radius: 12px;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  background-color: #f3f4f6;
+  background-color: #efe9d6;
 }
 
 .dark .task-image-container {
@@ -514,11 +644,13 @@ const goBackToGarden = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #e5e7eb;
+  background-color: #efe9d6;
+  color: #8aa37c;
 }
 
 .dark .task-image-placeholder {
   background-color: #374151;
+  color: #9ca3af;
 }
 
 /* Task Content */
@@ -548,7 +680,7 @@ const goBackToGarden = () => {
 .task-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #344a34;
   margin-bottom: 12px;
   line-height: 1.4;
 }
@@ -576,12 +708,16 @@ const goBackToGarden = () => {
   gap: 8px;
   margin-bottom: 20px;
   padding: 12px;
-  background-color: #f9fafb;
+  background-color: #f7f1e3;
+  border: 1px solid #e2dccb;
   border-radius: 8px;
+  color: #6c8a6a;
 }
 
 .dark .task-volunteers {
   background-color: rgba(0, 0, 0, 0.2);
+  border-color: transparent;
+  color: inherit;
 }
 
 .volunteer-count {
@@ -605,6 +741,52 @@ a.task-card--clickable {
   cursor: pointer;
 }
 
+/* Sign Up CTA inside each card (looks like a button) */
+.signup-cta,
+.task-full-cta {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 20px;
+  margin-top: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.signup-cta {
+  color: #ffffff;
+  background-color: #8aa37c;
+}
+
+.task-card:hover .signup-cta {
+  background-color: #6c8a6a;
+  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
+}
+
+.task-full-cta {
+  color: #6b7280;
+  background-color: #f3f4f6;
+  cursor: default;
+}
+
+.dark .task-full-cta {
+  color: #9ca3af;
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+/* Mobile compact header (hidden on desktop) */
+.task-compact-header {
+  display: none;
+}
+
+.task-detail-body {
+  display: block;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .tasks-content {
@@ -621,7 +803,114 @@ a.task-card--clickable {
 
   .tasks-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 14px;
+  }
+
+  /* Mobile: show compact header, collapse the body until expanded */
+  .task-compact-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .task-compact-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #efe9d6;
+    flex-shrink: 0;
+  }
+
+  .task-compact-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .task-compact-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8aa37c;
+  }
+
+  .dark .task-compact-thumb {
+    background-color: #1f2d1a;
+  }
+
+  .dark .task-compact-thumb-placeholder {
+    color: #9ca3af;
+  }
+
+  .task-compact-meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .task-compact-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #344a34;
+    line-height: 1.3;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .dark .task-compact-title {
+    color: #f5f5f5;
+  }
+
+  .task-compact-badge {
+    align-self: flex-start;
+  }
+
+  .task-compact-chevron {
+    width: 20px;
+    height: 20px;
+    color: #6b7280;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+
+  .task-compact-chevron--open {
+    transform: rotate(180deg);
+  }
+
+  .dark .task-compact-chevron {
+    color: #9ca3af;
+  }
+
+  /* Hide the full detail body on mobile until expanded */
+  .task-detail-body--collapsed {
+    display: none;
+  }
+
+  /* Tighten image container spacing on mobile expanded view */
+  .task-detail-body .task-image-container {
+    margin: 0 12px 12px;
+  }
+
+  .task-detail-body .task-content {
+    padding: 0 16px 16px;
+  }
+
+  /* Disable hover-lift on mobile so taps don't shift the card */
+  .task-card:hover {
+    transform: none;
   }
 }
 </style>

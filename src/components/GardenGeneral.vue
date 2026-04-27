@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useGardensStore, useAlertStore } from '@/stores';
 import HeroImageCard from '@/components/form/HeroImageCard.vue';
+import { gardenStatCards } from '@/_config/GardenConfig';
 
 const props = defineProps({
   garden: {
@@ -20,6 +21,10 @@ const props = defineProps({
   smsCampaigns: {
     type: Array,
     required: true
+  },
+  recurringTasks: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -27,6 +32,21 @@ const route = useRoute();
 const router = useRouter();
 const gardensStore = useGardensStore();
 const alertStore = useAlertStore();
+
+// Stat cards driven by `@/_config/GardenConfig` — the config defines the cards
+// and how to derive each count from the live data passed in via props.
+const statCards = computed(() => {
+  const ctx = {
+    garden: props.garden,
+    volunteerDays: props.volunteerDays,
+    recurringTasks: props.recurringTasks,
+    smsCampaigns: props.smsCampaigns
+  };
+  return gardenStatCards.map(card => ({
+    ...card,
+    count: typeof card.count === 'function' ? card.count(ctx) : card.count
+  }));
+});
 
 // Get latest 3 events, sorted from soonest to happen to longest
 const latestEvents = computed(() => {
@@ -258,7 +278,6 @@ const saveDescription = async () => {
 <template>
   <div class="bg-[#2d3e26] rounded-lg shadow-md p-6">
     <div class="mb-4">
-      <h2 class="text-2xl font-light font-serif mb-4 text-[#f5f5f5]">General</h2>
       <router-link 
         :to="`/gardens/${garden.attributes.slug}`"
         target="_blank"
@@ -270,27 +289,15 @@ const saveDescription = async () => {
     </div>
     <div class="space-y-6">
       <!-- Summary Numbers -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div 
-          class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
-          @click="router.push({ path: route.path, hash: '#volunteers' })"
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+          v-for="stat in statCards"
+          :key="stat.key"
+          class="stat-card bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
+          @click="router.push({ path: route.path, hash: stat.hash })"
         >
-          <div class="text-2xl font-bold text-blue-300">{{ garden.attributes.volunteers?.data?.length || 0 }}</div>
-          <div class="text-sm text-[#d0d0d0] mt-1">Volunteers</div>
-        </div>
-        <div 
-          class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
-          @click="router.push({ path: route.path, hash: '#events' })"
-        >
-          <div class="text-2xl font-bold text-purple-300">{{ volunteerDays.days?.length || 0 }}</div>
-          <div class="text-sm text-[#d0d0d0] mt-1">Events</div>
-        </div>
-        <div 
-          class="bg-[rgba(26,26,26,0.6)] p-4 rounded-lg border border-[#3d4d36]/50 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
-          @click="router.push({ path: route.path, hash: '#sms' })"
-        >
-          <div class="text-2xl font-bold text-green-300">{{ smsCampaigns.length || 0 }}</div>
-          <div class="text-sm text-[#d0d0d0] mt-1">SMS Campaigns</div>
+          <div class="stat-number text-3xl font-bold" :class="stat.numberClass">{{ stat.count }}</div>
+          <div class="stat-label text-lg text-[#d0d0d0]">{{ stat.label }}</div>
         </div>
       </div>
 
@@ -489,6 +496,29 @@ const saveDescription = async () => {
   display: flex;
   width: 100%;
   justify-content: center;
+}
+
+/* Stat cards: stack number above label by default */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  margin-top: 0.25rem;
+}
+
+/* On mobile (single-column layout), put number and label on the same line */
+@media (max-width: 767px) {
+  .stat-card {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.625rem;
+  }
+
+  .stat-label {
+    margin-top: 0;
+  }
 }
 </style>
 

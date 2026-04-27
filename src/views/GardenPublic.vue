@@ -1526,6 +1526,13 @@ const mapLocationTrackings = computed(() => {
   .organization-title {
     font-size: 1.75rem;
   }
+
+  /* Inset event cards on mobile so the section background shows through
+     on the sides and the rounded corners are visible. */
+  .event-item {
+    margin: 0 8px;
+    border-radius: 10px;
+  }
 }
 
 @media (max-width: 480px) {

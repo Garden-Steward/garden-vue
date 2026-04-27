@@ -417,6 +417,25 @@ const getStatusBadgeClasses = (status) => {
 // Refs to GardenTask modal instances (regular tasks) for opening programmatically
 const regularTaskModalRefs = ref({});
 
+// Mobile: which regular task cards are expanded inline (collapsed by default on mobile)
+const expandedRegularTasks = ref({});
+
+const toggleRegularTaskExpanded = (taskId) => {
+  expandedRegularTasks.value[taskId] = !expandedRegularTasks.value[taskId];
+};
+
+const isMobileViewport = () =>
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+
+// Card-level click on regular task: on mobile toggles inline expansion; on desktop opens edit modal (editor only)
+const handleRegularTaskCardClick = (taskId) => {
+  if (isMobileViewport()) {
+    toggleRegularTaskExpanded(taskId);
+    return;
+  }
+  if (props.editor) openEditModal(taskId);
+};
+
 // Open edit modal for a regular task (call exposed openModal on the component)
 const openEditModal = (taskId) => {
   const modalRef = regularTaskModalRefs.value[taskId];
@@ -480,12 +499,12 @@ const openRecurringEditModal = (taskId) => {
               class="p-4 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
               @click="toggleDrawer(recurringTask.id)"
             >
-              <div class="flex items-center justify-between">
-                <div class="text-lg font-medium text-[#f5f5f5]">
+              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-0">
+                <div class="text-lg font-medium text-[#f5f5f5] w-full md:w-auto">
                   {{ recurringTask.attributes?.title }}
                 </div>
-                <div class="flex gap-2 items-center">
-                  <span 
+                <div class="flex gap-2 items-center self-end md:self-auto">
+                  <span
                     class="px-3 py-1 rounded-full text-sm font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
                   >
                     {{ recurringTask.attributes?.type || 'General' }}
@@ -705,7 +724,7 @@ const openRecurringEditModal = (taskId) => {
         <GardenTask v-if="editor" :garden="garden.id" :editor="editor" />
       </div>
       
-      <div v-if="regularTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 ml-3">
+      <div v-if="regularTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6 md:ml-3">
         <div
           v-for="task in regularTasks"
           :key="task.id"
@@ -713,27 +732,67 @@ const openRecurringEditModal = (taskId) => {
           tabindex="0"
           class="bg-[rgba(26,26,26,0.6)] rounded-xl border border-[#3d4d36]/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-custom-green focus:ring-offset-2 focus:ring-offset-[#2d3e26]"
           :class="{ 'hover:border-[#8aa37c]/50': editor }"
-          @click="editor && openEditModal(task.id)"
-          @keydown.enter="editor && openEditModal(task.id)"
-          @keydown.space.prevent="editor && openEditModal(task.id)"
+          @click="handleRegularTaskCardClick(task.id)"
+          @keydown.enter="handleRegularTaskCardClick(task.id)"
+          @keydown.space.prevent="handleRegularTaskCardClick(task.id)"
         >
-          <!-- Task image -->
-          <div class="m-4 rounded-xl aspect-[4/3] overflow-hidden bg-[#1f2d1a]">
-            <img
-              v-if="getTaskImage(task)"
-              :src="getTaskImage(task)"
-              :alt="task.attributes?.title || 'Task'"
-              class="w-full h-full object-cover"
-            />
-            <div v-else class="w-full h-full flex items-center justify-center">
-              <svg class="w-12 h-12 text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+          <!-- Mobile compact header: thumbnail + title + category. Tap to expand. -->
+          <div class="flex md:hidden items-center gap-3 p-3">
+            <div class="w-16 h-16 rounded-lg overflow-hidden bg-[#1f2d1a] shrink-0">
+              <img
+                v-if="getTaskImage(task)"
+                :src="getTaskImage(task)"
+                :alt="task.attributes?.title || 'Task'"
+                class="w-full h-full object-cover"
+              />
+              <div v-else class="w-full h-full flex items-center justify-center">
+                <svg class="w-7 h-7 text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
             </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-base font-semibold text-[#f5f5f5] leading-tight line-clamp-2">
+                {{ task.attributes?.title }}
+              </h3>
+              <span
+                v-if="task.attributes?.type"
+                :class="getTypeBadgeClasses(task.attributes?.type)"
+                class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+              >
+                {{ task.attributes?.type }}
+              </span>
+            </div>
+            <svg
+              class="w-5 h-5 text-[#d0d0d0] transition-transform shrink-0"
+              :class="{ 'rotate-180': expandedRegularTasks[task.id] }"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
 
-          <!-- Task content -->
-          <div class="p-4 space-y-3">
+          <!-- Detail body: always visible on desktop; on mobile only when expanded -->
+          <div :class="{ 'hidden md:block': !expandedRegularTasks[task.id] }">
+            <!-- Task image -->
+            <div class="m-4 rounded-xl aspect-[4/3] overflow-hidden bg-[#1f2d1a]">
+              <img
+                v-if="getTaskImage(task)"
+                :src="getTaskImage(task)"
+                :alt="task.attributes?.title || 'Task'"
+                class="w-full h-full object-cover"
+              />
+              <div v-else class="w-full h-full flex items-center justify-center">
+                <svg class="w-12 h-12 text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Task content -->
+            <div class="p-4 space-y-3">
             <!-- Badges -->
             <div class="flex flex-wrap gap-2">
               <span :class="getStatusBadgeClasses(task.attributes?.status)" class="px-3 py-1 rounded-full text-xs font-semibold">
@@ -788,6 +847,7 @@ const openRecurringEditModal = (taskId) => {
               </svg>
               Edit
             </button>
+            </div>
           </div>
         </div>
       </div>

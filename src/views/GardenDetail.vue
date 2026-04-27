@@ -30,6 +30,7 @@ const { user } = storeToRefs(authStore);
 const { garden } = storeToRefs(gardensStore);
 const { volunteerDays, volunteerDaysPagination } = storeToRefs(eventStore);
 const { smsCampaigns } = storeToRefs(campaignStore);
+const { recurringTasks } = storeToRefs(gardenTaskStore);
 const { taskMessages, loading: messagesLoading } = storeToRefs(messagesStore);
 
 const eventsPage = ref(1);
@@ -74,10 +75,8 @@ const initializeFromHash = () => {
 // Set active section and update URL hash
 const setActiveSection = (section) => {
   activeSection.value = section;
-  // Update URL hash without triggering navigation
-  if (window.history.replaceState) {
-    window.history.replaceState(null, '', `${route.path}#${section}`);
-  }
+  // Keep Vue Router's reactive hash in sync with section changes.
+  router.replace({ path: route.path, hash: `#${section}` });
 };
 
 // Watch for hash changes in the URL
@@ -351,13 +350,21 @@ const openEventEditor = (day) => {
 </script>
 
 <template>
-  <div class="bg-[#344a34] mx-auto min-h-screen">
+  <div class="gm-page mx-auto min-h-screen">
     <!-- Garden Title Header -->
     <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
-            <h1 v-if="garden.attributes?.title" class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight pr-12 lg:pr-0">{{ garden.attributes.title }}</h1>
+            <h1
+              v-if="garden.attributes?.title"
+              class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight pr-12 lg:pr-0 cursor-pointer hover:opacity-90 transition-opacity"
+              role="button"
+              tabindex="0"
+              @click="setActiveSection('general')"
+              @keydown.enter="setActiveSection('general')"
+              @keydown.space.prevent="setActiveSection('general')"
+            >{{ garden.attributes.title }}</h1>
             <div v-else class="h-12 bg-white/20 rounded animate-pulse"></div>
             <p v-if="garden.attributes?.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb.length > 150 ? garden.attributes.blurb.substring(0, 150) + '...' : garden.attributes.blurb }}</p>
             <div v-else-if="garden.loading || (!garden.attributes && !garden.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
@@ -390,18 +397,19 @@ const openEventEditor = (day) => {
             :editor="editor"
             :volunteer-days="volunteerDays"
             :sms-campaigns="smsCampaigns"
+            :recurring-tasks="recurringTasks"
           />
 
         <!-- Task Messages Section -->
-        <div v-if="activeSection === 'messages'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'messages'" class="gm-panel rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">Task Messages</h2>
+            <h2 class="gm-heading text-2xl font-light font-serif">Task Messages</h2>
           </div>
 
           <LoadingSpinner v-if="messagesLoading" size="sm" :centered="true" />
 
           <div v-else-if="!groupedMessages || groupedMessages.length === 0" class="text-center py-8">
-            <p class="text-[#d0d0d0]">No task messages found</p>
+            <p class="gm-text-muted">No task messages found</p>
           </div>
 
           <div v-else class="space-y-4">
@@ -452,9 +460,9 @@ const openEventEditor = (day) => {
         </div>
 
         <!-- Volunteers Section -->
-        <div v-if="activeSection === 'volunteers'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'volunteers'" class="gm-panel rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">Volunteers ({{ garden.attributes.volunteers?.data?.length || 0 }})</h2>
+            <h2 class="gm-heading text-2xl font-light font-serif">Volunteers ({{ garden.attributes.volunteers?.data?.length || 0 }})</h2>
             <a v-if="editor" @click="clearTemp" class="text-sm text-blue-400 hover:text-blue-300 cursor-pointer">Clear Temps</a>
           </div>
 
@@ -469,18 +477,18 @@ const openEventEditor = (day) => {
           <div v-if="garden.attributes.volunteers?.data?.length" class="relative">
             <table class="w-full">
               <thead>
-                <tr class="tr-class border-b-2 border-[#3d4d36]/50">
-                  <th class="text-left py-3 px-4 text-[#f5f5f5]">
+                <tr class="tr-class gm-border-b-strong border-b-2">
+                  <th class="text-left py-3 px-4 gm-text">
                     <button @click="toggleSortOrder('name')" class="cursor-pointer hover:text-blue-400 flex items-center gap-2">
                       Name {{ sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
                     </button>
                   </th>
-                  <th class="text-left py-3 px-4 text-[#f5f5f5]">
+                  <th class="text-left py-3 px-4 gm-text">
                     <button @click="toggleSortOrder('createdAt')" class="cursor-pointer hover:text-blue-400 flex items-center gap-2">
                       Registered {{ sortField === 'createdAt' ? (sortOrder === 'asc' ? '▲' : '▼') : '' }}
                     </button>
                   </th>
-                  <th class="text-left py-3 px-4 text-[#f5f5f5]">Interests</th>
+                  <th class="text-left py-3 px-4 gm-text">Interests</th>
                 </tr>
               </thead>
               <tbody>
@@ -497,14 +505,14 @@ const openEventEditor = (day) => {
               </tbody>
             </table>
           </div>
-          <div v-else class="text-[#d0d0d0] text-center py-8">
+          <div v-else class="gm-text-muted text-center py-8">
             No volunteers yet.
           </div>
         </div>
 
         <!-- Projects Section -->
-        <div v-if="activeSection === 'projects'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
-          <h2 class="text-2xl font-light font-serif mb-4 text-[#f5f5f5]">Projects</h2>
+        <div v-if="activeSection === 'projects'" class="gm-panel rounded-lg shadow-md p-6">
+          <h2 class="text-2xl font-light font-serif mb-4 gm-text">Projects</h2>
           <div v-if="editor && garden?.id" class="mb-4">
             <Project 
               :garden="garden.id"
@@ -516,15 +524,15 @@ const openEventEditor = (day) => {
         </div>
 
         <!-- Tasks Section -->
-        <div v-if="activeSection === 'tasks'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'tasks'" class="gm-panel rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">Tasks</h2>
+            <h2 class="gm-heading text-2xl font-light font-serif">Tasks</h2>
             <router-link
               v-if="garden.attributes?.slug"
               :to="`/gardens/${garden.attributes.slug}/tasks`"
               target="_blank"
               rel="noopener noreferrer"
-              class="px-4 py-2 bg-[rgba(26,26,26,0.6)] border border-[#3d4d36]/50 text-[#f5f5f5] font-medium text-sm rounded shadow-md hover:bg-[rgba(26,26,26,0.8)] hover:border-[#3d4d36] focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
+              class="gm-secondary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
             >
               View Public Tasks Page
             </router-link>
@@ -536,20 +544,20 @@ const openEventEditor = (day) => {
         <PlantsCatalog v-if="activeSection === 'plants'" :garden="garden" />
 
         <!-- Events Section -->
-        <div v-if="activeSection === 'events'" id="events" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'events'" id="events" class="gm-panel rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">Events ({{ volunteerDays.days?.length || 0 }})</h2>
+            <h2 class="gm-heading text-2xl font-light font-serif">Events ({{ volunteerDays.days?.length || 0 }})</h2>
             <div class="flex items-center gap-3">
               <router-link
                 :to="`/manage/gardens/${garden.attributes?.slug}/event-templates`"
-                class="px-4 py-2 bg-[rgba(26,26,26,0.6)] border border-[#3d4d36]/50 text-[#f5f5f5] font-medium text-sm rounded shadow-md hover:bg-[rgba(26,26,26,0.8)] hover:border-[#3d4d36] focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
+                class="gm-secondary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
               >
                 Recurring Event Templates
               </router-link>
-              <button 
-                v-if="editor" 
-                type="button" 
-                class="px-4 py-2 bg-orange-700 text-white font-medium text-sm rounded shadow-md hover:bg-orange-800 focus:bg-orange-800 focus:outline-none focus:ring-0 transition duration-150 ease-in-out" 
+              <button
+                v-if="editor"
+                type="button"
+                class="gm-primary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
                 @click="showDayModal = true"
               >
                 Create Volunteer Day
@@ -560,23 +568,23 @@ const openEventEditor = (day) => {
           <VolunteerDayModal v-model:show="showDayModal" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" />
 
           <!-- Events table (past + upcoming, sortable) -->
-          <div v-if="allEventsSorted.length > 0" class="relative overflow-x-auto">
+          <div v-if="allEventsSorted.length > 0" class="relative sm:overflow-x-auto">
             <table class="w-full">
-              <thead>
-                <tr class="border-b-2 border-[#3d4d36]/50">
+              <thead class="hidden sm:table-header-group">
+                <tr class="gm-border-b-strong border-b-2">
                   <th class="w-14 py-3 px-2"></th>
-                  <th class="text-left py-3 px-4 text-[#f5f5f5]">
+                  <th class="text-left py-3 px-4 gm-text">
                     <button @click="toggleEventSort('title')" class="cursor-pointer hover:text-blue-400 flex items-center gap-2 font-medium">
                       Title {{ eventSortField === 'title' ? (eventSortOrder === 'asc' ? '▲' : '▼') : '' }}
                     </button>
                   </th>
-                  <th class="text-left py-3 px-4 text-[#f5f5f5]">
+                  <th class="text-left py-3 px-4 gm-text">
                     <button @click="toggleEventSort('startDatetime')" class="cursor-pointer hover:text-blue-400 flex items-center gap-2 font-medium">
                       Date {{ eventSortField === 'startDatetime' ? (eventSortOrder === 'asc' ? '▲' : '▼') : '' }}
                     </button>
                   </th>
-                  <th class="text-left py-3 px-4 text-[#f5f5f5] font-medium">Recurring</th>
-                  <th class="text-left py-3 px-4 text-[#f5f5f5] font-medium">Actions</th>
+                  <th class="hidden md:table-cell text-left py-3 px-4 gm-text font-medium">Recurring</th>
+                  <th class="text-left py-3 px-4 gm-text font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -584,28 +592,47 @@ const openEventEditor = (day) => {
                   v-for="day in allEventsSorted"
                   :key="day.id"
                   :class="[
-                    'border-b border-[#3d4d36]/30 cursor-pointer',
-                    isPastEvent(day)
-                      ? 'bg-[rgba(60,60,60,0.5)] text-[#b0b0b0]'
-                      : 'bg-[rgba(26,26,26,0.4)] text-[#f5f5f5] hover:bg-[rgba(26,26,26,0.6)]'
+                    'gm-event-row block sm:table-row border-b cursor-pointer p-3 sm:p-0',
+                    isPastEvent(day) ? 'gm-event-row-past' : 'gm-event-row-upcoming'
                   ]"
                   @click="openEventEditor(day)"
                 >
-                  <td class="py-2 px-2 w-14 align-middle">
+                  <!-- Thumbnail (desktop only — mobile shows it inline beside title) -->
+                  <td class="hidden sm:table-cell py-2 px-2 w-14 align-middle">
                     <img
                       v-if="getEventHeroThumbnail(day)"
                       :src="getEventHeroThumbnail(day)"
                       :alt="day.title"
                       class="w-12 h-12 object-cover rounded flex-shrink-0"
                     />
-                    <span v-else class="inline-block w-12 h-12 rounded bg-[#3d4d36]/30" aria-hidden="true"></span>
+                    <span v-else class="gm-thumb-placeholder inline-block w-12 h-12 rounded" aria-hidden="true"></span>
                   </td>
-                  <td class="py-3 px-4 font-medium">{{ day.title }}</td>
-                  <td class="py-3 px-4">{{ formatEventDate(day.startDatetime) }}</td>
-                  <td class="py-3 px-4">
+
+                  <!-- Title (with inline mobile thumbnail) -->
+                  <td class="block sm:table-cell sm:py-3 sm:px-4 font-medium">
+                    <div class="flex items-center gap-3 sm:block">
+                      <img
+                        v-if="getEventHeroThumbnail(day)"
+                        :src="getEventHeroThumbnail(day)"
+                        :alt="day.title"
+                        class="sm:hidden w-12 h-12 object-cover rounded flex-shrink-0"
+                      />
+                      <span class="font-semibold text-lg leading-snug sm:text-base sm:font-medium">{{ day.title }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Date -->
+                  <td class="block sm:table-cell mt-1 sm:mt-0 sm:py-3 sm:px-4 text-lg sm:text-base gm-text-muted sm:gm-text">
+                    {{ formatEventDate(day.startDatetime) }}
+                  </td>
+
+                  <!-- Recurring (hidden on mobile + tablet) -->
+                  <td class="hidden md:table-cell py-3 px-4">
                     <span class="recurring-preview">{{ getRecurringEventPreview(day) }}</span>
                   </td>
-                  <td class="py-3 px-4" @click.stop>
+
+                  <!-- Actions -->
+                  <td class="block sm:table-cell mt-2 sm:mt-0 sm:py-3 sm:px-4" @click.stop>
                     <VolunteerDayModal
                       v-bind="day"
                       :garden="garden.id"
@@ -621,7 +648,7 @@ const openEventEditor = (day) => {
           </div>
 
           <!-- No Events Message -->
-          <div v-else-if="!volunteerDays.loading" class="text-[#d0d0d0] text-center py-8">
+          <div v-else-if="!volunteerDays.loading" class="gm-text-muted text-center py-8">
             No events scheduled yet.
           </div>
 
@@ -642,9 +669,9 @@ const openEventEditor = (day) => {
         </div>
 
         <!-- SMS Campaigns Section -->
-        <div v-if="activeSection === 'sms'" class="bg-[#2d3e26] rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'sms'" class="gm-panel rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-light font-serif text-[#f5f5f5]">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
+            <h2 class="gm-heading text-2xl font-light font-serif">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
             <SmsCampaignModal
               v-if="editor"
               :garden="garden.id"
@@ -658,7 +685,7 @@ const openEventEditor = (day) => {
               <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
             </div>
           </div>
-          <div v-else class="text-[#d0d0d0] text-center py-8">
+          <div v-else class="gm-text-muted text-center py-8">
             No SMS campaigns yet.
           </div>
 
@@ -701,4 +728,260 @@ export default {
     -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
     mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
+
+  /* ── Light mode (default, homepage palette) ──────── */
+  .gm-page {
+    background-color: #f7f1e3;
+    color: #344a34;
+  }
+
+  .gm-panel {
+    background-color: #ffffff;
+    color: #344a34;
+    border: 1px solid #e2dccb;
+  }
+
+  .gm-heading {
+    color: #376451;
+  }
+
+  .gm-text {
+    color: #344a34;
+  }
+
+  .gm-text-muted {
+    color: #6b7280;
+  }
+
+  .gm-border-b-strong {
+    border-bottom-color: #e2dccb;
+  }
+
+  .gm-secondary-btn {
+    background-color: #ffffff;
+    color: #376451;
+    border: 1px solid #c7d4bf;
+  }
+  .gm-secondary-btn:hover {
+    background-color: #f3ece0;
+    border-color: #8aa37c;
+  }
+
+  .gm-primary-btn {
+    background-color: #8aa37c;
+    color: #ffffff;
+    border: 1px solid #8aa37c;
+  }
+  .gm-primary-btn:hover,
+  .gm-primary-btn:focus {
+    background-color: #6c8a6a;
+    border-color: #6c8a6a;
+  }
+  .gm-primary-btn:active {
+    background-color: #376451;
+    border-color: #376451;
+  }
+
+  .gm-event-row {
+    border-color: #e2dccb;
+  }
+  .gm-event-row-upcoming {
+    background-color: #ffffff;
+    color: #344a34;
+  }
+  .gm-event-row-upcoming:hover {
+    background-color: #f3ece0;
+  }
+  .gm-event-row-past {
+    background-color: #f7f1e3;
+    color: #6b7280;
+  }
+  .gm-event-row-past:hover {
+    background-color: #ece6d4;
+  }
+
+  .gm-thumb-placeholder {
+    background-color: rgba(138, 163, 124, 0.2);
+  }
+
+  /* ── Dark mode overrides ─────────────────────────── */
+  :global(.dark) .gm-page {
+    background-color: #344a34;
+    color: #f5f5f5;
+  }
+
+  :global(.dark) .gm-panel {
+    background-color: #2d3e26;
+    color: #f5f5f5;
+    border-color: #3d4d36;
+  }
+
+  :global(.dark) .gm-heading,
+  :global(.dark) .gm-text {
+    color: #f5f5f5;
+  }
+
+  :global(.dark) .gm-text-muted {
+    color: #d0d0d0;
+  }
+
+  :global(.dark) .gm-border-b-strong {
+    border-bottom-color: rgba(61, 77, 54, 0.5);
+  }
+
+  :global(.dark) .gm-secondary-btn {
+    background-color: rgba(26, 26, 26, 0.6);
+    color: #f5f5f5;
+    border-color: rgba(61, 77, 54, 0.5);
+  }
+  :global(.dark) .gm-secondary-btn:hover {
+    background-color: rgba(26, 26, 26, 0.8);
+    border-color: #3d4d36;
+  }
+
+  :global(.dark) .gm-primary-btn {
+    background-color: #c2410c;
+    border-color: #c2410c;
+  }
+  :global(.dark) .gm-primary-btn:hover,
+  :global(.dark) .gm-primary-btn:focus {
+    background-color: #9a3209;
+    border-color: #9a3209;
+  }
+  :global(.dark) .gm-primary-btn:active {
+    background-color: #7a2807;
+    border-color: #7a2807;
+  }
+
+  :global(.dark) .gm-event-row {
+    border-color: rgba(61, 77, 54, 0.3);
+  }
+  :global(.dark) .gm-event-row-upcoming {
+    background-color: rgba(26, 26, 26, 0.4);
+    color: #f5f5f5;
+  }
+  :global(.dark) .gm-event-row-upcoming:hover {
+    background-color: rgba(26, 26, 26, 0.6);
+  }
+  :global(.dark) .gm-event-row-past {
+    background-color: rgba(60, 60, 60, 0.5);
+    color: #b0b0b0;
+  }
+  :global(.dark) .gm-event-row-past:hover {
+    background-color: rgba(60, 60, 60, 0.65);
+  }
+
+  :global(.dark) .gm-thumb-placeholder {
+    background-color: rgba(61, 77, 54, 0.3);
+  }
+</style>
+
+<!--
+  Light-mode overrides for child components that hardcode dark hex colors
+  via Tailwind arbitrary classes (e.g. bg-[#2d3e26], text-[#f5f5f5]).
+  Refactoring all of GardenTaskList / GardenGeneral / GardenSidebar /
+  ProjectsList / PlantsCatalog / VolunteerDetail / GardenVolunteerInterestsSection
+  to be theme-aware would be a much larger change; instead we re-paint those
+  specific Tailwind arbitrary utilities to homepage-palette equivalents
+  whenever this view is rendered AND the document is NOT in .dark mode.
+-->
+<style>
+/* Enforce dark-mode panel palette in manage-garden sections (mobile + desktop). */
+html.dark .gm-page .gm-panel {
+  background-color: #2d3e26 !important;
+  color: #f5f5f5 !important;
+  border-color: #3d4d36 !important;
+}
+html.dark .gm-page .gm-heading,
+html.dark .gm-page .gm-text {
+  color: #f5f5f5 !important;
+}
+html.dark .gm-page .gm-text-muted {
+  color: #d0d0d0 !important;
+}
+html.dark .gm-page .gm-secondary-btn {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  color: #f5f5f5 !important;
+  border-color: rgba(61, 77, 54, 0.5) !important;
+}
+html.dark .gm-page .gm-secondary-btn:hover {
+  background-color: rgba(26, 26, 26, 0.8) !important;
+  border-color: #3d4d36 !important;
+}
+
+/* Events table rows: scoped :global(.dark) rules can lose to light row styles — force dark surfaces + text */
+html.dark .gm-page .gm-event-row {
+  border-color: rgba(61, 77, 54, 0.4) !important;
+}
+html.dark .gm-page .gm-event-row-upcoming {
+  background-color: rgba(26, 26, 26, 0.5) !important;
+  color: #f5f5f5 !important;
+}
+html.dark .gm-page .gm-event-row-upcoming:hover {
+  background-color: rgba(26, 26, 26, 0.72) !important;
+}
+html.dark .gm-page .gm-event-row-past {
+  background-color: rgba(40, 48, 38, 0.65) !important;
+  color: #c5d0bf !important;
+}
+html.dark .gm-page .gm-event-row-past:hover {
+  background-color: rgba(40, 48, 38, 0.82) !important;
+}
+html.dark .gm-page .gm-event-row .gm-text-muted {
+  color: #d0d0d0 !important;
+}
+html.dark .gm-page .gm-event-row .recurring-preview {
+  color: #b8c4b0 !important;
+  -webkit-mask-image: linear-gradient(to right, black 82%, transparent 100%);
+  mask-image: linear-gradient(to right, black 82%, transparent 100%);
+}
+
+html:not(.dark) .gm-page .bg-\[\#2d3e26\] {
+  background-color: #ffffff !important;
+  color: #344a34 !important;
+}
+html:not(.dark) .gm-page .bg-\[\#344a34\] {
+  background-color: #f7f1e3 !important;
+  color: #344a34 !important;
+}
+html:not(.dark) .gm-page .bg-\[\#1a1a1a\] {
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) .gm-page .text-\[\#f5f5f5\] {
+  color: #344a34 !important;
+}
+html:not(.dark) .gm-page .text-\[\#d0d0d0\] {
+  color: #6b7280 !important;
+}
+html:not(.dark) .gm-page .text-\[\#8aa37c\] {
+  color: #6c8a6a !important;
+}
+
+html:not(.dark) .gm-page .border-\[\#3d4d36\],
+html:not(.dark) .gm-page [class*="border-[#3d4d36]"] {
+  border-color: #e2dccb !important;
+}
+
+/* Translucent dark backgrounds → soft sage tints */
+html:not(.dark) .gm-page [class*="bg-[rgba(26,26,26"] {
+  background-color: rgba(138, 163, 124, 0.08) !important;
+}
+html:not(.dark) .gm-page [class*="bg-[rgba(26,26,26,0.6)]"]:hover,
+html:not(.dark) .gm-page [class*="hover:bg-[rgba(26,26,26,0.8)]"]:hover {
+  background-color: rgba(138, 163, 124, 0.18) !important;
+}
+
+/* Inputs / form controls that hardcode dark backgrounds */
+html:not(.dark) .gm-page input[class*="bg-[rgba(26,26,26"],
+html:not(.dark) .gm-page select[class*="bg-[rgba(26,26,26"],
+html:not(.dark) .gm-page textarea[class*="bg-[rgba(26,26,26"] {
+  background-color: #ffffff !important;
+  color: #344a34 !important;
+  border-color: #d6cfb8 !important;
+}
+html:not(.dark) .gm-page input[class*="bg-[rgba(26,26,26"]::placeholder,
+html:not(.dark) .gm-page textarea[class*="bg-[rgba(26,26,26"]::placeholder {
+  color: #9ca3af !important;
+}
 </style>
