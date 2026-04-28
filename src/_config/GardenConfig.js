@@ -22,10 +22,31 @@
  *   ctx = {
  *     garden,           // gardens store: { attributes: { volunteers: { data: [...] }, ... } }
  *     volunteerDays,    // event store:   { days: [...] }
- *     recurringTasks,   // garden-task store: [...]
+ *     recurringTasks,   // garden-task store: recurring templates only (not used for Tasks stat)
+ *     gardenTasks,      // garden-task store: `/api/garden-tasks` for this garden (active task rows)
  *     smsCampaigns      // sms campaign store: [...]
  *   }
  */
+
+/** Statuses counted on the General "Tasks" stat (garden-task rows, not recurring templates). */
+export const gardenTaskStatActiveStatuses = [
+  'INITIALIZED',
+  'PENDING',
+  'INTERESTED',
+  'STARTED',
+  'IN_PROGRESS'
+];
+
+/** Count `/api/garden-tasks` rows in any of the “active work” statuses above. */
+export function countGardenTasksForStatCard(gardenTasks) {
+  const list = Array.isArray(gardenTasks) ? gardenTasks : [];
+  const allowed = new Set(gardenTaskStatActiveStatuses.map((s) => s.toUpperCase()));
+  return list.filter((t) => {
+    const s = String(t?.attributes?.status ?? '').trim().toUpperCase();
+    return allowed.has(s);
+  }).length;
+}
+
 export const gardenStatCards = [
   {
     key: 'volunteers',
@@ -46,7 +67,7 @@ export const gardenStatCards = [
     label: 'Tasks',
     hash: '#tasks',
     numberClass: 'text-amber-700 dark:text-amber-300',
-    count: (ctx) => ctx.recurringTasks?.length || 0
+    count: (ctx) => countGardenTasksForStatCard(ctx.gardenTasks)
   },
   {
     key: 'sms',
@@ -95,6 +116,90 @@ export const campaignTypeBadges = {
   }
 };
 
+/** Normalize recurring task type string → config key (`Water` → `water`). */
+export function normalizeRecurringTaskType(type) {
+  return String(type || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-');
+}
+
+/**
+ * Recurring task type pills (GardenTaskList cards, etc.)
+ *
+ * Keys match `taskTypes` in GardenTask.vue (`General`, `Water`, …).
+ * Uses standard Tailwind palettes with explicit `dark:` variants.
+ */
+export const recurringTaskTypeBadgeBaseClasses =
+  'inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold leading-tight shadow-sm border';
+
+export const recurringTaskTypeBadges = {
+  general: {
+    label: 'General',
+    classes:
+      'bg-stone-100 text-stone-800 border-stone-300/70 ' +
+      'dark:bg-stone-700 dark:text-stone-100 dark:border-stone-600/70'
+  },
+  water: {
+    label: 'Water',
+    classes:
+      'bg-sky-100 text-sky-900 border-sky-300/70 ' +
+      'dark:bg-sky-900 dark:text-sky-50 dark:border-sky-700/70'
+  },
+  weeding: {
+    label: 'Weeding',
+    classes:
+      'bg-lime-100 text-lime-900 border-lime-300/70 ' +
+      'dark:bg-lime-900 dark:text-lime-50 dark:border-lime-700/70'
+  },
+  planting: {
+    label: 'Planting',
+    classes:
+      'bg-emerald-100 text-emerald-900 border-emerald-300/70 ' +
+      'dark:bg-emerald-900 dark:text-emerald-50 dark:border-emerald-700/70'
+  },
+  harvest: {
+    label: 'Harvest',
+    classes:
+      'bg-amber-100 text-amber-900 border-amber-300/70 ' +
+      'dark:bg-amber-900 dark:text-amber-50 dark:border-amber-700/70'
+  },
+  default: {
+    label: '',
+    classes:
+      'bg-teal-100 text-teal-900 border-teal-300/70 ' +
+      'dark:bg-teal-900 dark:text-teal-50 dark:border-teal-700/70'
+  }
+};
+
+/** Resolve API type string → badge classes (base + light/dark palette). */
+export function getRecurringTaskTypeBadgeClasses(type) {
+  const normalized = normalizeRecurringTaskType(type);
+  const key =
+    normalized && recurringTaskTypeBadges[normalized]
+      ? normalized
+      : normalized
+        ? 'default'
+        : 'general';
+  const variant = recurringTaskTypeBadges[key];
+  return `${recurringTaskTypeBadgeBaseClasses} ${variant.classes}`;
+}
+
+/** Label shown in the pill (matches configured types or title-cases unknown values). */
+export function getRecurringTaskTypeDisplayLabel(type) {
+  const normalized = normalizeRecurringTaskType(type);
+  const configured =
+    normalized && recurringTaskTypeBadges[normalized]?.label;
+  if (configured) return configured;
+  const raw = String(type ?? '').trim();
+  if (!raw) return recurringTaskTypeBadges.general.label;
+  return raw
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
 /** Normalize a raw type ("recurring_task", "RSVP", …) → "recurring-task". */
 export function normalizeCampaignType(type) {
   return (type || '').toLowerCase().replace(/_/g, '-');
@@ -121,6 +226,23 @@ export const taskStatusOptions = [
 ];
 
 export const DEFAULT_TASK_STATUS = 'INITIALIZED';
+
+/** Strapi `recurring-task.scheduler_type` enum values (extend if the API adds more). */
+export const recurringSchedulerTypes = [
+  'No Schedule',
+  'Weekly Shuffle'
+];
+
+/** Strapi `recurring-task.week_start_date` — first day of the scheduling week. */
+export const weekStartDayOptions = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday'
+];
 
 /** Resolve a status value (case-insensitive) to a config entry, or fall back. */
 export function getTaskStatusOption(status) {

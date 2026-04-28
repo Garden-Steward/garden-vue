@@ -47,9 +47,9 @@ onMounted(() => {
 
     L.marker([locationTracking.latitude, locationTracking.longitude], { icon: svgIcon }).addTo(map)
       .bindTooltip(locationTracking.label)
-      .bindPopup(`<div class="popup-content text-center">
-                    ${locationTracking.label}
-                </div>`)
+      .bindPopup(
+        `<div class="popup-content leaflet-popup-inner" style="color:#000000;text-align:center;">${locationTracking.label}</div>`
+      )
       .on('click', () => {
         // Emit an event with the selected location
         emit('select-location', locationTracking);
@@ -88,21 +88,42 @@ watch(() => props.centerCoordinates, (newCoords) => {
 }
 
 /* Leaflet popups & tooltips keep their default white background even in dark
-   mode, so the page-wrapper's light text color (#f5f5f5) was rendering as
-   white-on-white. Lock them to a dark text color regardless of theme. */
+   mode, so page wrappers often set light text (#f5f5f5) that inherits here.
+   Lock popup/tooltip copy to dark text; include .dark so specificity beats inherited color. */
+html.dark .leaflet-popup-content,
+.dark .leaflet-popup-content,
 .leaflet-popup-content,
+html.dark .leaflet-popup-content .popup-content,
+.dark .leaflet-popup-content .popup-content,
 .leaflet-popup-content .popup-content,
+html.dark .leaflet-popup-content a,
+.dark .leaflet-popup-content a,
 .leaflet-popup-content a,
+html.dark .leaflet-tooltip,
+.dark .leaflet-tooltip,
 .leaflet-tooltip {
   color: #1a1a1a !important;
 }
 
 html.dark .leaflet-popup-content-wrapper,
-html.dark .leaflet-tooltip {
+.dark .leaflet-popup-content-wrapper,
+html.dark .leaflet-tooltip,
+.dark .leaflet-tooltip {
   background-color: #ffffff;
 }
 
-html.dark .leaflet-popup-tip {
+html.dark .leaflet-popup-tip,
+.dark .leaflet-popup-tip {
   background-color: #ffffff;
+}
+
+html.dark .leaflet-popup-close-button,
+.dark .leaflet-popup-close-button {
+  color: #4b5563 !important;
+}
+
+html.dark .leaflet-popup-close-button:hover,
+.dark .leaflet-popup-close-button:hover {
+  color: #111827 !important;
 }
 </style>

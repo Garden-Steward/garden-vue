@@ -38,3 +38,79 @@
     margin-bottom: 10px;
   }
 }
+
+/*
+ * Leaflet popup/tooltip panes sit inside dark-themed pages that set light text on
+ * wrappers (e.g. garden-public-container). Those wrappers inherit into the white
+ * popup balloon. These rules are unlayered so they beat Tailwind @layer utilities.
+ */
+html.dark .leaflet-popup-pane .leaflet-popup-content,
+html.dark .leaflet-popup-pane .leaflet-popup-content *,
+.dark .leaflet-popup-pane .leaflet-popup-content,
+.dark .leaflet-popup-pane .leaflet-popup-content *,
+html.dark .leaflet-popup-pane .leaflet-popup-inner,
+.dark .leaflet-popup-pane .leaflet-popup-inner {
+  color: #000000 !important;
+}
+
+html.dark .leaflet-tooltip-pane .leaflet-tooltip,
+html.dark .leaflet-tooltip-pane .leaflet-tooltip *,
+.dark .leaflet-tooltip-pane .leaflet-tooltip,
+.dark .leaflet-tooltip-pane .leaflet-tooltip * {
+  color: #000000 !important;
+}
+
+html.dark .leaflet-popup-close-button,
+.dark .leaflet-popup-close-button {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+html.dark .leaflet-popup-close-button:hover,
+.dark .leaflet-popup-close-button:hover {
+  color: #000000 !important;
+}
+
+html.dark .leaflet-container .leaflet-control-attribution,
+html.dark .leaflet-container .leaflet-control-attribution a,
+.dark .leaflet-container .leaflet-control-attribution,
+.dark .leaflet-container .leaflet-control-attribution a {
+  color: #1a1a1a !important;
+}
+
+/*
+ * Manifesto (/manifesto): light mode = cream panel + forest copy; dark mode = #2d3e26 panel + pale copy.
+ * Unlayered + !important so this survives after Bootstrap / Tailwind utilities.
+ */
+html.dark .manifesto-panel.manifesto-panel,
+.dark .manifesto-panel.manifesto-panel {
+  color: #d0d0d0 !important;
+}
+
+html.dark .manifesto-panel .manifesto-heading,
+.dark .manifesto-panel .manifesto-heading {
+  color: #c8dbbf !important;
+}
+
+html.dark .manifesto-panel .manifesto-body .manifesto-p,
+.dark .manifesto-panel .manifesto-body .manifesto-p {
+  color: #d0d0d0 !important;
+}
+
+html.dark .manifesto-panel .manifesto-media-text,
+.dark .manifesto-panel .manifesto-media-text {
+  color: #f5f5f5 !important;
+}
+
+html.dark .manifesto-panel .manifesto-media-muted,
+.dark .manifesto-panel .manifesto-media-muted {
+  color: #d0d0d0 !important;
+}
+
+.manifesto-media-text {
+  color: #f5f5f5;
+}
+
+.manifesto-media-muted {
+  color: #d0d0d0;
+}

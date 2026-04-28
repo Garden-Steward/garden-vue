@@ -4,6 +4,10 @@ import { storeToRefs } from 'pinia';
 import { useGardenTaskStore, useWeekSchedulerStore } from '@/stores';
 import GardenTask from '@/components/modals/GardenTask.vue';
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
+import {
+  getRecurringTaskTypeBadgeClasses,
+  getRecurringTaskTypeDisplayLabel
+} from '@/_config/GardenConfig';
 
 const props = defineProps({
   garden: {
@@ -61,7 +65,6 @@ const recurringTasks = computed(() => {
 
 // Regular garden tasks (filtered)
 const regularTasks = computed(() => {
-  console.log("gardenTasks value:", gardenTasks.value);
   if (!gardenTasks.value) return [];
   try {
     const allTasks = Array.isArray(gardenTasks.value) ? gardenTasks.value : [];
@@ -73,6 +76,31 @@ const regularTasks = computed(() => {
   } catch (error) {
     console.error('Error processing regular tasks:', error);
     return [];
+  }
+});
+
+const taskTypeFilter = ref('');
+
+/** Distinct task `type` values from current regular tasks (for filter dropdown). */
+const taskTypesForFilter = computed(() => {
+  const types = new Set();
+  for (const task of regularTasks.value) {
+    const t = task.attributes?.type;
+    if (t && typeof t === 'string' && t.trim()) types.add(t.trim());
+  }
+  return [...types].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+});
+
+const displayedRegularTasks = computed(() => {
+  if (!taskTypeFilter.value) return regularTasks.value;
+  return regularTasks.value.filter(
+    (task) => (task.attributes?.type || '').trim() === taskTypeFilter.value
+  );
+});
+
+watch(taskTypesForFilter, (types) => {
+  if (taskTypeFilter.value && !types.includes(taskTypeFilter.value)) {
+    taskTypeFilter.value = '';
   }
 });
 
@@ -490,7 +518,7 @@ const openRecurringEditModal = (taskId) => {
         </div>
       </div>
 
-      <div v-show="recurringDrawerOpen" class="px-4 pb-4 pt-0 space-y-3">
+      <div v-show="recurringDrawerOpen" class="px-0 pb-4 pt-0 space-y-3">
         <div v-for="recurringTask in recurringTasks" :key="recurringTask.id">
           <!-- Recurring task row (no border, sits inside outer container) -->
           <div class="bg-[rgba(26,26,26,0.35)] rounded-lg overflow-hidden">
@@ -499,18 +527,27 @@ const openRecurringEditModal = (taskId) => {
               class="p-4 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] transition-colors"
               @click="toggleDrawer(recurringTask.id)"
             >
-              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-0">
-                <div class="text-lg font-medium text-[#f5f5f5] w-full md:w-auto">
-                  {{ recurringTask.attributes?.title }}
-                </div>
-                <div class="flex gap-2 items-center self-end md:self-auto">
-                  <span
-                    class="px-3 py-1 rounded-full text-sm font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
+              <!-- Title row: name + Edit, type badge + expand chevron -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1 pr-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span class="text-lg font-medium text-[#f5f5f5]">
+                    {{ recurringTask.attributes?.title }}
+                  </span>
+                  <button
+                    v-if="editor"
+                    type="button"
+                    @click.stop="toggleDayEditMode(recurringTask.id)"
+                    class="text-sm text-blue-400 hover:text-blue-300 underline shrink-0"
                   >
-                    {{ recurringTask.attributes?.type || 'General' }}
+                    {{ dayEditMode[recurringTask.id] ? 'Done' : 'Edit' }}
+                  </button>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                  <span :class="getRecurringTaskTypeBadgeClasses(recurringTask.attributes?.type)">
+                    {{ getRecurringTaskTypeDisplayLabel(recurringTask.attributes?.type) }}
                   </span>
                   <svg 
-                    class="w-5 h-5 text-[#d0d0d0] transition-transform"
+                    class="w-5 h-5 shrink-0 text-[#d0d0d0] transition-transform"
                     :class="{ 'rotate-180': openDrawers[recurringTask.id] }"
                     fill="none" 
                     stroke="currentColor" 
@@ -520,7 +557,7 @@ const openRecurringEditModal = (taskId) => {
                   </svg>
                 </div>
               </div>
-              <!-- Day badges in same container as title -->
+              <!-- Day badges -->
               <div class="flex flex-wrap gap-2 items-center mt-3" @click.stop>
                 <button
                   v-for="day in getDaysForTask(recurringTask)"
@@ -555,13 +592,6 @@ const openRecurringEditModal = (taskId) => {
                   title="Add day"
                 >
                   <span class="text-lg font-bold leading-none">+</span>
-                </button>
-                <button
-                  v-if="editor"
-                  @click="toggleDayEditMode(recurringTask.id)"
-                  class="text-sm text-blue-400 hover:text-blue-300 underline"
-                >
-                  {{ dayEditMode[recurringTask.id] ? 'Done' : 'Edit' }}
                 </button>
               </div>
             </div>
@@ -607,6 +637,7 @@ const openRecurringEditModal = (taskId) => {
               :id="recurringTask.id"
               :garden="garden.id"
               :editor="editor"
+              :is-recurring-template="true"
             />
           </div>
           
@@ -719,14 +750,37 @@ const openRecurringEditModal = (taskId) => {
     
     <!-- Regular Tasks Section (card grid, same style as public tasks page) -->
     <div v-if="editor || regularTasks.length > 0" class="mt-8">
-      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <h3 class="text-xl font-bold text-[#f5f5f5]">Tasks</h3>
-        <GardenTask v-if="editor" :garden="garden.id" :editor="editor" />
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <div class="flex flex-wrap items-center gap-2 min-w-0 flex-1">
+          <label for="task-type-filter" class="sr-only">Filter by task type</label>
+          <select
+            id="task-type-filter"
+            v-model="taskTypeFilter"
+            class="task-type-filter-select min-w-[11rem] max-w-full rounded-lg border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.75)] text-[#f5f5f5] px-3 py-2 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-green focus:ring-offset-2 focus:ring-offset-[#2d3e26] disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="regularTasks.length === 0"
+          >
+            <option value="">All types</option>
+            <option v-for="t in taskTypesForFilter" :key="t" :value="t">{{ t }}</option>
+          </select>
+        </div>
+        <div v-if="editor" class="shrink-0 ml-auto">
+          <GardenTask :garden="garden.id" :editor="editor" />
+        </div>
       </div>
       
-      <div v-if="regularTasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6 md:ml-3">
+      <div v-if="regularTasks.length > 0">
+        <p
+          v-if="displayedRegularTasks.length === 0"
+          class="py-10 px-4 text-center text-[#d0d0d0] text-sm md:ml-3"
+        >
+          No tasks match this type. Choose &quot;All types&quot; to see every task.
+        </p>
         <div
-          v-for="task in regularTasks"
+          v-else
+          class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6 md:ml-3"
+        >
+        <div
+          v-for="task in displayedRegularTasks"
           :key="task.id"
           role="button"
           tabindex="0"
@@ -850,6 +904,7 @@ const openRecurringEditModal = (taskId) => {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       <!-- GardenTask modals for editing (opened via ref.openModal()) -->

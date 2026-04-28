@@ -1,18 +1,4 @@
 <script setup>
-// Theme toggle positioning
-const themeDropdownRef = ref(null);
-
-const getThemeDropdownStyle = () => {
-    const toggle = document.querySelector('.theme-toggle-button');
-    if (toggle) {
-        const rect = toggle.getBoundingClientRect();
-        return {
-            top: `${rect.bottom + 8}px`,
-            right: `${window.innerWidth - rect.right}px`
-        };
-    }
-    return { top: '0px', right: '0px' };
-};
 import { ref, nextTick, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores';
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
@@ -21,15 +7,12 @@ import MoonIcon from '@/components/icons/Moon.svg?raw';
 import SystemIcon from '@/components/icons/System.svg?raw';
 
 const authStore = useAuthStore();
+const theme = ref('system');
 const showProfileOptions = ref(false);
 const isMobileMenuOpen = ref(false);
-const showThemeDropdown = ref(false);
 const mobileMenu = ref(null);
 const profileMenuRef = ref(null);
 const profileButtonRef = ref(null);
-
-// Theme management
-const theme = ref('system'); // 'light', 'dark', or 'system'
 
 const getSystemPreference = () => {
     if (typeof window !== 'undefined' && window.matchMedia) {
@@ -45,7 +28,7 @@ const applyTheme = (themeValue) => {
         shouldBeDark = true;
     } else if (themeValue === 'light') {
         shouldBeDark = false;
-    } else { // 'system'
+    } else {
         shouldBeDark = getSystemPreference();
     }
 
@@ -62,7 +45,6 @@ const setTheme = (newTheme) => {
     applyTheme(newTheme);
 };
 
-// Initialize theme on mount
 onMounted(() => {
     const savedTheme = localStorage.getItem('app-theme');
     if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system') {
@@ -70,7 +52,6 @@ onMounted(() => {
     }
     applyTheme(theme.value);
 
-    // Watch for system preference changes when theme is 'system'
     if (typeof window !== 'undefined' && window.matchMedia) {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const handleChange = () => {
@@ -80,19 +61,23 @@ onMounted(() => {
         };
         mediaQuery.addEventListener('change', handleChange);
     }
+
+    document.addEventListener('click', handleClickOutside);
+    window.addEventListener('keydown', handleEscape);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+    window.removeEventListener('keydown', handleEscape);
 });
 
 const toggleProfileOptions = () => {
     showProfileOptions.value = !showProfileOptions.value;
 };
 
-const toggleThemeDropdown = () => {
-    showThemeDropdown.value = !showThemeDropdown.value;
-};
-
 const toggleMobileMenu = async () => {
     isMobileMenuOpen.value = !isMobileMenuOpen.value;
-    await nextTick(); // Wait for the DOM to update
+    await nextTick();
     if (isMobileMenuOpen.value) {
         mobileMenu.value.style.transform = 'translateX(0)';
     } else {
@@ -100,9 +85,7 @@ const toggleMobileMenu = async () => {
     }
 };
 
-// Close profile dropdown when clicking outside
 const handleClickOutside = (event) => {
-    // Check if click is outside profile menu and profile button
     const profileMenu = event.target.closest('.profile-menu');
     const profileButton = event.target.closest('.profile-menu-button');
 
@@ -110,15 +93,6 @@ const handleClickOutside = (event) => {
         showProfileOptions.value = false;
     }
 
-    // Check if click is outside theme dropdown and theme toggle
-    const themeDropdown = event.target.closest('.theme-dropdown');
-    const themeToggle = event.target.closest('.theme-toggle-button');
-
-    if (!themeDropdown && !themeToggle && showThemeDropdown.value) {
-        showThemeDropdown.value = false;
-    }
-
-    // Check if click is outside mobile menu and mobile menu button
     const mobileMenuElement = event.target.closest('.mobile-menu');
     const mobileMenuButton = event.target.closest('.mobile-menu-button');
 
@@ -130,7 +104,6 @@ const handleClickOutside = (event) => {
     }
 };
 
-// Handle Escape key to close menus
 const handleEscape = (e) => {
     if (e.key === 'Escape') {
         if (showProfileOptions.value) {
@@ -144,50 +117,13 @@ const handleEscape = (e) => {
         }
     }
 };
-
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
-    window.addEventListener('keydown', handleEscape);
-});
-
-onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
-    window.removeEventListener('keydown', handleEscape);
-});
 </script>
 
 <template>
-    <!-- Profile menu outside navbar -->
     <transition name="fade">
         <div v-if="showProfileOptions" ref="profileMenuRef" class="profile-menu bg-custom-light p-2">
             <div v-if="authStore.user" class="user-info">
                 <div class="user-name">{{ authStore.user.username || (authStore.user.firstName && authStore.user.lastName ? `${authStore.user.firstName} ${authStore.user.lastName}` : 'User') }}</div>
-            </div>
-            <div class="theme-settings">
-                <div class="theme-settings-label">Theme Settings</div>
-                <div class="theme-options">
-                    <button
-                        @click="setTheme('light')"
-                        :class="['theme-option', { active: theme === 'light' }]"
-                        title="Light Mode"
-                    >
-                        <span v-html="SunIcon" class="theme-icon"></span>
-                    </button>
-                    <button
-                        @click="setTheme('dark')"
-                        :class="['theme-option', { active: theme === 'dark' }]"
-                        title="Dark Mode"
-                    >
-                        <span v-html="MoonIcon" class="theme-icon"></span>
-                    </button>
-                    <button
-                        @click="setTheme('system')"
-                        :class="['theme-option', { active: theme === 'system' }]"
-                        title="System Preference"
-                    >
-                        <span v-html="SystemIcon" class="theme-icon"></span>
-                    </button>
-                </div>
             </div>
             <button @click="() => { authStore.logout(); showProfileOptions = false; }"
                     class="btn btn-link nav-item nav-link">
@@ -196,20 +132,20 @@ onUnmounted(() => {
         </div>
     </transition>
 
-    <nav class="navbar navbar-expand navbar-light bg-custom-light w-full max-w-full overflow-x-hidden">
+    <nav
+        class="gs-navbar navbar navbar-expand navbar-light w-full max-w-full overflow-x-hidden bg-custom-light dark:!bg-custom-light"
+    >
         <router-link to="/" class="logo-image desktop-logo">
                 <img src="/public/gs-logo-name.png" alt="GS Logo" class="logo-img h-7 mt-1">
         </router-link>
 
         <div class="navbar-nav d-flex justify-content-center w-100 mb-1">
-            <!-- Mobile Menu Button -->
             <button class="mobile-menu-button" @click="toggleMobileMenu">
                 <span class="bar"></span>
                 <span class="bar"></span>
                 <span class="bar"></span>
             </button>
 
-            <!-- Mobile Menu Items -->
             <div ref="mobileMenu" v-show="isMobileMenuOpen" class="mobile-menu bg-darker-green text-white">
                 <router-link to="/" class="nav-item nav-link" @click="toggleMobileMenu">Home</router-link>
                 <router-link to="/gardens" class="nav-item nav-link" @click="toggleMobileMenu">Gardens</router-link>
@@ -221,16 +157,30 @@ onUnmounted(() => {
                 <router-link to="/help" class="nav-item nav-link" @click="toggleMobileMenu">Help</router-link>
                 <router-link to="/login" class="nav-item nav-link" v-show="!authStore.user" @click="toggleMobileMenu">Login</router-link>
 
-                <!-- Mobile Theme Options -->
                 <div class="mobile-theme-options">
-                    <span class="text-sm opacity-75 mr-2">Theme:</span>
-                    <button @click="setTheme('light')" :class="['theme-option', { active: theme === 'light' }]" title="Light Mode">
+                    <span class="mobile-theme-inline-label">Theme</span>
+                    <button
+                        type="button"
+                        @click="setTheme('light')"
+                        :class="['theme-option', { active: theme === 'light' }]"
+                        title="Light Mode"
+                    >
                         <span v-html="SunIcon" class="theme-icon"></span>
                     </button>
-                    <button @click="setTheme('dark')" :class="['theme-option', { active: theme === 'dark' }]" title="Dark Mode">
+                    <button
+                        type="button"
+                        @click="setTheme('dark')"
+                        :class="['theme-option', { active: theme === 'dark' }]"
+                        title="Dark Mode"
+                    >
                         <span v-html="MoonIcon" class="theme-icon"></span>
                     </button>
-                    <button @click="setTheme('system')" :class="['theme-option', { active: theme === 'system' }]" title="System">
+                    <button
+                        type="button"
+                        @click="setTheme('system')"
+                        :class="['theme-option', { active: theme === 'system' }]"
+                        title="System preference"
+                    >
                         <span v-html="SystemIcon" class="theme-icon"></span>
                     </button>
                 </div>
@@ -258,54 +208,10 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- Right side: Theme toggle and Login (or Profile) -->
             <div class="nav-right-section">
-                <!-- Theme Toggle (only for logged out users - logged in users have it in profile dropdown) -->
-                <div v-show="!authStore.user" class="theme-toggle-container">
-                    <button 
-                        @click="toggleThemeDropdown" 
-                        class="theme-toggle-button"
-                        title="Theme Settings"
-                    >
-                        <span v-if="theme === 'dark'" v-html="MoonIcon" class="theme-icon"></span>
-                        <span v-else-if="theme === 'light'" v-html="SunIcon" class="theme-icon"></span>
-                        <span v-else v-html="SystemIcon" class="theme-icon"></span>
-                    </button>
-                </div>
-                
-                <!-- Login / Profile -->
                 <router-link v-show="!authStore.user" to="/login" class="nav-item nav-link login-link">Login</router-link>
             </div>
-            
-            <!-- Theme Dropdown (teleported to body to avoid clipping) -->
-            <Teleport to="body">
-                <div v-show="showThemeDropdown" class="theme-dropdown" :style="getThemeDropdownStyle()">
-                    <div class="theme-settings-label">Theme</div>
-                    <div class="theme-options">
-                        <button 
-                            @click="setTheme('light'); showThemeDropdown = false" 
-                            :class="['theme-option', { active: theme === 'light' }]"
-                            title="Light Mode"
-                        >
-                            <span v-html="SunIcon" class="theme-icon"></span>
-                        </button>
-                        <button 
-                            @click="setTheme('dark'); showThemeDropdown = false" 
-                            :class="['theme-option', { active: theme === 'dark' }]"
-                            title="Dark Mode"
-                        >
-                            <span v-html="MoonIcon" class="theme-icon"></span>
-                        </button>
-                        <button 
-                            @click="setTheme('system'); showThemeDropdown = false" 
-                            :class="['theme-option', { active: theme === 'system' }]"
-                            title="System Preference"
-                        >
-                            <span v-html="SystemIcon" class="theme-icon"></span>
-                        </button>
-                    </div>
-                </div>
-            </Teleport>
+
             <div v-if="authStore.user" class="profile-container">
                 <UserProfileDisplay
                     ref="profileButtonRef"
@@ -323,12 +229,42 @@ onUnmounted(() => {
 
 <style scoped>
 .nav-link {
-    margin-right: 20px; /* Adds spacing to the right of each link */
-    color: #fff;
+    margin-right: 20px;
+}
+
+/*
+ * Header is always the light cream bar (`bg-custom-light`), including in `html.dark`.
+ * Links stay dark green on cream (readable); force fill to match `color`.
+ */
+.gs-navbar.navbar.bg-custom-light {
+    color: #376451;
+}
+html.dark .gs-navbar.navbar.bg-custom-light {
+    background-color: #f7f1e3 !important;
+}
+.gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link,
+.gs-navbar.navbar.bg-custom-light .nav-right-section .login-link {
+    color: #376451 !important;
+    -webkit-text-fill-color: #376451 !important;
+}
+.gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link:hover,
+.gs-navbar.navbar.bg-custom-light .nav-right-section .login-link:hover {
+    color: #2d4a2e !important;
+    -webkit-text-fill-color: #2d4a2e !important;
+    text-decoration: underline;
+}
+.gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.router-link-active {
+    color: #2d4a2e !important;
+    -webkit-text-fill-color: #2d4a2e !important;
+}
+
+.mobile-menu .nav-link,
+.mobile-menu .nav-item.nav-link {
+    color: #fff !important;
 }
 .profile-container {
     position: absolute;
-    right: 15px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
@@ -337,62 +273,23 @@ onUnmounted(() => {
 }
 .nav-right-section {
     position: absolute;
-    right: 15px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     align-items: center;
-    gap: 15px;
     z-index: 1500;
-}
-.theme-toggle-container {
-    position: relative;
-}
-.theme-toggle-button {
-    background: transparent;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    border-radius: 6px;
-    padding: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    width: 36px;
-    height: 36px;
-    color: #fff;
-}
-.theme-toggle-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: #fff;
-    transform: scale(1.05);
-}
-.theme-toggle-button .theme-icon {
-    width: 18px;
-    height: 18px;
-}
-.theme-dropdown {
-    position: fixed;
-    min-width: 150px;
-    background: white;
-    border: 1px solid #8aa37c;
-    border-radius: 5px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    z-index: 9999999;
-    padding: 12px;
-}
-.dark .theme-dropdown {
-    background: #1f2d1f;
-    border-color: #3d4d36;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 .login-link {
     font-size: 1.1rem;
+    margin-right: 0 !important;
+    font-weight: 600;
+    text-decoration: none;
 }
 .profile-menu {
     position: fixed;
     top: 60px;
-    right: 15px;
+    right: 8px;
     min-width: 150px;
     background: white;
     border: 1px solid #8aa37c;
@@ -400,10 +297,11 @@ onUnmounted(() => {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     z-index: 99999;
 }
+/* Match main bar: light tan surface + dark green text (not white on cream). */
 .dark .profile-menu {
-    background: #1f2d1f;
-    border-color: #3d4d36;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    background: #f7f1e3 !important;
+    border-color: rgba(138, 163, 124, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 .profile-menu .nav-link {
     color: #333;
@@ -415,18 +313,19 @@ onUnmounted(() => {
     background-color: #f5f5f5;
 }
 .dark .profile-menu .nav-link {
-    color: #f5f5f5;
+    color: #376451 !important;
 }
 .dark .profile-menu .nav-link:hover {
-    background-color: rgba(61, 77, 54, 0.45);
+    color: #2d4a2e !important;
+    background-color: rgba(138, 163, 124, 0.15);
 }
 .user-info {
     padding: 12px 16px;
     border-bottom: 1px solid #e0e0e0;
     margin-bottom: 8px;
 }
-.dark .user-info {
-    border-bottom-color: #3d4d36;
+.dark .profile-menu .user-info {
+    border-bottom-color: rgba(138, 163, 124, 0.35);
 }
 .user-name {
     font-size: 1rem;
@@ -434,67 +333,8 @@ onUnmounted(() => {
     color: #333;
     word-break: break-word;
 }
-.dark .user-name {
-    color: #f5f5f5;
-}
-.theme-settings {
-    padding: 8px 16px;
-    border-bottom: 1px solid #e0e0e0;
-    margin-bottom: 8px;
-}
-.dark .theme-settings {
-    border-bottom-color: #3d4d36;
-}
-.theme-settings-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
-}
-.dark .theme-settings-label {
-    color: #d0d0d0;
-}
-.theme-options {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-start;
-}
-.theme-option {
-    background: transparent;
-    border: 2px solid #8aa37c;
-    border-radius: 6px;
-    padding: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    width: 36px;
-    height: 36px;
-}
-.theme-option:hover {
-    background-color: #f5f5f5;
-    transform: scale(1.05);
-}
-.dark .theme-option:hover {
-    background-color: rgba(61, 77, 54, 0.45);
-}
-.theme-option.active {
-    background-color: #8aa37c;
-    border-color: #6c8a6a;
-}
-.theme-option.active .theme-icon {
-    color: #fff;
-}
-.theme-icon {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    color: #8aa37c;
-    transition: color 0.2s ease;
-}
-.theme-option.active .theme-icon {
-    color: #fff;
+.dark .profile-menu .user-name {
+    color: #376451 !important;
 }
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s;
@@ -504,62 +344,61 @@ onUnmounted(() => {
 }
 
 .mobile-menu-button {
-    display: none; /* Ensure it's visible on mobile */
+    display: none;
     cursor: pointer;
-    position: absolute; /* Position it relative to its nearest positioned ancestor */
-    left: 15px; /* Align to the far left */
-    top: 15px; /* Adjust this value based on your header's height */
-    z-index: 1050; /* Ensure it's above other content */
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    z-index: 1050;
 }
 
 .mobile-menu {
     position: fixed;
-    top: 50px; /* Adjust this value to the height of your header */
+    top: 50px;
     left: 0;
-    width: 250px; /* Ensure it spans the full width */
-    height: calc(100% - 65px); /* Adjust based on your header height */
+    width: 250px;
+    height: calc(100% - 65px);
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     display: flex;
     flex-direction: column;
     z-index: 1000;
-    color: #fff; /* Ensures all text is white */
+    color: #fff;
 }
 
 .navbar {
-    display: flex; /* Ensures the navbar is a flex container */
-    justify-content: center; /* Center the items in the navbar */
-    align-items: center; /* Aligns items vertically */
-    position: relative; /* Ensure the navbar is the reference for absolute positioning */
-    min-height: 60px; /* Add minimum height to prevent collapse */
-    padding: 0.5rem 1rem; /* Add consistent padding */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 60px;
+    padding: 0.5rem 0.75rem;
     width: 100%;
-    max-width: 100vw; /* Ensure navbar doesn't exceed viewport width */
+    max-width: 100vw;
     z-index: 1000;
     overflow: visible;
 }
 
 .logo-image {
-    position: absolute; /* Position the logo absolutely within the navbar */
-    left: 15px; /* Adjust this value to position the logo as needed */
-    top: 4; /* Align to the top of the navbar */
-    z-index: 1; /* Ensure it's above other content */
+    position: absolute;
+    left: 15px;
+    top: 4;
+    z-index: 1;
 }
 
-/* Prevent logo from getting squished */
 .logo-img {
     height: auto;
-    max-height: 3rem; /* Increased by another 20% from 2.5rem */
+    max-height: 3rem;
     width: auto;
-    max-width: 288px; /* Increased by another 20% from 240px */
-    object-fit: contain; /* Preserve aspect ratio */
+    max-width: 288px;
+    object-fit: contain;
 }
 
 .navbar-nav {
-    width: 100%; /* Takes up the full width of the navbar */
+    width: 100%;
     display: flex;
-    justify-content: center; /* Centers the navigation links */
-    align-items: center; /* Aligns items vertically */
+    justify-content: center;
+    align-items: center;
 }
 
 .nav-item.nav-link {
@@ -578,10 +417,6 @@ onUnmounted(() => {
 }
 
 
-.nav-link, .mobile-menu .nav-item {
-    color: #fff; /* Ensures text is white */
-}
-
 .bar {
     display: block;
     width: 25px;
@@ -591,35 +426,64 @@ onUnmounted(() => {
 }
 
 .mobile-menu .router-link-exact-active {
-    font-weight: bold; /* Makes the font weight bold */
-    color: #fff !important; /* Keeps the text color white, as previously defined */
+    font-weight: bold;
+    color: #fff !important;
     border-bottom: 2px solid #fff;
 }
 .mobile-menu .router-link-exact-active.image {
-    font-weight: bold; /* Makes the font weight bold */
-    color: #fff !important; /* Keeps the text color white, as previously defined */
+    font-weight: bold;
+    color: #fff !important;
     border-bottom: 0px;
 }
+
 .mobile-theme-options {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 8px;
     padding: 12px 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
     margin-top: 10px;
 }
+.mobile-theme-inline-label {
+    font-size: 0.875rem;
+    opacity: 0.8;
+    margin-right: 4px;
+}
 .mobile-theme-options .theme-option {
-    width: 36px;
-    height: 36px;
-    margin-right: 8px;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    color: #fff;
+}
+.mobile-theme-options .theme-option:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.75);
+}
+.mobile-theme-options .theme-option.active {
+    background-color: #8aa37c;
+    border-color: #c5d4b8;
+}
+.mobile-theme-options .theme-icon {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Mobile logo - hidden by default, shown in media query */
 .mobile-logo {
     display: none;
 }
 
-/* Hide desktop logo and show mobile logo when hamburger menu appears */
-/* Tablet and below: show hamburger menu */
 @media (max-width: 1024px) {
     .desktop-logo {
         display: none;
@@ -633,19 +497,16 @@ onUnmounted(() => {
     .web-nav {
         display: none;
     }
-    /* Center the logo specifically */
     .nav-item img {
-        display: block; /* Makes the image a block element to center it */
-        margin: 0 auto; /* Auto margin for horizontal centering */
+        display: block;
+        margin: 0 auto;
     }
 
-    /* Ensure mobile logo doesn't get squished */
     .mobile-logo .logo-img {
-        max-width: 216px; /* Increased by another 20% from 180px */
-        max-height: 2.7rem; /* Increased by another 20% from 2.25rem */
+        max-width: 216px;
+        max-height: 2.7rem;
     }
 
-    /* Update mobile logo positioning */
     .mobile-logo {
         position: absolute;
         left: 50%;
@@ -653,13 +514,11 @@ onUnmounted(() => {
         z-index: 1;
     }
 
-    /* Update mobile specific styles */
     .navbar {
         justify-content: center;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.75rem;
     }
 
-    /* Ensure mobile menu button doesn't interfere with centering */
     .mobile-menu-button {
         position: absolute;
         left: 1rem;
@@ -668,8 +527,6 @@ onUnmounted(() => {
     }
 }
 
-/* Show desktop logo and hide mobile logo above the breakpoint */
-/* Desktop: show full navigation links */
 @media (min-width: 1025px) {
     .desktop-logo {
         display: block;
@@ -682,11 +539,10 @@ onUnmounted(() => {
     }
 }
 
-/* Mobile: Fix profile icon positioning */
 @media (max-width: 1024px) {
     .profile-container {
         position: absolute;
-        right: 15px;
+        right: 8px;
         top: 12px;
         transform: none;
         z-index: 1500;

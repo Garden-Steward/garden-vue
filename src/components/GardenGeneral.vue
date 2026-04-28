@@ -25,6 +25,10 @@ const props = defineProps({
   recurringTasks: {
     type: Array,
     default: () => []
+  },
+  gardenTasks: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -40,6 +44,7 @@ const statCards = computed(() => {
     garden: props.garden,
     volunteerDays: props.volunteerDays,
     recurringTasks: props.recurringTasks,
+    gardenTasks: props.gardenTasks,
     smsCampaigns: props.smsCampaigns
   };
   return gardenStatCards.map(card => ({

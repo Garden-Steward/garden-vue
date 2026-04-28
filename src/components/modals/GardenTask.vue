@@ -1,13 +1,15 @@
 <script setup>
 import { computed, ref, watch } from "vue";
-import { useGardenTaskStore, useAlertStore } from '@/stores';
+import { useGardenTaskStore, useAlertStore, instructionStore } from '@/stores';
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
 import FormToggle from '@/components/Toggle.vue';
 import MediaSelector from '@/components/form/MediaSelector.vue';
 import {
   taskStatusOptions,
   getTaskStatusOption,
-  DEFAULT_TASK_STATUS
+  DEFAULT_TASK_STATUS,
+  recurringSchedulerTypes,
+  weekStartDayOptions
 } from '@/_config/GardenConfig';
 
 const props = defineProps({
@@ -40,7 +42,15 @@ const props = defineProps({
   editor: {
     type: Boolean,
     default: false
-  }
+  },
+  /** True when editing a recurring-task template (not a one-off garden task). */
+  isRecurringTemplate: {
+    type: Boolean,
+    default: false
+  },
+  scheduler_type: String,
+  week_start_date: String,
+  instruction: [Object, Array]
 });
 
 const gardenTaskStore = useGardenTaskStore();
@@ -62,7 +72,8 @@ const taskTypes = ['General', 'Water', 'Weeding', 'Planting', 'Harvest'];
 const validationErrors = ref({
   title: false,
   type: false,
-  overview: false
+  overview: false,
+  scheduler_type: false
 });
 
 function clearValidationError(field) {
@@ -72,13 +83,27 @@ function clearValidationError(field) {
 }
 
 function validateForm() {
+  if (props.isRecurringTemplate) {
+    const titleValid = !!String(form.value.title || '').trim();
+    const typeValid = !!String(form.value.type || '').trim();
+    const overviewValid = !!String(form.value.overview || '').trim();
+    const schedValid = !!String(form.value.scheduler_type || '').trim();
+    validationErrors.value = {
+      title: !titleValid,
+      type: !typeValid,
+      overview: !overviewValid,
+      scheduler_type: !schedValid
+    };
+    return titleValid && typeValid && overviewValid && schedValid;
+  }
   const titleValid = !!String(form.value.title || '').trim();
   const typeValid = !!String(form.value.type || '').trim();
   const overviewValid = !!String(form.value.overview || '').trim();
   validationErrors.value = {
     title: !titleValid,
     type: !typeValid,
-    overview: !overviewValid
+    overview: !overviewValid,
+    scheduler_type: false
   };
   return titleValid && typeValid && overviewValid;
 }
@@ -152,16 +177,82 @@ watch(() => props.editor, (newVal) => {
 
 watch(show, (isVisible) => {
   if (!isVisible) {
-    validationErrors.value = { title: false, type: false, overview: false };
+    validationErrors.value = { title: false, type: false, overview: false, scheduler_type: false };
   }
 });
 
 const topic = computed(() => {
+  if (props.id && props.isRecurringTemplate) return 'Title';
   return (props.id) ? "Edit Title:" : "Garden Task Title:";
 });
 
 const submitText = computed(() => {
+  if (props.id && props.isRecurringTemplate) return 'Save recurring task';
   return (props.id) ? "Update Task" : "Create Task";
+});
+
+const instructionInstStore = instructionStore();
+const instructionOptions = ref([]);
+
+/** Map Strapi instruction relation prop → `{ id }` for the payload. */
+function instructionRelationToForm(rel) {
+  if (rel == null) return null;
+  const wrapped = rel.data != null ? rel.data : rel;
+  const raw = wrapped?.id != null ? wrapped.id : wrapped;
+  const id = typeof raw === 'object' && raw?.id != null ? raw.id : raw;
+  if (id == null || id === '') return null;
+  const n = Number(id);
+  return Number.isFinite(n) ? { id: n } : null;
+}
+
+function normalizeMediaFromProps(media) {
+  if (!media) return null;
+  if (media.data) {
+    const d = media.data;
+    return { ...(d.attributes || d), id: d.id };
+  }
+  return media;
+}
+
+async function loadInstructionOptions() {
+  const gid = props.garden;
+  if (!gid || !props.isRecurringTemplate) return;
+  instructionOptions.value = await instructionInstStore.findByGarden(gid);
+}
+
+function syncRecurringFormFromProps() {
+  form.value = {
+    title: props.title || '',
+    type: props.type || '',
+    overview: props.overview || '',
+    max_volunteers: props.max_volunteers != null && props.max_volunteers !== '' ? Number(props.max_volunteers) : null,
+    primary_image: normalizeMediaFromProps(props.primary_image),
+    complete_once: !!props.complete_once,
+    scheduler_type: props.scheduler_type || '',
+    week_start_date: props.week_start_date || 'Sunday',
+    instruction: instructionRelationToForm(props.instruction)
+  };
+  initialForm.value = JSON.parse(JSON.stringify(form.value));
+}
+
+watch(show, (visible) => {
+  if (visible && props.id && props.isRecurringTemplate) {
+    syncRecurringFormFromProps();
+    loadInstructionOptions();
+  }
+});
+
+const instructionSelectId = computed({
+  get() {
+    return form.value.instruction?.id ?? '';
+  },
+  set(v) {
+    if (v === '' || v == null) {
+      form.value.instruction = null;
+    } else {
+      form.value.instruction = { id: Number(v) };
+    }
+  }
 });
 
 // Watch handlers
@@ -182,10 +273,12 @@ watch(() => props.max_volunteers, (newVal) => {
 });
 
 watch(() => props.volunteers, (newVal) => {
+  if (props.isRecurringTemplate) return;
   form.value.volunteers = newVal;
 });
 
 watch(() => props.status, (newVal) => {
+  if (props.isRecurringTemplate) return;
   form.value.status = (newVal && getTaskStatusOption(newVal).value) || DEFAULT_TASK_STATUS;
 });
 
@@ -197,6 +290,7 @@ watch(() => props.primary_image, (newVal) => {
 
 // Watch for changes to props.task and update initialForm
 watch(() => props.task, (newVal) => {
+  if (props.isRecurringTemplate) return;
   if (newVal) {
     form.value = {
       ...form.value,
@@ -285,13 +379,33 @@ function prepopulateFromRecurring(recurringTask) {
   // You can add more fields if needed
 }
 
+/** Clear all create-modal state after a successful POST so the next open starts empty. */
+function resetFormAfterSuccessfulCreate() {
+  form.value = {
+    title: '',
+    type: '',
+    overview: '',
+    max_volunteers: null,
+    status: DEFAULT_TASK_STATUS,
+    primary_image: null,
+    recurring_task: null,
+    is_group_task: false,
+    complete_once: false
+  };
+  initialForm.value = { ...form.value };
+  currentStep.value = 1;
+  showTemplatePicker.value = false;
+  saveAsTemplate.value = false;
+  selectedRecurringTask.value = null;
+  validationErrors.value = { title: false, type: false, overview: false, scheduler_type: false };
+}
+
 const submit = async () => {
   if (!validateForm()) {
     return;
   }
   let message;
   copy.value = false;
-  show.value = false;
   form.value.garden = props.garden;
   form.value.volunteer_day = props.dayId;
   try {
@@ -303,10 +417,46 @@ const submit = async () => {
     }
     // Then proceed with task creation/update
     if (props.id) {
-      const updatedTask = await gardenTaskStore.update(props.id, form.value);
-      message = 'Garden Task updated';
-      if (updatedTask) {
-        form.value = { ...form.value, ...updatedTask };
+      if (props.isRecurringTemplate) {
+        const recurringPayload = {
+          title: form.value.title,
+          overview: form.value.overview,
+          type: form.value.type,
+          complete_once: form.value.complete_once,
+          max_volunteers: form.value.max_volunteers,
+          scheduler_type: form.value.scheduler_type,
+          week_start_date: form.value.week_start_date,
+          garden: props.garden
+        };
+        if (form.value.primary_image?.id || form.value.primary_image?.data?.id) {
+          recurringPayload.primary_image = {
+            id: form.value.primary_image?.id || form.value.primary_image?.data?.id
+          };
+        }
+        recurringPayload.instruction = form.value.instruction?.id ?? null;
+
+        const updatedAttrs = await gardenTaskStore.updateRecurring(props.id, recurringPayload);
+        message = 'Recurring task updated';
+        if (updatedAttrs) {
+          form.value = {
+            title: updatedAttrs.title || '',
+            type: updatedAttrs.type || '',
+            overview: updatedAttrs.overview || '',
+            max_volunteers: updatedAttrs.max_volunteers != null && updatedAttrs.max_volunteers !== '' ? Number(updatedAttrs.max_volunteers) : null,
+            primary_image: normalizeMediaFromProps(updatedAttrs.primary_image),
+            complete_once: !!updatedAttrs.complete_once,
+            scheduler_type: updatedAttrs.scheduler_type || '',
+            week_start_date: updatedAttrs.week_start_date || 'Sunday',
+            instruction: instructionRelationToForm(updatedAttrs.instruction)
+          };
+          initialForm.value = JSON.parse(JSON.stringify(form.value));
+        }
+      } else {
+        const updatedTask = await gardenTaskStore.update(props.id, form.value);
+        message = 'Garden Task updated';
+        if (updatedTask) {
+          form.value = { ...form.value, ...updatedTask };
+        }
       }
     } else {
       form.value.status = 'INITIALIZED';
@@ -338,8 +488,11 @@ const submit = async () => {
 
     show.value = false;
     alertStore.success(message);
-    // Update initialForm after successful submit
-    initialForm.value = { ...form.value };
+    if (!props.id) {
+      resetFormAfterSuccessfulCreate();
+    } else if (!props.isRecurringTemplate) {
+      initialForm.value = { ...form.value };
+    }
   } catch (error) {
     console.error('Error submitting task:', error);
     alertStore.error('Failed to save task');
@@ -348,7 +501,8 @@ const submit = async () => {
 
 const handleDelete = async () => {
     if (!props.id) return;
-    
+    if (props.isRecurringTemplate) return;
+
     // Add confirmation dialog
     if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
         return;
@@ -424,13 +578,13 @@ defineExpose({ openModal });
     </a>
   </div>
   
-  <div v-else-if="showCreateButton">
+  <div v-else-if="showCreateButton" class="inline-flex shrink-0">
     <button
       type="button"
       class="gt-create-trigger px-5 py-2.5 font-semibold text-sm rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
       @click="show = true"
     >
-      Create Task
+      + Create
     </button>
   </div>
 
@@ -649,7 +803,165 @@ defineExpose({ openModal });
           </template>
 
           <!-- ============================================ -->
-          <!-- EDIT FLOW (single page, existing layout)     -->
+          <!-- EDIT: RECURRING TASK (template)                 -->
+          <!-- ============================================ -->
+          <template v-else-if="id && isRecurringTemplate">
+            <h2 class="gt-text text-lg font-semibold text-center mb-3 pr-6">Edit recurring task</h2>
+            <p class="gt-text text-sm text-center opacity-80 mb-4 pr-6">
+              Schedule and instruction options apply to this template. One-off task status is not used here.
+            </p>
+
+            <div class="flex items-center gap-4 mb-3">
+              <div class="flex-1">
+                <p class="gt-text pb-1 text-xl md:text-base font-semibold">{{ topic }} <span class="text-red-500">*</span></p>
+                <input
+                  :class="[
+                    'garden-task-input gt-input p-2 md:p-1 rounded-md border w-full leading-tight text-2xl md:text-lg focus:outline-none focus:ring-1',
+                    validationErrors.title ? 'border-2 !border-red-500' : ''
+                  ]"
+                  type="text"
+                  v-model="form.title"
+                  @input="clearValidationError('title')"
+                />
+              </div>
+            </div>
+
+            <p class="gt-text p-1 pb-0 mb-0 mt-0 text-xl md:text-base font-semibold">Overview: <span class="text-red-500">*</span></p>
+            <textarea
+              v-model="form.overview"
+              :class="[
+                'garden-task-input gt-input form-control px-3 py-3 md:py-2 m-r-4 mb-1 w-full rounded-md border text-xl md:text-base focus:outline-none focus:ring-1',
+                validationErrors.overview ? 'border-2 !border-red-500' : ''
+              ]"
+              rows="5"
+              @input="clearValidationError('overview')"
+            ></textarea>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-4">
+              <div>
+                <p class="gt-text p-1 pb-0 text-md mb-1">Scheduler type: <span class="text-red-500">*</span></p>
+                <select
+                  v-model="form.scheduler_type"
+                  :class="[
+                    'garden-task-input gt-input rounded-md border p-2 w-full text-lg focus:outline-none focus:ring-1',
+                    validationErrors.scheduler_type ? 'border-2 !border-red-500' : ''
+                  ]"
+                  @change="clearValidationError('scheduler_type')"
+                >
+                  <option value="" disabled class="text-lg py-1">Select…</option>
+                  <option
+                    v-for="opt in recurringSchedulerTypes"
+                    :key="opt"
+                    :value="opt"
+                    class="text-lg py-1"
+                  >
+                    {{ opt }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <p class="gt-text p-1 pb-0 text-md mb-1">Week starts on</p>
+                <select
+                  v-model="form.week_start_date"
+                  class="garden-task-input gt-input rounded-md border p-2 w-full text-lg focus:outline-none focus:ring-1"
+                >
+                  <option
+                    v-for="d in weekStartDayOptions"
+                    :key="d"
+                    :value="d"
+                    class="text-lg py-1"
+                  >
+                    {{ d }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <p class="gt-text p-1 pb-0 text-md mb-1">Instruction (optional)</p>
+              <select
+                v-model="instructionSelectId"
+                class="garden-task-input gt-input rounded-md border p-2 w-full text-base focus:outline-none focus:ring-1"
+              >
+                <option value="">No instruction linked</option>
+                <option
+                  v-for="inst in instructionOptions"
+                  :key="inst.id"
+                  :value="inst.id"
+                >
+                  {{ inst.attributes?.title || `Instruction #${inst.id}` }}
+                </option>
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <FormToggle
+                v-model="form.complete_once"
+                label="Complete once (for all volunteers when done)"
+              />
+            </div>
+
+            <p class="gt-text p-1 pb-0 text-md mb-0">What kind of task?: <span class="text-red-500">*</span></p>
+            <select
+              v-model="form.type"
+              :class="[
+                'garden-task-input gt-input rounded-md border p-1 ml-1 text-lg focus:outline-none focus:ring-1',
+                validationErrors.type ? 'border-2 !border-red-500' : ''
+              ]"
+              @change="clearValidationError('type')"
+            >
+              <option value="" class="text-lg py-1">Select task type...</option>
+              <option class="text-lg py-1" value="General">General</option>
+              <option class="text-lg py-1" value="Water">Water</option>
+              <option class="text-lg py-1" value="Weeding">Weeding</option>
+              <option class="text-lg py-1" value="Planting">Planting</option>
+              <option class="text-lg py-1" value="Harvest">Harvest</option>
+            </select>
+
+            <div class="flex flex-col space-y-2 mb-4 mt-4">
+              <label class="gt-text text-sm font-medium">Photo</label>
+              <div v-if="garden" class="mt-2">
+                <MediaSelector
+                  v-model="form.primary_image"
+                  :garden-id="garden"
+                  :multiple="false"
+                  placeholder="Select or upload image"
+                />
+              </div>
+            </div>
+
+            <div class="gt-subsection p-4 rounded-lg mb-4 space-y-3">
+              <div class="flex items-center gap-4 flex-wrap">
+                <span class="gt-text font-medium">Max volunteers</span>
+                <select v-model="form.max_volunteers" class="garden-task-input gt-input rounded-md border p-1 w-24">
+                  <option :value="null">—</option>
+                  <option v-for="n in [1,2,3,4,5,99]" :key="n" :value="n">{{ n }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="modal-footer gt-footer flex flex-shrink-0 flex-col gap-3 p-4 border-t rounded-b-md">
+              <div
+                v-if="validationErrors.title || validationErrors.type || validationErrors.overview || validationErrors.scheduler_type"
+                class="w-full text-red-600 text-sm"
+              >
+                Please fill in title, overview, task type, and scheduler type.
+              </div>
+              <div v-if="error" class="w-full text-red-600 text-sm">Error: {{ error }}</div>
+              <div class="flex justify-end w-full">
+                <button
+                  v-if="isDirty"
+                  class="gt-submit-btn px-6 py-2.5 font-medium text-xs leading-tight uppercase rounded shadow-md hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-0 active:shadow-lg transition duration-150 ease-in-out"
+                  type="submit"
+                >
+                  {{ submitText }}
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- ============================================ -->
+          <!-- EDIT FLOW: ONE-OFF GARDEN TASK               -->
           <!-- ============================================ -->
           <template v-else>
             <!-- Status pill (prominent, top of form) -->
@@ -810,7 +1122,7 @@ defineExpose({ openModal });
 </template>
 
 <style scoped>
-/* ── Create Task trigger button (light by default) ─── */
+/* ── + Create trigger button (light by default) ─── */
 .gt-create-trigger {
   background-color: #8aa37c;
   color: #ffffff;
@@ -1184,14 +1496,14 @@ defineExpose({ openModal });
   color: #ffffff;
 }
 :global(.dark) .gt-step-inactive {
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #9ca3af;
+  background-color: #f0ebe0;
+  color: #111111;
 }
 :global(.dark) .gt-step-bar-active {
   background-color: #8aa37c;
 }
 :global(.dark) .gt-step-bar-inactive {
-  background-color: rgba(26, 26, 26, 0.6);
+  background-color: #c9c3b5;
 }
 
 :global(.dark) .gt-type-btn {
@@ -1280,6 +1592,18 @@ html.dark .garden-task-modal-content select option {
 html.dark .garden-task-modal-content .gt-subsection {
   background-color: rgba(26, 26, 26, 0.6) !important;
   border-color: #3d4d36 !important;
+}
+
+/* Step indicator: black numerals on light inactive circles (modal forces light text otherwise) */
+html.dark .garden-task-modal-content .gt-step-inactive {
+  background-color: #f0ebe0 !important;
+  color: #111111 !important;
+}
+html.dark .garden-task-modal-content .gt-step-bar-inactive {
+  background-color: #c9c3b5 !important;
+}
+html.dark .garden-task-modal-content .gt-step-active {
+  color: #ffffff !important;
 }
 
 /* Config-driven force-dark status pill colors (used from GardenConfig darkPillClass). */

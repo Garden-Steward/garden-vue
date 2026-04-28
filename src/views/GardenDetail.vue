@@ -30,7 +30,7 @@ const { user } = storeToRefs(authStore);
 const { garden } = storeToRefs(gardensStore);
 const { volunteerDays, volunteerDaysPagination } = storeToRefs(eventStore);
 const { smsCampaigns } = storeToRefs(campaignStore);
-const { recurringTasks } = storeToRefs(gardenTaskStore);
+const { recurringTasks, gardenTasks } = storeToRefs(gardenTaskStore);
 const { taskMessages, loading: messagesLoading } = storeToRefs(messagesStore);
 
 const eventsPage = ref(1);
@@ -107,6 +107,7 @@ watch(isEditor, (newValue) => {
 watch(() => garden.value, (newGarden) => {
   if (!newGarden.loading && newGarden.id) {
     gardenTaskStore.getRecurringTasks(newGarden.id);
+    gardenTaskStore.getGardenTasks(newGarden.id);
   }
 }, { immediate: true });
 
@@ -398,6 +399,7 @@ const openEventEditor = (day) => {
             :volunteer-days="volunteerDays"
             :sms-campaigns="smsCampaigns"
             :recurring-tasks="recurringTasks"
+            :garden-tasks="gardenTasks"
           />
 
         <!-- Task Messages Section -->

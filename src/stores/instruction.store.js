@@ -24,6 +24,17 @@ export const instructionStore = defineStore({
               .then(res => this.instructions = res.data)
               .catch(error => this.instructions = { error })
       },
+      /** Instructions linked to a garden (for recurring-task relation picker). */
+      async findByGarden(gardenId) {
+          if (!gardenId) return [];
+          const q = `${baseUrl}?filters[garden][id][$eq]=${gardenId}&pagination[pageSize]=200&sort=title:asc`;
+          return fetchWrapper.get(q)
+              .then(res => (Array.isArray(res.data) ? res.data : []))
+              .catch(error => {
+                  this.handleError(error);
+                  return [];
+              });
+      },
       async findSlug(slug) {
         //   this.instructions = { loading: true };
           this.instruction = { loading: true };

@@ -455,6 +455,16 @@ const mapLocationTrackings = computed(() => {
 
     <!-- Full Screen Content -->
     <div class="garden-public-content">
+      <!-- Title + blurb first -->
+      <div v-if="garden.attributes" class="garden-header garden-header-top">
+        <h1 class="garden-title">{{ garden.attributes.title }}</h1>
+        <p v-if="garden.attributes.blurb" class="garden-blurb">{{ garden.attributes.blurb }}</p>
+      </div>
+      <div v-else-if="garden.loading" class="garden-header garden-header-top">
+        <div class="garden-title h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
+        <div class="garden-blurb h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+      </div>
+
       <!-- Hero Image -->
       <div v-if="garden.attributes" class="garden-hero-image">
         <img 
@@ -467,22 +477,17 @@ const mapLocationTrackings = computed(() => {
         <div class="hero-image bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
       </div>
 
-      <!-- Header -->
-      <div v-if="garden.attributes" class="garden-header">
-        <h1 class="garden-title">{{ garden.attributes.title }}</h1>
-        <p v-if="garden.attributes.blurb" class="garden-blurb">{{ garden.attributes.blurb }}</p>
-        
-        <!-- Garden Map (if coordinates exist) -->
-        <div v-if="gardenCoordinates && mapLocationTrackings.length > 0" class="garden-map-container">
+      <!-- Garden Map (if coordinates exist) -->
+      <div
+        v-if="garden.attributes && gardenCoordinates && mapLocationTrackings.length > 0"
+        class="garden-map-wrap"
+      >
+        <div class="garden-map-container">
           <LeafletMap 
             :location-trackings="mapLocationTrackings"
             :center-coordinates="gardenCoordinates"
           />
         </div>
-      </div>
-      <div v-else-if="garden.loading" class="garden-header">
-        <div class="garden-title h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
-        <div class="garden-blurb h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
       </div>
 
       <section v-if="garden.attributes?.description" class="garden-section">
@@ -825,11 +830,15 @@ const mapLocationTrackings = computed(() => {
 /* Hero Image */
 .garden-hero-image {
   width: 100%;
-  margin-bottom: 40px;
+  margin-bottom: 60px;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+}
+
+.garden-hero-image:has(+ .garden-map-wrap) {
+  margin-bottom: 36px;
 }
 
 .dark .garden-hero-image {
@@ -844,10 +853,20 @@ const mapLocationTrackings = computed(() => {
   display: block;
 }
 
-/* Header */
+/* Header (title + blurb at top, before hero) */
 .garden-header {
   text-align: center;
+}
+.garden-header-top {
+  margin-bottom: 28px;
+}
+
+/* Map block below hero */
+.garden-map-wrap {
   margin-bottom: 60px;
+}
+.garden-map-wrap .garden-map-container {
+  margin-top: 0;
 }
 
 .garden-title {
@@ -887,6 +906,31 @@ const mapLocationTrackings = computed(() => {
 
 .dark .garden-map-container {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/*
+ * Leaflet popups/tooltips use a white panel; this page sets light body text via
+ * .dark .garden-public-container { color: #f5f5f5 }, which inherited into the
+ * map UI. Force readable dark text on white surfaces (higher specificity than LeafletMap.vue alone).
+ */
+.dark .garden-public-container .leaflet-popup-content,
+.dark .garden-public-container .leaflet-popup-content .popup-content,
+.dark .garden-public-container .leaflet-popup-content a,
+.dark .garden-public-container .leaflet-tooltip {
+  color: #1a1a1a !important;
+}
+
+.dark .garden-public-container .leaflet-popup-close-button {
+  color: #4b5563 !important;
+}
+
+.dark .garden-public-container .leaflet-popup-close-button:hover {
+  color: #111827 !important;
+}
+
+.dark .garden-public-container .leaflet-popup-content-wrapper,
+.dark .garden-public-container .leaflet-popup-tip {
+  background-color: #ffffff !important;
 }
 
 /* Actions */

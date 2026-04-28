@@ -139,25 +139,28 @@ export default {
 </script>
 
 <style scoped>
+/* Light modal styling — aligned with PhoneLoginModal.vue defaults */
 .registration-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background-color: rgba(17, 24, 39, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
 .modal-content {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border-radius: 12px;
-  padding: 40px;
+  background-color: #ffffff;
+  color: #111827;
+  border-radius: 0.75rem;
+  padding: 2.5rem;
   max-width: 400px;
-  width: 90%;
+  width: 100%;
   position: relative;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(74, 222, 128, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid #e5e7eb;
 }
 
 .close-btn {
@@ -167,26 +170,28 @@ export default {
   background: none;
   border: none;
   font-size: 2rem;
+  line-height: 1;
   color: #9ca3af;
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .close-btn:hover {
-  color: #e4e4e4;
+  color: #4b5563;
 }
 
 h2 {
   font-size: 1.5rem;
-  color: #e4e4e4;
+  font-weight: 700;
+  color: #111827;
   margin-bottom: 8px;
   text-align: center;
 }
 
 .notice {
-  background: rgba(74, 222, 128, 0.08);
-  border-left: 3px solid #4ade80;
-  color: #9ca3af;
+  background: #f0fdf4;
+  border-left: 3px solid #8aa37c;
+  color: #374151;
   padding: 12px;
   border-radius: 4px;
   font-size: 0.85rem;
@@ -196,7 +201,7 @@ h2 {
 }
 
 .subtitle {
-  color: #9ca3af;
+  color: #4b5563;
   text-align: center;
   margin-bottom: 32px;
   font-size: 0.95rem;
@@ -212,8 +217,8 @@ h2 {
 
 label {
   display: block;
-  font-size: 0.85rem;
-  color: #9ca3af;
+  font-size: 0.875rem;
+  color: #374151;
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -222,30 +227,30 @@ label {
 
 input {
   width: 100%;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(74, 222, 128, 0.3);
-  border-radius: 8px;
-  color: #e4e4e4;
+  padding: 0.75rem 1rem;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  color: #111827;
   font-size: 1rem;
   box-sizing: border-box;
-  transition: all 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 input:focus {
   outline: none;
-  border-color: #4ade80;
-  background: rgba(255, 255, 255, 0.08);
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #8aa37c;
 }
 
 input::placeholder {
-  color: #6b7280;
+  color: #9ca3af;
 }
 
 .error-message {
-  background: rgba(239, 68, 68, 0.1);
+  background: #fef2f2;
   border-left: 3px solid #ef4444;
-  color: #fca5a5;
+  color: #b91c1c;
   padding: 12px;
   border-radius: 4px;
   font-size: 0.9rem;
@@ -261,7 +266,7 @@ input::placeholder {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s, opacity 0.2s;
 }
 
 .btn-primary {
@@ -271,22 +276,22 @@ input::placeholder {
 
 .btn-primary:hover:not(:disabled) {
   background: #6c8a6a;
-  transform: translateY(-2px);
 }
 
 .btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .btn-secondary {
-  background: rgba(138, 163, 124, 0.2);
-  color: #8aa37c;
+  background: #f9fafb;
+  color: #6c8a6a;
+  border: 1px solid #e5e7eb;
   margin-top: 12px;
 }
 
 .btn-secondary:hover {
-  background: rgba(138, 163, 124, 0.3);
+  background: #f3f4f6;
 }
 
 .help-text {
@@ -302,18 +307,19 @@ input::placeholder {
 
 .check-icon {
   font-size: 3rem;
-  color: #4ade80;
+  color: #16a34a;
   margin-bottom: 16px;
 }
 
 .confirmation-step h3 {
   font-size: 1.25rem;
-  color: #e4e4e4;
+  font-weight: 700;
+  color: #111827;
   margin-bottom: 12px;
 }
 
 .confirmation-step p {
-  color: #9ca3af;
+  color: #4b5563;
   line-height: 1.6;
   margin-bottom: 24px;
 }

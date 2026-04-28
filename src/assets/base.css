@@ -16,6 +16,11 @@ a {
 body {
     background-color: #8aa37c;
 }
+
+/* Dark canvas: match panel green (#2d3e26) — avoid clashing with a second full-page green (#1f2d1a). */
+html.dark body {
+    background-color: #2d3e26;
+}
 .w300 {
     width: 300px;
     margin: 15px;

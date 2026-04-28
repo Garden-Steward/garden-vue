@@ -97,29 +97,35 @@ We must act as nature.`
 </script>
 
 <template>
-  <div class="bg-custom-light p-5 rounded-lg md:w-2/3 lg:w-3/4 mx-auto">
-    <h1 class="text-3xl text-center mb-6">Our Manifesto</h1>
-    
+  <!-- Light: cream panel + forest copy. Dark: same canvas #2d3e26 as body, light gray copy. -->
+  <div class="manifesto-page py-6 md:py-10 dark:bg-[#2d3e26] rounded-none md:rounded-lg">
+    <div class="manifesto-panel bg-custom-light dark:bg-[#2d3e26] p-5 rounded-lg md:w-2/3 lg:w-3/4 mx-auto text-gray-900 dark:text-[#d0d0d0]">
+    <h1 class="manifesto-heading text-3xl text-center mb-6 font-serif text-gray-900 dark:text-[#c8dbbf]">
+      Our Manifesto
+    </h1>
+
     <!-- Audio Player Section -->
-    <div class="bg-[#344a34] p-6 rounded-lg mb-8 text-center dark:bg-[#2d3e26]">
-      <p class="text-[#f5f5f5] text-lg mb-4 dark:text-[#f5f5f5]">Listen to the audio version</p>
+    <div class="manifesto-media bg-[#344a34] p-6 rounded-lg mb-8 text-center dark:bg-[#344a34]">
+      <p class="manifesto-media-text text-lg mb-4">Listen to the audio version</p>
       <audio controls class="w-full max-w-md mx-auto">
         <source :src="audioUrl" type="audio/mp4">
         Your browser does not support the audio element.
       </audio>
-      <p class="text-[#d0d0d0] text-sm mt-3 dark:text-[#d0d0d0]">Recorded April 2026</p>
+      <p class="manifesto-media-muted text-sm mt-3">Recorded April 2026</p>
     </div>
-    
+
     <!-- Manifesto Text -->
-    <div class="prose prose-lg max-w-none dark:prose-invert">
+    <div class="manifesto-body max-w-none space-y-6">
       <template v-for="(paragraph, index) in manifestoText.split('\n\n')" :key="index">
-        <p class="text-lg leading-relaxed">{{ paragraph }}</p>
+        <p class="manifesto-p text-lg leading-relaxed text-gray-800 dark:text-[#d0d0d0]">
+          {{ paragraph }}
+        </p>
       </template>
     </div>
-    
+
     <!-- Call to Action -->
-    <div class="mt-8 p-6 bg-[#344a34] rounded-lg text-center dark:bg-[#2d3e26]">
-      <p class="text-[#f5f5f5] text-xl mb-4 dark:text-[#f5f5f5]">Does this resonate with you?</p>
+    <div class="manifesto-media mt-8 p-6 bg-[#344a34] rounded-lg text-center dark:bg-[#344a34]">
+      <p class="manifesto-media-text text-xl mb-4">Does this resonate with you?</p>
       <div class="flex flex-col sm:flex-row gap-3 justify-center">
         <a href="/join" class="hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
           Join Our Movement
@@ -128,6 +134,7 @@ We must act as nature.`
           Get Involved
         </a>
       </div>
+    </div>
     </div>
   </div>
 </template>

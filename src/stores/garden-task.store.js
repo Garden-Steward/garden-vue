@@ -6,6 +6,40 @@ import { useAlertStore } from '@/stores';
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks`;
 const recurringUrl = `${import.meta.env.VITE_API_URL}/api/recurring-tasks`;
 
+/** Normalize recurring-task entity from API (flatten media; keep relations as returned). */
+function normalizeRecurringTaskEntity(entity) {
+    if (!entity?.attributes) return entity;
+    const attrs = { ...entity.attributes };
+    if (attrs.primary_image?.data) {
+        const imageData = attrs.primary_image.data;
+        attrs.primary_image = {
+            ...(imageData.attributes || imageData),
+            id: imageData.id
+        };
+    }
+    return { id: entity.id, attributes: attrs };
+}
+
+/** Normalize a single Strapi garden-task entity (same rules as getGardenTasks / update). */
+function normalizeGardenTaskEntity(task) {
+    if (!task?.attributes) return task;
+    const t = { id: task.id, attributes: { ...task.attributes } };
+    const vol = t.attributes.volunteers;
+    if (vol?.data) {
+        t.attributes.volunteers = vol.data;
+    } else if (!vol) {
+        t.attributes.volunteers = [];
+    }
+    if (t.attributes.primary_image?.data) {
+        const imageData = t.attributes.primary_image.data;
+        t.attributes.primary_image = {
+            ...(imageData.attributes || imageData),
+            id: imageData.id
+        };
+    }
+    return t;
+}
+
 export const useGardenTaskStore = defineStore({
     id: 'gardenTasks',
     state: () => ({
@@ -104,15 +138,11 @@ export const useGardenTaskStore = defineStore({
             return fetchWrapper.post(`${baseUrl}?populate=primary_image`, { data: data })
                 .then(response => {
                     if (response?.data?.attributes) {
-                        if (response.data.attributes.primary_image?.data) {
-                            const imageData = response.data.attributes.primary_image.data;
-                            response.data.attributes.primary_image = {
-                                ...imageData.attributes,
-                                id: imageData.id
-                            };
-                        }
-                        this.gardenTasks.push(response.data);
-                        return response.data.attributes;
+                        const normalized = normalizeGardenTaskEntity(response.data);
+                        const tasks = Array.isArray(this.gardenTasks) ? [...this.gardenTasks] : [];
+                        const withoutDup = tasks.filter((t) => t.id !== normalized.id);
+                        this.gardenTasks = [normalized, ...withoutDup];
+                        return normalized.attributes;
                     }
                     return response;
                 })
@@ -150,6 +180,39 @@ export const useGardenTaskStore = defineStore({
                         this.recurringTasks = [...list, response.data];
                     }
                     return response?.data;
+                })
+                .catch(this.handleError);
+        },
+        async updateRecurring(id, data) {
+            const payload = { ...data };
+            if (payload.primary_image?.id) {
+                payload.primary_image = { id: payload.primary_image.id };
+            }
+            if (payload.instruction === undefined) {
+                delete payload.instruction;
+            } else if (payload.instruction === null) {
+                payload.instruction = null;
+            } else if (typeof payload.instruction === 'number') {
+                // plain document id from form
+            } else if (payload.instruction?.id != null) {
+                payload.instruction = payload.instruction.id;
+            }
+
+            return fetchWrapper.put(`${recurringUrl}/${id}?populate=*`, { data: payload })
+                .then(response => {
+                    if (!response?.data) return response;
+
+                    const normalized = normalizeRecurringTaskEntity(response.data);
+                    const list = Array.isArray(this.recurringTasks) ? [...this.recurringTasks] : [];
+                    const idx = list.findIndex((t) => t.id === normalized.id);
+                    if (idx !== -1) {
+                        list[idx] = normalized;
+                    } else {
+                        list.push(normalized);
+                    }
+                    this.recurringTasks = list;
+
+                    return normalized.attributes;
                 })
                 .catch(this.handleError);
         },

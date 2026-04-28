@@ -11,12 +11,12 @@
           alt="Garden Steward Logo"
         >
         <br />
-        <router-link 
-          to="/contribute" 
+        <router-link
+          to="/contribute"
           class="contribute-link"
         >
-          <span class="contribute-text text-white">Open Source For Good! Contribute</span>
-          <i class="fab fa-github ml-2 text-white"></i>
+          <span class="contribute-text">Open Source For Good! Contribute</span>
+          <i class="fab fa-github ml-2" aria-hidden="true"></i>
         </router-link>
       </p>
     </div>
@@ -24,31 +24,42 @@
 </template>
 
 <style scoped>
+/* Muted sage — matches footer/center panel in branding (same in light + dark mode) */
 .footer-container {
+  --footer-sage: #8da382;
   margin-top: 2rem;
-  padding: 1rem 0;
+  padding: 1.75rem 1rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--footer-sage);
+}
+
+/* Explicit repeat so html.dark page styles never strip the footer band */
+:global(html.dark) .footer-container {
+  background-color: #8da382;
 }
 
 .contribute-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #8aa37c;
+  color: #ffffff;
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, opacity 0.2s ease;
   margin-top: 1rem;
 }
 
 .contribute-link:hover {
-  color: #6b8e5a;
+  color: #f7f1e3;
   text-decoration: underline;
 }
 
 .contribute-text {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .contribute-link i {
   font-size: 1.2em;
+  color: inherit;
 }
 </style>

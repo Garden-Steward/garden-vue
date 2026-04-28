@@ -38,17 +38,18 @@
   text-align: center;
   box-shadow: 0 2px 12px rgba(138, 163, 124, 0.12);
   transition: box-shadow 0.3s ease;
+  /* Explicit surface text — do not inherit light gray from dark-mode page wrappers */
+  color: #1a3d2e;
+  /* WebKit paints -webkit-text-fill-color over `color`; keep them aligned (fixes “computed green, looks white”). */
+  -webkit-text-fill-color: currentColor;
 }
 
 .newsletter-card:hover {
   box-shadow: 0 6px 24px rgba(138, 163, 124, 0.2);
 }
 
-:global(.dark) .newsletter-section { background: transparent; }
-:global(.dark) .newsletter-card {
-  background: #293d29;
-  border-color: rgba(138, 163, 124, 0.2);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+:global(.dark) .newsletter-section {
+  background: transparent;
 }
 
 .newsletter-icon {
@@ -57,26 +58,25 @@
   line-height: 1;
 }
 
+/* Same palette as Nav on cream (`#376451` family); must win over inherited wrapper text in dark mode */
 .newsletter-heading {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.75rem;
   font-weight: 700;
-  color: #376451;
+  color: #1a3d2e;
+  -webkit-text-fill-color: currentColor;
   margin: 0 0 0.6rem;
   letter-spacing: -0.01em;
 }
 
-:global(.dark) .newsletter-heading { color: #f5f5f5; }
-
 .newsletter-sub {
   font-size: 1rem;
-  color: #555;
+  color: #3d5c3d;
+  -webkit-text-fill-color: currentColor;
   line-height: 1.6;
   margin: 0 auto 1.75rem;
   max-width: 380px;
 }
-
-:global(.dark) .newsletter-sub { color: #d0d0d0; }
 
 .subscribe-btn {
   display: inline-block;
@@ -84,6 +84,7 @@
   font-size: 1rem;
   font-weight: 600;
   color: #fff;
+  -webkit-text-fill-color: currentColor;
   background: #8aa37c;
   border-radius: 8px;
   text-decoration: none;
@@ -101,10 +102,27 @@
 .newsletter-fine {
   margin-top: 1rem;
   font-size: 0.8rem;
-  color: #999;
+  color: #4a6b48;
+  -webkit-text-fill-color: currentColor;
 }
 
-:global(.dark) .newsletter-fine { color: #6b7280; }
+/* Dark mode: cream card + dark green type (do not inherit page-level light `color` / fill from wrappers) */
+:global(.dark) .newsletter-card {
+  color: #1a3d2e !important;
+  -webkit-text-fill-color: #1a3d2e !important;
+}
+:global(.dark) .newsletter-heading {
+  color: #1a3d2e !important;
+  -webkit-text-fill-color: #1a3d2e !important;
+}
+:global(.dark) .newsletter-sub {
+  color: #3d5c3d !important;
+  -webkit-text-fill-color: #3d5c3d !important;
+}
+:global(.dark) .newsletter-fine {
+  color: #4a6b48 !important;
+  -webkit-text-fill-color: #4a6b48 !important;
+}
 
 @media (max-width: 480px) {
   .newsletter-card { padding: 2rem 1.25rem; }

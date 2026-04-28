@@ -3,7 +3,9 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
 </script>
 
 <template>
-  <div class="home-wrapper">
+  <div
+    class="home-wrapper min-h-screen bg-[#f7f1e3] dark:bg-[#2d3e26]"
+  >
 
     <!-- Hero heading — full width -->
     <div class="hero-section">
@@ -73,9 +75,8 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
 </template>
 
 <style scoped>
-/* ── Page wrapper ──────────────────────────────────── */
+/* ── Page wrapper (background: Tailwind on element for reliable dark mode) ── */
 .home-wrapper {
-  background-color: #f7f1e3;
   min-height: 100vh;
 }
 
@@ -256,25 +257,42 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
   line-height: 1.6;
 }
 
-/* ── Dark mode ─────────────────────────────────────── */
-:global(.dark) .home-wrapper {
-  background-color: #2d3e26;
-}
-
+/* ── Dark mode (text / sections; page bg uses Tailwind dark:bg on .home-wrapper) ── */
 :global(.dark) .hero-title {
   color: #c8dbbf;
+  -webkit-text-fill-color: #c8dbbf;
+}
+
+:global(.dark) .hero-eyebrow {
+  color: #a5c499;
+  -webkit-text-fill-color: #a5c499;
 }
 
 :global(.dark) .hero-tagline {
   color: #a0a8a0;
+  -webkit-text-fill-color: #a0a8a0;
 }
 
+/* Main copy on dark page bg — must win over inherited fill / Bootstrap */
 :global(.dark) .body-text {
-  color: #d0d0d0;
+  color: #e8e8e8 !important;
+  -webkit-text-fill-color: #e8e8e8 !important;
 }
 
+:global(.dark) .btn-home-secondary {
+  color: #c8dbbf;
+  -webkit-text-fill-color: #c8dbbf;
+  border-color: #8aa37c;
+}
+
+:global(.dark) .btn-home-secondary:hover {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+/* Dark: canvas is #2d3e26 (body); band uses inset green #344a34 — one accent, not a third flat green. */
 :global(.dark) .manifesto-section {
-  background: #1e2e1e;
+  background: #344a34;
 }
 
 /* ── Mobile ────────────────────────────────────────── */

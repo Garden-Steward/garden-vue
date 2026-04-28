@@ -13,7 +13,9 @@ gardensStore.getAll(user.value.id);
 </script>
 
 <template>
-  <div class="manage-home-wrapper">
+  <div
+    class="manage-home-wrapper min-h-screen bg-[#f7f1e3] dark:bg-[#2d3e26]"
+  >
     <div class="manage-home-card">
       <p class="manage-eyebrow">Welcome back</p>
       <h1 class="manage-title">
@@ -64,9 +66,8 @@ gardensStore.getAll(user.value.id);
 </template>
 
 <style scoped>
-/* ── Page wrapper (light by default) ───────────────── */
+/* Page wrapper — light bg / dark bg via Tailwind on element */
 .manage-home-wrapper {
-  background-color: #f7f1e3;
   min-height: 100vh;
   padding: 2rem 1rem;
 }
@@ -193,10 +194,6 @@ gardensStore.getAll(user.value.id);
 }
 
 /* ── Dark mode overrides ───────────────────────────── */
-:global(.dark) .manage-home-wrapper {
-  background-color: #2d3e26;
-}
-
 :global(.dark) .manage-home-card {
   background-color: #344a34;
   border-color: #3d4d36;
