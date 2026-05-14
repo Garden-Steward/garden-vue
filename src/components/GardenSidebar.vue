@@ -128,7 +128,7 @@ onUnmounted(() => {
     <Teleport to="body">
       <aside
         v-if="isMobileMenuOpen"
-        class="mobile-menu-container lg:hidden fixed top-0 right-0 h-full w-80 max-w-[85vw] z-50 bg-[rgba(26,26,26,0.95)] shadow-2xl overflow-y-auto"
+        class="mobile-menu-container lg:hidden fixed top-0 right-0 h-full w-80 max-w-[85vw] z-50 bg-forest-panel shadow-2xl overflow-y-auto"
       >
         <nav class="p-4 pt-16">
           <ul class="sidebar-nav">
@@ -149,9 +149,9 @@ onUnmounted(() => {
       </aside>
     </Teleport>
 
-    <!-- Desktop Sidebar (unchanged) -->
-    <aside class="hidden lg:block w-64 flex-shrink-0">
-      <nav class="bg-[rgba(26,26,26,0.6)] rounded-lg shadow-md p-2 sticky top-4">
+    <!-- Desktop: one flat forest tone in dark (matches gm-page); no gray card -->
+    <aside class="hidden lg:block w-64 flex-shrink-0 lg:dark:bg-forest-page">
+      <nav class="bg-[rgba(26,26,26,0.6)] dark:bg-transparent shadow-md dark:shadow-none rounded-lg dark:rounded-none p-2 sticky top-4">
         <ul class="sidebar-nav">
           <li v-for="item in navItems" :key="item.id" class="sidebar-nav-item">
             <button
@@ -231,6 +231,31 @@ onUnmounted(() => {
 .sidebar-nav-link.active .sidebar-nav-icon :deep(svg) {
   stroke: #fff;
   fill: #fff;
+}
+
+/* Dark mode: flat column — no inset “chips”; hover / active only */
+:global(html.dark) .sidebar-nav-link {
+  background: transparent;
+  color: #f5f5f5;
+}
+:global(html.dark) .sidebar-nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.14);
+}
+:global(html.dark) .sidebar-nav-link.active {
+  background-color: #8aa37c;
+  color: #fff;
+}
+
+.mobile-menu-container .sidebar-nav-link {
+  background: transparent;
+  color: #f5f5f5;
+}
+.mobile-menu-container .sidebar-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.mobile-menu-container .sidebar-nav-link.active {
+  background-color: #8aa37c;
+  color: #fff;
 }
 
 /* Hamburger Menu Styles */

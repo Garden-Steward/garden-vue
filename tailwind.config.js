@@ -21,6 +21,12 @@ module.exports = {
         'custom-green': '#8aa37c',
         'darker-green': '#6c8a6a', // Slightly darker version of custom-green
         'darkest-green': '#376451', // Darkest green from logo
+        // Manager / dark UI surfaces — prefer these over arbitrary bg-[#2d3e26] etc.
+        forest: {
+          page: '#344a34', // gm-page dark, EventTemplates shell
+          panel: '#2d3e26', // cards, body canvas dark
+          border: '#3d4d36',
+        },
         'custom-peach': '#F9E2D1',
         'dark-orange': '#C2410C', // Dark orange for primary buttons
         // Add more custom colors here as needed
@@ -46,6 +52,8 @@ module.exports = {
     // Dark mode custom colors
     'dark:bg-[#2d3e26]',
     'dark:bg-[#344a34]',
+    'dark:bg-forest-page',
+    'dark:bg-forest-panel',
     'dark:text-[#f5f5f5]',
     'dark:text-[#d0d0d0]',
     'dark:border-gray-600',

@@ -439,6 +439,51 @@ const mapLocationTrackings = computed(() => {
     label: garden.value?.attributes?.title || 'Garden Location'
   }];
 });
+
+const showGardenMap = computed(() => {
+  return !!(
+    garden.value?.attributes &&
+    gardenCoordinates.value &&
+    mapLocationTrackings.value.length > 0
+  );
+});
+
+const volunteerCount = computed(() => {
+  const v = garden.value?.attributes?.volunteers;
+  if (!v) return 0;
+  if (Array.isArray(v)) return v.length;
+  if (Array.isArray(v.data)) return v.data.length;
+  return 0;
+});
+
+const activeVolunteersBubbleText = computed(() => {
+  const n = volunteerCount.value;
+  const noun = n === 1 ? 'Active Volunteer' : 'Active Volunteers';
+  return `${n} ${noun}`;
+});
+
+const gardenStartedAt = computed(() => {
+  const a = garden.value?.attributes;
+  return a?.createdAt || a?.publishedAt || garden.value?.createdAt || null;
+});
+
+const formatStartedDate = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+const gardenStartedLabel = computed(() => formatStartedDate(gardenStartedAt.value));
+
+/** All projects for this garden (public list beside map). */
+const gardenProjectsList = computed(() => {
+  const list = projects.value;
+  if (!list || !Array.isArray(list)) return [];
+  return list.filter((p) => p?.attributes);
+});
 </script>
 
 <template>
@@ -477,26 +522,8 @@ const mapLocationTrackings = computed(() => {
         <div class="hero-image bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
       </div>
 
-      <!-- Garden Map (if coordinates exist) -->
-      <div
-        v-if="garden.attributes && gardenCoordinates && mapLocationTrackings.length > 0"
-        class="garden-map-wrap"
-      >
-        <div class="garden-map-container">
-          <LeafletMap 
-            :location-trackings="mapLocationTrackings"
-            :center-coordinates="gardenCoordinates"
-          />
-        </div>
-      </div>
-
-      <section v-if="garden.attributes?.description" class="garden-section">
-
-        <div class="section-content" v-html="garden.attributes.description.replace(/\n/g, '<br>')"></div>
-      </section>
-
-      <!-- Upcoming Events and Latest Events -->
-      <section class="two-column-section">
+      <!-- Upcoming Events and Latest Events (before map / stats) -->
+      <section v-if="garden.attributes" class="two-column-section">
         <div class="two-column-layout">
           <!-- Left: Upcoming Events -->
           <div class="column-content">
@@ -554,6 +581,73 @@ const mapLocationTrackings = computed(() => {
                 Load More
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="garden.attributes?.description" class="garden-section">
+
+        <div class="section-content" v-html="garden.attributes.description.replace(/\n/g, '<br>')"></div>
+      </section>
+
+      <!-- Map (left) + stats (right) on wide screens -->
+      <section v-if="garden.attributes" class="garden-map-stats-section">
+        <div
+          class="garden-map-stats-row"
+          :class="{ 'garden-map-stats-row--no-map': !showGardenMap }"
+        >
+          <div v-if="showGardenMap" class="garden-map-column">
+            <div class="garden-map-container garden-map-container--inline">
+              <LeafletMap 
+                :location-trackings="mapLocationTrackings"
+                :center-coordinates="gardenCoordinates"
+              />
+            </div>
+          </div>
+          <div class="garden-stats-column">
+            <p class="garden-active-volunteers-bubble">{{ activeVolunteersBubbleText }}</p>
+            <dl class="garden-stats-dl">
+              <div v-if="organization?.title" class="garden-stat">
+                <dt class="garden-stat-label">Organization</dt>
+                <dd class="garden-stat-value">
+                  <a
+                    v-if="organization.url"
+                    :href="organization.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="garden-stat-link"
+                  >{{ organization.title }}</a>
+                  <template v-else>{{ organization.title }}</template>
+                </dd>
+              </div>
+              <div v-if="gardenStartedLabel" class="garden-stat">
+                <dt class="garden-stat-label">Started</dt>
+                <dd class="garden-stat-value">{{ gardenStartedLabel }}</dd>
+              </div>
+              <div class="garden-stat">
+                <dt class="garden-stat-label">Projects</dt>
+                <dd class="garden-stat-value">
+                  {{ gardenProjectsList.length > 0 ? gardenProjectsList.length : 'Working on it' }}
+                </dd>
+              </div>
+            </dl>
+            <ul v-if="gardenProjectsList.length" class="garden-projects-mini-list">
+              <li
+                v-for="proj in gardenProjectsList"
+                :key="proj.id"
+                class="garden-projects-mini-item"
+              >
+                <router-link
+                  v-if="proj.attributes.slug && garden.attributes.slug"
+                  :to="`/gardens/${garden.attributes.slug}/p/${proj.attributes.slug}`"
+                  class="garden-projects-mini-link"
+                  @click="saveScrollPosition"
+                >
+                  {{ proj.attributes.title }}
+                </router-link>
+                <span v-else class="garden-projects-mini-text">{{ proj.attributes.title }}</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
@@ -837,7 +931,7 @@ const mapLocationTrackings = computed(() => {
   transition: all 0.3s ease;
 }
 
-.garden-hero-image:has(+ .garden-map-wrap) {
+.garden-hero-image:has(+ .two-column-section) {
   margin-bottom: 36px;
 }
 
@@ -861,12 +955,138 @@ const mapLocationTrackings = computed(() => {
   margin-bottom: 28px;
 }
 
-/* Map block below hero */
-.garden-map-wrap {
+/* Stats + map row (map is a narrow column beside facts) */
+.garden-map-stats-section {
   margin-bottom: 60px;
 }
-.garden-map-wrap .garden-map-container {
+
+.garden-map-stats-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 38%);
+  gap: 40px;
+  align-items: start;
+}
+
+.garden-map-stats-row--no-map {
+  grid-template-columns: 1fr;
+}
+
+.garden-stats-dl {
+  margin: 0;
+  padding: 0;
+}
+
+.garden-stat {
+  margin-bottom: 18px;
+}
+
+.garden-stat:last-of-type {
+  margin-bottom: 0;
+}
+
+.garden-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #666;
+  margin: 0 0 4px 0;
+}
+
+.dark .garden-stat-label {
+  color: #a8b89e;
+}
+
+.garden-stat-value {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.4;
+  color: #1a1a1a;
+}
+
+.dark .garden-stat-value {
+  color: #f5f5f5;
+}
+
+.garden-stat-link {
+  color: #6c8a6a;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.garden-stat-link:hover {
+  color: #8aa37c;
+  text-decoration: underline;
+}
+
+.dark .garden-stat-link {
+  color: #a3c49a;
+}
+
+.dark .garden-stat-link:hover {
+  color: #c5d4b8;
+}
+
+.garden-projects-mini-list {
+  list-style: none;
+  margin: 20px 0 0 0;
+  padding: 0;
+  border-top: 1px solid rgba(138, 163, 124, 0.25);
+  padding-top: 16px;
+}
+
+.dark .garden-projects-mini-list {
+  border-top-color: rgba(138, 163, 124, 0.35);
+}
+
+.garden-projects-mini-item {
+  margin-bottom: 10px;
+}
+
+.garden-projects-mini-item:last-child {
+  margin-bottom: 0;
+}
+
+.garden-projects-mini-link {
+  color: #6c8a6a;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.garden-projects-mini-link:hover {
+  color: #8aa37c;
+  text-decoration: underline;
+}
+
+.dark .garden-projects-mini-link {
+  color: #a3c49a;
+}
+
+.garden-projects-mini-text {
+  color: #4a4a4a;
+}
+
+.dark .garden-projects-mini-text {
+  color: #d0d0d0;
+}
+
+.garden-map-column {
+  min-width: 0;
+}
+
+.garden-map-container--inline {
   margin-top: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .garden-map-stats-row:not(.garden-map-stats-row--no-map) {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
 }
 
 .garden-title {
