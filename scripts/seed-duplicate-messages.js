@@ -8,7 +8,6 @@
  *   ADMIN_EMAIL=admin@example.com \
  *   ADMIN_PASSWORD=yourpassword \
  *   GARDEN_TASK_ID=42 \
- *   DUPLICATE_COUNT=5 \
  *   node scripts/seed-duplicate-messages.js
  *
  * All env vars can also be set in a .env file — this script reads process.env
@@ -20,7 +19,7 @@ const API_URL      = process.env.API_URL      || 'http://localhost:1337';
 const EMAIL        = process.env.ADMIN_EMAIL;
 const PASSWORD     = process.env.ADMIN_PASSWORD;
 const TASK_ID      = process.env.GARDEN_TASK_ID;
-const COUNT        = parseInt(process.env.DUPLICATE_COUNT || '5', 10);
+const COUNT        = 5;
 
 // The repeated SMS body to seed
 const SMS_BODY = "Chris it's your watering day, can you water?";
