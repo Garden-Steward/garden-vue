@@ -25,6 +25,7 @@
         "preview": "vite preview --port 5050",
         "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
         "deploy": "vite build && firebase deploy",
+        "seed:setup": "node scripts/seed-setup.js",
         "seed:duplicate-messages": "node scripts/seed-duplicate-messages.js"
     },
     "dependencies": {
