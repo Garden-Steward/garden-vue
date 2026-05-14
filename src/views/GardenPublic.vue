@@ -955,20 +955,41 @@ const gardenProjectsList = computed(() => {
   margin-bottom: 28px;
 }
 
-/* Stats + map row (map is a narrow column beside facts) */
+/* Map (narrow, left) + stats (right) */
 .garden-map-stats-section {
   margin-bottom: 60px;
 }
 
 .garden-map-stats-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 38%);
+  grid-template-columns: minmax(260px, 38%) minmax(0, 1fr);
   gap: 40px;
   align-items: start;
 }
 
 .garden-map-stats-row--no-map {
   grid-template-columns: 1fr;
+}
+
+.garden-active-volunteers-bubble {
+  display: inline-block;
+  margin: 0 0 20px 0;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #1a3d1f;
+  background-color: rgba(138, 163, 124, 0.28);
+  border: 1px solid rgba(108, 138, 106, 0.45);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.dark .garden-active-volunteers-bubble {
+  color: #e8f0e4;
+  background-color: rgba(138, 163, 124, 0.35);
+  border-color: rgba(197, 212, 184, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .garden-stats-dl {
