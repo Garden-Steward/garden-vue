@@ -133,12 +133,49 @@ const handleEscape = (e) => {
 
 <template>
     <transition name="fade">
-        <div v-if="showProfileOptions" ref="profileMenuRef" class="profile-menu bg-custom-light p-2">
+        <div
+            v-if="showProfileOptions"
+            ref="profileMenuRef"
+            class="profile-menu bg-custom-light p-2"
+        >
             <div v-if="authStore.user" class="user-info">
                 <div class="user-name">{{ authStore.user.username || (authStore.user.firstName && authStore.user.lastName ? `${authStore.user.firstName} ${authStore.user.lastName}` : 'User') }}</div>
             </div>
-            <button @click="() => { authStore.logout(); showProfileOptions = false; }"
-                    class="btn btn-link nav-item nav-link">
+            <div class="profile-theme-options" role="group" aria-label="Color theme">
+                <span class="profile-theme-label">Theme</span>
+                <button
+                    type="button"
+                    class="profile-theme-option"
+                    :class="{ active: theme === 'light' }"
+                    title="Light mode"
+                    @click="setTheme('light')"
+                >
+                    <span class="theme-icon" v-html="SunIcon"></span>
+                </button>
+                <button
+                    type="button"
+                    class="profile-theme-option"
+                    :class="{ active: theme === 'dark' }"
+                    title="Dark mode"
+                    @click="setTheme('dark')"
+                >
+                    <span class="theme-icon" v-html="MoonIcon"></span>
+                </button>
+                <button
+                    type="button"
+                    class="profile-theme-option"
+                    :class="{ active: theme === 'system' }"
+                    title="Match system"
+                    @click="setTheme('system')"
+                >
+                    <span class="theme-icon" v-html="SystemIcon"></span>
+                </button>
+            </div>
+            <button
+                type="button"
+                class="profile-logout-btn"
+                @click="() => { authStore.logout(); showProfileOptions = false; }"
+            >
                 Logout
             </button>
         </div>
@@ -377,39 +414,27 @@ html.dark .gs-navbar.navbar.bg-custom-light {
     position: fixed;
     top: 60px;
     right: 8px;
-    min-width: 150px;
+    min-width: 180px;
     background: white;
     border: 1px solid #8aa37c;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     z-index: 99999;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
 }
-/* Match main bar: light tan surface + dark green text (not white on cream). */
+/* Match main bar: light tan surface; force dark copy (survives html.dark + Bootstrap). */
 .dark .profile-menu {
     background: #f7f1e3 !important;
     border-color: rgba(138, 163, 124, 0.35);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-}
-.profile-menu .nav-link {
-    color: #333;
-    margin: 0;
-    padding: 8px 16px;
-    display: block;
-}
-.profile-menu .nav-link:hover {
-    background-color: #f5f5f5;
-}
-.dark .profile-menu .nav-link {
-    color: #376451 !important;
-}
-.dark .profile-menu .nav-link:hover {
-    color: #2d4a2e !important;
-    background-color: rgba(138, 163, 124, 0.15);
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
 }
 .user-info {
     padding: 12px 16px;
     border-bottom: 1px solid #e0e0e0;
-    margin-bottom: 8px;
+    margin-bottom: 0;
 }
 .dark .profile-menu .user-info {
     border-bottom-color: rgba(138, 163, 124, 0.35);
@@ -417,11 +442,109 @@ html.dark .gs-navbar.navbar.bg-custom-light {
 .user-name {
     font-size: 1rem;
     font-weight: 600;
-    color: #333;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
     word-break: break-word;
 }
 .dark .profile-menu .user-name {
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+}
+
+.profile-theme-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 4px;
+}
+.dark .profile-menu .profile-theme-options {
+    border-bottom-color: rgba(138, 163, 124, 0.35);
+}
+.profile-theme-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #4b5563 !important;
+    -webkit-text-fill-color: #4b5563 !important;
+    margin-right: 4px;
+    width: 100%;
+    margin-bottom: 2px;
+}
+.dark .profile-theme-label {
+    color: #374151 !important;
+    -webkit-text-fill-color: #374151 !important;
+}
+.profile-theme-option {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 2px solid rgba(55, 100, 81, 0.35);
+    border-radius: 8px;
+    cursor: pointer;
     color: #376451 !important;
+    -webkit-text-fill-color: #376451 !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.profile-theme-option:hover {
+    background-color: rgba(138, 163, 124, 0.15);
+    border-color: #376451;
+}
+.profile-theme-option.active {
+    background-color: #8aa37c;
+    border-color: #6c8a6a;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+.profile-theme-option .theme-icon {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+}
+.profile-theme-option .theme-icon :deep(svg) {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.profile-logout-btn {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 10px 16px 12px;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 0 0 4px 4px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.profile-logout-btn:hover {
+    background-color: rgba(138, 163, 124, 0.12);
+    color: #064e3b !important;
+    -webkit-text-fill-color: #064e3b !important;
+}
+.dark .profile-logout-btn {
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+}
+.dark .profile-logout-btn:hover {
+    background-color: rgba(138, 163, 124, 0.18);
+    color: #064e3b !important;
+    -webkit-text-fill-color: #064e3b !important;
 }
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s;

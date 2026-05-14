@@ -99,7 +99,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
+  <!-- Flex item is this root: it stretches full row height; paint it so cream gm-page doesn’t show through below the nav -->
+  <div class="garden-sidebar-column w-full lg:w-80 lg:flex-shrink-0 lg:self-stretch lg:bg-forest-page">
     <!-- Hamburger Button (Mobile Only) - Absolute position in header -->
     <Teleport to="#garden-header">
       <button
@@ -149,9 +150,9 @@ onUnmounted(() => {
       </aside>
     </Teleport>
 
-    <!-- Desktop: one flat forest tone in dark (matches gm-page); no gray card -->
-    <aside class="hidden lg:block w-64 flex-shrink-0 lg:dark:bg-forest-page">
-      <nav class="bg-[rgba(26,26,26,0.6)] dark:bg-transparent shadow-md dark:shadow-none rounded-lg dark:rounded-none p-2 sticky top-4">
+    <!-- Desktop: flat nav on forest column (light + dark); no gray card -->
+    <aside class="garden-sidebar-desktop hidden lg:block w-full flex-shrink-0">
+      <nav class="bg-[rgba(26,26,26,0.6)] lg:bg-transparent shadow-md lg:shadow-none rounded-lg lg:rounded-none p-2 sticky top-4">
         <ul class="sidebar-nav">
           <li v-for="item in navItems" :key="item.id" class="sidebar-nav-item">
             <button
@@ -233,15 +234,15 @@ onUnmounted(() => {
   fill: #fff;
 }
 
-/* Dark mode: flat column — no inset “chips”; hover / active only */
-:global(html.dark) .sidebar-nav-link {
+/* Desktop column: always forest rail at lg — flat links (not html.dark-only; avoids cream bleed-through in light) */
+.garden-sidebar-desktop .sidebar-nav-link {
   background: transparent;
   color: #f5f5f5;
 }
-:global(html.dark) .sidebar-nav-link:hover {
+.garden-sidebar-desktop .sidebar-nav-link:hover {
   background-color: rgba(0, 0, 0, 0.14);
 }
-:global(html.dark) .sidebar-nav-link.active {
+.garden-sidebar-desktop .sidebar-nav-link.active {
   background-color: #8aa37c;
   color: #fff;
 }

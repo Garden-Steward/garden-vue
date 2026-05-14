@@ -448,6 +448,14 @@ const showGardenMap = computed(() => {
   );
 });
 
+const googleMapsUrl = computed(() => {
+  const c = gardenCoordinates.value;
+  if (!c) return null;
+  const { latitude: lat, longitude: lng } = c;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return `https://www.google.com/maps?q=${lat},${lng}`;
+});
+
 const volunteerCount = computed(() => {
   const v = garden.value?.attributes?.volunteers;
   if (!v) return 0;
@@ -603,6 +611,15 @@ const gardenProjectsList = computed(() => {
                 :center-coordinates="gardenCoordinates"
               />
             </div>
+            <a
+              v-if="googleMapsUrl"
+              :href="googleMapsUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="garden-google-maps-link"
+            >
+              Open in Google Maps
+            </a>
           </div>
           <div class="garden-stats-column">
             <p class="garden-active-volunteers-bubble">{{ activeVolunteersBubbleText }}</p>
@@ -955,9 +972,25 @@ const gardenProjectsList = computed(() => {
   margin-bottom: 28px;
 }
 
-/* Map (narrow, left) + stats (right) */
+/* Map (narrow, left) + stats (right); whole block centered with panel background */
 .garden-map-stats-section {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: 60px;
+  padding: 28px 32px 32px;
+  border-radius: 16px;
+  background-color: rgba(234, 241, 229, 0.95);
+  border: 1px solid rgba(138, 163, 124, 0.35);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.dark .garden-map-stats-section {
+  background-color: rgba(31, 45, 28, 0.92);
+  border-color: rgba(138, 163, 124, 0.28);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 .garden-map-stats-row {
@@ -969,6 +1002,11 @@ const gardenProjectsList = computed(() => {
 
 .garden-map-stats-row--no-map {
   grid-template-columns: 1fr;
+}
+
+.garden-stats-column {
+  text-align: left;
+  min-width: 0;
 }
 
 .garden-active-volunteers-bubble {
@@ -1097,6 +1135,29 @@ const gardenProjectsList = computed(() => {
   min-width: 0;
 }
 
+.garden-google-maps-link {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #6c8a6a;
+  text-decoration: none;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.garden-google-maps-link:hover {
+  color: #4a6b48;
+  text-decoration: underline;
+}
+
+.dark .garden-google-maps-link {
+  color: #a3c49a;
+}
+
+.dark .garden-google-maps-link:hover {
+  color: #c5d4b8;
+}
+
 .garden-map-container--inline {
   margin-top: 0;
   max-width: 100%;
@@ -1104,6 +1165,11 @@ const gardenProjectsList = computed(() => {
 }
 
 @media (max-width: 900px) {
+  .garden-map-stats-section {
+    padding: 22px 18px 24px;
+    border-radius: 14px;
+  }
+
   .garden-map-stats-row:not(.garden-map-stats-row--no-map) {
     grid-template-columns: 1fr;
     gap: 28px;
