@@ -15,35 +15,53 @@ onMounted(async () => {
   await messagesStore.fetchByGarden(gardenId);
 });
 
+const deduplicateMessages = (messages) => {
+  const seen = new Map();
+  messages.forEach(msg => {
+    const key = `${msg.type}::${msg.body}`;
+    if (seen.has(key)) {
+      seen.get(key).count++;
+    } else {
+      seen.set(key, { message: msg, count: 1 });
+    }
+  });
+  return Array.from(seen.values());
+};
+
 const groupedMessages = computed(() => {
   if (!taskMessages.value) return [];
 
-  // First, group messages by task
   const groups = new Map();
   taskMessages.value.forEach(message => {
     const taskId = message.garden_task?.id || 'no-task';
-    
+
     if (!groups.has(taskId)) {
+      const volunteers = message.garden_task?.volunteers;
+      const resolvedUser = volunteers?.[0]?.username || 'Anonymous volunteer';
+      console.log(`[TaskMessages] Task ${taskId} ("${message.garden_task?.title}") — volunteers raw:`, volunteers, '→ resolved name:', resolvedUser);
       groups.set(taskId, {
         taskId,
         taskTitle: message.garden_task?.title || 'Messages without task',
-        user: message.garden_task?.volunteers[0]?.username || 'Anonymous volunteer',
+        user: resolvedUser,
         messages: []
       });
     }
     groups.get(taskId).messages.push(message);
   });
 
-  // Convert to array and sort by task ID (highest to lowest)
   const sortedGroups = Array.from(groups.values())
     .sort((a, b) => {
       if (a.taskId === 'no-task') return 1;
       if (b.taskId === 'no-task') return -1;
       return parseInt(b.taskId) - parseInt(a.taskId);
-    });
+    })
+    .map(group => ({
+      ...group,
+      deduplicatedMessages: deduplicateMessages(group.messages)
+    }));
 
-  console.log('Sorted group IDs:', sortedGroups.map(g => g.taskId));
-  
+  console.log('[TaskMessages] Sorted group IDs:', sortedGroups.map(g => g.taskId));
+
   return sortedGroups;
 });
 
@@ -136,7 +154,7 @@ const getStatusColor = (status) => {
         <Vue3SlideUpDown v-model="openTasks[group.taskId]">
           <div class="space-y-3 mt-3">
             <div
-              v-for="message in group.messages"
+              v-for="{ message, count } in group.deduplicatedMessages"
               :key="message.id"
               class="rounded-lg border border-[#a8c49a]/80 bg-[#e8f2e0] p-3 shadow-sm hover:bg-[#dff0d4] transition-colors border-l-4 border-l-[#7a9b68]"
             >
@@ -148,6 +166,13 @@ const getStatusColor = (status) => {
                     </span>
                     <span :class="[getTypeColor(message.type), 'px-2 py-1 rounded-full text-xs font-medium border border-black/10']">
                       {{ message.type }}
+                    </span>
+                    <span
+                      v-if="count > 1"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#4a7a38] text-white text-sm font-bold shadow-md"
+                      :title="`Sent ${count} times`"
+                    >
+                      {{ count }}
                     </span>
                   </div>
                   <p class="text-[#2d3e26]">{{ message.body }}</p>
