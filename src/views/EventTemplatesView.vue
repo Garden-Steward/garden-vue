@@ -95,7 +95,7 @@ function onRecurringTemplateDeleted() {
 </script>
 
 <template>
-  <div class="mx-auto min-h-screen w-full overflow-x-hidden bg-[#344a34]">
+  <div class="min-h-screen w-full max-w-none overflow-x-hidden bg-[#344a34] md:-mx-4 md:w-[calc(100%+2rem)]">
     <!-- Garden title header (same as GardenDetail; sidebar hamburger teleports here) -->
     <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
@@ -114,7 +114,7 @@ function onRecurringTemplateDeleted() {
       <LoadingSpinner size="lg" :centered="true" />
     </div>
 
-    <div v-else-if="garden?.attributes" class="flex w-full flex-col gap-6 py-1 pl-0 pr-4 sm:py-5 sm:pr-5 md:-mx-4 lg:flex-row lg:pr-8">
+    <div v-else-if="garden?.attributes" class="flex w-full flex-col gap-6 py-1 pl-1 pr-4 sm:py-5 sm:pr-5 lg:flex-row lg:pr-8">
       <GardenSidebar
         active-section="events"
         @update:active-section="onSidebarSection"

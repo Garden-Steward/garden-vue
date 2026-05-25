@@ -163,15 +163,22 @@ const sortedVolunteers = computed(() => {
 
 const deduplicateMessages = (messages) => {
   const seen = new Map();
-  messages.forEach(msg => {
+  messages.forEach((msg) => {
     const key = `${msg.type}::${msg.body}`;
+    const at = msg.createdAt || msg.attributes?.createdAt;
     if (seen.has(key)) {
-      seen.get(key).count++;
+      const entry = seen.get(key);
+      entry.count++;
+      if (at) entry.times.push(at);
     } else {
-      seen.set(key, { message: msg, count: 1 });
+      seen.set(key, { message: msg, count: 1, times: at ? [at] : [] });
     }
   });
-  return Array.from(seen.values());
+  return Array.from(seen.values()).map((entry) => ({
+    message: entry.message,
+    count: entry.count,
+    times: [...entry.times].filter(Boolean).sort((a, b) => new Date(a) - new Date(b))
+  }));
 };
 
 // Group messages by task (similar to TaskMessages.vue)
@@ -220,6 +227,25 @@ const formatDate = (dateString) => {
     hour: '2-digit',
     minute: '2-digit'
   });
+};
+
+/** e.g. 8:18am — for stacked send times */
+const formatTimeShort = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return '';
+  let h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? 'pm' : 'am';
+  h = h % 12;
+  if (h === 0) h = 12;
+  const mm = m.toString().padStart(2, '0');
+  return `${h}:${mm}${ampm}`;
+};
+
+const formatTimesComma = (times) => {
+  if (!times?.length) return '';
+  return times.map(formatTimeShort).join(', ');
 };
 
 // Get type color helper (dark mode: opaque fills so chips stay readable on orange-brown message tiles)
@@ -369,7 +395,7 @@ const openEventEditor = (day) => {
 </script>
 
 <template>
-  <div class="gm-page mx-auto min-h-screen w-full overflow-x-hidden">
+  <div class="gm-page min-h-screen w-full max-w-none overflow-x-hidden md:-mx-4 md:w-[calc(100%+2rem)]">
     <!-- Garden Title Header -->
     <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
@@ -400,7 +426,7 @@ const openEventEditor = (day) => {
     <!-- Main Content -->
     <div v-else-if="garden.attributes">
       <!-- Main Layout with Sidebar -->
-      <div class="flex w-full flex-col gap-6 py-1 pl-0 pr-4 sm:py-5 sm:pr-5 md:-mx-4 lg:flex-row lg:pr-8">
+      <div class="flex w-full flex-col gap-6 py-1 pl-1 pr-4 sm:py-5 sm:pr-5 lg:flex-row lg:pr-8">
         <!-- Sidebar Navigation -->
         <GardenSidebar 
           :active-section="activeSection" 
@@ -454,7 +480,7 @@ const openEventEditor = (day) => {
               </div>
               
               <div class="space-y-3 mt-4">
-                <div v-for="{ message, count } in group.deduplicatedMessages" :key="message.id"
+                <div v-for="{ message, count, times } in group.deduplicatedMessages" :key="message.id"
                      class="gm-msg-item rounded-lg p-3 border border-[#a8c49a]/80 bg-[#e8f2e0] shadow-sm border-l-4 hover:bg-[#dff0d4] transition-colors dark:bg-[#3a2215] dark:border-[#c2410c]/35 dark:hover:bg-[#4a2c1a] dark:shadow-black/25"
                      :class="getMessageBorderColor(message.type)">
                   <div class="flex justify-between items-start mb-2 gap-2">
@@ -467,13 +493,23 @@ const openEventEditor = (day) => {
                       </span>
                       <span
                         v-if="count > 1"
-                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#4a7a38] text-white text-sm font-bold shadow-md dark:bg-[#5a8a48] dark:text-white"
+                        class="inline-flex items-center justify-center min-w-[2rem] h-8 px-1.5 rounded-full bg-[#C2410C] text-white text-sm font-bold shadow-md ring-2 ring-white/25 dark:ring-white/20"
                         :title="`Sent ${count} times`"
                       >
                         {{ count }}
                       </span>
                     </div>
-                    <span class="text-xs text-[#3d4d36] dark:text-[#b8c9b0] shrink-0">{{ formatDate(message.createdAt) }}</span>
+                    <div class="text-right shrink-0 max-w-[58%] sm:max-w-[50%]">
+                      <div class="text-xs text-[#3d4d36] dark:text-[#b8c9b0]">
+                        {{ formatDate(message.createdAt || message.attributes?.createdAt) }}
+                      </div>
+                      <div
+                        v-if="count > 1 && times?.length"
+                        class="text-xs text-[#3d4d36] dark:text-[#b8c9b0] mt-1 leading-snug"
+                      >
+                        {{ formatTimesComma(times) }}
+                      </div>
+                    </div>
                   </div>
                   <p class="text-[#2d3e26] dark:text-[#e8eee4] text-sm">{{ message.body }}</p>
                   <p v-if="message.previous" class="text-[#3d4d36] dark:text-[#b8c9b0] text-xs mt-2 italic">
