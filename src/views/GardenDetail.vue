@@ -161,34 +161,52 @@ const sortedVolunteers = computed(() => {
   });
 });
 
+const deduplicateMessages = (messages) => {
+  const seen = new Map();
+  messages.forEach(msg => {
+    const key = `${msg.type}::${msg.body}`;
+    if (seen.has(key)) {
+      seen.get(key).count++;
+    } else {
+      seen.set(key, { message: msg, count: 1 });
+    }
+  });
+  return Array.from(seen.values());
+};
+
 // Group messages by task (similar to TaskMessages.vue)
 const groupedMessages = computed(() => {
   if (!taskMessages.value || !Array.isArray(taskMessages.value)) return [];
 
-  // First, group messages by task
   const groups = new Map();
   taskMessages.value.forEach(message => {
     const taskId = message.garden_task?.id || 'no-task';
-    
+
     if (!groups.has(taskId)) {
+      const volunteers = message.garden_task?.volunteers;
+      const resolvedUser = volunteers?.[0]?.username || 'Anonymous volunteer';
+      console.log(`[GardenDetail] Task ${taskId} ("${message.garden_task?.title}") — volunteers raw:`, volunteers, '→ resolved name:', resolvedUser);
       groups.set(taskId, {
         taskId,
         taskTitle: message.garden_task?.title || 'Messages without task',
-        user: message.garden_task?.volunteers?.[0]?.username || 'Anonymous volunteer',
+        user: resolvedUser,
         messages: []
       });
     }
     groups.get(taskId).messages.push(message);
   });
 
-  // Convert to array and sort by task ID (highest to lowest)
   const sortedGroups = Array.from(groups.values())
     .sort((a, b) => {
       if (a.taskId === 'no-task') return 1;
       if (b.taskId === 'no-task') return -1;
       return parseInt(b.taskId) - parseInt(a.taskId);
-    });
-  
+    })
+    .map(group => ({
+      ...group,
+      deduplicatedMessages: deduplicateMessages(group.messages)
+    }));
+
   return sortedGroups;
 });
 
@@ -204,18 +222,18 @@ const formatDate = (dateString) => {
   });
 };
 
-// Get type color helper
+// Get type color helper (dark mode: opaque fills so chips stay readable on orange-brown message tiles)
 const getTypeColor = (type) => {
   const colors = {
-    question: 'bg-blue-100 text-blue-800',
-    followup: 'bg-purple-100 text-purple-800',
-    reply: 'bg-green-100 text-green-800',
-    notification: 'bg-yellow-100 text-yellow-800',
-    complete: 'bg-teal-100 text-teal-800',
-    registration: 'bg-indigo-100 text-indigo-800',
-    error: 'bg-red-100 text-red-800'
+    question: 'bg-blue-100 text-blue-800 dark:bg-[#1e3a5f] dark:text-[#bfdbfe]',
+    followup: 'bg-purple-100 text-purple-800 dark:bg-[#4c1d95] dark:text-[#f5f3ff]',
+    reply: 'bg-green-100 text-green-800 dark:bg-[#14532d] dark:text-[#dcfce7]',
+    notification: 'bg-yellow-100 text-yellow-800 dark:bg-[#713f12] dark:text-[#fef9c3]',
+    complete: 'bg-teal-100 text-teal-800 dark:bg-[#134e4a] dark:text-[#ccfbf1]',
+    registration: 'bg-indigo-100 text-indigo-800 dark:bg-[#312e81] dark:text-[#e0e7ff]',
+    error: 'bg-red-100 text-red-800 dark:bg-[#7f1d1d] dark:text-[#fecaca]'
   };
-  return colors[type] || 'bg-gray-100 text-gray-800';
+  return colors[type] || 'bg-gray-100 text-gray-800 dark:bg-[#1e293b] dark:text-[#e2e8f0]';
 };
 
 // Left accent on light message cards — muted greens (readable on pea-green tiles)
@@ -232,19 +250,19 @@ const getMessageBorderColor = (type) => {
   return colors[type] || 'border-l-[#7a9b68]';
 };
 
-// Get status color helper
+// Get status color helper (dark mode: opaque navy / purple / etc. — no translucent fills that read “light on light”)
 const getStatusColor = (status) => {
   const colors = {
-    PENDING: 'bg-yellow-100 text-yellow-800',
-    INTERESTED: 'bg-blue-100 text-blue-800',
-    STARTED: 'bg-indigo-100 text-indigo-800',
-    FINISHED: 'bg-green-100 text-green-800',
-    ABANDONED: 'bg-red-100 text-red-800',
-    ISSUE: 'bg-orange-100 text-orange-800',
-    SKIPPED: 'bg-gray-100 text-gray-800',
-    RESOLVED: 'bg-teal-100 text-teal-800'
+    PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-[#5c4a08] dark:text-[#fef9c3]',
+    INTERESTED: 'bg-blue-100 text-blue-800 dark:bg-[#1e3a5f] dark:text-[#bfdbfe]',
+    STARTED: 'bg-indigo-100 text-indigo-800 dark:bg-[#312e81] dark:text-[#e0e7ff]',
+    FINISHED: 'bg-green-100 text-green-800 dark:bg-[#1e3a8a] dark:text-[#eff6ff]',
+    ABANDONED: 'bg-red-100 text-red-800 dark:bg-[#7f1d1d] dark:text-[#fecaca]',
+    ISSUE: 'bg-orange-100 text-orange-800 dark:bg-[#9a3412] dark:text-[#ffedd5]',
+    SKIPPED: 'bg-gray-100 text-gray-800 dark:bg-[#4c1d95] dark:text-[#f5f3ff]',
+    RESOLVED: 'bg-teal-100 text-teal-800 dark:bg-[#134e4a] dark:text-[#ccfbf1]'
   };
-  return colors[status] || 'bg-gray-100 text-gray-800';
+  return colors[status] || 'bg-gray-100 text-gray-800 dark:bg-[#1e293b] dark:text-[#e2e8f0]';
 };
 
 // Normalize event data (handle both Strapi format and normalized format)
@@ -351,7 +369,7 @@ const openEventEditor = (day) => {
 </script>
 
 <template>
-  <div class="gm-page mx-auto min-h-screen">
+  <div class="gm-page mx-auto min-h-screen w-full overflow-x-hidden">
     <!-- Garden Title Header -->
     <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
@@ -382,7 +400,7 @@ const openEventEditor = (day) => {
     <!-- Main Content -->
     <div v-else-if="garden.attributes">
       <!-- Main Layout with Sidebar -->
-      <div class="flex flex-col lg:flex-row gap-6 px-2 sm:px-4 lg:px-6 p-1 sm:p-5">
+      <div class="flex w-full flex-col gap-6 py-1 pl-0 pr-4 sm:py-5 sm:pr-5 md:-mx-4 lg:flex-row lg:pr-8">
         <!-- Sidebar Navigation -->
         <GardenSidebar 
           :active-section="activeSection" 
@@ -403,7 +421,7 @@ const openEventEditor = (day) => {
           />
 
         <!-- Task Messages Section -->
-        <div v-if="activeSection === 'messages'" class="gm-panel rounded-lg shadow-md p-6">
+        <div v-if="activeSection === 'messages'" id="messages" class="gm-panel rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="gm-heading text-2xl font-light font-serif">Task Messages</h2>
           </div>
@@ -415,44 +433,55 @@ const openEventEditor = (day) => {
           </div>
 
           <div v-else class="space-y-4">
-            <div v-for="group in groupedMessages" :key="group.taskId" class="rounded-lg p-4 border border-[#8aa37c]/50 bg-[#d2e4c8] shadow-sm">
+            <div
+              v-for="group in groupedMessages"
+              :key="group.taskId"
+              class="gm-msg-group rounded-lg p-4 border border-[#8aa37c]/50 bg-[#d2e4c8] shadow-sm dark:bg-[#1a2218] dark:border-[#3d4d36]/80 dark:shadow-black/25"
+            >
               <div class="flex items-center gap-2 mb-3">
-                <h3 class="text-lg font-semibold text-[#1a2617]">{{ group.taskTitle }}</h3>
+                <h3 class="text-lg font-semibold text-[#1a2617] dark:text-[#f5f5f5]">{{ group.taskTitle }}</h3>
                 <span v-if="group.taskId !== 'no-task'" 
-                      :class="[getStatusColor(group.messages[0]?.garden_task?.status), 'px-2 py-1 rounded-full text-xs border border-black/10']">
+                      :class="[getStatusColor(group.messages[0]?.garden_task?.status), 'px-2 py-1 rounded-full text-xs border border-black/10 dark:border-white/10']">
                   {{ group.messages[0]?.garden_task?.status || 'UNKNOWN' }}
                 </span>
-                <span class="text-sm text-[#3d4d36]">
+                <span class="text-sm text-[#3d4d36] dark:text-[#c5d4b8]">
                   ({{ group.messages.length }} message{{ group.messages.length === 1 ? '' : 's' }})
                 </span>
               </div>
-              <div class="text-sm text-[#3d4d36] mb-3">
+              <div class="text-sm text-[#3d4d36] dark:text-[#b8c9b0] mb-3">
                 <div>To: {{ group.user }}</div>
                 <div>First message: {{ formatDate(group.messages[group.messages.length - 1]?.createdAt) }}</div>
               </div>
               
               <div class="space-y-3 mt-4">
-                <div v-for="message in group.messages" :key="message.id" 
-                     class="rounded-lg p-3 border border-[#a8c49a]/80 bg-[#e8f2e0] shadow-sm border-l-4 hover:bg-[#dff0d4] transition-colors" 
+                <div v-for="{ message, count } in group.deduplicatedMessages" :key="message.id"
+                     class="gm-msg-item rounded-lg p-3 border border-[#a8c49a]/80 bg-[#e8f2e0] shadow-sm border-l-4 hover:bg-[#dff0d4] transition-colors dark:bg-[#3a2215] dark:border-[#c2410c]/35 dark:hover:bg-[#4a2c1a] dark:shadow-black/25"
                      :class="getMessageBorderColor(message.type)">
                   <div class="flex justify-between items-start mb-2 gap-2">
                     <div class="flex flex-wrap items-center gap-2">
-                      <span class="font-semibold text-sm text-[#1a2617]">
+                      <span class="font-semibold text-sm text-[#1a2617] dark:text-[#f5f5f5]">
                         {{ message.user?.username || 'Anonymous volunteer' }}
                       </span>
-                      <span :class="[getTypeColor(message.type), 'px-2 py-1 rounded-full text-xs font-medium border border-black/10']">
+                      <span :class="[getTypeColor(message.type), 'px-2 py-1 rounded-full text-xs font-medium border border-black/10 dark:border-white/10']">
                         {{ message.type }}
                       </span>
+                      <span
+                        v-if="count > 1"
+                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#4a7a38] text-white text-sm font-bold shadow-md dark:bg-[#5a8a48] dark:text-white"
+                        :title="`Sent ${count} times`"
+                      >
+                        {{ count }}
+                      </span>
                     </div>
-                    <span class="text-xs text-[#3d4d36] shrink-0">{{ formatDate(message.createdAt) }}</span>
+                    <span class="text-xs text-[#3d4d36] dark:text-[#b8c9b0] shrink-0">{{ formatDate(message.createdAt) }}</span>
                   </div>
-                  <p class="text-[#2d3e26] text-sm">{{ message.body }}</p>
-                  <p v-if="message.previous" class="text-[#3d4d36] text-xs mt-2 italic">
+                  <p class="text-[#2d3e26] dark:text-[#e8eee4] text-sm">{{ message.body }}</p>
+                  <p v-if="message.previous" class="text-[#3d4d36] dark:text-[#b8c9b0] text-xs mt-2 italic">
                     Response to use message: {{ message.previous }}
                   </p>
-                  
+
                   <!-- Related Event (if exists) -->
-                  <div v-if="message.event" class="mt-2 text-xs text-[#2d3e26]">
+                  <div v-if="message.event" class="mt-2 text-xs text-[#2d3e26] dark:text-[#d0dccd]">
                     Related Event: {{ message.event.title }}
                   </div>
                 </div>

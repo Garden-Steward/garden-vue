@@ -108,6 +108,18 @@ function closeRegisterModal() {
     background-color: #344a34 !important;
     border-color: #3d4d36 !important;
     color: #f5f5f5 !important;
+    -webkit-text-fill-color: #f5f5f5;
+    caret-color: #f5f5f5;
+  }
+
+  /* Chrome autofill uses its own background; without this, caret/text can stay light on pale autofill. */
+  html.dark .stew .form-control:not(.is-invalid):-webkit-autofill,
+  html.dark .stew .form-control:not(.is-invalid):-webkit-autofill:hover,
+  html.dark .stew .form-control:not(.is-invalid):-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #344a34 inset !important;
+    -webkit-text-fill-color: #f5f5f5 !important;
+    caret-color: #f5f5f5 !important;
+    border-color: #3d4d36 !important;
   }
 
   html.dark .stew .form-control:not(.is-invalid)::placeholder {
@@ -123,6 +135,17 @@ function closeRegisterModal() {
     border-color: #dc2626 !important;
     background-color: #442222 !important;
     color: #fecaca !important;
+    -webkit-text-fill-color: #fecaca;
+    caret-color: #fecaca;
+  }
+
+  html.dark .stew .form-control.is-invalid:-webkit-autofill,
+  html.dark .stew .form-control.is-invalid:-webkit-autofill:hover,
+  html.dark .stew .form-control.is-invalid:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #442222 inset !important;
+    -webkit-text-fill-color: #fecaca !important;
+    caret-color: #fecaca !important;
+    border-color: #dc2626 !important;
   }
   .stew-logo-wrapper {
     flex-shrink: 0;

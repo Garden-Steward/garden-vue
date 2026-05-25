@@ -99,7 +99,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
+  <!-- Flex item is this root: it stretches full row height; paint it so cream gm-page doesn’t show through below the nav -->
+  <div class="garden-sidebar-column w-full lg:w-80 lg:flex-shrink-0 lg:self-stretch lg:bg-forest-page">
     <!-- Hamburger Button (Mobile Only) - Absolute position in header -->
     <Teleport to="#garden-header">
       <button
@@ -128,7 +129,7 @@ onUnmounted(() => {
     <Teleport to="body">
       <aside
         v-if="isMobileMenuOpen"
-        class="mobile-menu-container lg:hidden fixed top-0 right-0 h-full w-80 max-w-[85vw] z-50 bg-[rgba(26,26,26,0.95)] shadow-2xl overflow-y-auto"
+        class="mobile-menu-container lg:hidden fixed top-0 right-0 h-full w-80 max-w-[85vw] z-50 bg-forest-panel shadow-2xl overflow-y-auto"
       >
         <nav class="p-4 pt-16">
           <ul class="sidebar-nav">
@@ -149,9 +150,9 @@ onUnmounted(() => {
       </aside>
     </Teleport>
 
-    <!-- Desktop Sidebar (unchanged) -->
-    <aside class="hidden lg:block w-64 flex-shrink-0">
-      <nav class="bg-[rgba(26,26,26,0.6)] rounded-lg shadow-md p-2 sticky top-4">
+    <!-- Desktop: flat nav on forest column (light + dark); no gray card -->
+    <aside class="garden-sidebar-desktop hidden lg:block w-full flex-shrink-0">
+      <nav class="bg-[rgba(26,26,26,0.6)] lg:bg-transparent shadow-md lg:shadow-none rounded-lg lg:rounded-none p-2 sticky top-4">
         <ul class="sidebar-nav">
           <li v-for="item in navItems" :key="item.id" class="sidebar-nav-item">
             <button
@@ -231,6 +232,31 @@ onUnmounted(() => {
 .sidebar-nav-link.active .sidebar-nav-icon :deep(svg) {
   stroke: #fff;
   fill: #fff;
+}
+
+/* Desktop column: always forest rail at lg — flat links (not html.dark-only; avoids cream bleed-through in light) */
+.garden-sidebar-desktop .sidebar-nav-link {
+  background: transparent;
+  color: #f5f5f5;
+}
+.garden-sidebar-desktop .sidebar-nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.14);
+}
+.garden-sidebar-desktop .sidebar-nav-link.active {
+  background-color: #8aa37c;
+  color: #fff;
+}
+
+.mobile-menu-container .sidebar-nav-link {
+  background: transparent;
+  color: #f5f5f5;
+}
+.mobile-menu-container .sidebar-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.mobile-menu-container .sidebar-nav-link.active {
+  background-color: #8aa37c;
+  color: #fff;
 }
 
 /* Hamburger Menu Styles */

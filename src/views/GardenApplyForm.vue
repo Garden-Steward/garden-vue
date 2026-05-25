@@ -243,16 +243,14 @@ function prevStep() {
         <transition v-else name="slide-fade" mode="out-in">
         <!-- Project Type Question -->
         <div v-if="currentStep === 0" :key="'step-0'" class="question-content">
-          <h2 class="text-2xl font-semibold mb-6 text-center dark:text-[#f5f5f5]">{{ currentQuestion.question }}</h2>
+          <h2 class="text-2xl font-semibold mb-6 text-center text-gray-900 dark:text-[#f5f5f5]">{{ currentQuestion.question }}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
             <button
               v-for="type in projectTypes"
               :key="type"
               @click="selectProjectType(type)"
-              class="project-type-btn p-6 rounded-lg border-2 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-              :class="formData.projectType === type 
-                ? 'border-green-600 bg-green-50 text-green-800 dark:border-green-500 dark:bg-green-800/20 dark:text-green-300' 
-                : 'border-gray-300 bg-white text-gray-700 hover:border-green-400 dark:border-gray-600 dark:bg-[#344a34] dark:text-[#d0d0d0] dark:hover:border-green-500'"
+              class="project-type-btn choice-btn p-6 rounded-lg border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg"
+              :class="formData.projectType === type ? 'choice-btn--selected' : 'choice-btn--default'"
             >
               <span class="text-lg font-medium">{{ type }}</span>
             </button>
@@ -261,7 +259,7 @@ function prevStep() {
 
         <!-- Project Title Question -->
         <div v-else-if="currentQuestion && currentQuestion.id === 'projectName'" :key="'step-1'" class="question-content">
-          <h2 class="text-2xl font-semibold mb-6 text-center dark:text-[#f5f5f5]">{{ currentQuestion.question }}</h2>
+          <h2 class="text-2xl font-semibold mb-6 text-center text-gray-900 dark:text-[#f5f5f5]">{{ currentQuestion.question }}</h2>
           <div class="max-w-md mx-auto">
             <input
               v-model="formData.title"
@@ -285,16 +283,14 @@ function prevStep() {
         <div v-else-if="currentQuestion && currentQuestion.id === 'location'" :key="'step-location'" class="question-content">
           <!-- Location Question Buttons -->
           <div v-if="!showLocationInput">
-            <h2 class="text-2xl font-semibold mb-6 text-center">{{ currentQuestion.question }}</h2>
+            <h2 class="text-2xl font-semibold mb-6 text-center text-gray-900 dark:text-[#f5f5f5]">{{ currentQuestion.question }}</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
               <button
                 v-for="location in locationOptions"
                 :key="location"
                 @click="selectLocation(location)"
-                class="project-type-btn p-6 rounded-lg border-2 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-                :class="formData.location === location 
-                  ? 'border-green-600 bg-green-50 text-green-800' 
-                  : 'border-gray-300 bg-white text-gray-700 hover:border-green-400'"
+                class="project-type-btn choice-btn p-6 rounded-lg border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg"
+                :class="formData.location === location ? 'choice-btn--selected' : 'choice-btn--default'"
               >
                 <span class="text-lg font-medium">{{ location }}</span>
               </button>
@@ -303,7 +299,7 @@ function prevStep() {
 
           <!-- Location Input (if not Oakland) -->
           <div v-else>
-            <h2 class="text-2xl font-semibold mb-6 text-center dark:text-[#f5f5f5]">Where is this project located?</h2>
+            <h2 class="text-2xl font-semibold mb-6 text-center text-gray-900 dark:text-[#f5f5f5]">Where is this project located?</h2>
             <div class="max-w-md mx-auto">
               <input
                 v-model="formData.cityName"
@@ -326,16 +322,14 @@ function prevStep() {
 
         <!-- Maintenance Question (only for Land Work Project) -->
         <div v-else-if="currentQuestion && currentQuestion.id === 'maintenance'" :key="'step-maintenance'" class="question-content">
-          <h2 class="text-2xl font-semibold mb-6 text-center">{{ currentQuestion.question }}</h2>
+          <h2 class="text-2xl font-semibold mb-6 text-center text-gray-900 dark:text-[#f5f5f5]">{{ currentQuestion.question }}</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl mx-auto">
             <button
               v-for="option in maintenanceOptions"
               :key="option"
               @click="selectMaintenance(option)"
-              class="project-type-btn p-6 rounded-lg border-2 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-              :class="formData.requiresMaintenance === option 
-                ? 'border-green-600 bg-green-50 text-green-800' 
-                : 'border-gray-300 bg-white text-gray-700 hover:border-green-400'"
+              class="project-type-btn choice-btn p-6 rounded-lg border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg"
+              :class="formData.requiresMaintenance === option ? 'choice-btn--selected' : 'choice-btn--default'"
             >
               <span class="text-lg font-medium">{{ option }}</span>
             </button>
@@ -344,7 +338,7 @@ function prevStep() {
 
         <!-- Description Question -->
         <div v-else-if="currentQuestion && currentQuestion.id === 'description'" :key="'step-description'" class="question-content">
-          <h2 class="text-2xl font-semibold mb-6 text-center">{{ currentQuestion.question }}</h2>
+          <h2 class="text-2xl font-semibold mb-6 text-center text-gray-900 dark:text-[#f5f5f5]">{{ currentQuestion.question }}</h2>
           <div class="max-w-2xl mx-auto">
             <textarea
               v-model="formData.description"
@@ -365,7 +359,7 @@ function prevStep() {
 
         <!-- Contact Information Step -->
         <div v-else-if="currentQuestion && currentQuestion.id === 'contact'" :key="'step-contact'" class="question-content">
-          <h2 class="text-2xl font-semibold mb-6 text-center">What's your name and email?</h2>
+          <h2 class="text-2xl font-semibold mb-6 text-center text-gray-900 dark:text-[#f5f5f5]">What's your name and email?</h2>
           <div class="max-w-md mx-auto space-y-4">
             <div>
               <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Name</label>
@@ -467,6 +461,84 @@ function prevStep() {
 
 .project-type-btn:active {
   transform: scale(0.98);
+}
+
+/* Peach tiles + brand green selected — force dark copy on peach (html.dark inheritance / WebKit fill) */
+.choice-btn--default {
+  border-color: rgba(108, 138, 106, 0.42);
+  background-color: #f9e2d1;
+  color: #0f1a0d !important;
+  -webkit-text-fill-color: #0f1a0d !important;
+}
+
+.choice-btn--default span {
+  color: #0f1a0d !important;
+  -webkit-text-fill-color: #0f1a0d !important;
+}
+
+.choice-btn--default:hover {
+  border-color: #8aa37c;
+  background-color: #f2dac4;
+  color: #0f1a0d !important;
+  -webkit-text-fill-color: #0f1a0d !important;
+}
+
+.dark .choice-btn--default {
+  border-color: rgba(197, 212, 184, 0.4);
+  background-color: #f9e2d1;
+  color: #0f1a0d !important;
+  -webkit-text-fill-color: #0f1a0d !important;
+}
+
+.dark .choice-btn--default span {
+  color: #0f1a0d !important;
+  -webkit-text-fill-color: #0f1a0d !important;
+}
+
+.dark .choice-btn--default:hover {
+  border-color: #8aa37c;
+  background-color: #ffe8cf;
+  color: #0f1a0d !important;
+  -webkit-text-fill-color: #0f1a0d !important;
+}
+
+.choice-btn--selected {
+  border-color: #6c8a6a;
+  background-color: #8aa37c;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(55, 100, 81, 0.28);
+}
+
+.choice-btn--selected span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.dark .choice-btn--selected {
+  border-color: #a3c49a;
+  background-color: #6c8a6a;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.dark .choice-btn--selected span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.choice-btn--selected:hover {
+  background-color: #6c8a6a;
+  border-color: #5a7558;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.dark .choice-btn--selected:hover {
+  background-color: #5a7558;
+  border-color: #c5d4b8;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 /* Smooth transitions for progress indicator */
