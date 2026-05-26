@@ -403,7 +403,7 @@ const openEventEditor = (day) => {
           <div class="flex-1">
             <h1
               v-if="garden.attributes?.title"
-              class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight pr-12 lg:pr-0 cursor-pointer hover:opacity-90 transition-opacity"
+              class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight cursor-pointer hover:opacity-90 transition-opacity"
               role="button"
               tabindex="0"
               @click="setActiveSection('general')"
@@ -414,6 +414,15 @@ const openEventEditor = (day) => {
             <p v-if="garden.attributes?.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb.length > 150 ? garden.attributes.blurb.substring(0, 150) + '...' : garden.attributes.blurb }}</p>
             <div v-else-if="garden.loading || (!garden.attributes && !garden.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
           </div>
+          <router-link
+            v-if="garden.attributes?.slug"
+            :to="`/gardens/${garden.attributes.slug}`"
+            target="_blank"
+            class="shrink-0 self-start inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium text-white bg-white/15 hover:bg-white/25 border border-white/30 transition-colors whitespace-nowrap"
+          >
+            <i class="fas fa-external-link-alt text-xs opacity-80"></i>
+            Public Page
+          </router-link>
         </div>
       </div>
     </div>
@@ -568,6 +577,8 @@ const openEventEditor = (day) => {
                   :garden="garden.id"
                   :editor="editor"
                   :managerIds="garden.attributes.managers?.data?.map(m => m.id) || []"
+                  :welcome-email-subject="garden.attributes?.welcome_email_subject || ''"
+                  :welcome-email-body="garden.attributes?.welcome_email_body || ''"
                 />
               </tbody>
             </table>
@@ -736,28 +747,30 @@ const openEventEditor = (day) => {
         </div>
 
         <!-- SMS Campaigns Section -->
-        <div v-if="activeSection === 'sms'" class="gm-panel rounded-lg shadow-md p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="gm-heading text-2xl font-light font-serif">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
-            <SmsCampaignModal
-              v-if="editor"
-              :garden="garden.id"
-              :interests="garden.attributes.interests"
-              :editor="editor"
-            />
-          </div>
-
-          <div v-if="smsCampaigns?.length" class="grid grid-cols-1 gap-4">
-            <div v-for="campaign in smsCampaigns.slice(0, 20)" :key="campaign.id">
-              <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
+        <div v-if="activeSection === 'sms'" class="gm-panel rounded-lg shadow-md p-4 flex flex-col min-h-[480px]">
+          <div class="sms-campaigns-inner flex-1 rounded-lg p-4 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="gm-heading text-2xl font-light font-serif">SMS Campaigns ({{ smsCampaigns.length || 0 }})</h2>
+              <SmsCampaignModal
+                v-if="editor"
+                :garden="garden.id"
+                :interests="garden.attributes.interests"
+                :editor="editor"
+              />
             </div>
-          </div>
-          <div v-else class="gm-text-muted text-center py-8">
-            No SMS campaigns yet.
-          </div>
 
-          <LoadingSpinner v-if="smsCampaigns.loading" size="sm" />
-          <div v-if="smsCampaigns.error" class="text-danger">Error loading sms campaigns: {{smsCampaigns.error}}</div>
+            <div v-if="smsCampaigns?.length" class="grid grid-cols-1 gap-4">
+              <div v-for="campaign in smsCampaigns.slice(0, 20)" :key="campaign.id">
+                <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
+              </div>
+            </div>
+            <div v-else class="gm-text-muted text-center py-8 flex-1 flex items-center justify-center">
+              No SMS campaigns yet.
+            </div>
+
+            <LoadingSpinner v-if="smsCampaigns.loading" size="sm" />
+            <div v-if="smsCampaigns.error" class="text-danger">Error loading sms campaigns: {{smsCampaigns.error}}</div>
+          </div>
         </div>
       </main>
       </div>
@@ -806,6 +819,11 @@ export default {
     background-color: #ffffff;
     color: #344a34;
     border: 1px solid #e2dccb;
+  }
+
+  .sms-campaigns-inner {
+    background-color: #edf3e8;
+    border: 1px solid #d4e0cc;
   }
 
   .gm-heading {
@@ -957,6 +975,11 @@ export default {
 html.dark .gm-page .gm-panel {
   background-color: #2d3e26 !important;
   color: #f5f5f5 !important;
+  border-color: #3d4d36 !important;
+}
+
+html.dark .gm-page .sms-campaigns-inner {
+  background-color: #344a34 !important;
   border-color: #3d4d36 !important;
 }
 html.dark .gm-page .gm-heading,

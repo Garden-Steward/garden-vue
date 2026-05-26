@@ -156,9 +156,12 @@ watch(() => heroImage.value, async (newImage, oldImage) => {
 const editingWelcomeText = ref(false);
 const editingBlurb = ref(false);
 const editingDescription = ref(false);
+const editingWelcomeEmail = ref(false);
 const welcomeTextValue = ref('');
 const blurbValue = ref('');
 const descriptionValue = ref('');
+const welcomeEmailSubjectValue = ref('');
+const welcomeEmailBodyValue = ref('');
 const isSavingText = ref(false);
 
 // Initialize text values from garden
@@ -180,7 +183,25 @@ watch(() => props.garden?.attributes?.description, (newVal) => {
   }
 }, { immediate: true });
 
+watch(() => props.garden?.attributes?.welcome_email_subject, (newVal) => {
+  if (!editingWelcomeEmail.value) {
+    welcomeEmailSubjectValue.value = newVal || '';
+  }
+}, { immediate: true });
+
+watch(() => props.garden?.attributes?.welcome_email_body, (newVal) => {
+  if (!editingWelcomeEmail.value) {
+    welcomeEmailBodyValue.value = newVal || '';
+  }
+}, { immediate: true });
+
 // Start editing functions
+const startEditingWelcomeEmail = () => {
+  welcomeEmailSubjectValue.value = props.garden?.attributes?.welcome_email_subject || '';
+  welcomeEmailBodyValue.value = props.garden?.attributes?.welcome_email_body || '';
+  editingWelcomeEmail.value = true;
+};
+
 const startEditingWelcomeText = () => {
   welcomeTextValue.value = props.garden?.attributes?.welcome_text || '';
   editingWelcomeText.value = true;
@@ -197,6 +218,12 @@ const startEditingDescription = () => {
 };
 
 // Cancel editing functions
+const cancelEditingWelcomeEmail = () => {
+  welcomeEmailSubjectValue.value = props.garden?.attributes?.welcome_email_subject || '';
+  welcomeEmailBodyValue.value = props.garden?.attributes?.welcome_email_body || '';
+  editingWelcomeEmail.value = false;
+};
+
 const cancelEditingWelcomeText = () => {
   welcomeTextValue.value = props.garden?.attributes?.welcome_text || '';
   editingWelcomeText.value = false;
@@ -213,6 +240,25 @@ const cancelEditingDescription = () => {
 };
 
 // Save text fields
+const saveWelcomeEmail = async () => {
+  if (!props.editor || !props.garden?.id) return;
+  try {
+    isSavingText.value = true;
+    await gardensStore.update(props.garden.id, {
+      welcome_email_subject: welcomeEmailSubjectValue.value,
+      welcome_email_body: welcomeEmailBodyValue.value,
+    });
+    await gardensStore.getSlug(route.params.slug);
+    editingWelcomeEmail.value = false;
+    alertStore.success('Welcome email updated successfully');
+  } catch (error) {
+    console.error('Error saving welcome email:', error);
+    alertStore.error('Failed to save welcome email. Please try again.');
+  } finally {
+    isSavingText.value = false;
+  }
+};
+
 const saveWelcomeText = async () => {
   if (!props.editor || !props.garden?.id) return;
   
@@ -282,16 +328,6 @@ const saveDescription = async () => {
 
 <template>
   <div class="bg-[#2d3e26] rounded-lg shadow-md p-6">
-    <div class="mb-4">
-      <router-link 
-        :to="`/gardens/${garden.attributes.slug}`"
-        target="_blank"
-        class="btn-view-public inline-flex items-center px-4 py-2 bg-custom-green text-white font-medium rounded hover:bg-darker-green transition-colors"
-      >
-        <i class="fas fa-external-link-alt mr-2"></i>
-        View Public Garden Page
-      </router-link>
-    </div>
     <div class="space-y-6">
       <!-- Summary Numbers -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -465,6 +501,72 @@ const saveDescription = async () => {
         </div>
       </div>
       
+      <!-- Welcome Email Section -->
+      <div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex flex-col gap-0.5">
+            <h3 class="text-lg font-semibold leading-tight text-[#f5f5f5] m-0">Welcome Email</h3>
+            <p class="text-sm text-[#a8b89e] italic leading-snug m-0">Sent to new members when they join the garden</p>
+          </div>
+          <button
+            v-if="editor && !editingWelcomeEmail"
+            type="button"
+            @click="startEditingWelcomeEmail"
+            class="shrink-0 text-sm text-blue-400 hover:text-blue-300 underline"
+          >Edit</button>
+        </div>
+        <div class="mt-1.5 h-px w-full bg-[rgba(138,163,124,0.4)]" aria-hidden="true" />
+
+        <!-- Display mode -->
+        <div v-if="!editingWelcomeEmail" class="space-y-3 mt-6">
+          <div>
+            <p class="text-xs text-[#a8b89e] uppercase tracking-wide mb-1">Subject</p>
+            <p class="text-[#d0d0d0]">{{ garden.attributes.welcome_email_subject || 'No subject set.' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-[#a8b89e] uppercase tracking-wide mb-1">Body</p>
+            <p class="text-[#d0d0d0] whitespace-pre-wrap">{{ garden.attributes.welcome_email_body || 'No email body set.' }}</p>
+          </div>
+        </div>
+
+        <!-- Edit mode -->
+        <div v-else class="space-y-3 mt-6">
+          <div>
+            <label class="block text-sm text-[#d0d0d0] mb-1">Subject</label>
+            <input
+              v-model="welcomeEmailSubjectValue"
+              type="text"
+              class="w-full px-3 py-2 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent"
+              placeholder="Enter welcome email subject..."
+            />
+          </div>
+          <div>
+            <label class="block text-sm text-[#d0d0d0] mb-1">
+              Body
+              <span class="text-[#a8b89e] text-xs italic ml-1">Markdown supported</span>
+            </label>
+            <textarea
+              v-model="welcomeEmailBodyValue"
+              rows="10"
+              class="w-full px-3 py-2 border border-[#3d4d36]/50 bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] rounded-md focus:outline-none focus:ring-2 focus:ring-custom-green focus:border-transparent font-mono text-sm"
+              placeholder="Enter welcome email body… Markdown is supported (e.g. **bold**, _italic_, ## Heading)"
+            ></textarea>
+          </div>
+          <div class="flex gap-2">
+            <button
+              @click="saveWelcomeEmail"
+              :disabled="isSavingText"
+              class="px-4 py-2 bg-custom-green text-white rounded hover:bg-darker-green transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >{{ isSavingText ? 'Saving...' : 'Save' }}</button>
+            <button
+              @click="cancelEditingWelcomeEmail"
+              :disabled="isSavingText"
+              class="px-4 py-2 bg-[rgba(26,26,26,0.8)] text-[#f5f5f5] rounded hover:bg-[rgba(26,26,26,1)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Hero Image Section (Editor Only) -->
       <div v-if="editor" class="mt-6">
         <div class="flex items-start justify-between gap-3">
@@ -487,22 +589,6 @@ const saveDescription = async () => {
 </template>
 
 <style scoped>
-/* Make "View Public Garden Page" button full width on mobile */
-@media (max-width: 768px) {
-  .btn-view-public {
-    display: flex;
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* Make button full width on all screen sizes */
-.btn-view-public {
-  display: flex;
-  width: 100%;
-  justify-content: center;
-}
-
 /* Stat cards: stack number above label by default */
 .stat-card {
   display: flex;

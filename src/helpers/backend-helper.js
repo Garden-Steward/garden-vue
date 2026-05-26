@@ -9,6 +9,13 @@ export const backendHelper = {
                 return res
             })
             .catch(this.handleError);
-  }
+  },
 
+  sendWelcomeEmail: function (userId, body = {}) {
+    return fetchWrapper.post(`${baseUrl}/email/send-welcome/${userId}`, body)
+            .then(res => {
+                console.log('[welcome-email]', res);
+                return res;
+            });
+  },
 }

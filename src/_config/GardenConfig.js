@@ -90,6 +90,12 @@ export const campaignBadgeBaseClasses =
   'inline-block shrink-0 rounded-full uppercase tracking-wide px-2.5 py-2 text-sm font-semibold leading-tight shadow-sm';
 
 export const campaignTypeBadges = {
+  poll: {
+    label: 'Poll',
+    classes:
+      'bg-amber-500 text-white border border-amber-700/40 ' +
+      'dark:bg-amber-600 dark:text-amber-50 dark:border-amber-800/50'
+  },
   rsvp: {
     label: 'RSVP',
     classes:
