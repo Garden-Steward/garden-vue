@@ -11,10 +11,22 @@ export const useGardensStore = defineStore({
         garden: {}
     }),
     actions: {
-        async getAll(userId) {
+        async getAll() {
             this.gardens = { loading: true };
-            fetchWrapper.get(`${baseUrl}?populate=managers,volunteers`)
-                .then(res => this.gardens = res.data)
+            fetchWrapper.get(`${baseUrl}?populate=managers,volunteers,hero_image`)
+                .then(res => {
+                    const gardens = (Array.isArray(res.data) ? res.data : []).map(garden => {
+                        if (garden.attributes?.hero_image?.data) {
+                            const imageData = garden.attributes.hero_image.data;
+                            garden.attributes.hero_image = {
+                                ...imageData.attributes,
+                                id: imageData.id
+                            };
+                        }
+                        return garden;
+                    });
+                    this.gardens = gardens;
+                })
                 .catch(error => this.gardens = { error })
         },
         async getAllPublic() {

@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, GardensPublicView, SetPassword,
     InstructionPublic, GardenApplyForm, HelpView,
-    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView, VerifyEmail } from '@/views';
+    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, ProjectManage, ProjectsView, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView, VerifyEmail } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
@@ -109,9 +109,11 @@ export const router = createRouter({
         },
         
         // Management routes (authenticated)
+        // The gardens dashboard is the management index at /manage.
         {
             path: '/manage',
-            redirect: '/manage/gardens',
+            component: GardensView,
+            name: 'manage-gardens-list',
             meta: { requiresAuth: true }
         },
         {
@@ -121,9 +123,21 @@ export const router = createRouter({
             meta: { requiresAuth: true }
         },
         {
+            // Legacy index path → canonical /manage
             path: '/manage/gardens',
-            component: GardensView,
-            name: 'manage-gardens-list',
+            redirect: '/manage',
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/manage/projects',
+            component: ProjectsView,
+            name: 'manage-projects',
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/manage/project/:id',
+            component: ProjectManage,
+            name: 'manage-project',
             meta: { requiresAuth: true }
         },
         {

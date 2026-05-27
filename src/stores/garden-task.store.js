@@ -45,7 +45,8 @@ export const useGardenTaskStore = defineStore({
     state: () => ({
         gardenTasks: {},
         gardenTask: {},
-        recurringTasks: []
+        recurringTasks: [],
+        userTasks: {}
     }),
     actions: {
         handleError(err) {
@@ -68,6 +69,20 @@ export const useGardenTaskStore = defineStore({
                 })
                 .catch(error => {
                     this.gardenTask = { error };
+                    this.handleError(error);
+                });
+        },
+        async getUserTasks() {
+            this.userTasks = { loading: true };
+            return fetchWrapper.get(`${baseUrl}/user?populate[0]=garden&populate[1]=primary_image`)
+                .then(response => {
+                    const raw = Array.isArray(response) ? response : (response?.data ?? []);
+                    const tasks = (Array.isArray(raw) ? raw : [raw]).map(normalizeGardenTaskEntity);
+                    this.userTasks = tasks;
+                    return tasks;
+                })
+                .catch(error => {
+                    this.userTasks = { error };
                     this.handleError(error);
                 });
         },

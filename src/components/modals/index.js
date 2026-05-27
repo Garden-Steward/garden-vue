@@ -3,3 +3,4 @@ export { default as RecurringTemplateModal } from './RecurringTemplateModal.vue'
 export { default as SmsCampaignModal } from './SmsCampaignModal.vue';
 export { default as VolunteerDayTasks } from './VolunteerDayTasks.vue';
 export { default as GardenTask } from './GardenTask.vue';
+export { default as PitchProject } from './PitchProject.vue';

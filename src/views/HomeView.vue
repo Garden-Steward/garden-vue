@@ -50,14 +50,14 @@ gardensStore.getAll(user.value.id);
         </p>
         <p class="profile-line">
           You're a member of
-          <router-link to="/manage/gardens" class="profile-link">
+          <router-link to="/manage" class="profile-link">
             {{ gardens.length }} gardens.
           </router-link>
         </p>
       </div>
 
       <div class="cta-row">
-        <a href="/manage/gardens" class="btn-manage btn-manage-primary">
+        <a href="/manage" class="btn-manage btn-manage-primary">
           View Gardens
         </a>
       </div>

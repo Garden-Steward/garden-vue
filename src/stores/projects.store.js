@@ -5,11 +5,26 @@ import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/projects`;
 
+/** Flatten a Strapi users-permissions m2m relation into a plain [{ id, ...attrs }] array. */
+function normalizeUserRelation(rel) {
+    const data = rel?.data;
+    if (!Array.isArray(data)) return Array.isArray(rel) ? rel : [];
+    return data.map(u => ({ id: u.id, ...(u.attributes || {}) }));
+}
+
+/** Reduce a relation field (array of ids or objects) to a clean array of numeric ids. */
+function relationToIds(value) {
+    if (!Array.isArray(value)) return value;
+    return value.map(v => (typeof v === 'object' ? v?.id : v)).filter(id => id != null);
+}
+
 export const useProjectsStore = defineStore({
     id: 'projects',
     state: () => ({
         projects: {},
-        project: {}
+        project: {},
+        userProjects: {},
+        communityProjects: {}
     }),
     actions: {
         handleError(err) {
@@ -71,6 +86,89 @@ export const useProjectsStore = defineStore({
                     return projects;
                 })
                 .catch(this.handleError);
+        },
+        async getUserProjects() {
+            this.userProjects = { loading: true };
+            return fetchWrapper.get(`${baseUrl}/user?populate[0]=hero_image&populate[1]=garden&populate[2]=created_by&populate[3]=managers&populate[4]=interested`)
+                .then(response => {
+                    const raw = Array.isArray(response) ? response : (response?.data ?? []);
+                    const projects = (Array.isArray(raw) ? raw : [raw]).map(project => {
+                        if (project.attributes?.hero_image?.data) {
+                            const imageData = project.attributes.hero_image.data;
+                            project.attributes.hero_image = {
+                                ...imageData.attributes,
+                                id: imageData.id
+                            };
+                        }
+                        return project;
+                    });
+                    this.userProjects = projects;
+                    return projects;
+                })
+                .catch(error => {
+                    this.userProjects = { error };
+                    this.handleError(error);
+                });
+        },
+        async findById(id) {
+            this.project = { loading: true };
+            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=created_by&populate[4]=managers&populate[5]=impact_metrics&populate[6]=interested`)
+                .then(response => {
+                    const project = response?.data;
+                    if (!project) {
+                        this.project = { error: 'Project not found' };
+                        return null;
+                    }
+                    // Normalize hero_image
+                    if (project.attributes?.hero_image?.data) {
+                        const imageData = project.attributes.hero_image.data;
+                        project.attributes.hero_image = {
+                            ...imageData.attributes,
+                            id: imageData.id
+                        };
+                    }
+                    // Normalize featured_gallery
+                    if (project.attributes?.featured_gallery?.data) {
+                        project.attributes.featured_gallery = project.attributes.featured_gallery.data.map(img => ({
+                            ...img.attributes,
+                            id: img.id
+                        }));
+                    } else if (!project.attributes?.featured_gallery) {
+                        project.attributes.featured_gallery = [];
+                    }
+                    // Normalize manager / interested user relations to plain arrays
+                    project.attributes.managers = normalizeUserRelation(project.attributes?.managers);
+                    project.attributes.interested = normalizeUserRelation(project.attributes?.interested);
+                    this.project = project;
+                    return project;
+                })
+                .catch(error => {
+                    this.project = { error };
+                    throw error;
+                });
+        },
+        async getAllProjects() {
+            this.communityProjects = { loading: true };
+            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=garden&populate[2]=created_by&populate[3]=interested&sort=createdAt:desc&pagination[pageSize]=100`)
+                .then(response => {
+                    const raw = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
+                    const projects = raw.map(project => {
+                        if (project.attributes?.hero_image?.data) {
+                            const imageData = project.attributes.hero_image.data;
+                            project.attributes.hero_image = {
+                                ...imageData.attributes,
+                                id: imageData.id
+                            };
+                        }
+                        return project;
+                    });
+                    this.communityProjects = projects;
+                    return projects;
+                })
+                .catch(error => {
+                    this.communityProjects = { error };
+                    this.handleError(error);
+                });
         },
         async getSlug(slug) {
             this.project = { loading: true };
@@ -154,7 +252,22 @@ export const useProjectsStore = defineStore({
                         id: typeof event === 'object' ? event.id : event
                     }));
             }
-            
+
+            // Reduce relation objects to ids (Strapi accepts id or { id }).
+            if (data.created_by && typeof data.created_by === 'object') {
+                data.created_by = data.created_by.id;
+            }
+            if (Array.isArray(data.managers)) {
+                data.managers = relationToIds(data.managers);
+            }
+            if (Array.isArray(data.interested)) {
+                data.interested = relationToIds(data.interested);
+            }
+            // garden may be intentionally null (project not associated with one).
+            if (data.garden && typeof data.garden === 'object') {
+                data.garden = data.garden.id ?? null;
+            }
+
             // Convert empty date strings to null
             if (data.date_start === '') {
                 data.date_start = null;
@@ -162,7 +275,7 @@ export const useProjectsStore = defineStore({
             if (data.date_end === '') {
                 data.date_end = null;
             }
-            
+
             return fetchWrapper.put(`${baseUrl}/${id}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=impact_metrics`, { data: data })
                 .then(response => {
                     if (response?.data?.attributes) {
@@ -209,7 +322,22 @@ export const useProjectsStore = defineStore({
                         id: typeof event === 'object' ? event.id : event
                     }));
             }
-            
+
+            // Reduce relation objects to ids (Strapi accepts id or { id }).
+            if (data.created_by && typeof data.created_by === 'object') {
+                data.created_by = data.created_by.id;
+            }
+            if (Array.isArray(data.managers)) {
+                data.managers = relationToIds(data.managers);
+            }
+            if (Array.isArray(data.interested)) {
+                data.interested = relationToIds(data.interested);
+            }
+            // garden may be intentionally null (pitch without association).
+            if (data.garden && typeof data.garden === 'object') {
+                data.garden = data.garden.id ?? null;
+            }
+
             // Convert empty date strings to null
             if (data.date_start === '') {
                 data.date_start = null;
@@ -270,6 +398,30 @@ export const useProjectsStore = defineStore({
                     }
                     return response;
                 });
+        },
+        async pitch(data) {
+            // Normalize hero_image to its id for the relation
+            if (data.hero_image?.id) {
+                data.hero_image = { id: data.hero_image.id };
+            }
+            // Normalize featured_gallery to ids
+            if (data.featured_gallery && Array.isArray(data.featured_gallery)) {
+                data.featured_gallery = data.featured_gallery.map(img => ({ id: img.id }));
+            }
+            return fetchWrapper.post(`${baseUrl}/pitch`, { data })
+                .then(response => response?.data ?? response)
+                .catch(this.handleError);
+        },
+        async toggleInterest(id) {
+            return fetchWrapper.post(`${baseUrl}/${id}/interest`, {})
+                .then(response => response)
+                .catch(this.handleError);
+        },
+        async updateManagers(id, managers) {
+            const managerIds = (managers || []).map(m => (typeof m === 'object' ? m.id : m));
+            return fetchWrapper.put(`${baseUrl}/${id}/managers`, { data: { managers: managerIds } })
+                .then(response => response?.data ?? response)
+                .catch(this.handleError);
         },
         async uploadImage(formData) {
             return fetchWrapper.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData)

@@ -212,6 +212,78 @@ export function normalizeCampaignType(type) {
 }
 
 /**
+ * Project category badges
+ *
+ * Pills shown on project cards (dashboard "My projects", Pitch a Project
+ * category picker). Keys match the `categoryOptions` in Project.vue
+ * (`Infrastructure`, `Art`, …). Colors follow the Pitch a Project mockup.
+ */
+export const projectCategoryBadgeBaseClasses =
+  'inline-flex shrink-0 items-center rounded-full px-3 py-1 text-sm font-semibold leading-tight shadow-sm border';
+
+export const projectCategoryBadges = {
+  infrastructure: {
+    label: 'Infrastructure',
+    classes:
+      'bg-orange-200 text-orange-900 border-orange-300/70 ' +
+      'dark:bg-orange-900/70 dark:text-orange-50 dark:border-orange-700/70'
+  },
+  art: {
+    label: 'Art',
+    classes:
+      'bg-orange-400 text-white border-orange-500/70 ' +
+      'dark:bg-orange-700 dark:text-orange-50 dark:border-orange-600/70'
+  },
+  event: {
+    label: 'Event',
+    classes:
+      'bg-amber-300 text-amber-950 border-amber-400/70 ' +
+      'dark:bg-amber-700 dark:text-amber-50 dark:border-amber-600/70'
+  },
+  education: {
+    label: 'Education',
+    classes:
+      'bg-teal-500 text-white border-teal-600/70 ' +
+      'dark:bg-teal-800 dark:text-teal-50 dark:border-teal-700/70'
+  },
+  planting: {
+    label: 'Planting',
+    classes:
+      'bg-green-400 text-green-950 border-green-500/70 ' +
+      'dark:bg-green-800 dark:text-green-50 dark:border-green-700/70'
+  },
+  community: {
+    label: 'Community',
+    classes:
+      'bg-sky-500 text-white border-sky-600/70 ' +
+      'dark:bg-sky-800 dark:text-sky-50 dark:border-sky-700/70'
+  },
+  default: {
+    label: '',
+    classes:
+      'bg-stone-200 text-stone-800 border-stone-300/70 ' +
+      'dark:bg-stone-700 dark:text-stone-100 dark:border-stone-600/70'
+  }
+};
+
+/** Project category options (value/label), shared by the pitch form + filters. */
+export const projectCategoryOptions = [
+  { value: 'Infrastructure', label: 'Infrastructure' },
+  { value: 'Art', label: 'Art' },
+  { value: 'Event', label: 'Event' },
+  { value: 'Education', label: 'Education' },
+  { value: 'Planting', label: 'Planting' },
+  { value: 'Community', label: 'Community' }
+];
+
+/** Resolve a project category string → badge classes (base + light/dark palette). */
+export function getProjectCategoryBadgeClasses(category) {
+  const key = String(category || '').trim().toLowerCase();
+  const variant = projectCategoryBadges[key] || projectCategoryBadges.default;
+  return `${projectCategoryBadgeBaseClasses} ${variant.classes}`;
+}
+
+/**
  * Task status options
  *
  * Drives the status dropdown in the GardenTask edit modal (and any other

@@ -15,6 +15,10 @@ export const useAuthStore = defineStore({
         },
         returnUrl: null
     }),
+    getters: {
+        isLoggedIn: (state) => !!state.user,
+        isAdmin: (state) => state.user?.role?.type === 'administrator',
+    },
     actions: {
         async initGoogle() {
             const { url } = await fetchWrapper.get(`${baseUrl}/OAuth/googleLogin`);

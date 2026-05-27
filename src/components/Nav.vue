@@ -204,7 +204,7 @@ const handleEscape = (e) => {
                     @click="toggleMobileMenu"
                 >Gardens</router-link>
                 <router-link
-                    to="/manage/gardens"
+                    to="/manage"
                     class="nav-item nav-link"
                     v-show="authStore.user"
                     :class="{ 'mobile-nav-section-active': isManageNavActive }"
@@ -268,7 +268,7 @@ const handleEscape = (e) => {
                         :class="{ 'nav-link--section-active': isGardensNavActive }"
                     >Gardens</router-link>
                     <router-link
-                        to="/manage/gardens"
+                        to="/manage"
                         class="nav-item nav-link"
                         v-show="authStore.user"
                         :class="{ 'nav-link--section-active': isManageNavActive }"
