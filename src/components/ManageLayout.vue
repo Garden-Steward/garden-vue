@@ -44,9 +44,9 @@ const navIconPaths = {
 const navItems = computed(() => [
   { label: 'Dashboard', icon: 'grid', href: '/manage', active: route.path === '/manage' },
   { label: 'Projects', icon: 'project', href: '/manage/projects', active: route.path.startsWith('/manage/project') },
-  { label: 'Gardens', icon: 'leaf', href: '/gardens', active: route.path.startsWith('/gardens') || route.path.startsWith('/manage/gardens') },
-  { label: 'Tasks', icon: 'tasks', active: false },
-  { label: 'Events', icon: 'calendar', active: false }
+  { label: 'Gardens', icon: 'leaf', href: '/gardens', active: route.path.startsWith('/gardens') || route.path.startsWith('/manage/gardens'), desktopOnly: true },
+  { label: 'Tasks', icon: 'tasks', active: false, desktopOnly: true },
+  { label: 'Events', icon: 'calendar', active: false, desktopOnly: true }
 ]);
 </script>
 
@@ -64,7 +64,7 @@ const navItems = computed(() => [
             v-for="item in navItems"
             :key="item.label"
             class="dash-nav__item"
-            :class="{ 'dash-nav__item--active': item.active }"
+            :class="{ 'dash-nav__item--active': item.active, 'dash-nav__item--desktop-only': item.desktopOnly }"
             :href="item.href || undefined"
           >
             <svg class="dash-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -112,6 +112,15 @@ const navItems = computed(() => [
 @media (max-width: 820px) {
   .manage-shell__grid {
     grid-template-columns: 1fr;
+  }
+
+  .dash-sidebar {
+    position: static;
+    min-height: unset;
+  }
+
+  .dash-nav__item--desktop-only {
+    display: none;
   }
 }
 
