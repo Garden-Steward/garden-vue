@@ -109,21 +109,6 @@ const navItems = computed(() => [
   min-width: 0;
 }
 
-@media (max-width: 820px) {
-  .manage-shell__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dash-sidebar {
-    position: static;
-    min-height: unset;
-  }
-
-  .dash-nav__item--desktop-only {
-    display: none;
-  }
-}
-
 /* ── Sidebar ── */
 .dash-sidebar {
   position: sticky;
@@ -207,6 +192,21 @@ const navItems = computed(() => [
 
 .dash-btn--primary:hover {
   background-color: #97c264;
+}
+
+@media (max-width: 820px) {
+  .manage-shell__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-sidebar {
+    position: static;
+    min-height: unset;
+  }
+
+  .dash-nav__item--desktop-only {
+    display: none;
+  }
 }
 
 .dash-sidebar__cta {
