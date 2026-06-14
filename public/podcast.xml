@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     version="2.0">
+
+  <channel>
+    <!-- ===== SHOW-LEVEL METADATA (update once) ===== -->
+    <title>Untethered</title>
+    <link>https://garden-steward.web.app</link>
+    <language>en-us</language>
+    <copyright>© 2026 Garden Steward</copyright>
+    <lastBuildDate>Sun, 14 Jun 2026 06:00:00 GMT</lastBuildDate>
+    <atom:link href="https://garden-steward.web.app/podcast.xml" rel="self" type="application/rss+xml"/>
+
+    <!-- iTunes metadata -->
+    <itunes:author>Cypress</itunes:author>
+    <itunes:subtitle>A podcast about the commons — the things that belong to all of us.</itunes:subtitle>
+    <itunes:summary>
+      Untethered is a podcast about the commons, community abundance, and the quiet work of building a better world. Hosted by Cypress. From the people who brought you Garden Steward.
+    </itunes:summary>
+    <description>
+      Untethered is a podcast about the commons, community abundance, and the quiet work of building a better world. Hosted by Cypress. From the people who brought you Garden Steward.
+    </description>
+    <itunes:keywords>commons, permaculture, community, abundance, garden steward, environment</itunes:keywords>
+
+    <!--
+      COVER ART: Replace href when GAR-6 is done.
+      Placeholder points to where the final 3000×3000 image will live.
+    -->
+    <itunes:image href="https://garden-steward.web.app/podcast/cover-art.jpg"/>
+
+    <!-- Categories (Apple Podcasts uses these for browse-ability) -->
+    <itunes:category text="Society &amp; Culture">
+      <itunes:category text="Philosophy"/>
+    </itunes:category>
+    <itunes:category text="Education">
+      <itunes:category text="How To"/>
+    </itunes:category>
+
+    <itunes:explicit>no</itunes:explicit>
+
+    <itunes:owner>
+      <itunes:name>Cypress</itunes:name>
+      <!-- TODO: Set up a real contact email -->
+      <itunes:email>hello@garden-steward.org</itunes:email>
+    </itunes:owner>
+
+    <!-- ===== NEW EPISODES: Add new &lt;item&gt; blocks below ===== -->
+
+    <!--
+      ═══════════════════════════════════════════════════════════════════
+      TO ADD A NEW EPISODE:
+      1. Copy the &lt;item&gt; block (the full example below is commented out)
+      2. Fill in: title, pubDate, enclosure url+length, duration, guid
+      3. Write the description and full show notes in content:encoded
+      4. Upload the MP3 to GCS first (see HOSTING.md or episode-workflow.md)
+      5. Update &lt;lastBuildDate&gt; above
+      6. Run: vite build && firebase deploy
+      ═══════════════════════════════════════════════════════════════════
+    -->
+
+    <!--
+    EXAMPLE — TEMPLATE FOR A NEW EPISODE:
+    <item>
+      <title>Ep N: Episode Title Here</title>
+      <enclosure url="https://garden-steward.web.app/podcast/episode-N.mp3"
+                 type="audio/mpeg"
+                 length="12345678"/>
+      <guid isPermaLink="true">https://garden-steward.web.app/podcast.xml#episode-N</guid>
+      <pubDate>Wed, 17 Jun 2026 06:00:00 GMT</pubDate>
+      <itunes:duration>00:30:00</itunes:duration>
+      <itunes:episode>N</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:season>1</itunes:season>
+      <description>Brief episode description for RSS readers (plain text, ~2 sentences).</description>
+      <content:encoded><![CDATA[
+        <h2>Episode Title</h2>
+        <p>Full show notes here — links, guest info, resources mentioned, etc.</p>
+        <h3>Links &amp; Resources</h3>
+        <ul>
+          <li><a href="https://...">Resource name</a></li>
+        </ul>
+      ]]></content:encoded>
+    </item>
+    -->
+
+    <!--
+      ═══════════════════════════════════════════════════════════════════
+      EP 1 — The Common Treasury (launches June 17)
+      ═══════════════════════════════════════════════════════════════════
+      TODO: Fill in enclosure length (file size in bytes), duration, description,
+      and full show notes once the audio is finalized (GAR-8) and show notes
+      are written (GAR-9).
+
+      Audio file goes in public/podcast/episode-1.mp3 — Firebase Hosting
+      serves it at https://garden-steward.web.app/podcast/episode-1.mp3
+    -->
+    <item>
+      <title>Ep 1: The Common Treasury</title>
+      <enclosure url="https://garden-steward.web.app/podcast/episode-1.mp3"
+                 type="audio/mpeg"
+                 length="0"/>
+      <guid isPermaLink="true">https://garden-steward.web.app/podcast.xml#episode-1</guid>
+      <pubDate>Wed, 17 Jun 2026 06:00:00 GMT</pubDate>
+      <itunes:duration>00:00:00</itunes:duration>
+      <itunes:episode>1</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:season>1</itunes:season>
+      <description>In the inaugural episode, we explore the deep history of the commons — from medieval English common lands to the Diggers who dared to reclaim them. What did we lose, and what can we still rebuild?</description>
+      <content:encoded><![CDATA[
+        <p><em>Show notes coming soon — once the audio is finalized (GAR-8).</em></p>
+        <p>In the inaugural episode of Untethered, we explore the deep history of the commons — from medieval English common lands to the Diggers who dared to reclaim them.</p>
+        <p><strong>Topics covered:</strong></p>
+        <ul>
+          <li>The origins of the commons in pre-enclosure England</li>
+          <li>Gerrard Winstanley and the Diggers (True Levellers)</li>
+          <li>What the enclosure movement actually took from ordinary people</li>
+          <li>How the idea of the commons lives on today — and why it matters</li>
+        </ul>
+      ]]></content:encoded>
+    </item>
+
+    <!--
+      ═══════════════════════════════════════════════════════════════════
+      EP 2 — The People Who Remembered (launches June 24)
+      ═══════════════════════════════════════════════════════════════════
+    -->
+
+    <!--
+      ═══════════════════════════════════════════════════════════════════
+      EP 3 — Rebuilding the Commons (launches July 1)
+      ═══════════════════════════════════════════════════════════════════
+    -->
+  </channel>
+</rss>
