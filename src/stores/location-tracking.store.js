@@ -13,7 +13,7 @@ export const useLocationTrackingStore = defineStore({
         async fetchAll() {
             this.locationTrackings = { loading: true };
             try {
-                const response = await fetchWrapper.get(`${baseUrl}?populate=plant&populate=plant_image&populate=user`);
+                const response = await fetchWrapper.get(`${baseUrl}?populate=plant&populate=plant.clipart&populate=plant_image&populate=user`);
                 this.locationTrackings = response.data.map(item => ({
                     id: item.id,
                     ...item.attributes,
@@ -43,7 +43,7 @@ export const useLocationTrackingStore = defineStore({
             // In the future, this could be a backend filter
             this.locationTrackings = { loading: true };
             try {
-                const response = await fetchWrapper.get(`${baseUrl}?populate=plant&populate=plant.Benefits&populate=plant_image&populate=location_image&populate=user&pagination[pageSize]=100`);
+                const response = await fetchWrapper.get(`${baseUrl}?populate=plant&populate=plant.Benefits&populate=plant.clipart&populate=plant_image&populate=location_image&populate=user&pagination[pageSize]=100`);
                 const allTrackings = response.data.map(item => ({
                     id: item.id,
                     ...item.attributes,

@@ -93,6 +93,13 @@ const formatDate = (dateString) => {
 };
 
 const getImageUrl = (tracking) => {
+  // Clipart preferred — clean illustration for identification
+  if (tracking.plant?.clipart?.data?.attributes?.url) {
+    return tracking.plant.clipart.data.attributes.url;
+  }
+  if (tracking.plant?.clipart?.data?.attributes?.formats?.small?.url) {
+    return tracking.plant.clipart.data.attributes.formats.small.url;
+  }
   // Try plant_image first, then location_image
   if (tracking.small_image) return tracking.small_image;
   if (tracking.thumbnail) return tracking.thumbnail;
