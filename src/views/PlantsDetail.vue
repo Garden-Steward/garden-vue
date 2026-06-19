@@ -19,7 +19,6 @@ onMounted(() => {
 const getClipUrl = () => {
   const clip = plant.value?.attributes?.clipart?.data?.attributes;
   if (!clip) return null;
-  // Prefer large format, then medium, then original
   return clip.formats?.large?.url || clip.formats?.medium?.url || clip.url;
 };
 
@@ -70,101 +69,82 @@ const getTypeColor = (type) => {
     <!-- Plant detail -->
     <template v-else>
       <div class="plant-detail__back">
-        <router-link to="/manage/plants" class="dash-link">&larr; Plants Directory</router-link>
+        <router-link to="/manage/plants" class="plant-detail__back-link">&larr; Plants Directory</router-link>
       </div>
 
-      <!-- ── Hero: clipart + basic info side by side ── -->
-      <div class="plant-detail__hero">
-        <!-- Clipart (left) -->
-        <div class="plant-detail__clipart-wrap">
-          <img
-            v-if="getClipUrl()"
-            :src="getClipUrl()"
-            :alt="plant.attributes?.title || 'Plant illustration'"
-            class="plant-detail__clipart"
-          />
-          <div v-else class="plant-detail__clipart-empty">
-            🌿
-          </div>
-        </div>
-
-        <!-- Basic info (right) -->
-        <div class="plant-detail__info">
-          <h1 class="plant-detail__name">{{ plant.attributes?.title }}</h1>
-          <p class="plant-detail__latin">{{ plant.attributes?.latin }}</p>
-
-          <div class="plant-detail__badges">
-            <span
-              v-if="plant.attributes?.type"
-              class="plant-detail__badge"
-              :class="getTypeColor(plant.attributes.type)"
-            >
-              {{ plant.attributes.type }}
-            </span>
-            <span v-if="hasClip" class="plant-detail__badge plant-detail__badge--clipart">
-              🖌️ Clipart
-            </span>
-          </div>
-
-          <!-- Sun & Water -->
-          <div class="plant-detail__meta">
-            <div v-if="plant.attributes?.sun_detail" class="plant-detail__meta-item">
-              <span class="plant-detail__meta-label">☀️ Sun</span>
-              <p class="plant-detail__meta-text">{{ plant.attributes.sun_detail }}</p>
-            </div>
-            <div v-if="plant.attributes?.water_detail" class="plant-detail__meta-item">
-              <span class="plant-detail__meta-label">💧 Water</span>
-              <p class="plant-detail__meta-text">{{ plant.attributes.water_detail }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Description / text content ── -->
-      <div class="plant-detail__body">
-        <!-- Magic writeup -->
-        <div v-if="plant.attributes?.magic" class="plant-detail__section plant-detail__magic">
-          <h2 class="plant-detail__section-title">Magic</h2>
-          <div class="plant-detail__text plant-detail__text--magic">{{ plant.attributes.magic }}</div>
-        </div>
-
-        <!-- Full description -->
-        <div v-if="plant.attributes?.description" class="plant-detail__section">
-          <h2 class="plant-detail__section-title">Description</h2>
-          <div class="plant-detail__text">{{ plant.attributes.description }}</div>
-        </div>
-
-        <!-- Benefits -->
-        <div
-          v-if="plant.attributes?.Benefits?.length"
-          class="plant-detail__section"
-        >
-          <h2 class="plant-detail__section-title">Benefits</h2>
-          <div class="plant-detail__benefits">
-            <span
-              v-for="b in plant.attributes.Benefits"
-              :key="b.id"
-              class="plant-detail__benefit-tag"
-            >
-              {{ b.title }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Gallery images -->
-        <div
-          v-if="getImages().length > 0"
-          class="plant-detail__section"
-        >
-          <h2 class="plant-detail__section-title">Photos</h2>
-          <div class="plant-detail__gallery">
+      <div class="plant-detail__card">
+        <!-- ── Hero: clipart + basic info side by side ── -->
+        <div class="plant-detail__hero">
+          <div class="plant-detail__clipart-wrap">
             <img
-              v-for="img in getImages()"
-              :key="img.id"
-              :src="img.attributes?.formats?.medium?.url || img.attributes?.url"
-              :alt="img.attributes?.alternativeText || plant.attributes?.title"
-              class="plant-detail__gallery-img"
+              v-if="getClipUrl()"
+              :src="getClipUrl()"
+              :alt="plant.attributes?.title || 'Plant illustration'"
+              class="plant-detail__clipart"
             />
+            <div v-else class="plant-detail__clipart-empty">🌿</div>
+          </div>
+
+          <div class="plant-detail__info">
+            <h1 class="plant-detail__name">{{ plant.attributes?.title }}</h1>
+            <p class="plant-detail__latin">{{ plant.attributes?.latin }}</p>
+
+            <div class="plant-detail__badges">
+              <span
+                v-if="plant.attributes?.type"
+                class="plant-detail__badge"
+                :class="getTypeColor(plant.attributes.type)"
+              >
+                {{ plant.attributes.type }}
+              </span>
+              <span v-if="hasClip" class="plant-detail__badge plant-detail__badge--clipart">🖌️ Clipart</span>
+            </div>
+
+            <div class="plant-detail__meta">
+              <div v-if="plant.attributes?.sun_detail" class="plant-detail__meta-item">
+                <span class="plant-detail__meta-label">☀️ Sun</span>
+                <p class="plant-detail__meta-text">{{ plant.attributes.sun_detail }}</p>
+              </div>
+              <div v-if="plant.attributes?.water_detail" class="plant-detail__meta-item">
+                <span class="plant-detail__meta-label">💧 Water</span>
+                <p class="plant-detail__meta-text">{{ plant.attributes.water_detail }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Description / text content ── -->
+        <div class="plant-detail__body">
+          <div v-if="plant.attributes?.magic" class="plant-detail__section">
+            <h2 class="plant-detail__section-title">Magic</h2>
+            <div class="plant-detail__text plant-detail__text--magic">{{ plant.attributes.magic }}</div>
+          </div>
+
+          <div v-if="plant.attributes?.description" class="plant-detail__section">
+            <h2 class="plant-detail__section-title">Description</h2>
+            <div class="plant-detail__text">{{ plant.attributes.description }}</div>
+          </div>
+
+          <div v-if="plant.attributes?.Benefits?.length" class="plant-detail__section">
+            <h2 class="plant-detail__section-title">Benefits</h2>
+            <div class="plant-detail__benefits">
+              <span v-for="b in plant.attributes.Benefits" :key="b.id" class="plant-detail__benefit-tag">
+                {{ b.title }}
+              </span>
+            </div>
+          </div>
+
+          <div v-if="getImages().length > 0" class="plant-detail__section">
+            <h2 class="plant-detail__section-title">Photos</h2>
+            <div class="plant-detail__gallery">
+              <img
+                v-for="img in getImages()"
+                :key="img.id"
+                :src="img.attributes?.formats?.medium?.url || img.attributes?.url"
+                :alt="img.attributes?.alternativeText || plant.attributes?.title"
+                class="plant-detail__gallery-img"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -173,43 +153,57 @@ const getTypeColor = (type) => {
 </template>
 
 <style scoped>
+/* ── Outer shell ── */
 .plant-detail {
-  max-width: 960px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 /* ── Back link ── */
 .plant-detail__back {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
 }
 
-.dash-link {
-  color: #4a5a45;
+.plant-detail__back-link {
+  color: #6b7280;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   text-decoration: none;
   transition: color 0.15s;
 }
 
-.dash-link:hover {
+.plant-detail__back-link:hover {
   color: #2f5233;
   text-decoration: underline;
 }
 
-html.dark .dash-link {
+html.dark .plant-detail__back-link {
   color: #c2cbbb;
 }
 
-html.dark .dash-link:hover {
+html.dark .plant-detail__back-link:hover {
   color: #e6f0db;
+}
+
+/* ── Inner card ── */
+.plant-detail__card {
+  background: #f7f1e3;
+  border-radius: 1.25rem;
+  padding: 2rem 2rem 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+html.dark .plant-detail__card {
+  background: #2a3928;
+  box-shadow: none;
 }
 
 /* ── Hero: two-column ── */
 .plant-detail__hero {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 2rem;
-  margin-bottom: 2.5rem;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 1.75rem;
+  margin-bottom: 2rem;
 }
 
 @media (max-width: 768px) {
@@ -224,7 +218,7 @@ html.dark .dash-link:hover {
   border-radius: 1rem;
   overflow: hidden;
   background: #f0efe8;
-  border: 1px solid #e2dccb;
+  border: 1px solid #ddd6c4;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
@@ -248,18 +242,18 @@ html.dark .plant-detail__clipart-wrap {
   font-size: 5rem;
 }
 
-/* ── Info ── */
+/* ── Info sidebar ── */
 .plant-detail__info {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .plant-detail__name {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-size: clamp(1.6rem, 3.5vw, 2.5rem);
   font-weight: 800;
-  color: #376451;
+  color: #2d4a2e;
   margin: 0;
   line-height: 1.1;
 }
@@ -269,7 +263,7 @@ html.dark .plant-detail__name {
 }
 
 .plant-detail__latin {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-style: italic;
   color: #6b7280;
   margin: 0;
@@ -282,40 +276,39 @@ html.dark .plant-detail__latin {
 .plant-detail__badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.3rem;
+  gap: 0.45rem;
+  margin-top: 0.15rem;
 }
 
 .plant-detail__badge {
-  padding: 0.2rem 0.65rem;
+  padding: 0.18rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
 }
 
 .plant-detail__badge--clipart {
-  background: rgba(138, 163, 124, 0.15);
-  color: #4a5a45;
-  font-size: 0.8rem;
+  background: rgba(138, 163, 124, 0.18);
+  color: #3d5a3e;
 }
 
 html.dark .plant-detail__badge--clipart {
   color: #c2cbbb;
 }
 
-/* ── Meta blocks (sun, water) ── */
+/* ── Meta blocks ── */
 .plant-detail__meta {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
+  gap: 0.65rem;
+  margin-top: 0.4rem;
 }
 
 .plant-detail__meta-item {
-  padding: 0.65rem 0.85rem;
-  background: rgba(138, 163, 124, 0.08);
+  padding: 0.6rem 0.85rem;
+  background: rgba(138, 163, 124, 0.1);
   border-radius: 0.75rem;
-  border: 1px solid #e2dccb;
+  border: 1px solid #ddd6c4;
 }
 
 html.dark .plant-detail__meta-item {
@@ -324,11 +317,11 @@ html.dark .plant-detail__meta-item {
 }
 
 .plant-detail__meta-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #4a5a45;
+  color: #3d5a3e;
   display: block;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.15rem;
 }
 
 html.dark .plant-detail__meta-label {
@@ -336,7 +329,7 @@ html.dark .plant-detail__meta-label {
 }
 
 .plant-detail__meta-text {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: #4b5563;
   margin: 0;
   line-height: 1.5;
@@ -350,12 +343,12 @@ html.dark .plant-detail__meta-text {
 .plant-detail__body {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding-bottom: 3rem;
+  gap: 1.75rem;
+  padding-bottom: 1rem;
 }
 
 .plant-detail__section {
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
 }
 
 .plant-detail__section:last-child {
@@ -364,12 +357,12 @@ html.dark .plant-detail__meta-text {
 
 .plant-detail__section-title {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: #376451;
-  margin: 0 0 0.75rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 2px solid #e2dccb;
+  color: #2d4a2e;
+  margin: 0 0 0.65rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid #ddd6c4;
 }
 
 html.dark .plant-detail__section-title {
@@ -379,10 +372,10 @@ html.dark .plant-detail__section-title {
 
 .plant-detail__text {
   font-size: 0.95rem;
-  line-height: 1.7;
+  line-height: 1.75;
   color: #374151;
   white-space: pre-line;
-  padding: 0 0.25rem;
+  padding: 0 0.5rem;
 }
 
 html.dark .plant-detail__text {
@@ -393,16 +386,16 @@ html.dark .plant-detail__text {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.05rem;
   line-height: 1.8;
-  color: #4a5a45;
+  color: #3d5a3e;
   padding: 1rem 1.25rem;
-  background: rgba(138, 163, 124, 0.08);
+  background: rgba(138, 163, 124, 0.1);
   border-radius: 0.75rem;
   border-left: 4px solid #8aa37c;
 }
 
 html.dark .plant-detail__text--magic {
   color: #e6f0db;
-  background: rgba(138, 163, 124, 0.06);
+  background: rgba(138, 163, 124, 0.08);
   border-left-color: #6a8360;
 }
 
@@ -410,7 +403,7 @@ html.dark .plant-detail__text--magic {
 .plant-detail__benefits {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .plant-detail__benefit-tag {
@@ -430,8 +423,8 @@ html.dark .plant-detail__benefit-tag {
 /* ── Gallery ── */
 .plant-detail__gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.65rem;
 }
 
 .plant-detail__gallery-img {
@@ -439,7 +432,7 @@ html.dark .plant-detail__benefit-tag {
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 0.6rem;
-  border: 1px solid #e2dccb;
+  border: 1px solid #ddd6c4;
 }
 
 html.dark .plant-detail__gallery-img {
@@ -464,11 +457,7 @@ html.dark .plant-detail__error {
 
 .plant-detail__not-found-text {
   font-size: 1.1rem;
-  color: #6b7280;
-  margin: 0 0 0.75rem;
-}
-
-html.dark .plant-detail__not-found-text {
   color: #a0a8a0;
+  margin: 0 0 0.75rem;
 }
 </style>
