@@ -351,10 +351,15 @@ html.dark .plant-detail__meta-text {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  padding-bottom: 3rem;
 }
 
 .plant-detail__section {
-  /* default spacing */
+  padding-bottom: 0.5rem;
+}
+
+.plant-detail__section:last-child {
+  padding-bottom: 0;
 }
 
 .plant-detail__section-title {
@@ -377,6 +382,7 @@ html.dark .plant-detail__section-title {
   line-height: 1.7;
   color: #374151;
   white-space: pre-line;
+  padding: 0 0.25rem;
 }
 
 html.dark .plant-detail__text {
