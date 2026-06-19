@@ -44,6 +44,7 @@ const navIconPaths = {
 const navItems = computed(() => [
   { label: 'Dashboard', icon: 'grid', href: '/manage', active: route.path === '/manage' },
   { label: 'Projects', icon: 'project', href: '/manage/projects', active: route.path.startsWith('/manage/project') },
+  { label: 'Plants', icon: 'leaf', href: '/manage/plants', active: route.path.startsWith('/manage/plants') },
   { label: 'Gardens', icon: 'leaf', href: '/gardens', active: route.path.startsWith('/gardens') || route.path.startsWith('/manage/gardens'), desktopOnly: true },
   { label: 'Tasks', icon: 'tasks', active: false, desktopOnly: true },
   { label: 'Events', icon: 'calendar', active: false, desktopOnly: true }
