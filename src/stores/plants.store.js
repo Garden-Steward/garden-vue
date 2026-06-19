@@ -9,6 +9,8 @@ export const usePlantsStore = defineStore({
     state: () => ({
         /** Flat array of plant objects, accumulated page by page. */
         plants: [],
+        /** Single plant loaded via slug lookup. */
+        plant: null,
         /** Pagination metadata from the API. */
         pagination: { page: 1, pageSize: 25, total: 0, pageCount: 0 },
         /** Current search query (mirrors the UI input). */
@@ -19,7 +21,11 @@ export const usePlantsStore = defineStore({
         /** True while a fetch is in flight. */
         loading: false,
         /** Error object or null. */
-        error: null
+        error: null,
+        /** True while a single-plant fetch is in flight. */
+        plantLoading: false,
+        /** Single plant fetch error. */
+        plantError: null
     }),
     getters: {
         /** Total plant count (for the sidebar badge). */
@@ -110,6 +116,31 @@ export const usePlantsStore = defineStore({
         async loadNextPage() {
             if (this.allLoaded || this.loading) return;
             await this.fetchPage(this.pagination.page + 1);
+        },
+
+        /**
+         * Load a single plant by slug, with full details.
+         */
+        async fetchBySlug(slug) {
+            this.plant = null;
+            this.plantLoading = true;
+            this.plantError = null;
+
+            const params = new URLSearchParams();
+            params.set('filters[slug][$eq]', slug);
+            params.set('populate', 'clipart,images');
+            params.set('populate[0]', 'Benefits');
+
+            fetchWrapper.get(`${baseUrl}?${params.toString()}`)
+                .then(res => {
+                    const found = Array.isArray(res.data) && res.data.length > 0 ? res.data[0] : null;
+                    this.plant = found;
+                    this.plantLoading = false;
+                })
+                .catch(error => {
+                    this.plantError = error;
+                    this.plantLoading = false;
+                });
         },
 
         /**

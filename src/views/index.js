@@ -26,3 +26,4 @@ export { default as TaskDetailPublic } from './TaskDetailPublic.vue';
 export { default as ManifestoView } from './ManifestoView.vue';
 export { default as VerifyEmail } from './VerifyEmail.vue';
 export { default as PlantsDirectory } from './PlantsDirectory.vue';
+export { default as PlantsDetail } from './PlantsDetail.vue';
