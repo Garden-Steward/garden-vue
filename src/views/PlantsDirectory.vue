@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { usePlantsStore } from '@/stores';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
@@ -35,34 +35,14 @@ const sortChevron = (field) => {
   return plantsStore.sortOrder === 'asc' ? ' ↑' : ' ↓';
 };
 
-// ── Infinite scroll (IntersectionObserver) ──
-const sentinelRef = ref(null);
-let observer = null;
-
+// ── Load more button ──
 onMounted(() => {
-  // Load initial page if empty
   plantsStore.ensureLoaded();
-
-  // Set up IntersectionObserver for infinite scroll
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0].isIntersecting && !allLoaded.value && !loading.value) {
-        plantsStore.loadNextPage();
-      }
-    },
-    { rootMargin: '200px' }
-  );
-
-  if (sentinelRef.value) {
-    observer.observe(sentinelRef.value);
-  }
 });
 
-onUnmounted(() => {
-  if (observer) {
-    observer.disconnect();
-  }
-});
+const loadMore = () => {
+  plantsStore.loadNextPage();
+};
 
 // ── Image helper ──
 const getThumbnailUrl = (plant) => {
@@ -211,10 +191,18 @@ const getTypeColor = (type) => {
         </div>
       </router-link>
 
-      <!-- Inline load-more sentinel (hidden but observed) -->
-      <div ref="sentinelRef" class="plants-sentinel">
-        <LoadingSpinner v-if="loading" :centered="true" size="sm" />
-        <p v-else-if="allLoaded && plants.length" class="plants-end-note">
+      <!-- Load more button -->
+      <div class="plants-load-more">
+        <button
+          v-if="!allLoaded"
+          class="plants-load-more__btn"
+          :disabled="loading"
+          @click="loadMore"
+        >
+          <LoadingSpinner v-if="loading" :centered="true" size="sm" />
+          <span v-else>Load More Plants</span>
+        </button>
+        <p v-else class="plants-load-more__done">
           All {{ pagination.total }} plants loaded ✓
         </p>
       </div>
@@ -506,20 +494,59 @@ html.dark .plant-card__latin {
   text-transform: capitalize;
 }
 
-/* ── Sentinel / Load more ── */
-.plants-sentinel {
+/* ── Load more ── */
+.plants-load-more {
   grid-column: 1 / -1;
   padding: 1.5rem 0;
   text-align: center;
 }
 
-.plants-end-note {
-  font-size: 0.85rem;
+.plants-load-more__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 2rem;
+  border: 2px solid #8aa37c;
+  border-radius: 999px;
+  background: #fff;
+  color: #2f5233;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 180px;
+  min-height: 44px;
+}
+
+.plants-load-more__btn:hover:not(:disabled) {
+  background: #d7e8c8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(138, 163, 124, 0.3);
+}
+
+.plants-load-more__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+html.dark .plants-load-more__btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: #8aa37c;
+  color: #e6f0db;
+}
+
+html.dark .plants-load-more__btn:hover:not(:disabled) {
+  background: rgba(138, 163, 124, 0.2);
+}
+
+.plants-load-more__done {
+  font-size: 0.9rem;
   color: #6b7280;
   margin: 0;
 }
 
-html.dark .plants-end-note {
+html.dark .plants-load-more__done {
   color: #a0a8a0;
 }
 
