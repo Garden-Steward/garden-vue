@@ -6,38 +6,14 @@ import { useAlertStore } from '@/stores';
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks`;
 const recurringUrl = `${import.meta.env.VITE_API_URL}/api/recurring-tasks`;
 
-/** Normalize recurring-task entity from API (flatten media; keep relations as returned). */
-function normalizeRecurringTaskEntity(entity) {
-    if (!entity?.attributes) return entity;
-    const attrs = { ...entity.attributes };
-    if (attrs.primary_image?.data) {
-        const imageData = attrs.primary_image.data;
-        attrs.primary_image = {
-            ...(imageData.attributes || imageData),
-            id: imageData.id
-        };
-    }
-    return { id: entity.id, attributes: attrs };
-}
-
-/** Normalize a single Strapi garden-task entity (same rules as getGardenTasks / update). */
-function normalizeGardenTaskEntity(task) {
-    if (!task?.attributes) return task;
-    const t = { id: task.id, attributes: { ...task.attributes } };
-    const vol = t.attributes.volunteers;
-    if (vol?.data) {
-        t.attributes.volunteers = vol.data;
-    } else if (!vol) {
-        t.attributes.volunteers = [];
-    }
-    if (t.attributes.primary_image?.data) {
-        const imageData = t.attributes.primary_image.data;
-        t.attributes.primary_image = {
-            ...(imageData.attributes || imageData),
-            id: imageData.id
-        };
-    }
-    return t;
+/**
+ * Strapi v5 returns flat entries with relations/media already de-nested.
+ * Guarantee the volunteers relation is always an array so consumers can iterate.
+ */
+function normalizeGardenTask(task) {
+    if (!task) return task;
+    if (!Array.isArray(task.volunteers)) task.volunteers = [];
+    return task;
 }
 
 export const useGardenTaskStore = defineStore({
@@ -58,12 +34,7 @@ export const useGardenTaskStore = defineStore({
             this.gardenTask = { loading: true };
             return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=volunteers&populate[1]=primary_image&populate[2]=instruction&populate[3]=garden`)
                 .then(response => {
-                    const task = response.data;
-                    if (task?.attributes?.volunteers?.data) {
-                        task.attributes.volunteers = task.attributes.volunteers.data;
-                    } else if (!task?.attributes?.volunteers) {
-                        task.attributes.volunteers = [];
-                    }
+                    const task = normalizeGardenTask(response.data);
                     this.gardenTask = task;
                     return task;
                 })
@@ -77,7 +48,7 @@ export const useGardenTaskStore = defineStore({
             return fetchWrapper.get(`${baseUrl}/user?populate[0]=garden&populate[1]=primary_image`)
                 .then(response => {
                     const raw = Array.isArray(response) ? response : (response?.data ?? []);
-                    const tasks = (Array.isArray(raw) ? raw : [raw]).map(normalizeGardenTaskEntity);
+                    const tasks = (Array.isArray(raw) ? raw : [raw]).map(normalizeGardenTask);
                     this.userTasks = tasks;
                     return tasks;
                 })
@@ -89,14 +60,7 @@ export const useGardenTaskStore = defineStore({
         async getGardenTasks(gardenId) {
             return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=instruction&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished`)
                 .then(response => {
-                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(task => {
-                        if (task.attributes?.volunteers?.data) {
-                            task.attributes.volunteers = task.attributes.volunteers.data;
-                        } else if (!task.attributes?.volunteers) {
-                            task.attributes.volunteers = [];
-                        }
-                        return task;
-                    });
+                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeGardenTask);
                     this.gardenTasks = tasks;
                     return tasks;
                 })
@@ -113,33 +77,20 @@ export const useGardenTaskStore = defineStore({
                 .then(response => {
                     if (!response?.data) return response;
 
-                    const resData = response.data;
-                    const attrs = { ...resData.attributes };
-
-                    // Normalize primary_image from Strapi { data: { id, attributes } } to flat { id, url, formats, ... }
-                    if (attrs.primary_image?.data) {
-                        const imageData = attrs.primary_image.data;
-                        attrs.primary_image = {
-                            ...(imageData.attributes || imageData),
-                            id: imageData.id
-                        };
-                    }
+                    // v5 returns a flat entry.
+                    const updated = normalizeGardenTask(response.data);
 
                     // Update the single task in gardenTasks so UI (e.g. task cards) reflects the change
                     const tasks = Array.isArray(this.gardenTasks) ? this.gardenTasks : [];
-                    const index = tasks.findIndex(t => t.id === resData.id || t.id === id);
+                    const index = tasks.findIndex(t => t.id === updated.id || t.id === id);
                     if (index !== -1) {
-                        const existing = tasks[index];
-                        const mergedAttrs = { ...existing.attributes, ...attrs };
-                        this.gardenTasks = tasks.map((t, i) =>
-                            i === index ? { id: resData.id, attributes: mergedAttrs } : t
-                        );
+                        this.gardenTasks = tasks.map((t, i) => i === index ? { ...t, ...updated } : t);
                     } else {
                         // Task not in list (e.g. different garden); still push so refs stay in sync
-                        this.gardenTasks = [...tasks, { id: resData.id, attributes: attrs }];
+                        this.gardenTasks = [...tasks, updated];
                     }
 
-                    return attrs;
+                    return updated;
                 })
                 .catch(this.handleError);
         },
@@ -152,12 +103,12 @@ export const useGardenTaskStore = defineStore({
 
             return fetchWrapper.post(`${baseUrl}?populate=primary_image`, { data: data })
                 .then(response => {
-                    if (response?.data?.attributes) {
-                        const normalized = normalizeGardenTaskEntity(response.data);
+                    if (response?.data?.id) {
+                        const normalized = normalizeGardenTask(response.data);
                         const tasks = Array.isArray(this.gardenTasks) ? [...this.gardenTasks] : [];
                         const withoutDup = tasks.filter((t) => t.id !== normalized.id);
                         this.gardenTasks = [normalized, ...withoutDup];
-                        return normalized.attributes;
+                        return normalized;
                     }
                     return response;
                 })
@@ -217,7 +168,8 @@ export const useGardenTaskStore = defineStore({
                 .then(response => {
                     if (!response?.data) return response;
 
-                    const normalized = normalizeRecurringTaskEntity(response.data);
+                    // v5 returns a flat entry.
+                    const normalized = response.data;
                     const list = Array.isArray(this.recurringTasks) ? [...this.recurringTasks] : [];
                     const idx = list.findIndex((t) => t.id === normalized.id);
                     if (idx !== -1) {
@@ -227,7 +179,7 @@ export const useGardenTaskStore = defineStore({
                     }
                     this.recurringTasks = list;
 
-                    return normalized.attributes;
+                    return normalized;
                 })
                 .catch(this.handleError);
         },
@@ -239,7 +191,7 @@ export const useGardenTaskStore = defineStore({
             }
 
             // Only allow deletion if status is INITIALIZED
-            if (task.attributes.status !== 'INITIALIZED') {
+            if (task.status !== 'INITIALIZED') {
                 throw new Error('Cannot delete task: Only tasks with INITIALIZED status can be deleted');
             }
 
@@ -254,14 +206,7 @@ export const useGardenTaskStore = defineStore({
         async getTasksByGardenSlug(slug) {
             return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=garden&populate[4]=instruction&filters[garden][slug][$eq]=${slug}&filters[status][$nei]=finished`)
                 .then(response => {
-                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(task => {
-                        if (task.attributes?.volunteers?.data) {
-                            task.attributes.volunteers = task.attributes.volunteers.data;
-                        } else if (!task.attributes?.volunteers) {
-                            task.attributes.volunteers = [];
-                        }
-                        return task;
-                    });
+                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeGardenTask);
                     this.gardenTasks = tasks;
                     return tasks;
                 })

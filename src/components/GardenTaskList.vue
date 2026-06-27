@@ -46,37 +46,19 @@ watch(() => props.garden?.id, (newId) => {
 // Normalize the structure to handle both Strapi formats
 const recurringTasks = computed(() => {
   if (!storeRecurringTasks.value) return [];
-  try {
-    const tasks = Array.isArray(storeRecurringTasks.value) ? storeRecurringTasks.value : [storeRecurringTasks.value];
-    // Normalize to ensure consistent structure
-    return tasks.map(task => {
-      // If it's already in {id, attributes} format, return as is
-      if (task && task.id && task.attributes) return task;
-      // If it's in {data: {id, attributes}} format, extract it
-      if (task && task.data) return task.data;
-      // Otherwise return as is
-      return task;
-    }).filter(Boolean);
-  } catch (error) {
-    console.error('Error processing recurring tasks:', error);
-    return [];
-  }
+  // v5 entries are flat already.
+  const tasks = Array.isArray(storeRecurringTasks.value) ? storeRecurringTasks.value : [storeRecurringTasks.value];
+  return tasks.filter(Boolean);
 });
 
 // Regular garden tasks (filtered)
 const regularTasks = computed(() => {
-  if (!gardenTasks.value) return [];
-  try {
-    const allTasks = Array.isArray(gardenTasks.value) ? gardenTasks.value : [];
-    return allTasks.filter(task => {
-      if (!task || !task.attributes) return false;
-      const status = task.attributes?.status;
-      return status !== 'ABANDONED' && status !== 'SKIPPED';
-    });
-  } catch (error) {
-    console.error('Error processing regular tasks:', error);
-    return [];
-  }
+  if (!Array.isArray(gardenTasks.value)) return [];
+  return gardenTasks.value.filter(task => {
+    if (!task || !task.id) return false;
+    const status = task.status;
+    return status !== 'ABANDONED' && status !== 'SKIPPED';
+  });
 });
 
 const taskTypeFilter = ref('');
@@ -85,7 +67,7 @@ const taskTypeFilter = ref('');
 const taskTypesForFilter = computed(() => {
   const types = new Set();
   for (const task of regularTasks.value) {
-    const t = task.attributes?.type;
+    const t = task.type;
     if (t && typeof t === 'string' && t.trim()) types.add(t.trim());
   }
   return [...types].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
@@ -94,7 +76,7 @@ const taskTypesForFilter = computed(() => {
 const displayedRegularTasks = computed(() => {
   if (!taskTypeFilter.value) return regularTasks.value;
   return regularTasks.value.filter(
-    (task) => (task.attributes?.type || '').trim() === taskTypeFilter.value
+    (task) => (task.type || '').trim() === taskTypeFilter.value
   );
 });
 
@@ -110,23 +92,18 @@ const getRecurringTaskId = (recurringTask) => {
   return recurringTask?.id;
 };
 
-// Get instruction for a recurring task (Strapi: instruction.data or instruction with attributes)
+// Get instruction for a recurring task (v5: flat relation)
 const getRecurringTaskInstruction = (recurringTask) => {
-  const instr = recurringTask?.attributes?.instruction;
+  const instr = recurringTask?.instruction;
   if (!instr) return null;
-  const data = instr?.data ?? instr;
-  const attrs = data?.attributes ?? data;
-  const slug = attrs?.slug;
-  const title = attrs?.title;
-  return slug && title ? { title, slug } : null;
+  return (instr.slug && instr.title) ? { title: instr.title, slug: instr.slug } : null;
 };
 
-// Get instruction for a regular garden task
+// Get instruction for a regular garden task (v5: flat relation)
 const getTaskInstruction = (task) => {
-  const instr = task?.attributes?.instruction?.data;
+  const instr = task?.instruction;
   if (!instr) return null;
-  const attrs = instr.attributes || instr;
-  return (attrs?.slug && attrs?.title) ? { title: attrs.title, slug: attrs.slug } : null;
+  return (instr.slug && instr.title) ? { title: instr.title, slug: instr.slug } : null;
 };
 
 // Get scheduler entries for a specific recurring task
@@ -205,16 +182,13 @@ const selectedVolunteers = computed(() => {
 
 // Filter volunteers for add dropdown
 const filteredVolunteers = computed(() => {
-  if (!props.garden?.attributes?.volunteers?.data) return [];
-  const volunteers = Array.isArray(props.garden.attributes.volunteers.data) 
-    ? props.garden.attributes.volunteers.data 
-    : [];
-  
+  const volunteers = Array.isArray(props.garden?.volunteers) ? props.garden.volunteers : [];
+
   if (!searchQuery.value) return volunteers;
-  
+
   return volunteers.filter(volunteer =>
-    volunteer?.attributes?.firstName?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    volunteer?.attributes?.lastName?.toLowerCase().includes(searchQuery.value.toLowerCase())
+    volunteer?.firstName?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    volunteer?.lastName?.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 });
 
@@ -393,21 +367,16 @@ const cancelRemoveDay = () => {
 
 // Regular task card helpers (same style as public tasks page)
 const getTaskImage = (task) => {
-  const primaryImage = task?.attributes?.primary_image;
+  const primaryImage = task?.primary_image;
   if (!primaryImage) return null;
-  const url = primaryImage.url
-    || primaryImage.formats?.medium?.url
-    || primaryImage.data?.attributes?.url
-    || primaryImage.data?.attributes?.formats?.medium?.url;
+  const url = primaryImage.url || primaryImage.formats?.medium?.url;
   if (!url) return null;
   return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || ''}${url}`;
 };
 
 const getVolunteerCount = (task) => {
-  const volunteers = task?.attributes?.volunteers;
-  if (Array.isArray(volunteers)) return volunteers.length;
-  if (volunteers?.data && Array.isArray(volunteers.data)) return volunteers.data.length;
-  return 0;
+  const volunteers = task?.volunteers;
+  return Array.isArray(volunteers) ? volunteers.length : 0;
 };
 
 const formatTaskStatus = (status) => {
@@ -531,7 +500,7 @@ const openRecurringEditModal = (taskId) => {
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0 flex-1 pr-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                   <span class="text-lg font-medium text-[#f5f5f5]">
-                    {{ recurringTask.attributes?.title }}
+                    {{ recurringTask.title }}
                   </span>
                   <button
                     v-if="editor"
@@ -543,8 +512,8 @@ const openRecurringEditModal = (taskId) => {
                   </button>
                 </div>
                 <div class="flex shrink-0 items-center gap-2">
-                  <span :class="getRecurringTaskTypeBadgeClasses(recurringTask.attributes?.type)">
-                    {{ getRecurringTaskTypeDisplayLabel(recurringTask.attributes?.type) }}
+                  <span :class="getRecurringTaskTypeBadgeClasses(recurringTask.type)">
+                    {{ getRecurringTaskTypeDisplayLabel(recurringTask.type) }}
                   </span>
                   <svg 
                     class="w-5 h-5 shrink-0 text-[#d0d0d0] transition-transform"
@@ -601,8 +570,8 @@ const openRecurringEditModal = (taskId) => {
               v-if="openDrawers[recurringTask.id]"
               class="px-4 pb-4 border-t border-[#3d4d36]/50 pt-4 space-y-3"
             >
-              <div v-if="recurringTask.attributes?.overview" class="text-sm text-[#d0d0d0]">
-                {{ recurringTask.attributes.overview }}
+              <div v-if="recurringTask.overview" class="text-sm text-[#d0d0d0]">
+                {{ recurringTask.overview }}
               </div>
               <div v-if="getRecurringTaskInstruction(recurringTask)" class="text-sm">
                 <span class="text-[#d0d0d0]">Instructions: </span>
@@ -615,8 +584,8 @@ const openRecurringEditModal = (taskId) => {
                   {{ getRecurringTaskInstruction(recurringTask).title }}
                 </a>
               </div>
-              <div v-if="recurringTask.attributes?.updatedAt" class="text-xs text-[#999]">
-                Last updated: {{ formatDate(recurringTask.attributes.updatedAt) }}
+              <div v-if="recurringTask.updatedAt" class="text-xs text-[#999]">
+                Last updated: {{ formatDate(recurringTask.updatedAt) }}
               </div>
               
               <div v-if="editor" class="pt-2">
@@ -633,7 +602,7 @@ const openRecurringEditModal = (taskId) => {
           <!-- Edit modal for recurring task - always render but hide the card -->
           <div :data-recurring-task-id="recurringTask.id" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;">
             <GardenTask
-              v-bind="recurringTask.attributes"
+              v-bind="recurringTask"
               :id="recurringTask.id"
               :garden="garden.id"
               :editor="editor"
@@ -732,7 +701,7 @@ const openRecurringEditModal = (taskId) => {
                       @click="addUserToSchedule(volunteer)"
                       class="px-3 py-2 cursor-pointer hover:bg-[rgba(26,26,26,0.8)] rounded-md text-[#f5f5f5]"
                     >
-                      {{ volunteer.attributes.firstName }} {{ volunteer.attributes.lastName }}
+                      {{ volunteer.firstName }} {{ volunteer.lastName }}
                     </li>
                   </ul>
                   <p v-else class="px-3 py-2 text-[#d0d0d0] text-sm">No matching volunteers</p>
@@ -796,7 +765,7 @@ const openRecurringEditModal = (taskId) => {
               <img
                 v-if="getTaskImage(task)"
                 :src="getTaskImage(task)"
-                :alt="task.attributes?.title || 'Task'"
+                :alt="task.title || 'Task'"
                 class="w-full h-full object-cover"
               />
               <div v-else class="w-full h-full flex items-center justify-center">
@@ -807,14 +776,14 @@ const openRecurringEditModal = (taskId) => {
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="text-base font-semibold text-[#f5f5f5] leading-tight line-clamp-2">
-                {{ task.attributes?.title }}
+                {{ task.title }}
               </h3>
               <span
-                v-if="task.attributes?.type"
-                :class="getTypeBadgeClasses(task.attributes?.type)"
+                v-if="task.type"
+                :class="getTypeBadgeClasses(task.type)"
                 class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold"
               >
-                {{ task.attributes?.type }}
+                {{ task.type }}
               </span>
             </div>
             <svg
@@ -835,7 +804,7 @@ const openRecurringEditModal = (taskId) => {
               <img
                 v-if="getTaskImage(task)"
                 :src="getTaskImage(task)"
-                :alt="task.attributes?.title || 'Task'"
+                :alt="task.title || 'Task'"
                 class="w-full h-full object-cover"
               />
               <div v-else class="w-full h-full flex items-center justify-center">
@@ -849,22 +818,22 @@ const openRecurringEditModal = (taskId) => {
             <div class="p-4 space-y-3">
             <!-- Badges -->
             <div class="flex flex-wrap gap-2">
-              <span :class="getStatusBadgeClasses(task.attributes?.status)" class="px-3 py-1 rounded-full text-xs font-semibold">
-                {{ formatTaskStatus(task.attributes?.status) }}
+              <span :class="getStatusBadgeClasses(task.status)" class="px-3 py-1 rounded-full text-xs font-semibold">
+                {{ formatTaskStatus(task.status) }}
               </span>
-              <span v-if="task.attributes?.type" :class="getTypeBadgeClasses(task.attributes?.type)" class="px-3 py-1 rounded-full text-xs font-semibold">
-                {{ task.attributes?.type }}
+              <span v-if="task.type" :class="getTypeBadgeClasses(task.type)" class="px-3 py-1 rounded-full text-xs font-semibold">
+                {{ task.type }}
               </span>
             </div>
 
             <!-- Title -->
             <h3 class="text-lg font-semibold text-[#f5f5f5] leading-tight">
-              {{ task.attributes?.title }}
+              {{ task.title }}
             </h3>
 
             <!-- Overview -->
-            <p v-if="task.attributes?.overview" class="text-sm text-[#d0d0d0] line-clamp-3">
-              {{ task.attributes.overview.length > 120 ? task.attributes.overview.substring(0, 120) + '...' : task.attributes.overview }}
+            <p v-if="task.overview" class="text-sm text-[#d0d0d0] line-clamp-3">
+              {{ task.overview.length > 120 ? task.overview.substring(0, 120) + '...' : task.overview }}
             </p>
 
             <!-- Instruction link -->
@@ -885,7 +854,7 @@ const openRecurringEditModal = (taskId) => {
                 <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
               </svg>
               <span class="text-sm font-medium text-[#d0d0d0]">
-                {{ getVolunteerCount(task) }} / {{ task.attributes?.max_volunteers ?? 1 }} volunteers
+                {{ getVolunteerCount(task) }} / {{ task.max_volunteers ?? 1 }} volunteers
               </span>
             </div>
 
@@ -917,7 +886,7 @@ const openRecurringEditModal = (taskId) => {
       >
         <GardenTask
           :ref="(el) => { if (el) regularTaskModalRefs[task.id] = el }"
-          v-bind="task.attributes"
+          v-bind="task"
           :id="task.id"
           :garden="garden.id"
           :editor="editor"

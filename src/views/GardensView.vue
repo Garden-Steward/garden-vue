@@ -120,11 +120,11 @@ const userActiveTasks = computed(() =>
 );
 
 const taskGarden = (task) => {
-    const g = task.attributes?.garden?.data || task.attributes?.garden;
+    const g = task.garden;
     if (!g) return { title: '', slug: '' };
     return {
-        title: g.attributes?.title || g.title || '',
-        slug: g.attributes?.slug || g.slug || ''
+        title: g.title || '',
+        slug: g.slug || ''
     };
 };
 
@@ -287,12 +287,12 @@ const rsvp = async (event) => {
                     :href="taskGarden(task).slug ? `/manage/gardens/${taskGarden(task).slug}#tasks` : undefined"
                 >
                     <div class="task-card__head">
-                        <span class="task-card__title">{{ task.attributes?.title }}</span>
-                        <span v-if="task.attributes?.type" :class="getRecurringTaskTypeBadgeClasses(task.attributes.type)">
-                            {{ getRecurringTaskTypeDisplayLabel(task.attributes.type) }}
+                        <span class="task-card__title">{{ task.title }}</span>
+                        <span v-if="task.type" :class="getRecurringTaskTypeBadgeClasses(task.type)">
+                            {{ getRecurringTaskTypeDisplayLabel(task.type) }}
                         </span>
                     </div>
-                    <span class="task-card__status">{{ getTaskStatusOption(task.attributes?.status).label }}</span>
+                    <span class="task-card__status">{{ getTaskStatusOption(task.status).label }}</span>
                     <span v-if="taskGarden(task).title" class="task-card__garden">{{ taskGarden(task).title }}</span>
                 </a>
             </div>

@@ -206,12 +206,8 @@ function instructionRelationToForm(rel) {
 }
 
 function normalizeMediaFromProps(media) {
-  if (!media) return null;
-  if (media.data) {
-    const d = media.data;
-    return { ...(d.attributes || d), id: d.id };
-  }
-  return media;
+  // v5 media is already a flat object.
+  return media || null;
 }
 
 async function loadInstructionOptions() {
@@ -302,15 +298,8 @@ watch(() => props.task, (newVal) => {
 
 // Add computed property for filtered volunteers
 const filteredVolunteers = computed(() => {
-  // If volunteers is an array, return it as-is (legacy support)
-  if (Array.isArray(props.volunteers)) {
-    return props.volunteers.filter(volunteer => volunteer?.attributes);
-  }
-  // If volunteers is an object with a data array, return that
-  if (props.volunteers?.data && Array.isArray(props.volunteers.data)) {
-    return props.volunteers.data.filter(volunteer => volunteer?.attributes);
-  }
-  return [];
+  // v5: volunteers is a flat array of user objects.
+  return Array.isArray(props.volunteers) ? props.volunteers.filter(v => v?.id) : [];
 });
 
 // Computed property to check if the form is dirty
@@ -326,17 +315,16 @@ const isDirty = computed(() => {
 // Computed property for recurring task titles
 const recurringTaskTitles = computed(() => {
   return (gardenTaskStore.recurringTasks || [])
-    .map(task => task?.attributes?.title)
+    .map(task => task?.title)
     .filter(Boolean);
 });
 
 // Track the selected recurring task for instruction display
 const selectedRecurringTask = ref(null);
 
-// Add this computed property
+// v5: instruction is a flat relation object on the recurring task.
 const taskInstruction = computed(() => {
-    return selectedRecurringTask.value?.attributes?.instruction?.data || 
-           form.value.recurring_task?.data?.attributes?.instruction?.data;
+    return selectedRecurringTask.value?.instruction || null;
 });
 
 // Add this computed property
@@ -365,8 +353,8 @@ const statusPillClass = computed(
 // Methods
 // Prepopulate form with recurring task data
 function prepopulateFromRecurring(recurringTask) {
-  if (!recurringTask?.attributes) return;
-  const attrs = recurringTask.attributes;
+  if (!recurringTask) return;
+  const attrs = recurringTask;
   // Only update fields that exist in both
   form.value.title = attrs.title || '';
   form.value.type = attrs.type || '';
@@ -539,7 +527,7 @@ defineExpose({ openModal });
             <UserProfileDisplay 
               v-for="volunteer in filteredVolunteers" 
               :key="volunteer.id"
-              :volunteer="volunteer.attributes"
+              :volunteer="volunteer"
             />
           </div>
         </div>
@@ -570,7 +558,7 @@ defineExpose({ openModal });
             <UserProfileDisplay 
               v-for="volunteer in filteredVolunteers" 
               :key="volunteer.id"
-              :volunteer="volunteer.attributes"
+              :volunteer="volunteer"
             />
           </div>
         </div>
@@ -669,15 +657,15 @@ defineExpose({ openModal });
                     tabindex="0"
                     @click="pickTemplate(task)"
                   >
-                    {{ task.attributes.title }}
+                    {{ task.title }}
                   </span>
                 </div>
               </div>
 
               <div v-if="taskInstruction" class="text-sm">
                 <span class="gt-accent font-semibold">Task has an instruction </span>
-                <a class="gt-accent underline hover:opacity-80" :href="'/i/' + taskInstruction.attributes.slug" target="_blank">
-                  {{ taskInstruction.attributes.title }}
+                <a class="gt-accent underline hover:opacity-80" :href="'/i/' + taskInstruction.slug" target="_blank">
+                  {{ taskInstruction.title }}
                 </a>
               </div>
             </div>
@@ -990,10 +978,10 @@ defineExpose({ openModal });
               <span class="gt-accent font-semibold">Task has an instruction </span>
               <a
                 class="gt-accent underline hover:opacity-80"
-                :href="'/i/' + taskInstruction.attributes.slug"
+                :href="'/i/' + taskInstruction.slug"
                 target="_blank"
               >
-                {{ taskInstruction.attributes.title }}
+                {{ taskInstruction.title }}
               </a>
             </div>
 
