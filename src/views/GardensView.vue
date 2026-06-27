@@ -83,7 +83,7 @@ const normalizeEvent = (event) => {
 
 // Helper: check if user is a manager of a garden
 const isManager = (garden) => {
-    const managers = garden.attributes?.managers?.data || [];
+    const managers = garden.managers || [];
     return managers.some(manager => {
         const managerId = manager.id || manager;
         return managerId === user.value?.id;
@@ -92,7 +92,7 @@ const isManager = (garden) => {
 
 // Helper: check if user is a volunteer (member) of a garden
 const isVolunteer = (garden) => {
-    const volunteers = garden.attributes?.volunteers?.data || [];
+    const volunteers = garden.volunteers || [];
     return volunteers.some(volunteer => {
         const volunteerId = volunteer.id || volunteer;
         return volunteerId === user.value?.id;
@@ -112,12 +112,12 @@ const memberGardens = computed(() => {
 });
 
 // Garden counts shown on each card
-const managersCount = (garden) => garden.attributes?.managers?.data?.length || 0;
-const volunteersCount = (garden) => garden.attributes?.volunteers?.data?.length || 0;
+const managersCount = (garden) => garden.managers?.length || 0;
+const volunteersCount = (garden) => garden.volunteers?.length || 0;
 
 // "Draft" badge — only when the API explicitly reports an unpublished garden.
 const isDraft = (garden) =>
-    garden.attributes && 'publishedAt' in garden.attributes && !garden.attributes.publishedAt;
+    'publishedAt' in garden && !garden.publishedAt;
 
 // ── Cross-garden tasks ─────────────────────────────────
 const userActiveTasks = computed(() =>
@@ -250,7 +250,7 @@ const loadMoreLatestEvents = () => { latestEventsToShow.value += 2; };
 // ── Actions ────────────────────────────────────────────
 // Placeholder until a manage-request endpoint exists (see plan: deferred).
 const requestToManage = (garden) => {
-    alertStore.success(`Request to manage "${garden.attributes?.title}" is coming soon.`);
+    alertStore.success(`Request to manage "${garden.title}" is coming soon.`);
 };
 
 const rsvp = async (event) => {
@@ -310,23 +310,23 @@ const rsvp = async (event) => {
                 v-for="garden in managedGardens"
                 :key="garden.id"
                 class="garden-card"
-                @click="rowClick(garden.attributes.slug)"
+                @click="rowClick(garden.slug)"
             >
                 <div
                     class="garden-card__media"
-                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.attributes?.hero_image) }"
-                    :style="getImageUrl(garden.attributes?.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.attributes.hero_image)})` } : null"
+                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.hero_image) }"
+                    :style="getImageUrl(garden.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.hero_image)})` } : null"
                 ></div>
                 <div class="garden-card__body">
-                    <h4 class="garden-card__title">{{ garden.attributes?.title }}</h4>
-                    <p class="garden-card__blurb">{{ garden.attributes?.blurb }}</p>
+                    <h4 class="garden-card__title">{{ garden.title }}</h4>
+                    <p class="garden-card__blurb">{{ garden.blurb }}</p>
                     <div class="garden-card__badges">
                         <span class="dash-badge dash-badge--manager">Manager</span>
                         <span v-if="isDraft(garden)" class="dash-badge dash-badge--draft">Draft</span>
                     </div>
                     <div class="garden-card__footer">
                         <span class="garden-card__counts">{{ managersCount(garden) }} Managers, {{ volunteersCount(garden) }} Volunteers</span>
-                        <a class="dash-link" :href="`/manage/gardens/${garden.attributes?.slug}`" @click.stop>Edit</a>
+                        <a class="dash-link" :href="`/manage/gardens/${garden.slug}`" @click.stop>Edit</a>
                     </div>
                 </div>
             </div>
@@ -344,16 +344,16 @@ const rsvp = async (event) => {
                 v-for="garden in memberGardens"
                 :key="garden.id"
                 class="garden-card"
-                @click="rowClick(garden.attributes.slug)"
+                @click="rowClick(garden.slug)"
             >
                 <div
                     class="garden-card__media"
-                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.attributes?.hero_image) }"
-                    :style="getImageUrl(garden.attributes?.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.attributes.hero_image)})` } : null"
+                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.hero_image) }"
+                    :style="getImageUrl(garden.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.hero_image)})` } : null"
                 ></div>
                 <div class="garden-card__body">
-                    <h4 class="garden-card__title">{{ garden.attributes?.title }}</h4>
-                    <p class="garden-card__blurb">{{ garden.attributes?.blurb }}</p>
+                    <h4 class="garden-card__title">{{ garden.title }}</h4>
+                    <p class="garden-card__blurb">{{ garden.blurb }}</p>
                     <div class="garden-card__badges">
                         <span class="dash-badge dash-badge--volunteer">Volunteer</span>
                         <span v-if="isDraft(garden)" class="dash-badge dash-badge--draft">Draft</span>

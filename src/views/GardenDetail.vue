@@ -93,10 +93,9 @@ watch(() => route.hash, (newHash) => {
 let editor = ref(false);
 
 const isEditor = computed(() => {
-  console.log('is editor garden', garden.value)
-  if (!garden.value?.attributes?.managers?.data || !user.value) return false;
-  
-  return !garden.value.loading && garden.value.attributes.managers.data.some(manager => manager.id === user.value.id);
+  if (!garden.value?.managers || !user.value) return false;
+
+  return !garden.value.loading && garden.value.managers.some(manager => manager.id === user.value.id);
 });
 
 watch(isEditor, (newValue) => {
@@ -119,8 +118,7 @@ watch(() => activeSection.value, (section) => {
 });
 
 onMounted(() => {
-  editor.value = garden.value.loading !== true && garden.value.attributes.managers.data.some(manager => manager.id === user?.value?.id);
-  console.log('editor mounted, ', editor.value);
+  editor.value = garden.value.loading !== true && garden.value.managers?.some(manager => manager.id === user?.value?.id);
   // Initialize active section from URL hash
   initializeFromHash();
 });
@@ -147,15 +145,15 @@ const toggleSortOrder = (field) => {
 };
 
 const sortedVolunteers = computed(() => {
-  if (!garden.value.attributes.volunteers?.data) return [];
-  return [...garden.value.attributes.volunteers.data].sort((a, b) => {
+  if (!garden.value.volunteers) return [];
+  return [...garden.value.volunteers].sort((a, b) => {
     if (sortField.value === 'name') {
-      const nameA = `${a.attributes.firstName} ${a.attributes.lastName}`.toLowerCase();
-      const nameB = `${b.attributes.firstName} ${b.attributes.lastName}`.toLowerCase();
+      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
       return sortOrder.value === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
     } else {
-      const dateA = new Date(a.attributes.createdAt);
-      const dateB = new Date(b.attributes.createdAt);
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
       return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA;
     }
   });
@@ -343,8 +341,8 @@ const allEventsSorted = computed(() => {
 // Hero image thumbnail URL for event (event's hero_image or garden fallback); null if none
 const getEventHeroThumbnail = (day) => {
   let heroImage = day?.hero_image || day?.attributes?.hero_image;
-  if (!heroImage && garden.value?.attributes?.hero_image) {
-    heroImage = garden.value.attributes.hero_image;
+  if (!heroImage && garden.value?.hero_image) {
+    heroImage = garden.value.hero_image;
   }
   if (!heroImage) return null;
   let imageUrl = null;
@@ -402,21 +400,21 @@ const openEventEditor = (day) => {
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
             <h1
-              v-if="garden.attributes?.title"
+              v-if="garden.title"
               class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight cursor-pointer hover:opacity-90 transition-opacity"
               role="button"
               tabindex="0"
               @click="setActiveSection('general')"
               @keydown.enter="setActiveSection('general')"
               @keydown.space.prevent="setActiveSection('general')"
-            >{{ garden.attributes.title }}</h1>
+            >{{ garden.title }}</h1>
             <div v-else class="h-12 bg-white/20 rounded animate-pulse"></div>
-            <p v-if="garden.attributes?.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb.length > 150 ? garden.attributes.blurb.substring(0, 150) + '...' : garden.attributes.blurb }}</p>
-            <div v-else-if="garden.loading || (!garden.attributes && !garden.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
+            <p v-if="garden.blurb" class="text-white/90 text-lg mt-2">{{ garden.blurb.length > 150 ? garden.blurb.substring(0, 150) + '...' : garden.blurb }}</p>
+            <div v-else-if="garden.loading || (!garden.id && !garden.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
           </div>
           <router-link
-            v-if="garden.attributes?.slug"
-            :to="`/gardens/${garden.attributes.slug}`"
+            v-if="garden.slug"
+            :to="`/gardens/${garden.slug}`"
             target="_blank"
             class="shrink-0 self-start inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium text-white bg-white/15 hover:bg-white/25 border border-white/30 transition-colors whitespace-nowrap"
           >
@@ -428,12 +426,12 @@ const openEventEditor = (day) => {
     </div>
 
     <!-- Loading State -->
-    <div v-if="garden.loading || (!garden.attributes && !garden.error)" class="flex items-center justify-center min-h-[60vh]">
+    <div v-if="garden.loading || (!garden.id && !garden.error)" class="flex items-center justify-center min-h-[60vh]">
       <LoadingSpinner size="lg" :centered="true" />
     </div>
 
     <!-- Main Content -->
-    <div v-else-if="garden.attributes">
+    <div v-else-if="garden.id">
       <!-- Main Layout with Sidebar -->
       <div class="flex w-full flex-col gap-6 py-1 pl-1 pr-4 sm:py-5 sm:pr-5 lg:flex-row lg:pr-8">
         <!-- Sidebar Navigation -->
@@ -538,19 +536,19 @@ const openEventEditor = (day) => {
         <!-- Volunteers Section -->
         <div v-if="activeSection === 'volunteers'" class="gm-panel rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="gm-heading text-2xl font-light font-serif">Volunteers ({{ garden.attributes.volunteers?.data?.length || 0 }})</h2>
+            <h2 class="gm-heading text-2xl font-light font-serif">Volunteers ({{ garden.volunteers?.length || 0 }})</h2>
             <a v-if="editor" @click="clearTemp" class="text-sm text-blue-400 hover:text-blue-300 cursor-pointer">Clear Temps</a>
           </div>
 
           <GardenVolunteerInterestsSection
             v-if="garden?.id"
             :garden-id="garden.id"
-            :current-interests="garden.attributes.interests || []"
+            :current-interests="garden.interests || []"
             :editor="editor"
             :active="activeSection === 'volunteers'"
           />
           
-          <div v-if="garden.attributes.volunteers?.data?.length" class="relative">
+          <div v-if="garden.volunteers?.length" class="relative">
             <table class="w-full">
               <thead>
                 <tr class="tr-class gm-border-b-strong border-b-2">
@@ -571,14 +569,14 @@ const openEventEditor = (day) => {
                 <Volunteer
                   v-for="volunteer in sortedVolunteers"
                   :key="volunteer.id"
-                  v-bind="volunteer.attributes"
+                  v-bind="volunteer"
                   :id="volunteer.id"
-                  :interests="garden.attributes.interests"
+                  :interests="garden.interests"
                   :garden="garden.id"
                   :editor="editor"
-                  :managerIds="garden.attributes.managers?.data?.map(m => m.id) || []"
-                  :welcome-email-subject="garden.attributes?.welcome_email_subject || ''"
-                  :welcome-email-body="garden.attributes?.welcome_email_body || ''"
+                  :managerIds="garden.managers?.map(m => m.id) || []"
+                  :welcome-email-subject="garden.welcome_email_subject || ''"
+                  :welcome-email-body="garden.welcome_email_body || ''"
                 />
               </tbody>
             </table>
@@ -594,7 +592,7 @@ const openEventEditor = (day) => {
           <div v-if="editor && garden?.id" class="mb-4">
             <Project 
               :garden="garden.id"
-              :garden-slug="garden?.attributes?.slug"
+              :garden-slug="garden?.slug"
               :editor="editor"
             />
           </div>
@@ -606,8 +604,8 @@ const openEventEditor = (day) => {
           <div class="flex justify-between items-center mb-4">
             <h2 class="gm-heading text-2xl font-light font-serif">Tasks</h2>
             <router-link
-              v-if="garden.attributes?.slug"
-              :to="`/gardens/${garden.attributes.slug}/tasks`"
+              v-if="garden.slug"
+              :to="`/gardens/${garden.slug}/tasks`"
               target="_blank"
               rel="noopener noreferrer"
               class="gm-secondary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
@@ -627,7 +625,7 @@ const openEventEditor = (day) => {
             <h2 class="gm-heading text-2xl font-light font-serif">Events ({{ volunteerDays.days?.length || 0 }})</h2>
             <div class="flex items-center gap-3">
               <router-link
-                :to="`/manage/gardens/${garden.attributes?.slug}/event-templates`"
+                :to="`/manage/gardens/${garden.slug}/event-templates`"
                 class="gm-secondary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
               >
                 Recurring Event Templates
@@ -643,7 +641,7 @@ const openEventEditor = (day) => {
             </div>
           </div>
 
-          <VolunteerDayModal v-model:show="showDayModal" :garden="garden.id" :interests="garden.attributes.interests" :editor="editor" />
+          <VolunteerDayModal v-model:show="showDayModal" :garden="garden.id" :interests="garden.interests" :editor="editor" />
 
           <!-- Events table (past + upcoming, sortable) -->
           <div v-if="allEventsSorted.length > 0" class="relative sm:overflow-x-auto">
@@ -714,7 +712,7 @@ const openEventEditor = (day) => {
                     <VolunteerDayModal
                       v-bind="day"
                       :garden="garden.id"
-                      :interests="garden.attributes.interests"
+                      :interests="garden.interests"
                       :editor="editor"
                       :smsLink="true"
                       tableRow
@@ -754,14 +752,14 @@ const openEventEditor = (day) => {
               <SmsCampaignModal
                 v-if="editor"
                 :garden="garden.id"
-                :interests="garden.attributes.interests"
+                :interests="garden.interests"
                 :editor="editor"
               />
             </div>
 
             <div v-if="smsCampaigns?.length" class="grid grid-cols-1 gap-4">
               <div v-for="campaign in smsCampaigns.slice(0, 20)" :key="campaign.id">
-                <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.attributes.interests"/>
+                <SmsCampaignModal v-bind="campaign" :garden="garden.id" :interests="garden.interests"/>
               </div>
             </div>
             <div v-else class="gm-text-muted text-center py-8 flex-1 flex items-center justify-center">

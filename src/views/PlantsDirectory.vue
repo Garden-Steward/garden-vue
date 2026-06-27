@@ -47,19 +47,18 @@ const loadMore = () => {
 // ── Image helper ──
 const getThumbnailUrl = (plant) => {
   // Priority: clipart (small format) → first image (small) → clipart (full) → first image (full)
-  const clipart = plant.attributes?.clipart?.data?.attributes;
-  const images = plant.attributes?.images?.data;
+  const clipart = plant.clipart;
+  const images = plant.images;
 
   if (clipart?.formats?.small?.url) return clipart.formats.small.url;
   if (clipart?.url) return clipart.url;
-  if (images?.[0]?.attributes?.formats?.small?.url) return images[0].attributes.formats.small.url;
-  if (images?.[0]?.attributes?.url) return images[0].attributes.url;
+  if (images?.[0]?.formats?.small?.url) return images[0].formats.small.url;
+  if (images?.[0]?.url) return images[0].url;
   return null;
 };
 
 const getFullClipUrl = (plant) => {
-  const clipart = plant.attributes?.clipart?.data?.attributes;
-  return clipart?.url || null;
+  return plant.clipart?.url || null;
 };
 
 // ── Type badge color ──
@@ -157,7 +156,7 @@ const getTypeColor = (type) => {
       <router-link
         v-for="plant in plants"
         :key="plant.id"
-        :to="`/manage/plant/${plant.attributes?.slug}`"
+        :to="`/manage/plant/${plant.slug}`"
         class="plant-card"
       >
         <!-- Thumbnail -->
@@ -165,7 +164,7 @@ const getTypeColor = (type) => {
           <img
             v-if="getThumbnailUrl(plant)"
             :src="getThumbnailUrl(plant)"
-            :alt="plant.attributes?.title || 'Plant'"
+            :alt="plant.title || 'Plant'"
             class="plant-card__img"
           />
           <div v-else class="plant-card__img-fallback">
@@ -179,14 +178,14 @@ const getTypeColor = (type) => {
 
         <!-- Info -->
         <div class="plant-card__body">
-          <h3 class="plant-card__name">{{ plant.attributes?.title }}</h3>
-          <p class="plant-card__latin">{{ plant.attributes?.latin }}</p>
+          <h3 class="plant-card__name">{{ plant.title }}</h3>
+          <p class="plant-card__latin">{{ plant.latin }}</p>
           <span
-            v-if="plant.attributes?.type"
+            v-if="plant.type"
             class="plant-card__type"
-            :class="getTypeColor(plant.attributes.type)"
+            :class="getTypeColor(plant.type)"
           >
-            {{ plant.attributes.type }}
+            {{ plant.type }}
           </span>
         </div>
       </router-link>

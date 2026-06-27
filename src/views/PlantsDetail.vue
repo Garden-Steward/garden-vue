@@ -17,13 +17,13 @@ onMounted(() => {
 
 // ── Image helpers ──
 const getClipUrl = () => {
-  const clip = plant.value?.attributes?.clipart?.data?.attributes;
+  const clip = plant.value?.clipart;
   if (!clip) return null;
   return clip.formats?.large?.url || clip.formats?.medium?.url || clip.url;
 };
 
 const getImages = () => {
-  return plant.value?.attributes?.images?.data || [];
+  return plant.value?.images || [];
 };
 
 const hasClip = computed(() => !!getClipUrl());
@@ -79,35 +79,35 @@ const getTypeColor = (type) => {
             <img
               v-if="getClipUrl()"
               :src="getClipUrl()"
-              :alt="plant.attributes?.title || 'Plant illustration'"
+              :alt="plant.title || 'Plant illustration'"
               class="plant-detail__clipart"
             />
             <div v-else class="plant-detail__clipart-empty">🌿</div>
           </div>
 
           <div class="plant-detail__info">
-            <h1 class="plant-detail__name">{{ plant.attributes?.title }}</h1>
-            <p class="plant-detail__latin">{{ plant.attributes?.latin }}</p>
+            <h1 class="plant-detail__name">{{ plant.title }}</h1>
+            <p class="plant-detail__latin">{{ plant.latin }}</p>
 
             <div class="plant-detail__badges">
               <span
-                v-if="plant.attributes?.type"
+                v-if="plant.type"
                 class="plant-detail__badge"
-                :class="getTypeColor(plant.attributes.type)"
+                :class="getTypeColor(plant.type)"
               >
-                {{ plant.attributes.type }}
+                {{ plant.type }}
               </span>
               <span v-if="hasClip" class="plant-detail__badge plant-detail__badge--clipart">🖌️ Clipart</span>
             </div>
 
             <div class="plant-detail__meta">
-              <div v-if="plant.attributes?.sun_detail" class="plant-detail__meta-item">
+              <div v-if="plant.sun_detail" class="plant-detail__meta-item">
                 <span class="plant-detail__meta-label">☀️ Sun</span>
-                <p class="plant-detail__meta-text">{{ plant.attributes.sun_detail }}</p>
+                <p class="plant-detail__meta-text">{{ plant.sun_detail }}</p>
               </div>
-              <div v-if="plant.attributes?.water_detail" class="plant-detail__meta-item">
+              <div v-if="plant.water_detail" class="plant-detail__meta-item">
                 <span class="plant-detail__meta-label">💧 Water</span>
-                <p class="plant-detail__meta-text">{{ plant.attributes.water_detail }}</p>
+                <p class="plant-detail__meta-text">{{ plant.water_detail }}</p>
               </div>
             </div>
           </div>
@@ -115,20 +115,20 @@ const getTypeColor = (type) => {
 
         <!-- ── Description / text content ── -->
         <div class="plant-detail__body">
-          <div v-if="plant.attributes?.magic" class="plant-detail__section">
+          <div v-if="plant.magic" class="plant-detail__section">
             <h2 class="plant-detail__section-title">Magic</h2>
-            <div class="plant-detail__text plant-detail__text--magic">{{ plant.attributes.magic }}</div>
+            <div class="plant-detail__text plant-detail__text--magic">{{ plant.magic }}</div>
           </div>
 
-          <div v-if="plant.attributes?.description" class="plant-detail__section">
+          <div v-if="plant.description" class="plant-detail__section">
             <h2 class="plant-detail__section-title">Description</h2>
-            <div class="plant-detail__text">{{ plant.attributes.description }}</div>
+            <div class="plant-detail__text">{{ plant.description }}</div>
           </div>
 
-          <div v-if="plant.attributes?.Benefits?.length" class="plant-detail__section">
+          <div v-if="plant.Benefits?.length" class="plant-detail__section">
             <h2 class="plant-detail__section-title">Benefits</h2>
             <div class="plant-detail__benefits">
-              <span v-for="b in plant.attributes.Benefits" :key="b.id" class="plant-detail__benefit-tag">
+              <span v-for="b in plant.Benefits" :key="b.id" class="plant-detail__benefit-tag">
                 {{ b.title }}
               </span>
             </div>
@@ -140,8 +140,8 @@ const getTypeColor = (type) => {
               <img
                 v-for="img in getImages()"
                 :key="img.id"
-                :src="img.attributes?.formats?.medium?.url || img.attributes?.url"
-                :alt="img.attributes?.alternativeText || plant.attributes?.title"
+                :src="img.formats?.medium?.url || img.url"
+                :alt="img.alternativeText || plant.title"
                 class="plant-detail__gallery-img"
               />
             </div>
