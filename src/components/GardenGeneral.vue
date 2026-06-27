@@ -59,15 +59,8 @@ const latestEvents = computed(() => {
     return [];
   }
   
-  // Normalize events (handle both Strapi format and normalized format)
-  const normalizedEvents = props.volunteerDays.days.map(event => {
-    // Handle Strapi format: { id, attributes: { title, startDatetime, ... } }
-    if (event.attributes) {
-      return { ...event.attributes, id: event.id };
-    }
-    // Already normalized format
-    return event;
-  });
+  // v5 events are flat already.
+  const normalizedEvents = props.volunteerDays.days;
   
   // Filter out events without startDatetime and sort by startDatetime (soonest first)
   const sortedEvents = normalizedEvents

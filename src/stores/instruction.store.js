@@ -38,17 +38,19 @@ export const instructionStore = defineStore({
       async findSlug(slug) {
         //   this.instructions = { loading: true };
           this.instruction = { loading: true };
-          fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[garden][populate]=organization`)
+          fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[garden][populate][organization]=true`)
               .then(res => this.instruction = res.data[0])
               .catch(error => this.instruction = { error })
       },
       async update(id, data) {
         return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
             .then(res => {
-                console.log("uginterest update resp:", res)
-                this.instructions = res.data.attributes;
-                const idx = this.instructions.findIndex(v=> v.id == res.data.id);
-                this.instructions[idx] = res.data.attributes;
+                // v5 returns a flat entry; update it in the list if present.
+                const updated = res.data;
+                if (Array.isArray(this.instructions)) {
+                    const idx = this.instructions.findIndex(v => v.id == updated.id);
+                    if (idx !== -1) this.instructions[idx] = updated;
+                }
             })
             .catch(this.handleError);
       },

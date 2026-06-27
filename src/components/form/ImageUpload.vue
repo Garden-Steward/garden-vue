@@ -51,7 +51,7 @@ const getImageUrl = computed(() => {
   if (!props.modelValue) return ''
   const url = typeof props.modelValue === 'string' 
     ? props.modelValue 
-    : props.modelValue.url || props.modelValue?.data?.attributes?.url || ''
+    : props.modelValue.url || ''
   return normalizeImageUrl(url)
 })
 

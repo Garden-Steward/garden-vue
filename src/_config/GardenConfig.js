@@ -42,7 +42,7 @@ export function countGardenTasksForStatCard(gardenTasks) {
   const list = Array.isArray(gardenTasks) ? gardenTasks : [];
   const allowed = new Set(gardenTaskStatActiveStatuses.map((s) => s.toUpperCase()));
   return list.filter((t) => {
-    const s = String(t?.attributes?.status ?? '').trim().toUpperCase();
+    const s = String(t?.status ?? '').trim().toUpperCase();
     return allowed.has(s);
   }).length;
 }
@@ -53,7 +53,7 @@ export const gardenStatCards = [
     label: 'Volunteers',
     hash: '#volunteers',
     numberClass: 'text-blue-700 dark:text-blue-300',
-    count: (ctx) => ctx.garden?.attributes?.volunteers?.data?.length || 0
+    count: (ctx) => ctx.garden?.volunteers?.length || 0
   },
   {
     key: 'events',

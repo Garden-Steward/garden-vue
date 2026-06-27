@@ -58,7 +58,7 @@ const currentImageUrl = computed(() => {
   if (!props.modelValue) return null
   
   // Handle Strapi format - prefer medium or large format for display
-  const attrs = props.modelValue.data?.attributes || props.modelValue.attributes || props.modelValue
+  const attrs = props.modelValue
   
   // Try medium format first (good balance)
   if (attrs.formats?.medium?.url) {

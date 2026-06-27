@@ -77,8 +77,8 @@ export const useMediaStore = defineStore({
             
             const term = searchTerm.toLowerCase().trim();
             const filtered = sourceMedia.filter(media => {
-                // Handle Strapi format
-                const mediaData = media.attributes || media.data?.attributes || media;
+                // v5 media entries are flat
+                const mediaData = media;
                 
                 // Search in various fields that might exist
                 const name = mediaData.name || mediaData.title || mediaData.filename || '';

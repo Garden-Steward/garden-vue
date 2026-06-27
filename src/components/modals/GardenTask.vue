@@ -877,7 +877,7 @@ defineExpose({ openModal });
                   :key="inst.id"
                   :value="inst.id"
                 >
-                  {{ inst.attributes?.title || `Instruction #${inst.id}` }}
+                  {{ inst.title || `Instruction #${inst.id}` }}
                 </option>
               </select>
             </div>
