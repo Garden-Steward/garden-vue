@@ -105,9 +105,11 @@ export const useEventStore = defineStore({
         },
         async findById(id) {
             this.event = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?${eventPopulate}`)
+            // v5 core findOne keys on documentId, but our /d/:id routes (and SMS
+            // links) use the numeric id — resolve via the custom by-id route,
+            // which populates server-side and returns a flat { data } entry.
+            return fetchWrapper.get(`${baseUrl}/by-id/${id}`)
                 .then(res => {
-                    // v5 entries are flat — fields live directly on res.data.
                     this.event = res.data;
                     return res.data;
                 })
@@ -187,7 +189,13 @@ export const useEventStore = defineStore({
                     }));
             }
 
-            return fetchWrapper.put(`${baseUrl}/${id}?${eventPopulate}`, { data: data })
+            // v5 core update keys on documentId; the editor passes the numeric id,
+            // so use the loaded entity's documentId when it matches.
+            const documentId = (this.event?.id == id && this.event?.documentId)
+                ? this.event.documentId
+                : id;
+
+            return fetchWrapper.put(`${baseUrl}/${documentId}?${eventPopulate}`, { data: data })
                 .then(res => {
                     this.volunteerDay = res.data;
                     // Update the event in state if it matches
