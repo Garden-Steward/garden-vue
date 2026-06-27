@@ -120,7 +120,7 @@ const selectedEventText = computed(() => {
     return 'All Events';
   }
   const event = availableEvents.value.find(e => e.id === parseInt(selectedEvent.value));
-  return event ? (event.title || event.attributes?.title || 'Untitled Event') : 'All Events';
+  return event ? (event.title || 'Untitled Event') : 'All Events';
 });
 
 // Toggle event dropdown
@@ -228,7 +228,7 @@ onUnmounted(() => {
                 ]"
               >
                 <span v-if="selectedEvent !== 'all' && parseInt(selectedEvent) === event.id" class="mr-2 text-custom-green">✓</span>
-                <span>{{ event.title || event.attributes?.title || 'Untitled Event' }}</span>
+                <span>{{ event.title || 'Untitled Event' }}</span>
               </button>
             </div>
           </transition>

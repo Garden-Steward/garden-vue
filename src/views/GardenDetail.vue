@@ -290,14 +290,8 @@ const getStatusColor = (status) => {
 };
 
 // Normalize event data (handle both Strapi format and normalized format)
-const normalizeEvent = (day) => {
-  // Handle Strapi format: { id, attributes: { title, startDatetime, ... } }
-  if (day.attributes) {
-    return { ...day.attributes, id: day.id };
-  }
-  // Already normalized format
-  return day;
-};
+// Strapi v5 events are flat already.
+const normalizeEvent = (day) => day;
 
 // Event table sort state — default: upcoming soonest first, then past (most recent first)
 const eventSortField = ref('default');
@@ -340,25 +334,15 @@ const allEventsSorted = computed(() => {
 
 // Hero image thumbnail URL for event (event's hero_image or garden fallback); null if none
 const getEventHeroThumbnail = (day) => {
-  let heroImage = day?.hero_image || day?.attributes?.hero_image;
+  // v5 media is flat: prefer the event's hero_image, fall back to the garden's.
+  let heroImage = day?.hero_image;
   if (!heroImage && garden.value?.hero_image) {
     heroImage = garden.value.hero_image;
   }
   if (!heroImage) return null;
-  let imageUrl = null;
-  if (heroImage?.data?.attributes?.formats?.small?.url) {
-    imageUrl = heroImage.data.attributes.formats.small.url;
-  } else if (heroImage?.formats?.small?.url) {
-    imageUrl = heroImage.formats.small.url;
-  } else if (heroImage?.data?.attributes?.formats?.thumbnail?.url) {
-    imageUrl = heroImage.data.attributes.formats.thumbnail.url;
-  } else if (heroImage?.formats?.thumbnail?.url) {
-    imageUrl = heroImage.formats.thumbnail.url;
-  } else if (heroImage?.data?.attributes?.url) {
-    imageUrl = heroImage.data.attributes.url;
-  } else if (heroImage?.url) {
-    imageUrl = heroImage.url;
-  }
+  let imageUrl = heroImage.formats?.small?.url
+    || heroImage.formats?.thumbnail?.url
+    || heroImage.url;
   if (!imageUrl) return null;
   const baseUrl = import.meta.env.VITE_API_URL || '';
   if (baseUrl === 'http://localhost:1337' && !imageUrl.includes('googleapis.com') && imageUrl.startsWith('/')) {
@@ -381,8 +365,8 @@ const formatEventDate = (dateString) => {
 const getRecurringEventPreview = (day) => {
   const rt = day?.recurring_template;
   if (!rt) return '';
-  // API returns recurring_template as flat object with title_template, or Strapi format with data.attributes
-  const name = rt.title_template ?? rt.data?.attributes?.title_template ?? rt.attributes?.title_template ?? rt.title ?? '';
+  // v5 returns recurring_template as a flat object with title_template.
+  const name = rt.title_template ?? rt.title ?? '';
   return String(name).slice(0, 15);
 };
 

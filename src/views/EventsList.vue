@@ -110,54 +110,34 @@ const pastEvents = computed(() => {
 
 // Get event hero image thumbnail URL (prefer event's hero_image over garden's)
 const getGardenImageThumbnail = (event) => {
-  // First, try to get hero_image from the event itself
-  let heroImage = event?.hero_image || event?.attributes?.hero_image || event?.data?.attributes?.hero_image;
-  
-  // If event doesn't have hero_image, fall back to garden's hero_image
+  // Prefer the event's own hero_image, fall back to the garden's (v5 flat media)
+  let heroImage = event?.hero_image;
   if (!heroImage && event?.garden) {
-    const garden = event.garden;
-    heroImage = garden?.data?.attributes?.hero_image || garden?.attributes?.hero_image || garden?.hero_image;
+    heroImage = event.garden.hero_image;
   }
-  
+
   if (!heroImage) return getImageOrDefault(null);
-  
-  // Handle different Strapi formats
-  let imageUrl = null;
-  
-  // Check for small format first
-  if (heroImage?.data?.attributes?.formats?.small?.url) {
-    imageUrl = heroImage.data.attributes.formats.small.url;
-  } else if (heroImage?.formats?.small?.url) {
-    imageUrl = heroImage.formats.small.url;
-  } else if (heroImage?.data?.attributes?.formats?.thumbnail?.url) {
-    imageUrl = heroImage.data.attributes.formats.thumbnail.url;
-  } else if (heroImage?.formats?.thumbnail?.url) {
-    imageUrl = heroImage.formats.thumbnail.url;
-  } else if (heroImage?.data?.attributes?.url) {
-    imageUrl = heroImage.data.attributes.url;
-  } else if (heroImage?.url) {
-    imageUrl = heroImage.url;
-  }
-  
+
+  let imageUrl = heroImage.formats?.small?.url
+    || heroImage.formats?.thumbnail?.url
+    || heroImage.url;
+
   // Handle localhost URLs
   if (imageUrl && import.meta.env.VITE_API_URL === 'http://localhost:1337' && !imageUrl.includes('googleapis.com') && imageUrl.startsWith('/')) {
     imageUrl = `${baseUrl}${imageUrl}`;
   }
-  
+
   return getImageOrDefault(imageUrl);
 };
 
 // Get garden name
 const getGardenName = (event) => {
-  if (!event?.garden) return '';
-  const garden = event.garden;
-  return garden?.data?.attributes?.title || garden?.attributes?.title || garden?.title || '';
+  return event?.garden?.title || '';
 };
 
 // Get garden object from event
 const getGardenFromEvent = (event) => {
-  if (!event?.garden) return null;
-  return event.garden?.data || event.garden;
+  return event?.garden || null;
 };
 
 // Get garden color for event (used for circle and badges)
@@ -168,8 +148,7 @@ const getGardenBannerColor = (event) => {
 
 // Get organization name from event (via garden)
 const getOrganizationName = (event) => {
-  const garden = event?.garden?.data ?? event?.garden;
-  const org = garden?.organization;
+  const org = event?.garden?.organization;
   if (org?.title) return org.title;
   return getGardenName(event) || '';
 };

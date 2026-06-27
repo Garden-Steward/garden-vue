@@ -156,13 +156,7 @@ const upcomingEvents = computed(() => {
   console.log('Current time:', now);
   
   const upcoming = eventsArray
-    .map(day => {
-      // Normalize Strapi format if needed
-      if (day.attributes) {
-        return { ...day.attributes, id: day.id };
-      }
-      return day;
-    })
+    .map(day => day)
     .filter(day => {
       // Skip if no startDatetime
       if (!day.startDatetime) {
@@ -220,13 +214,7 @@ const allPastEvents = computed(() => {
   const now = new Date();
   
   const pastEvents = eventsArray
-    .map(day => {
-      // Normalize Strapi format if needed
-      if (day.attributes) {
-        return { ...day.attributes, id: day.id };
-      }
-      return day;
-    })
+    .map(day => day)
     .filter(day => {
       // Skip if no startDatetime
       if (!day.startDatetime) {

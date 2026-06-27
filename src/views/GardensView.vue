@@ -73,13 +73,8 @@ const getImageUrl = (image) => {
 const latestEventsToShow = ref(3);
 const upcomingEventsToShow = ref(3);
 
-// Helper function to normalize event data (handle both Strapi format and normalized format)
-const normalizeEvent = (event) => {
-    if (event.attributes) {
-        return { ...event.attributes, id: event.id };
-    }
-    return event;
-};
+// Strapi v5 events are flat already.
+const normalizeEvent = (event) => event;
 
 // Helper: check if user is a manager of a garden
 const isManager = (garden) => {
@@ -207,10 +202,10 @@ const dashboardEvents = computed(() => {
 });
 
 const eventGardenId = (event) => {
-    const g = event.garden?.data || event.garden;
+    const g = event.garden;
     if (!g) return null;
     if (typeof g === 'number') return g;
-    return g.id ?? g.attributes?.id ?? null;
+    return g.id ?? null;
 };
 
 // Edit is only offered for events whose garden the user manages.
@@ -220,9 +215,9 @@ const canEditEvent = (event) => {
 };
 
 const eventGarden = (event) => {
-    const g = event.garden?.data || event.garden;
+    const g = event.garden;
     if (!g) return '';
-    return g.attributes?.title || g.title || '';
+    return g.title || '';
 };
 
 const upcomingEvents = computed(() => {

@@ -673,7 +673,7 @@ onUnmounted(() => {
               :key="event.id || event"
               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
             >
-              {{ event.title || event.attributes?.title || 'Untitled Event' }}
+              {{ event.title || 'Untitled Event' }}
             </span>
           </div>
         </div>
@@ -1056,7 +1056,7 @@ onUnmounted(() => {
                 @click="addRelatedEvent(event.id)"
                 class="w-full text-left px-3 py-2 text-sm bg-[rgba(26,26,26,0.8)] hover:bg-[rgba(138,163,124,0.2)] text-[#f5f5f5] rounded border border-[#3d4d36] transition-colors"
               >
-                {{ event.title || event.attributes?.title || 'Untitled Event' }}
+                {{ event.title || 'Untitled Event' }}
               </button>
             </div>
           </div>
@@ -1068,7 +1068,7 @@ onUnmounted(() => {
               :key="event.id || event"
               class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
             >
-              {{ event.title || event.attributes?.title || 'Untitled Event' }}
+              {{ event.title || 'Untitled Event' }}
               <button
                 v-if="editor"
                 @click="removeRelatedEvent(event.id || event)"
@@ -1250,7 +1250,7 @@ onUnmounted(() => {
                     :key="event.id || event"
                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
                   >
-                    {{ event.title || event.attributes?.title || 'Untitled Event' }}
+                    {{ event.title || 'Untitled Event' }}
                   </span>
                 </div>
               </div>
