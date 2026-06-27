@@ -366,26 +366,26 @@ const featuredProjects = computed(() => {
   }
   
   // Get all projects
-  const allProjects = projects.value.filter(p => p.attributes);
-  
+  const allProjects = projects.value.filter(p => p?.id);
+
   if (allProjects.length === 0) return [];
-  
+
   // Get all featured projects
-  const featured = allProjects.filter(p => p.attributes?.featured);
-  
+  const featured = allProjects.filter(p => p.featured);
+
   // Sort featured projects by date_start (most recent first)
   if (featured.length > 0) {
     return featured.sort((a, b) => {
-      const dateA = a.attributes?.date_start ? new Date(a.attributes.date_start) : new Date(0);
-      const dateB = b.attributes?.date_start ? new Date(b.attributes.date_start) : new Date(0);
+      const dateA = a.date_start ? new Date(a.date_start) : new Date(0);
+      const dateB = b.date_start ? new Date(b.date_start) : new Date(0);
       return dateB - dateA;
     });
   }
-  
+
   // If no featured projects, return most recent project
   const sorted = [...allProjects].sort((a, b) => {
-    const dateA = a.attributes?.date_start ? new Date(a.attributes.date_start) : new Date(0);
-    const dateB = b.attributes?.date_start ? new Date(b.attributes.date_start) : new Date(0);
+    const dateA = a.date_start ? new Date(a.date_start) : new Date(0);
+    const dateB = b.date_start ? new Date(b.date_start) : new Date(0);
     return dateB - dateA;
   });
   
@@ -396,15 +396,13 @@ const featuredProjects = computed(() => {
 const getProjectHeroImage = (project) => {
   if (!project) return null;
   
-  const heroImage = project.attributes?.hero_image;
+  const heroImage = project.hero_image;
   if (!heroImage) return null;
-  
-  // Handle different image formats
-  const imageUrl = heroImage.url || 
-                   heroImage.formats?.medium?.url ||
-                   heroImage.data?.attributes?.url ||
-                   heroImage.data?.attributes?.formats?.medium?.url;
-  
+
+  // v5 media is flat
+  const imageUrl = heroImage.url ||
+                   heroImage.formats?.medium?.url;
+
   return getImageOrDefault(imageUrl);
 };
 
@@ -483,7 +481,7 @@ const gardenStartedLabel = computed(() => formatStartedDate(gardenStartedAt.valu
 const gardenProjectsList = computed(() => {
   const list = projects.value;
   if (!list || !Array.isArray(list)) return [];
-  return list.filter((p) => p?.attributes);
+  return list.filter((p) => p?.id);
 });
 </script>
 
@@ -648,14 +646,14 @@ const gardenProjectsList = computed(() => {
                 class="garden-projects-mini-item"
               >
                 <router-link
-                  v-if="proj.attributes.slug && garden.slug"
-                  :to="`/gardens/${garden.slug}/p/${proj.attributes.slug}`"
+                  v-if="proj.slug && garden.slug"
+                  :to="`/gardens/${garden.slug}/p/${proj.slug}`"
                   class="garden-projects-mini-link"
                   @click="saveScrollPosition"
                 >
-                  {{ proj.attributes.title }}
+                  {{ proj.title }}
                 </router-link>
-                <span v-else class="garden-projects-mini-text">{{ proj.attributes.title }}</span>
+                <span v-else class="garden-projects-mini-text">{{ proj.title }}</span>
               </li>
             </ul>
           </div>
@@ -687,12 +685,12 @@ const gardenProjectsList = computed(() => {
           <div class="project-layout" :class="{ 'project-layout-reverse': index % 2 === 1 }">
             <!-- Copy/Text -->
             <div class="project-content">
-              <h3 class="project-title">{{ project.attributes.title }}</h3>
-              <div v-if="project.attributes.short_description" class="project-description" v-html="truncateDescription(project.attributes.short_description)"></div>
-              <div v-else-if="project.attributes.description" class="project-description" v-html="truncateDescription(project.attributes.description)"></div>
+              <h3 class="project-title">{{ project.title }}</h3>
+              <div v-if="project.short_description" class="project-description" v-html="truncateDescription(project.short_description)"></div>
+              <div v-else-if="project.description" class="project-description" v-html="truncateDescription(project.description)"></div>
               <router-link 
-                v-if="project.attributes.slug && garden?.slug"
-                :to="`/gardens/${garden.slug}/p/${project.attributes.slug}`"
+                v-if="project.slug && garden?.slug"
+                :to="`/gardens/${garden.slug}/p/${project.slug}`"
                 class="btn-explore-project"
                 @click="saveScrollPosition"
               >
@@ -704,7 +702,7 @@ const gardenProjectsList = computed(() => {
             <div v-if="getProjectHeroImage(project)" class="project-image-wrapper">
               <img 
                 :src="getProjectHeroImage(project)" 
-                :alt="project.attributes.title || 'Project image'"
+                :alt="project.title || 'Project image'"
                 class="project-hero-image"
               />
             </div>

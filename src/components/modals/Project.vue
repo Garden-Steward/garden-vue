@@ -344,40 +344,13 @@ watch(() => validGalleryImages.value.length, (newLength) => {
 const heroThumbnailUrl = computed(() => {
   const heroImage = form.value.hero_image;
   if (!heroImage) return null;
-  
-  // Handle API response format: hero_image.data.attributes.formats.thumbnail.url
-  if (heroImage.data?.attributes?.formats?.thumbnail?.url) {
-    return heroImage.data.attributes.formats.thumbnail.url;
-  }
-  
-  // Handle normalized format: hero_image.formats.thumbnail.url
-  if (heroImage.formats?.thumbnail?.url) {
-    return heroImage.formats.thumbnail.url;
-  }
-  
-  // Fallback to small or medium if thumbnail not available
-  if (heroImage.data?.attributes?.formats?.small?.url) {
-    return heroImage.data.attributes.formats.small.url;
-  }
-  if (heroImage.formats?.small?.url) {
-    return heroImage.formats.small.url;
-  }
-  if (heroImage.data?.attributes?.formats?.medium?.url) {
-    return heroImage.data.attributes.formats.medium.url;
-  }
-  if (heroImage.formats?.medium?.url) {
-    return heroImage.formats.medium.url;
-  }
-  
-  // Last resort: use main URL
-  if (heroImage.data?.attributes?.url) {
-    return heroImage.data.attributes.url;
-  }
-  if (heroImage.url) {
-    return heroImage.url;
-  }
-  
-  return null;
+
+  // Strapi v5 media is flat: { url, formats: { thumbnail, small, medium } }
+  return heroImage.formats?.thumbnail?.url
+    || heroImage.formats?.small?.url
+    || heroImage.formats?.medium?.url
+    || heroImage.url
+    || null;
 });
 
 // Normalize related events for display
@@ -385,17 +358,8 @@ const normalizedRelatedEvents = computed(() => {
   if (!form.value.related_events || !Array.isArray(form.value.related_events)) {
     return [];
   }
-  return form.value.related_events.map(event => {
-    if (typeof event === 'object' && event !== null) {
-      // Handle Strapi format: { id, attributes: { title, ... } }
-      if (event.attributes) {
-        return { ...event.attributes, id: event.id };
-      }
-      // Handle already normalized format: { id, title, ... }
-      return event;
-    }
-    return event;
-  }).filter(Boolean);
+  // Strapi v5 returns flat event entries already.
+  return form.value.related_events.filter(Boolean);
 });
 
 // Fetch available events when component mounts or garden changes

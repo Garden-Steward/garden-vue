@@ -5,11 +5,18 @@ import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/projects`;
 
-/** Flatten a Strapi users-permissions m2m relation into a plain [{ id, ...attrs }] array. */
-function normalizeUserRelation(rel) {
-    const data = rel?.data;
-    if (!Array.isArray(data)) return Array.isArray(rel) ? rel : [];
-    return data.map(u => ({ id: u.id, ...(u.attributes || {}) }));
+/**
+ * Strapi v5 returns flat entries (fields directly on the object, relations
+ * already de-nested). Guarantee the array-valued relations are always arrays
+ * so consumers can iterate without guards.
+ */
+function normalizeProject(p) {
+    if (!p) return p;
+    if (!Array.isArray(p.featured_gallery)) p.featured_gallery = [];
+    if (!Array.isArray(p.related_events)) p.related_events = [];
+    if (!Array.isArray(p.managers)) p.managers = [];
+    if (!Array.isArray(p.interested)) p.interested = [];
+    return p;
 }
 
 /** Reduce a relation field (array of ids or objects) to a clean array of numeric ids. */
@@ -53,35 +60,7 @@ export const useProjectsStore = defineStore({
         async getProjects(gardenId) {
             return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=related_events.title&populate[5]=impact_metrics&filters[garden][id][$eq]=${gardenId}`)
                 .then(response => {
-                    const projects = (Array.isArray(response.data) ? response.data : [response.data]).map(project => {
-                        // Normalize hero_image
-                        if (project.attributes?.hero_image?.data) {
-                            const imageData = project.attributes.hero_image.data;
-                            project.attributes.hero_image = {
-                                ...imageData.attributes,
-                                id: imageData.id
-                            };
-                        }
-                        // Normalize featured_gallery
-                        if (project.attributes?.featured_gallery?.data) {
-                            project.attributes.featured_gallery = project.attributes.featured_gallery.data.map(img => ({
-                                ...img.attributes,
-                                id: img.id
-                            }));
-                        } else if (!project.attributes?.featured_gallery) {
-                            project.attributes.featured_gallery = [];
-                        }
-                        // Normalize related_events
-                        if (project.attributes?.related_events?.data) {
-                            project.attributes.related_events = project.attributes.related_events.data.map(event => ({
-                                ...event.attributes,
-                                id: event.id
-                            }));
-                        } else if (!project.attributes?.related_events) {
-                            project.attributes.related_events = [];
-                        }
-                        return project;
-                    });
+                    const projects = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeProject);
                     this.projects = projects;
                     return projects;
                 })
@@ -92,16 +71,7 @@ export const useProjectsStore = defineStore({
             return fetchWrapper.get(`${baseUrl}/user?populate[0]=hero_image&populate[1]=garden&populate[2]=created_by&populate[3]=managers&populate[4]=interested`)
                 .then(response => {
                     const raw = Array.isArray(response) ? response : (response?.data ?? []);
-                    const projects = (Array.isArray(raw) ? raw : [raw]).map(project => {
-                        if (project.attributes?.hero_image?.data) {
-                            const imageData = project.attributes.hero_image.data;
-                            project.attributes.hero_image = {
-                                ...imageData.attributes,
-                                id: imageData.id
-                            };
-                        }
-                        return project;
-                    });
+                    const projects = (Array.isArray(raw) ? raw : [raw]).map(normalizeProject);
                     this.userProjects = projects;
                     return projects;
                 })
@@ -119,28 +89,8 @@ export const useProjectsStore = defineStore({
                         this.project = { error: 'Project not found' };
                         return null;
                     }
-                    // Normalize hero_image
-                    if (project.attributes?.hero_image?.data) {
-                        const imageData = project.attributes.hero_image.data;
-                        project.attributes.hero_image = {
-                            ...imageData.attributes,
-                            id: imageData.id
-                        };
-                    }
-                    // Normalize featured_gallery
-                    if (project.attributes?.featured_gallery?.data) {
-                        project.attributes.featured_gallery = project.attributes.featured_gallery.data.map(img => ({
-                            ...img.attributes,
-                            id: img.id
-                        }));
-                    } else if (!project.attributes?.featured_gallery) {
-                        project.attributes.featured_gallery = [];
-                    }
-                    // Normalize manager / interested user relations to plain arrays
-                    project.attributes.managers = normalizeUserRelation(project.attributes?.managers);
-                    project.attributes.interested = normalizeUserRelation(project.attributes?.interested);
-                    this.project = project;
-                    return project;
+                    this.project = normalizeProject(project);
+                    return this.project;
                 })
                 .catch(error => {
                     this.project = { error };
@@ -152,16 +102,7 @@ export const useProjectsStore = defineStore({
             return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=garden&populate[2]=created_by&populate[3]=interested&sort=createdAt:desc&pagination[pageSize]=100`)
                 .then(response => {
                     const raw = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
-                    const projects = raw.map(project => {
-                        if (project.attributes?.hero_image?.data) {
-                            const imageData = project.attributes.hero_image.data;
-                            project.attributes.hero_image = {
-                                ...imageData.attributes,
-                                id: imageData.id
-                            };
-                        }
-                        return project;
-                    });
+                    const projects = raw.map(normalizeProject);
                     this.communityProjects = projects;
                     return projects;
                 })
@@ -180,47 +121,8 @@ export const useProjectsStore = defineStore({
                         return null;
                     }
                     
-                    const project = projects[0];
-                    // Normalize hero_image
-                    if (project.attributes?.hero_image?.data) {
-                        const imageData = project.attributes.hero_image.data;
-                        project.attributes.hero_image = {
-                            ...imageData.attributes,
-                            id: imageData.id
-                        };
-                    }
-                    // Normalize featured_gallery
-                    if (project.attributes?.featured_gallery?.data) {
-                        project.attributes.featured_gallery = project.attributes.featured_gallery.data.map(img => ({
-                            ...img.attributes,
-                            id: img.id
-                        }));
-                    } else if (!project.attributes?.featured_gallery) {
-                        project.attributes.featured_gallery = [];
-                    }
-                    // Normalize related_events
-                    if (project.attributes?.related_events?.data) {
-                        project.attributes.related_events = project.attributes.related_events.data.map(event => {
-                            const normalizedEvent = {
-                                ...event.attributes,
-                                id: event.id
-                            };
-                            // Normalize hero_image if present
-                            if (normalizedEvent.hero_image?.data) {
-                                const imageData = normalizedEvent.hero_image.data;
-                                normalizedEvent.hero_image = {
-                                    ...imageData.attributes,
-                                    id: imageData.id
-                                };
-                            }
-                            return normalizedEvent;
-                        });
-                    } else if (!project.attributes?.related_events) {
-                        project.attributes.related_events = [];
-                    }
-                    
-                    this.project = project;
-                    return project;
+                    this.project = normalizeProject(projects[0]);
+                    return this.project;
                 })
                 .catch(error => {
                     this.project = { error };
@@ -278,23 +180,8 @@ export const useProjectsStore = defineStore({
 
             return fetchWrapper.put(`${baseUrl}/${id}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=impact_metrics`, { data: data })
                 .then(response => {
-                    if (response?.data?.attributes) {
-                        // Normalize hero_image
-                        if (response.data.attributes.hero_image?.data) {
-                            const imageData = response.data.attributes.hero_image.data;
-                            response.data.attributes.hero_image = {
-                                ...imageData.attributes,
-                                id: imageData.id
-                            };
-                        }
-                        // Normalize featured_gallery
-                        if (response.data.attributes.featured_gallery?.data) {
-                            response.data.attributes.featured_gallery = response.data.attributes.featured_gallery.data.map(img => ({
-                                ...img.attributes,
-                                id: img.id
-                            }));
-                        }
-                        return response.data.attributes;
+                    if (response?.data) {
+                        return normalizeProject(response.data);
                     }
                     return response;
                 });
@@ -348,40 +235,10 @@ export const useProjectsStore = defineStore({
 
             return fetchWrapper.post(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=related_events.title&populate[5]=impact_metrics`, { data: data })
                 .then(response => {
-                    if (response?.data?.id && response?.data?.attributes) {
-                        // Normalize hero_image
-                        if (response.data.attributes.hero_image?.data) {
-                            const imageData = response.data.attributes.hero_image.data;
-                            response.data.attributes.hero_image = {
-                                ...imageData.attributes,
-                                id: imageData.id
-                            };
-                        }
-                        // Normalize featured_gallery
-                        if (response.data.attributes.featured_gallery?.data) {
-                            response.data.attributes.featured_gallery = response.data.attributes.featured_gallery.data.map(img => ({
-                                ...img.attributes,
-                                id: img.id
-                            }));
-                        } else if (!response.data.attributes.featured_gallery) {
-                            response.data.attributes.featured_gallery = [];
-                        }
-                        // Normalize related_events
-                        if (response.data.attributes.related_events?.data) {
-                            response.data.attributes.related_events = response.data.attributes.related_events.data.map(event => ({
-                                ...event.attributes,
-                                id: event.id
-                            }));
-                        } else if (!response.data.attributes.related_events) {
-                            response.data.attributes.related_events = [];
-                        }
-                        
-                        // Create normalized project object matching getProjects format
-                        const newProject = {
-                            id: response.data.id,
-                            attributes: response.data.attributes
-                        };
-                        
+                    if (response?.data?.id) {
+                        // v5 returns a flat entry; guarantee array relations.
+                        const newProject = normalizeProject(response.data);
+
                         // Add to store if projects is an array
                         if (Array.isArray(this.projects)) {
                             // Check if project already exists (shouldn't happen, but prevent duplicates)
@@ -393,7 +250,7 @@ export const useProjectsStore = defineStore({
                             // If projects is not an array, initialize it
                             this.projects = [newProject];
                         }
-                        
+
                         return newProject;
                     }
                     return response;

@@ -139,32 +139,32 @@ const userProjectsList = computed(() =>
 );
 
 const projectGarden = (project) => {
-    const g = project.attributes?.garden?.data || project.attributes?.garden;
+    const g = project.garden;
     if (!g) return { title: '', slug: '' };
     return {
-        title: g.attributes?.title || g.title || '',
-        slug: g.attributes?.slug || g.slug || ''
+        title: g.title || '',
+        slug: g.slug || ''
     };
 };
 
-// Relation ids from a Strapi m2m field (handles { data: [...] } or a plain array).
+// Relation ids from a Strapi v5 relation array (or a plain array of ids).
 const relationIds = (rel) => {
-    const arr = rel?.data || rel || [];
-    return (Array.isArray(arr) ? arr : []).map(x => x.id ?? x);
+    const arr = Array.isArray(rel) ? rel : [];
+    return arr.map(x => x.id ?? x);
 };
 
 const projectCreatorId = (project) => {
-    const cb = project.attributes?.created_by;
-    return cb?.data?.id ?? cb?.id ?? cb ?? null;
+    const cb = project.created_by;
+    return cb?.id ?? cb ?? null;
 };
 const isProjectCreator = (project) => {
     const id = projectCreatorId(project);
     return id != null && id === user.value?.id;
 };
 const isProjectManager = (project) =>
-    relationIds(project.attributes?.managers).includes(user.value?.id);
+    relationIds(project.managers).includes(user.value?.id);
 const isProjectInterested = (project) =>
-    relationIds(project.attributes?.interested).includes(user.value?.id);
+    relationIds(project.interested).includes(user.value?.id);
 
 // The Interested toggle only applies to projects the user neither manages nor created.
 const canExpressInterest = (project) => !isProjectManager(project) && !isProjectCreator(project);
@@ -182,7 +182,7 @@ const togglingInterestId = ref(null);
 const toggleInterest = async (project) => {
     if (togglingInterestId.value) return;
     togglingInterestId.value = project.id;
-    const ids = relationIds(project.attributes?.interested);
+    const ids = relationIds(project.interested);
     const next = ids.includes(user.value?.id)
         ? ids.filter(id => id !== user.value?.id)
         : [...ids, user.value?.id];
@@ -380,9 +380,9 @@ const rsvp = async (event) => {
                 @click="viewProjectClick(project.id)"
             >
                 <div class="project-card__head">
-                    <span class="project-card__title">{{ project.attributes?.title }}</span>
-                    <span v-if="project.attributes?.category" :class="getProjectCategoryBadgeClasses(project.attributes.category)">
-                        {{ project.attributes.category }}
+                    <span class="project-card__title">{{ project.title }}</span>
+                    <span v-if="project.category" :class="getProjectCategoryBadgeClasses(project.category)">
+                        {{ project.category }}
                     </span>
                 </div>
                 <p v-if="projectGarden(project).title" class="project-card__garden">{{ projectGarden(project).title }}</p>
@@ -390,9 +390,9 @@ const rsvp = async (event) => {
                     <span v-if="projectOwnership(project)" class="project-card__ownership">{{ projectOwnership(project) }}</span>
                     <span class="project-card__actions">
                         <a
-                            v-if="projectGarden(project).slug && project.attributes?.slug"
+                            v-if="projectGarden(project).slug && project.slug"
                             class="dash-link"
-                            :href="`/gardens/${projectGarden(project).slug}/p/${project.attributes.slug}`"
+                            :href="`/gardens/${projectGarden(project).slug}/p/${project.slug}`"
                             @click.stop
                         >View</a>
                         <button

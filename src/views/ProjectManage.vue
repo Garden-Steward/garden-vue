@@ -41,11 +41,11 @@ const userName = (u) => {
 
 // ── Garden options (gardens the user manages or volunteers at) ──
 const isManager = (garden) => {
-  const managers = garden.attributes?.managers?.data || [];
+  const managers = garden.managers || [];
   return managers.some(m => (m.id || m) === user.value?.id);
 };
 const isVolunteer = (garden) => {
-  const volunteers = garden.attributes?.volunteers?.data || [];
+  const volunteers = garden.volunteers || [];
   return volunteers.some(v => (v.id || v) === user.value?.id);
 };
 const pitchGardens = computed(() => {
@@ -54,9 +54,9 @@ const pitchGardens = computed(() => {
 });
 
 const buildForm = (p) => {
-  const attrs = p?.attributes || {};
+  const attrs = p || {};
   const g = attrs.garden;
-  const gardenId = g?.data?.id ?? g?.id ?? (typeof g === 'number' ? g : '');
+  const gardenId = g?.id ?? (typeof g === 'number' ? g : '');
   form.value = {
     title: attrs.title || '',
     short_description: attrs.short_description || '',
