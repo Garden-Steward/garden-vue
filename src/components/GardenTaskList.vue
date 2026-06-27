@@ -88,7 +88,6 @@ watch(taskTypesForFilter, (types) => {
 
 // Get recurring task ID from a recurring task
 const getRecurringTaskId = (recurringTask) => {
-  // Recurring tasks should be in {id, attributes} format after normalization
   return recurringTask?.id;
 };
 
@@ -118,8 +117,8 @@ const getSchedulerEntriesForTask = (recurringTask) => {
   days.forEach(day => {
     const dayEntries = weekscheduler.value[day] || [];
     dayEntries.forEach(sched => {
-      const schedRecurringTaskId = sched.recurring_task?.data?.id || sched.recurring_task?.id;
-      if (schedRecurringTaskId === recurringTaskId && sched.recurring_task?.data?.attributes?.scheduler_type !== 'No Schedule') {
+      const schedRecurringTaskId = sched.recurring_task?.id;
+      if (schedRecurringTaskId === recurringTaskId && sched.recurring_task?.scheduler_type !== 'No Schedule') {
         entries.push({ ...sched, day });
       }
     });
@@ -150,7 +149,7 @@ const getSchedulerForTaskAndDay = (recurringTask, day) => {
 // Check if a day has volunteers
 const dayHasVolunteers = (recurringTask, day) => {
   const sched = getSchedulerForTaskAndDay(recurringTask, day);
-  const volunteers = sched?.backup_volunteers?.data || [];
+  const volunteers = sched?.backup_volunteers || [];
   return volunteers.length > 0;
 };
 
@@ -177,7 +176,7 @@ const selectedTask = ref(null);
 const selectedVolunteers = computed(() => {
   if (!selectedTask.value || !selectedDay.value) return [];
   const sched = getSchedulerForTaskAndDay(selectedTask.value, selectedDay.value);
-  return sched?.backup_volunteers?.data || [];
+  return sched?.backup_volunteers || [];
 });
 
 // Filter volunteers for add dropdown
@@ -656,8 +655,8 @@ const openRecurringEditModal = (taskId) => {
                 <!-- Volunteers list -->
                 <div class="flex flex-wrap items-center gap-3 mb-3">
                   <div v-for="volunteer in selectedVolunteers" :key="volunteer.id" class="flex items-center gap-2 bg-[rgba(26,26,26,0.8)] rounded-lg p-2 border border-[#3d4d36]/50">
-                    <UserProfileDisplay :volunteer="volunteer.attributes" />
-                    <span class="text-sm font-medium text-[#f5f5f5]">{{ volunteer.attributes.firstName }} {{ volunteer.attributes.lastName }}</span>
+                    <UserProfileDisplay :volunteer="volunteer" />
+                    <span class="text-sm font-medium text-[#f5f5f5]">{{ volunteer.firstName }} {{ volunteer.lastName }}</span>
                     <button
                       v-if="editor"
                       @click="deleteUser(volunteer.id)"

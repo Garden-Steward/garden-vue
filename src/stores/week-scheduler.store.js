@@ -19,11 +19,11 @@ export const useWeekSchedulerStore = defineStore({
       async update(id, data) {
         return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
             .then(res => {
-                const day = res.data.attributes.day
-                const idx = this.weekscheduler[day].findIndex(ws=> ws.id == res.data.id);
-                this.weekscheduler[day][idx] = res.data.attributes;
-                this.weekscheduler[day][idx].id = res.data.id;
-                console.log("updated sched: ",this.weekscheduler)
+                // v5 returns a flat entry (fields + id directly on res.data).
+                const sched = res.data;
+                const day = sched.day;
+                const idx = this.weekscheduler[day].findIndex(ws=> ws.id == sched.id);
+                this.weekscheduler[day][idx] = sched;
             })
             .catch(this.handleError);
       },
@@ -31,13 +31,13 @@ export const useWeekSchedulerStore = defineStore({
         return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
             .then(res => {
                 // Add the new scheduler to the appropriate day
-                const day = res.data.attributes.day;
+                const sched = res.data;
+                const day = sched.day;
                 if (!this.weekscheduler[day]) {
                     this.weekscheduler[day] = [];
                 }
-                res.data.attributes.id = res.data.id;
-                this.weekscheduler[day].push(res.data.attributes);
-                return res.data;
+                this.weekscheduler[day].push(sched);
+                return sched;
             })
             .catch(this.handleError);
       },
@@ -64,12 +64,12 @@ export const useWeekSchedulerStore = defineStore({
 
 const groupedSchedules = (scheduleArr) => {
     const grouped = {};
-    
-    // Loop through schedules and group by day
-    for (const wkS of scheduleArr) {
-      grouped[wkS.attributes.day] = grouped[wkS.attributes.day] ? grouped[wkS.attributes.day] : [];
-      wkS.attributes.id = wkS.id
-      grouped[wkS.attributes.day].push(wkS.attributes);
+
+    // v5 entries are flat — group by day, push the entry as-is.
+    for (const wkS of (Array.isArray(scheduleArr) ? scheduleArr : [])) {
+      const day = wkS.day;
+      if (!grouped[day]) grouped[day] = [];
+      grouped[day].push(wkS);
     }
     return grouped;
   };

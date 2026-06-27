@@ -34,14 +34,11 @@ watch(
 
 const isEditor = computed(() => {
   if (!user.value?.id) return false;
-  if (garden.value?.loading || !garden.value?.attributes) return false;
-  const raw = garden.value?.attributes?.managers?.data ?? garden.value?.attributes?.managers;
-  const list = Array.isArray(raw) ? raw : [];
+  if (garden.value?.loading || !garden.value?.id) return false;
+  const list = Array.isArray(garden.value?.managers) ? garden.value.managers : [];
   const uid = user.value.id;
   return list.some((m) => {
-    const mid = typeof m === 'object' && m != null
-      ? (m.id ?? m.attributes?.id)
-      : m;
+    const mid = typeof m === 'object' && m != null ? m.id : m;
     return mid != null && mid == uid;
   });
 });
@@ -52,8 +49,9 @@ const NAMING_MAP = { title_month: 'month_year', title_nth_weekday: 'ordinal', ti
 
 function normalizeTemplate(t) {
   if (!t) return null;
-  const attrs = t.attributes || t;
-  const id = t.id ?? attrs.id;
+  // v5 entries are flat.
+  const attrs = t;
+  const id = t.id;
   const nth = attrs.nth_occurrence;
   const dow = attrs.weekday;
   const rawNaming = attrs.naming_convention;
@@ -101,20 +99,20 @@ function onRecurringTemplateDeleted() {
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
-            <h1 v-if="garden?.attributes?.title" class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight pr-12 lg:pr-0">{{ garden.attributes.title }}</h1>
+            <h1 v-if="garden?.title" class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight pr-12 lg:pr-0">{{ garden.title }}</h1>
             <div v-else class="h-12 bg-white/20 rounded animate-pulse"></div>
-            <p v-if="garden?.attributes?.blurb" class="text-white/90 text-lg mt-2">{{ garden.attributes.blurb?.length > 150 ? garden.attributes.blurb.substring(0, 150) + '...' : garden.attributes.blurb }}</p>
-            <div v-else-if="garden?.loading || (!garden?.attributes && !garden?.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
+            <p v-if="garden?.blurb" class="text-white/90 text-lg mt-2">{{ garden.blurb?.length > 150 ? garden.blurb.substring(0, 150) + '...' : garden.blurb }}</p>
+            <div v-else-if="garden?.loading || (!garden?.id && !garden?.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="garden?.loading || (!garden?.attributes && !garden?.error)" class="flex justify-center min-h-[60vh]">
+    <div v-if="garden?.loading || (!garden?.id && !garden?.error)" class="flex justify-center min-h-[60vh]">
       <LoadingSpinner size="lg" :centered="true" />
     </div>
 
-    <div v-else-if="garden?.attributes" class="flex w-full flex-col gap-6 py-1 pl-1 pr-4 sm:py-5 sm:pr-5 lg:flex-row lg:pr-8">
+    <div v-else-if="garden?.id" class="flex w-full flex-col gap-6 py-1 pl-1 pr-4 sm:py-5 sm:pr-5 lg:flex-row lg:pr-8">
       <GardenSidebar
         active-section="events"
         @update:active-section="onSidebarSection"
