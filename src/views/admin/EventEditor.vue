@@ -27,6 +27,9 @@ const isEditingTitle = ref(false);
 const autoSaveTimeout = ref(null);
 const isAutoSaving = ref(false);
 const showMediaFields = ref(false);
+// Gate the image/gallery auto-save watchers so they don't fire on initial load
+// (the values change from undefined → loaded during the first flush).
+const autoSaveReady = ref(false);
 
 const startEditingTitle = async () => {
   isEditingTitle.value = true;
@@ -73,6 +76,9 @@ watch(event, async (newEvent) => {
     // Deep clone to prevent mutations
     originalEventData.value = JSON.parse(JSON.stringify(newEvent));
     hasChanges.value = false;
+    // Enable auto-save only AFTER this load flush settles, so the initial
+    // population of hero_image/featured_gallery doesn't trigger a PUT.
+    nextTick(() => { autoSaveReady.value = true; });
   }
 }, { deep: true });
 
@@ -108,7 +114,7 @@ watch(
     return heroImage?.id || heroImage?.data?.id || null;
   },
   (newId, oldId) => {
-    if (!originalEventData.value || isLoading.value || isAutoSaving.value) return;
+    if (!autoSaveReady.value || !originalEventData.value || isLoading.value || isAutoSaving.value) return;
     // Only auto-save if image was added/changed (not removed or initial load)
     if (newId && newId !== oldId) {
       // Clear any existing timeout
@@ -132,7 +138,7 @@ watch(
     return JSON.stringify(ids);
   },
   (newIds, oldIds) => {
-    if (!originalEventData.value || isLoading.value || isAutoSaving.value) return;
+    if (!autoSaveReady.value || !originalEventData.value || isLoading.value || isAutoSaving.value) return;
     // Only auto-save if gallery was modified (not initial load)
     if (oldIds && newIds !== oldIds) {
       // Clear any existing timeout
@@ -260,46 +266,28 @@ const normalizeEventData = (attributes) => {
 
 const saveEvent = async (isAutoSave = false) => {
   try {
-    // Create a copy of the attributes to modify
-    const eventData = { ...event.value }
-    
-    // Format hero_image correctly if it exists
-    if (eventData.hero_image) {
-      // Handle MediaSelector format: { id, url } or Strapi format: { id, data: {...} }
-      const heroImageId = eventData.hero_image.id || eventData.hero_image.data?.id
-      if (heroImageId) {
-        eventData.hero_image = {
-          id: heroImageId
-        }
-      } else {
-        // If no valid ID, set to null
-        eventData.hero_image = null
-      }
-    }
-    
-    // Format featured_gallery correctly if it exists
-    if (eventData.featured_gallery) {
-      // Handle Strapi format: { data: [...] } or direct array
-      let galleryArray = []
-      if (eventData.featured_gallery?.data && Array.isArray(eventData.featured_gallery.data)) {
-        galleryArray = eventData.featured_gallery.data
-      } else if (Array.isArray(eventData.featured_gallery)) {
-        galleryArray = eventData.featured_gallery
-      }
-      
-      if (galleryArray.length > 0) {
-        eventData.featured_gallery = galleryArray
-          .map(img => {
-            // Extract ID from different formats
-            const id = img?.id || img?.data?.id
-            return id ? { id } : null
-          })
-          .filter(img => img !== null)
-      } else {
-        eventData.featured_gallery = []
-      }
-    }
-    
+    // Send ONLY the editable fields. The event object is a flat v5 entry, so
+    // spreading it would include id/documentId/timestamps and relation objects
+    // (garden, recurring_template, confirmed) — Strapi rejects those on a PUT
+    // (e.g. "Invalid key id"). Build an explicit payload instead.
+    const src = event.value || {};
+    const eventData = {
+      title: src.title,
+      blurb: src.blurb,
+      endText: src.endText,
+      startDatetime: src.startDatetime,
+      content: src.content,
+      accessibility: src.accessibility,
+      smsLink: src.smsLink,
+    };
+
+    // hero_image → { id } | null
+    const heroImageId = src.hero_image?.id || src.hero_image?.data?.id;
+    eventData.hero_image = heroImageId ? { id: heroImageId } : null;
+
+    // featured_gallery → [{ id }]
+    eventData.featured_gallery = getGalleryIds(src.featured_gallery).map((id) => ({ id }));
+
     await eventStore.update(route.params.id, eventData)
     
     if (isAutoSave) {
