@@ -31,7 +31,7 @@ export const useGardensStore = defineStore({
         async getSlug(slug) {
             this.garden = { loading: true };
             fetchWrapper.get(`${baseUrl}/${slug}/full?populate=managers`)
-                .then(res => this.garden = res.data)
+                .then(res => this.garden = res.data ?? { error: 'Garden not found' })
                 .catch(error => this.garden = { error })
         },
         async update(id, data) {

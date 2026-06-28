@@ -104,7 +104,7 @@ watch(isEditor, (newValue) => {
 });
 
 watch(() => garden.value, (newGarden) => {
-  if (!newGarden.loading && newGarden.id) {
+  if (newGarden && !newGarden.loading && newGarden.id) {
     gardenTaskStore.getRecurringTasks(newGarden.id);
     gardenTaskStore.getGardenTasks(newGarden.id);
   }
