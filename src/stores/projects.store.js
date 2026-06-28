@@ -58,7 +58,7 @@ export const useProjectsStore = defineStore({
             throw err;
         },
         async getProjects(gardenId) {
-            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=related_events.title&populate[5]=impact_metrics&filters[garden][id][$eq]=${gardenId}`)
+            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=impact_metrics&filters[garden][id][$eq]=${gardenId}`)
                 .then(response => {
                     const projects = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeProject);
                     this.projects = projects;
@@ -113,7 +113,7 @@ export const useProjectsStore = defineStore({
         },
         async getSlug(slug) {
             this.project = { loading: true };
-            return fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=garden.organization&populate[4]=related_events&populate[5]=related_events.title&populate[6]=related_events.startDatetime&populate[7]=related_events.hero_image&populate[8]=impact_metrics`)
+            return fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=garden.organization&populate[4]=related_events&populate[5]=related_events.hero_image&populate[6]=impact_metrics`)
                 .then(response => {
                     const projects = Array.isArray(response.data) ? response.data : [response.data];
                     if (projects.length === 0) {
@@ -235,7 +235,7 @@ export const useProjectsStore = defineStore({
                 data.date_end = null;
             }
 
-            return fetchWrapper.post(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=related_events.title&populate[5]=impact_metrics`, { data: data })
+            return fetchWrapper.post(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=impact_metrics`, { data: data })
                 .then(response => {
                     if (response?.data?.id) {
                         // v5 returns a flat entry; guarantee array relations.
