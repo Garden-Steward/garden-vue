@@ -440,7 +440,10 @@ const submit = async () => {
           initialForm.value = JSON.parse(JSON.stringify(form.value));
         }
       } else {
-        const updatedTask = await gardenTaskStore.update(props.id, form.value);
+        // is_group_task is a UI-only toggle (shows/hides group settings), not a schema field.
+        const taskPayload = { ...form.value };
+        delete taskPayload.is_group_task;
+        const updatedTask = await gardenTaskStore.update(props.id, taskPayload);
         message = 'Garden Task updated';
         if (updatedTask) {
           form.value = { ...form.value, ...updatedTask };
@@ -448,7 +451,10 @@ const submit = async () => {
       }
     } else {
       form.value.status = 'INITIALIZED';
-      const newTask = await gardenTaskStore.register(form.value);
+      // is_group_task is a UI-only toggle (shows/hides group settings), not a schema field.
+      const taskPayload = { ...form.value };
+      delete taskPayload.is_group_task;
+      const newTask = await gardenTaskStore.register(taskPayload);
       message = 'Garden Task added';
       if (newTask) {
         form.value = { ...form.value, ...newTask };
