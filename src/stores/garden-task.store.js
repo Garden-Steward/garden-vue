@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, stripReadOnly } from '@/helpers';
 import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks`;
@@ -67,6 +67,7 @@ export const useGardenTaskStore = defineStore({
                 .catch(this.handleError);
         },
         async update(id, data) {
+            data = stripReadOnly(data);
             if (data.primary_image?.id) {
                 data.primary_image = {
                     id: data.primary_image.id
@@ -95,6 +96,7 @@ export const useGardenTaskStore = defineStore({
                 .catch(this.handleError);
         },
         async register(data) {
+            data = stripReadOnly(data);
             if (data.primary_image?.id) {
                 data.primary_image = {
                     id: data.primary_image.id
@@ -136,6 +138,7 @@ export const useGardenTaskStore = defineStore({
                 })
         },
         async registerRecurring(data) {
+            data = stripReadOnly(data);
             if (data.primary_image?.id) {
                 data.primary_image = { id: data.primary_image.id };
             }
@@ -150,7 +153,7 @@ export const useGardenTaskStore = defineStore({
                 .catch(this.handleError);
         },
         async updateRecurring(id, data) {
-            const payload = { ...data };
+            const payload = stripReadOnly(data);
             if (payload.primary_image?.id) {
                 payload.primary_image = { id: payload.primary_image.id };
             }

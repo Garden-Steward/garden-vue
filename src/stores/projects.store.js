@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, stripReadOnly } from '@/helpers';
 import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/projects`;
@@ -130,6 +130,7 @@ export const useProjectsStore = defineStore({
                 });
         },
         async update(id, data) {
+            data = stripReadOnly(data);
             // Handle hero_image
             if (data.hero_image?.id) {
                 data.hero_image = {
@@ -187,6 +188,7 @@ export const useProjectsStore = defineStore({
                 });
         },
         async register(data) {
+            data = stripReadOnly(data);
             // Handle hero_image
             if (data.hero_image?.id) {
                 data.hero_image = {
@@ -257,6 +259,7 @@ export const useProjectsStore = defineStore({
                 });
         },
         async pitch(data) {
+            data = stripReadOnly(data);
             // Normalize hero_image to its id for the relation
             if (data.hero_image?.id) {
                 data.hero_image = { id: data.hero_image.id };

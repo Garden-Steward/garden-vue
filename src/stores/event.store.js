@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, stripReadOnly } from '@/helpers';
 import { useGardensStore, useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
@@ -173,6 +173,9 @@ export const useEventStore = defineStore({
             return this.loadingPromise;
         },
         async update(id, data) {
+            // Drop Strapi system keys (id/documentId/timestamps) in case the
+            // caller passed a spread entity.
+            data = stripReadOnly(data);
             // Reduce hero_image to its id for the write payload (v5 flat object,
             // or legacy { data: { id } }).
             const heroId = data.hero_image?.id ?? data.hero_image?.data?.id;
@@ -218,7 +221,7 @@ export const useEventStore = defineStore({
 
         },
         async register(data) {
-            // TODO get id back from the register 
+            data = stripReadOnly(data);
             return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
                 .then(res => {
                     // v5 returns a flat entry (fields + id directly on res.data).

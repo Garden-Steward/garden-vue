@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, stripReadOnly } from '@/helpers';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/gardens`;
 
@@ -35,6 +35,7 @@ export const useGardensStore = defineStore({
                 .catch(error => this.garden = { error })
         },
         async update(id, data) {
+            data = stripReadOnly(data);
             // Format hero_image correctly if it exists
             if (data.hero_image?.id) {
                 data.hero_image = {
