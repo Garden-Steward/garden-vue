@@ -63,7 +63,11 @@ const buildForm = (p) => {
     category: attrs.category || 'Community',
     garden: gardenId || '',
     featured_gallery: Array.isArray(attrs.featured_gallery) ? [...attrs.featured_gallery] : [],
-    location: attrs.location || null
+    // The schema stores flat latitude/longitude; the LocationPicker uses a
+    // { latitude, longitude } object.
+    location: (attrs.latitude != null && attrs.longitude != null)
+      ? { latitude: attrs.latitude, longitude: attrs.longitude }
+      : null
   };
   managers.value = Array.isArray(attrs.managers) ? [...attrs.managers] : [];
   interested.value = Array.isArray(attrs.interested) ? [...attrs.interested] : [];
@@ -89,7 +93,9 @@ const save = async () => {
       garden: form.value.garden || null,
       featured_gallery: gallery,
       hero_image: gallery[0] || null,
-      location: form.value.location || null
+      // Map the picker's { latitude, longitude } to the schema's flat fields.
+      latitude: form.value.location?.latitude ?? null,
+      longitude: form.value.location?.longitude ?? null
     };
     await projectsStore.update(projectId, payload);
     alertStore.success('Project saved.');
