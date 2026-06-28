@@ -156,9 +156,9 @@ async function submitApplication() {
 // Prepare submission payload with API field names
 function prepareSubmissionPayload() {
   return {
-    project_type: formData.value.projectType, // Maps to project_type for API
+    project_type: formData.value.projectType,
     location: formData.value.location,
-    city_name: formData.value.cityName,
+    city: formData.value.cityName, // schema field is `city`
     requires_maintenance: formData.value.requiresMaintenance,
     name: formData.value.name,
     email: formData.value.email,
