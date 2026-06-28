@@ -32,10 +32,13 @@ export const useGardenTaskStore = defineStore({
         },
         async findById(id) {
             this.gardenTask = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=volunteers&populate[1]=primary_image&populate[2]=instruction&populate[3]=garden`)
+            // v5 core findOne keys on documentId; the route gives a numeric id,
+            // so resolve via a filter on the collection (permitted) and take [0].
+            return fetchWrapper.get(`${baseUrl}?filters[id][$eq]=${id}&populate[0]=volunteers&populate[1]=primary_image&populate[2]=instruction&populate[3]=garden`)
                 .then(response => {
-                    const task = normalizeGardenTask(response.data);
-                    this.gardenTask = task;
+                    const arr = Array.isArray(response.data) ? response.data : [];
+                    const task = arr.length ? normalizeGardenTask(arr[0]) : null;
+                    this.gardenTask = task ?? { error: 'Task not found' };
                     return task;
                 })
                 .catch(error => {
@@ -73,8 +76,14 @@ export const useGardenTaskStore = defineStore({
                     id: data.primary_image.id
                 };
             }
-            
-            return fetchWrapper.put(`${baseUrl}/${id}?populate=primary_image`, { data: data })
+
+            // v5 core update keys on documentId; resolve it from the cached task
+            // (the numeric id comes from the route/props).
+            const cached = (Array.isArray(this.gardenTasks) ? this.gardenTasks : []).find(t => t.id === id)
+                || (this.gardenTask?.id === id ? this.gardenTask : null);
+            const documentId = cached?.documentId ?? id;
+
+            return fetchWrapper.put(`${baseUrl}/${documentId}?populate=primary_image`, { data: data })
                 .then(response => {
                     if (!response?.data) return response;
 
@@ -167,7 +176,11 @@ export const useGardenTaskStore = defineStore({
                 payload.instruction = payload.instruction.id;
             }
 
-            return fetchWrapper.put(`${recurringUrl}/${id}?populate=*`, { data: payload })
+            // v5 core update keys on documentId; resolve it from the cached recurring task.
+            const cachedRecurring = (Array.isArray(this.recurringTasks) ? this.recurringTasks : []).find(t => t.id === id);
+            const recurringDocId = cachedRecurring?.documentId ?? id;
+
+            return fetchWrapper.put(`${recurringUrl}/${recurringDocId}?populate=*`, { data: payload })
                 .then(response => {
                     if (!response?.data) return response;
 
@@ -198,7 +211,8 @@ export const useGardenTaskStore = defineStore({
                 throw new Error('Cannot delete task: Only tasks with INITIALIZED status can be deleted');
             }
 
-            return fetchWrapper.delete(`${baseUrl}/${id}`)
+            // v5 core delete keys on documentId.
+            return fetchWrapper.delete(`${baseUrl}/${task.documentId ?? id}`)
                 .then(() => {
                     // Remove the task from the store
                     this.gardenTasks = this.gardenTasks.filter(t => t.id !== id);
