@@ -1631,4 +1631,70 @@ html.dark .gt-status-skipped-darkforce {
   color: #e5e7eb !important;
   border-color: rgba(148, 163, 184, 0.4) !important;
 }
+
+/*
+ * The modal is teleported to #modals, where the component's scoped
+ * :global(.dark) rules don't reliably win. Force the dark palette for the
+ * interactive elements from this non-scoped layer (same approach as .gt-input
+ * above), matching our other dark forms.
+ */
+html.dark .garden-task-modal-content .gt-text,
+html.dark .garden-task-modal-content .gt-status-label {
+  color: #f5f5f5 !important;
+}
+
+html.dark .garden-task-modal-content .gt-accent {
+  color: #8aa37c !important;
+}
+
+/* Task-type / choice buttons */
+html.dark .garden-task-modal-content .gt-type-btn {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  border-color: #3d4d36 !important;
+  color: #f5f5f5 !important;
+}
+html.dark .garden-task-modal-content .gt-type-btn:hover {
+  border-color: #8aa37c !important;
+  background-color: rgba(138, 163, 124, 0.18) !important;
+}
+html.dark .garden-task-modal-content .gt-type-btn-active {
+  border-color: #8aa37c !important;
+  background-color: #6c8a6a !important;
+  color: #ffffff !important;
+}
+
+/* Primary (Continue / submit) button */
+html.dark .garden-task-modal-content .gt-submit-btn {
+  background-color: #8aa37c !important;
+  color: #ffffff !important;
+}
+html.dark .garden-task-modal-content .gt-submit-btn:hover,
+html.dark .garden-task-modal-content .gt-submit-btn:focus {
+  background-color: #6c8a6a !important;
+}
+html.dark .garden-task-modal-content .gt-submit-btn:disabled {
+  background-color: #3d4d36 !important;
+  color: #8a8a8a !important;
+}
+
+/* Back button */
+html.dark .garden-task-modal-content .gt-back-btn {
+  background-color: transparent !important;
+  color: #d0d0d0 !important;
+  border-color: #3d4d36 !important;
+}
+html.dark .garden-task-modal-content .gt-back-btn:hover {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  color: #f5f5f5 !important;
+}
+
+/* "Create from Template" chips */
+html.dark .garden-task-modal-content .gt-template-chip {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  border-color: #3d4d36 !important;
+  color: #8aa37c !important;
+}
+html.dark .garden-task-modal-content .gt-template-chip:hover {
+  background-color: rgba(138, 163, 124, 0.18) !important;
+}
 </style>
