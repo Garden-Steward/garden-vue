@@ -21,7 +21,6 @@ const props = defineProps({
   category: String,
   volunteer_count: Number,
   hours_contributed: Number,
-  partiful_link: String,
   featured: Boolean,
   impact_metrics: Array,
   related_events: Array,
@@ -110,7 +109,6 @@ const form = ref({
   category: props.category || 'Community',
   volunteer_count: props.volunteer_count || null,
   hours_contributed: props.hours_contributed || null,
-  partiful_link: props.partiful_link || '',
   featured: props.featured || false,
   impact_metrics: props.impact_metrics ? [...props.impact_metrics] : [],
   related_events: props.related_events ? (Array.isArray(props.related_events) ? props.related_events : props.related_events.data || []) : [],
@@ -172,7 +170,6 @@ watch(() => props.description, (newVal) => { form.value.description = newVal || 
 watch(() => props.category, (newVal) => { form.value.category = newVal || 'Community'; });
 watch(() => props.volunteer_count, (newVal) => { form.value.volunteer_count = newVal || null; });
 watch(() => props.hours_contributed, (newVal) => { form.value.hours_contributed = newVal || null; });
-watch(() => props.partiful_link, (newVal) => { form.value.partiful_link = newVal || ''; });
 watch(() => props.featured, (newVal) => { form.value.featured = newVal || false; });
 watch(() => props.hero_image, (newVal) => {
   if (newVal) {
@@ -543,7 +540,6 @@ const submit = async () => {
         category: 'Community',
         volunteer_count: null,
         hours_contributed: null,
-        partiful_link: '',
         featured: false,
         impact_metrics: [],
         related_events: [],
@@ -1010,11 +1006,6 @@ onUnmounted(() => {
               Garden must be set before selecting media
             </div>
           </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Partiful Link</label>
-            <TextInput v-model="form.partiful_link" placeholder="https://partiful.com/..." />
-          </div>
         </div>
 
 
@@ -1307,20 +1298,6 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <!-- Partiful Link -->
-              <div v-if="form.partiful_link" class="mb-8">
-                <a 
-                  :href="form.partiful_link" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  RSVP via Partiful
-                </a>
-              </div>
             </div>
             </div>
       </div>

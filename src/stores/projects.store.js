@@ -25,6 +25,22 @@ function relationToIds(value) {
     return value.map(v => (typeof v === 'object' ? v?.id : v)).filter(id => id != null);
 }
 
+/**
+ * v5 single-entry endpoints key on documentId, not numeric id. Resolve a
+ * project's documentId from whatever is cached in state (falls back to the
+ * numeric id). `store` is the store instance (`this`).
+ */
+function resolveProjectDocId(store, id) {
+    for (const list of [store.projects, store.communityProjects, store.userProjects]) {
+        if (Array.isArray(list)) {
+            const found = list.find((p) => p && p.id === id);
+            if (found?.documentId) return found.documentId;
+        }
+    }
+    if (store.project?.id === id && store.project?.documentId) return store.project.documentId;
+    return id;
+}
+
 export const useProjectsStore = defineStore({
     id: 'projects',
     state: () => ({
@@ -82,9 +98,12 @@ export const useProjectsStore = defineStore({
         },
         async findById(id) {
             this.project = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=created_by&populate[4]=managers&populate[5]=impact_metrics&populate[6]=interested`)
+            // v5 core findOne keys on documentId; the route gives a numeric id,
+            // so resolve via a filter on the collection (permitted) and take [0].
+            return fetchWrapper.get(`${baseUrl}?filters[id][$eq]=${id}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=created_by&populate[4]=managers&populate[5]=impact_metrics&populate[6]=interested`)
                 .then(response => {
-                    const project = response?.data;
+                    const arr = Array.isArray(response?.data) ? response.data : [];
+                    const project = arr.length ? arr[0] : null;
                     if (!project) {
                         this.project = { error: 'Project not found' };
                         return null;
@@ -179,7 +198,9 @@ export const useProjectsStore = defineStore({
                 data.date_end = null;
             }
 
-            return fetchWrapper.put(`${baseUrl}/${id}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=impact_metrics`, { data: data })
+            // v5 core update keys on documentId; resolve from cached state.
+            const documentId = resolveProjectDocId(this, id);
+            return fetchWrapper.put(`${baseUrl}/${documentId}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=impact_metrics`, { data: data })
                 .then(response => {
                     if (response?.data) {
                         return normalizeProject(response.data);
@@ -299,7 +320,9 @@ export const useProjectsStore = defineStore({
                 });
         },
         async delete(id) {
-            return fetchWrapper.delete(`${baseUrl}/${id}`)
+            // v5 core delete keys on documentId.
+            const documentId = resolveProjectDocId(this, id);
+            return fetchWrapper.delete(`${baseUrl}/${documentId}`)
                 .then(() => {
                     // Remove the project from the store
                     this.projects = this.projects.filter(p => p.id !== id);
