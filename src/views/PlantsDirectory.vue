@@ -129,7 +129,8 @@ const typeColors = {
   herb: 'bg-pink-100 text-pink-800',
   groundcover: 'bg-indigo-100 text-indigo-800',
   succulent: 'bg-orange-100 text-orange-800',
-  fern: 'bg-lime-100 text-lime-800'
+  fern: 'bg-lime-100 text-lime-800',
+  fungi: 'bg-amber-100 text-amber-900'
 };
 
 const getTypeColor = (type) => {
