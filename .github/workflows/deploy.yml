@@ -44,8 +44,19 @@ jobs:
       env:
         VITE_API_URL: ${{ secrets.VITE_API_URL }}
       run: |
-        set -e
-        npm run build && firebase deploy --only hosting:garden-steward --project garden-steward
+        set -o pipefail
+        npm run build
+        # Firebase 400s if the built output is identical to the currently-live
+        # version ("supplied version ... is the current active version"). That's
+        # a no-op, not a failure — treat it as success so CI stays green.
+        if firebase deploy --only hosting:garden-steward --project garden-steward 2>&1 | tee firebase-deploy.log; then
+          echo "Firebase deploy succeeded."
+        elif grep -q "is the current active version" firebase-deploy.log; then
+          echo "::notice::No hosting changes since the last deploy (version already live) — skipping."
+        else
+          echo "::error::Firebase deploy failed."
+          exit 1
+        fi
       
     - name: Log Deployment Success
       run: echo "Deployment to Firebase Hosting was successful!"
