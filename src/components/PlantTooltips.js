@@ -11,7 +11,6 @@
  *   // later: cleanup();
  */
 
-let activeTooltip = null;
 let touchPlantId = null;
 
 /**
@@ -158,7 +157,7 @@ export function initPlantTooltips(plants, containerSelector = '.blog-content') {
     span.addEventListener('mouseleave', hideTooltip);
 
     // Click - open plant page in new tab
-    span.addEventListener('click', (e) => {
+    span.addEventListener('click', () => {
       if (plantSlug) {
         window.open(`/manage/plant/${plantSlug}`, '_blank');
       }
