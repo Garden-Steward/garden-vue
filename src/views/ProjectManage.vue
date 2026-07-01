@@ -41,11 +41,11 @@ const userName = (u) => {
 
 // ── Garden options (gardens the user manages or volunteers at) ──
 const isManager = (garden) => {
-  const managers = garden.attributes?.managers?.data || [];
+  const managers = garden.managers || [];
   return managers.some(m => (m.id || m) === user.value?.id);
 };
 const isVolunteer = (garden) => {
-  const volunteers = garden.attributes?.volunteers?.data || [];
+  const volunteers = garden.volunteers || [];
   return volunteers.some(v => (v.id || v) === user.value?.id);
 };
 const pitchGardens = computed(() => {
@@ -54,16 +54,20 @@ const pitchGardens = computed(() => {
 });
 
 const buildForm = (p) => {
-  const attrs = p?.attributes || {};
+  const attrs = p || {};
   const g = attrs.garden;
-  const gardenId = g?.data?.id ?? g?.id ?? (typeof g === 'number' ? g : '');
+  const gardenId = g?.id ?? (typeof g === 'number' ? g : '');
   form.value = {
     title: attrs.title || '',
     short_description: attrs.short_description || '',
     category: attrs.category || 'Community',
     garden: gardenId || '',
     featured_gallery: Array.isArray(attrs.featured_gallery) ? [...attrs.featured_gallery] : [],
-    location: attrs.location || null
+    // The schema stores flat latitude/longitude; the LocationPicker uses a
+    // { latitude, longitude } object.
+    location: (attrs.latitude != null && attrs.longitude != null)
+      ? { latitude: attrs.latitude, longitude: attrs.longitude }
+      : null
   };
   managers.value = Array.isArray(attrs.managers) ? [...attrs.managers] : [];
   interested.value = Array.isArray(attrs.interested) ? [...attrs.interested] : [];
@@ -89,7 +93,9 @@ const save = async () => {
       garden: form.value.garden || null,
       featured_gallery: gallery,
       hero_image: gallery[0] || null,
-      location: form.value.location || null
+      // Map the picker's { latitude, longitude } to the schema's flat fields.
+      latitude: form.value.location?.latitude ?? null,
+      longitude: form.value.location?.longitude ?? null
     };
     await projectsStore.update(projectId, payload);
     alertStore.success('Project saved.');

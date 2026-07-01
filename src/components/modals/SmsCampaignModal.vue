@@ -221,7 +221,7 @@ export default {
             if (!this.pollToggles.showText) return undefined;
             if (opt.textType === 'project' && opt.textProjectId) {
                 const proj = this.availableProjects.find(p => p.id === opt.textProjectId);
-                return proj?.attributes?.title || undefined;
+                return proj?.title || undefined;
             }
             return opt.textCustom || undefined;
         },
@@ -439,7 +439,7 @@ export default {
                   <select v-else-if="opt.textType === 'project'" v-model="opt.textProjectId"
                     class="sms-modal-input flex-1 min-w-[90px] rounded p-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-custom-green/50">
                     <option :value="null">— select project —</option>
-                    <option v-for="p in availableProjects" :key="p.id" :value="p.id">{{ p.attributes?.title }}</option>
+                    <option v-for="p in availableProjects" :key="p.id" :value="p.id">{{ p.title }}</option>
                   </select>
                   <span v-if="opt.textType === 'project' && availableProjects.length === 0"
                     class="text-xs sms-modal-muted italic">No projects loaded</span>

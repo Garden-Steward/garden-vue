@@ -79,28 +79,22 @@ const activeTasks = computed(() => {
 
   return gardenTasks.value
     .filter(task => {
-      const status = task.attributes?.status;
+      const status = task.status;
       return status && !['FINISHED', 'ABANDONED', 'SKIPPED'].includes(status.toUpperCase());
     })
     .sort((a, b) => {
-      const dateA = new Date(a.attributes?.createdAt || 0);
-      const dateB = new Date(b.attributes?.createdAt || 0);
+      const dateA = new Date(a.createdAt || 0);
+      const dateB = new Date(b.createdAt || 0);
       return dateB - dateA; // Most recent first
     });
 });
 
 // Get task image
 const getTaskImage = (task) => {
-  const primaryImage = task.attributes?.primary_image;
+  const primaryImage = task.primary_image;
   if (!primaryImage) return null;
-
-  // Handle different image formats from Strapi
-  const imageUrl = primaryImage.url ||
-                   primaryImage.formats?.medium?.url ||
-                   primaryImage.data?.attributes?.url ||
-                   primaryImage.data?.attributes?.formats?.medium?.url;
-
-  return imageUrl || null;
+  // v5 media is flat
+  return primaryImage.url || primaryImage.formats?.medium?.url || null;
 };
 
 // Get type badge classes
@@ -140,15 +134,13 @@ const formatStatus = (status) => {
 
 // Get volunteer count
 const getVolunteerCount = (task) => {
-  const volunteers = task.attributes?.volunteers;
-  if (Array.isArray(volunteers)) return volunteers.length;
-  if (volunteers?.data && Array.isArray(volunteers.data)) return volunteers.data.length;
-  return 0;
+  const volunteers = task.volunteers;
+  return Array.isArray(volunteers) ? volunteers.length : 0;
 };
 
 // Whether the task has remaining open spots
 const hasAvailableSpots = (task) => {
-  const max = task.attributes?.max_volunteers || 1;
+  const max = task.max_volunteers || 1;
   return getVolunteerCount(task) < max;
 };
 
@@ -179,17 +171,10 @@ const onCompactHeaderClick = (event, taskId) => {
 
 // Get a small thumbnail URL (preferring smaller formats first) for the compact mobile header.
 const getTaskThumbnail = (task) => {
-  const primaryImage = task.attributes?.primary_image;
+  const primaryImage = task.primary_image;
   if (!primaryImage) return null;
-
-  const formats = primaryImage.formats || primaryImage.data?.attributes?.formats;
-  return (
-    formats?.thumbnail?.url ||
-    formats?.small?.url ||
-    primaryImage.url ||
-    primaryImage.data?.attributes?.url ||
-    null
-  );
+  const formats = primaryImage.formats;
+  return formats?.thumbnail?.url || formats?.small?.url || primaryImage.url || null;
 };
 </script>
 
@@ -216,8 +201,8 @@ const getTaskThumbnail = (task) => {
       </button>
 
       <!-- Header -->
-      <div v-if="garden.attributes" class="tasks-header">
-        <h1 class="tasks-title">{{ garden.attributes.title }} Tasks</h1>
+      <div v-if="garden.id" class="tasks-header">
+        <h1 class="tasks-title">{{ garden.title }} Tasks</h1>
         <p class="tasks-subtitle">Browse available volunteer opportunities and sign up to help</p>
       </div>
       <div v-else-if="garden.loading" class="tasks-header">
@@ -265,7 +250,7 @@ const getTaskThumbnail = (task) => {
               <img
                 v-if="getTaskThumbnail(task)"
                 :src="getTaskThumbnail(task)"
-                :alt="task.attributes?.title || 'Task image'"
+                :alt="task.title || 'Task image'"
               />
               <div v-else class="task-compact-thumb-placeholder">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,13 +259,13 @@ const getTaskThumbnail = (task) => {
               </div>
             </div>
             <div class="task-compact-meta">
-              <h3 class="task-compact-title">{{ task.attributes?.title }}</h3>
+              <h3 class="task-compact-title">{{ task.title }}</h3>
               <span
-                v-if="task.attributes?.type"
-                :class="getTypeBadgeClasses(task.attributes?.type)"
+                v-if="task.type"
+                :class="getTypeBadgeClasses(task.type)"
                 class="task-badge task-compact-badge"
               >
-                {{ task.attributes?.type }}
+                {{ task.type }}
               </span>
             </div>
             <svg
@@ -301,7 +286,7 @@ const getTaskThumbnail = (task) => {
               <img
                 v-if="getTaskImage(task)"
                 :src="getTaskImage(task)"
-                :alt="task.attributes?.title || 'Task image'"
+                :alt="task.title || 'Task image'"
                 class="task-image"
               />
               <div v-else class="task-image-placeholder">
@@ -315,20 +300,20 @@ const getTaskThumbnail = (task) => {
             <div class="task-content">
               <!-- Badges -->
               <div class="task-badges">
-                <span :class="getStatusBadgeClasses(task.attributes?.status)" class="task-badge">
-                  {{ formatStatus(task.attributes?.status) }}
+                <span :class="getStatusBadgeClasses(task.status)" class="task-badge">
+                  {{ formatStatus(task.status) }}
                 </span>
-                <span v-if="task.attributes?.type" :class="getTypeBadgeClasses(task.attributes?.type)" class="task-badge">
-                  {{ task.attributes?.type }}
+                <span v-if="task.type" :class="getTypeBadgeClasses(task.type)" class="task-badge">
+                  {{ task.type }}
                 </span>
               </div>
 
               <!-- Title -->
-              <h3 class="task-title">{{ task.attributes?.title }}</h3>
+              <h3 class="task-title">{{ task.title }}</h3>
 
               <!-- Overview -->
-              <p v-if="task.attributes?.overview" class="task-overview">
-                {{ task.attributes.overview.length > 150 ? task.attributes.overview.substring(0, 150) + '...' : task.attributes.overview }}
+              <p v-if="task.overview" class="task-overview">
+                {{ task.overview.length > 150 ? task.overview.substring(0, 150) + '...' : task.overview }}
               </p>
 
               <!-- Volunteer Info -->
@@ -337,7 +322,7 @@ const getTaskThumbnail = (task) => {
                   <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
                 </svg>
                 <span class="volunteer-count">
-                  {{ getVolunteerCount(task) }} / {{ task.attributes?.max_volunteers || 1 }} volunteers
+                  {{ getVolunteerCount(task) }} / {{ task.max_volunteers || 1 }} volunteers
                 </span>
               </div>
 

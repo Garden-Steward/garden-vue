@@ -39,7 +39,7 @@ watch(() => props.garden?.id, (newId) => {
 }, { immediate: true });
 
 // Fetch events when garden changes
-watch(() => props.garden?.attributes?.slug, (slug) => {
+watch(() => props.garden?.slug, (slug) => {
   if (slug) {
     eventStore.getByGarden(slug);
   }
@@ -56,8 +56,8 @@ const allProjects = computed(() => {
 const availableCategories = computed(() => {
   const categories = new Set();
   allProjects.value.forEach(project => {
-    if (project.attributes?.category) {
-      categories.add(project.attributes.category);
+    if (project.category) {
+      categories.add(project.category);
     }
   });
   return Array.from(categories).sort();
@@ -78,14 +78,14 @@ const projectsList = computed(() => {
   // Filter by category
   if (selectedCategory.value !== 'all') {
     filtered = filtered.filter(project => 
-      project.attributes?.category === selectedCategory.value
+      project.category === selectedCategory.value
     );
   }
 
   // Filter by related event
   if (selectedEvent.value !== 'all') {
     filtered = filtered.filter(project => {
-      const relatedEvents = project.attributes?.related_events;
+      const relatedEvents = project.related_events;
       if (!relatedEvents) return false;
       
       // Handle both Strapi format and normalized format
@@ -101,8 +101,8 @@ const projectsList = computed(() => {
 
   // Sort by createdAt (newest first by default)
   filtered.sort((a, b) => {
-    const dateA = a.attributes?.createdAt ? new Date(a.attributes.createdAt) : new Date(0);
-    const dateB = b.attributes?.createdAt ? new Date(b.attributes.createdAt) : new Date(0);
+    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
     
     if (sortOrder.value === 'asc') {
       return dateA - dateB;
@@ -120,7 +120,7 @@ const selectedEventText = computed(() => {
     return 'All Events';
   }
   const event = availableEvents.value.find(e => e.id === parseInt(selectedEvent.value));
-  return event ? (event.title || event.attributes?.title || 'Untitled Event') : 'All Events';
+  return event ? (event.title || 'Untitled Event') : 'All Events';
 });
 
 // Toggle event dropdown
@@ -228,7 +228,7 @@ onUnmounted(() => {
                 ]"
               >
                 <span v-if="selectedEvent !== 'all' && parseInt(selectedEvent) === event.id" class="mr-2 text-custom-green">✓</span>
-                <span>{{ event.title || event.attributes?.title || 'Untitled Event' }}</span>
+                <span>{{ event.title || 'Untitled Event' }}</span>
               </button>
             </div>
           </transition>
@@ -255,12 +255,12 @@ onUnmounted(() => {
     
     <template v-if="projectsList.length > 0">
       <div v-for="project in projectsList" :key="project.id" class="ml-3 mb-2">
-        <Project 
-          v-if="project.attributes"
-          v-bind="project.attributes" 
+        <Project
+          v-if="project.id"
+          v-bind="project"
           :id="project.id"
           :garden="garden?.id"
-          :garden-slug="garden?.attributes?.slug"
+          :garden-slug="garden?.slug"
           :editor="editor"
         />
       </div>

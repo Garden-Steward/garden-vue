@@ -12,20 +12,14 @@ onMounted(() => {
 });
 
 const getGardenImage = (garden) => {
-    if (!garden?.attributes?.hero_image) {
-        return getImageOrDefault(null);
-    }
-    
-    const heroImage = garden.attributes.hero_image;
-    
-    // Handle different image formats (Strapi can return different structures)
-    const imageUrl = heroImage.url || 
+    // v5: hero_image is a flat media object.
+    const heroImage = garden?.hero_image;
+    if (!heroImage) return getImageOrDefault(null);
+
+    const imageUrl = heroImage.url ||
                      heroImage.formats?.medium?.url ||
-                     heroImage.formats?.large?.url ||
-                     heroImage.data?.attributes?.url ||
-                     heroImage.data?.attributes?.formats?.medium?.url ||
-                     heroImage.data?.attributes?.formats?.large?.url;
-    
+                     heroImage.formats?.large?.url;
+
     return getImageOrDefault(imageUrl);
 };
 
@@ -47,18 +41,18 @@ const gardenClick = (slug) => {
                 v-for="garden in gardens" 
                 :key="garden.id" 
                 class="bg-white dark:!bg-[#2d3e26] rounded-lg shadow-md overflow-hidden hover:shadow-lg dark:hover:shadow-[#1a1a1a]/50 transition-shadow cursor-pointer border border-transparent dark:border-[#3d4d36]/50"
-                @click="gardenClick(garden.attributes.slug)"
+                @click="gardenClick(garden.slug)"
             >
                 <div class="h-48 overflow-hidden">
                     <img 
                         :src="getGardenImage(garden)" 
-                        :alt="garden.attributes?.title || 'Garden Image'"
+                        :alt="garden.title || 'Garden Image'"
                         class="w-full h-full object-cover"
                     />
                 </div>
                 <div class="p-4">
-                    <h3 class="text-xl font-bold mb-2 leading-snug text-gray-900 dark:text-[#f5f5f5]">{{ garden.attributes?.title }}</h3>
-                    <p v-if="garden.attributes?.blurb" class="text-gray-600 dark:text-[#d0d0d0] mb-2">{{ garden.attributes.blurb }}</p>
+                    <h3 class="text-xl font-bold mb-2 leading-snug text-gray-900 dark:text-[#f5f5f5]">{{ garden.title }}</h3>
+                    <p v-if="garden.blurb" class="text-gray-600 dark:text-[#d0d0d0] mb-2">{{ garden.blurb }}</p>
                 </div>
             </div>
         </div>

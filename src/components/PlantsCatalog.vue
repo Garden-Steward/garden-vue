@@ -19,8 +19,8 @@ const searchQuery = ref('');
 
 // Fetch plants when garden data is available
 const fetchPlants = () => {
-  const lat = props.garden?.attributes?.latitude;
-  const lng = props.garden?.attributes?.longitude;
+  const lat = props.garden?.latitude;
+  const lng = props.garden?.longitude;
   locationTrackingStore.fetchByGarden(lat, lng, 0.5); // 500m radius
 };
 
@@ -93,20 +93,20 @@ const formatDate = (dateString) => {
 };
 
 const getImageUrl = (tracking) => {
-  // Clipart preferred — clean illustration for identification
-  if (tracking.plant?.clipart?.data?.attributes?.url) {
-    return tracking.plant.clipart.data.attributes.url;
+  // Clipart preferred — clean illustration for identification (v5 flat media)
+  if (tracking.plant?.clipart?.url) {
+    return tracking.plant.clipart.url;
   }
-  if (tracking.plant?.clipart?.data?.attributes?.formats?.small?.url) {
-    return tracking.plant.clipart.data.attributes.formats.small.url;
+  if (tracking.plant?.clipart?.formats?.small?.url) {
+    return tracking.plant.clipart.formats.small.url;
   }
   // Try plant_image first, then location_image
   if (tracking.small_image) return tracking.small_image;
   if (tracking.thumbnail) return tracking.thumbnail;
   if (tracking.location_thumbnail) return tracking.location_thumbnail;
   // Fallback to plant's images if available
-  if (tracking.plant?.images?.data?.[0]?.attributes?.formats?.small?.url) {
-    return tracking.plant.images.data[0].attributes.formats.small.url;
+  if (tracking.plant?.images?.[0]?.formats?.small?.url) {
+    return tracking.plant.images[0].formats.small.url;
   }
   return null;
 };

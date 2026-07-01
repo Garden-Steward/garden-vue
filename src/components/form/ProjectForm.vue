@@ -42,7 +42,7 @@ const fileInput = ref(null);
 const gardenOptions = computed(() =>
   (props.gardens || []).map((g) => ({
     value: g.id,
-    label: g.attributes?.title || 'Untitled garden'
+    label: g.title || 'Untitled garden'
   }))
 );
 

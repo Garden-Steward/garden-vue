@@ -31,30 +31,30 @@ const { event } = storeToRefs(eventStore);
 let renderedContent = '';
 
 const isEventPast = computed(() => {
-  if (!event.value?.attributes?.startDatetime) return false;
-  const eventDate = new Date(event.value.attributes.startDatetime);
+  if (!event.value?.startDatetime) return false;
+  const eventDate = new Date(event.value.startDatetime);
   const now = new Date();
   return eventDate < now;
 });
 
 // Check if user is a manager of the event's garden
 const isManager = computed(() => {
-  if (!event.value?.attributes?.garden?.data?.attributes?.managers?.data || !user.value) return false;
-  return event.value.attributes.garden.data.attributes.managers.data.some(manager => manager.id === user.value.id);
+  if (!event.value?.garden?.managers || !user.value) return false;
+  return event.value.garden.managers.some(manager => manager.id === user.value.id);
 });
 
 // Get hero image or use default
 const heroImage = computed(() => {
-  const heroImageUrl = event.value?.attributes?.hero_image?.data?.attributes?.url;
+  const heroImageUrl = event.value?.hero_image?.url;
   return getImageOrDefault(heroImageUrl);
 });
 
 watch(event, (newVal) => {
-  if (newVal.attributes?.content) {
-    renderedContent = md.render(newVal.attributes?.content);
+  if (newVal.content) {
+    renderedContent = md.render(newVal.content);
   }
-  if (newVal.attributes?.confirmed) {
-    isRSVPed.value = newVal.attributes?.confirmed.data.some(item => item.id === user.value?.id);
+  if (newVal.confirmed) {
+    isRSVPed.value = newVal.confirmed.some(item => item.id === user.value?.id);
   }
 });
 
@@ -140,7 +140,7 @@ const handleKeyPress = (event) => {
           <img id="heroImage" alt="Hero Image" class="w-full h-full object-cover object-center" :src="heroImage">
         </div>
         <div class="flex justify-between items-start mb-6">
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-[#c9d966]">{{ event?.attributes?.title }}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-[#c9d966]">{{ event?.title }}</h1>
           <router-link 
             v-if="user && isManager && event?.id"
             :to="`/manage/events/${event.id}/edit`"
@@ -149,19 +149,19 @@ const handleKeyPress = (event) => {
             Edit Event
           </router-link>
         </div>
-        <h4 class="text-lg font-bold mb-6 text-gray-700 dark:text-[#e8e8e8]">{{ processDate(event?.attributes?.startDatetime) }}</h4>
-        <div v-if="event?.attributes?.blurb" class="text-left brief-box dark:bg-[#2d3e26] dark:text-[#e8e8e8]">
-            <div v-html="event?.attributes?.blurb"></div>
+        <h4 class="text-lg font-bold mb-6 text-gray-700 dark:text-[#e8e8e8]">{{ processDate(event?.startDatetime) }}</h4>
+        <div v-if="event?.blurb" class="text-left brief-box dark:bg-[#2d3e26] dark:text-[#e8e8e8]">
+            <div v-html="event?.blurb"></div>
         </div>
-        <div class="text-left text-gray-800 dark:text-[#e8e8e8]" v-if="event?.attributes?.content">
+        <div class="text-left text-gray-800 dark:text-[#e8e8e8]" v-if="event?.content">
             <div v-html="renderedContent"></div>
         </div>
         
         <!-- Featured Gallery -->
         <Gallery 
-          :gallery="event?.attributes?.featured_gallery"
+          :gallery="event?.featured_gallery"
           title="Event Gallery"
-          :photo-album-url="event?.attributes?.photo_album_url"
+          :photo-album-url="event?.photo_album_url"
         />
         
         <div v-if="user?.id" class="text-left mt-5 dark:text-[#e8e8e8]">
@@ -169,7 +169,7 @@ const handleKeyPress = (event) => {
               <p>Would you like to RSVP for this event?</p>
             </div>
             <p v-if="isEventPast" class="text-gray-600 dark:text-[#b8b8b8] font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
-            <a v-if="event?.attributes?.partiful_link && !isEventPast" :href="event.attributes.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
+            <a v-if="event?.partiful_link && !isEventPast" :href="event.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
               {{ isRSVPed ? 'RSVP Initiated' : 'RSVP via Partiful' }}
             </a>
             <button v-else-if="!isEventPast" :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer no-underline" @click="rsvpEvent" :disabled="isRSVPed">
@@ -182,7 +182,7 @@ const handleKeyPress = (event) => {
         <!-- Conditional rendering of the agreement button -->
         <div v-else class="mt-6 dark:text-[#e8e8e8]">
           <p v-if="isEventPast" class="text-gray-600 dark:text-[#b8b8b8] font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
-          <a v-if="event?.attributes?.partiful_link && !isEventPast" :href="event.attributes.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block text-white font-bold py-2 px-4 rounded text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
+          <a v-if="event?.partiful_link && !isEventPast" :href="event.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block text-white font-bold py-2 px-4 rounded text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
             {{ isRSVPed ? 'RSVP Initiated' : 'RSVP via Partiful' }}
           </a>
           <button v-else-if="!isEventPast" :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="text-white font-bold py-2 px-4 rounded" @click="rsvpEvent" :disabled="isRSVPed">
@@ -201,19 +201,19 @@ const handleKeyPress = (event) => {
       <div class="text-center py-4 text-white">
         This event is brought to you by 
         <router-link 
-          v-if="event?.attributes?.garden?.data?.attributes?.slug"
-          :to="{ name: 'garden-public', params: { slug: event?.attributes?.garden?.data?.attributes?.slug } }"
+          v-if="event?.garden?.slug"
+          :to="{ name: 'garden-public', params: { slug: event?.garden?.slug } }"
           class="font-bold underline hover:text-custom-peach"
         >
-          {{ event?.attributes?.garden?.data?.attributes?.title }}
+          {{ event?.garden?.title }}
         </router-link>
-        <strong v-else>{{ event?.attributes?.garden?.data?.attributes?.title }}</strong>
+        <strong v-else>{{ event?.garden?.title }}</strong>
       </div>
     </div>
       <!-- Modal -->
       <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white dark:!bg-[#2d3e26] p-6 rounded-lg shadow-lg w-3/4 md:w-1/4">
-          <h3 class="md:text-xl mb-4 text-lg text-gray-900 dark:text-[#e8e8e8]">Garden Steward manages events through SMS. You will be asked to sign up for SMS Updates for {{ event?.attributes?.garden?.data.attributes?.title }} as a part of RSVPing for this event. </h3>
+          <h3 class="md:text-xl mb-4 text-lg text-gray-900 dark:text-[#e8e8e8]">Garden Steward manages events through SMS. You will be asked to sign up for SMS Updates for {{ event?.garden?.title }} as a part of RSVPing for this event. </h3>
           
           <input 
             :value="phoneNumber"

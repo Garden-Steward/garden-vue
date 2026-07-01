@@ -44,7 +44,7 @@ const submitPhoneNumber = async () => {
 
 watch(instruction, async (newInstruction) => {
   console.log('newInstruction: ', newInstruction);
-  if (newInstruction?.attributes?.content) {
+  if (newInstruction?.content) {
     await ArticleUtils.processImages();
   }
 }, { deep: true });
@@ -61,17 +61,17 @@ instSTore.findSlug(route.params.slug);
 <template>
     <div>
       <div class="max-w-4xl mx-auto px-6 py-12 bg-gray-100 dark:bg-[#2d3e26] rounded-lg" v-if="!instruction.loading && !instruction.error">
-        <h1 class="text-3xl font-bold mb-6 dark:text-[#f5f5f5]">{{ instruction?.attributes?.title }}</h1>
-        <StrapiBlocks :content="instruction?.attributes?.content" :modifiers="modifiers" :blocks="blocks" class="text-left"/>
+        <h1 class="text-3xl font-bold mb-6 dark:text-[#f5f5f5]">{{ instruction?.title }}</h1>
+        <StrapiBlocks :content="instruction?.content" :modifiers="modifiers" :blocks="blocks" class="text-left"/>
         <!-- Conditional rendering of the agreement button -->
-        <div v-if="instruction?.attributes?.accept_required" class="mt-6">
+        <div v-if="instruction?.accept_required" class="mt-6">
           <button :class="{ 'bg-gray-500': isApproved, 'bg-green-700 hover:bg-green-900': !isApproved }" class="text-white font-bold py-2 px-4 rounded" @click="acceptTask" :disabled="isApproved">
-            {{ isApproved ? 'Submitted' : instruction?.attributes?.affirm_button_title }}
+            {{ isApproved ? 'Submitted' : instruction?.affirm_button_title }}
           </button>
           <p class="text-sm mt-2 dark:text-[#d0d0d0]">
             {{ isApproved ? 
               'Alright! Thank you for being involved.'
-              : instruction?.attributes?.affirm_explain }}
+              : instruction?.affirm_explain }}
           </p>
         </div>
       </div>
@@ -79,9 +79,9 @@ instSTore.findSlug(route.params.slug);
       <div v-if="instruction.error" class="text-danger">Error loading instruction: {{instruction.error}}</div>
       <!-- Add this at the bottom of your template -->
       <div class="text-center py-4 text-white dark:text-[#f5f5f5]">
-        <strong>{{ instruction?.attributes?.garden?.data.attributes?.title }}</strong> is brought to you by 
-        <a :href="instruction?.attributes?.garden?.data.attributes?.organization?.data?.attributes.url" target="_blank" class="text-slate-800 dark:text-green-400 underline hover:text-yellow-100 dark:hover:text-green-300 visited:text-yellow-3c00">
-          <strong>{{ instruction?.attributes?.garden?.data.attributes?.organization?.data?.attributes.title }}</strong>
+        <strong>{{ instruction?.garden?.title }}</strong> is brought to you by
+        <a :href="instruction?.garden?.organization?.url" target="_blank" class="text-slate-800 dark:text-green-400 underline hover:text-yellow-100 dark:hover:text-green-300 visited:text-yellow-3c00">
+          <strong>{{ instruction?.garden?.organization?.title }}</strong>
         </a>
       </div>
       

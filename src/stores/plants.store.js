@@ -49,8 +49,10 @@ export const usePlantsStore = defineStore({
             params.set('pagination[page]', String(page));
             params.set('pagination[pageSize]', '25');
 
-            // Populate clipart + images for thumbnails
-            params.set('populate', 'clipart,images');
+            // Populate clipart + images for thumbnails.
+            // Strapi v5 rejects comma-separated populate strings — use array syntax.
+            params.set('populate[0]', 'clipart');
+            params.set('populate[1]', 'images');
 
             // Sort
             params.set('sort[0]', `${this.sortField}:${this.sortOrder}`);
@@ -128,8 +130,10 @@ export const usePlantsStore = defineStore({
 
             const params = new URLSearchParams();
             params.set('filters[slug][$eq]', slug);
-            params.set('populate', 'clipart,images');
-            params.set('populate[0]', 'Benefits');
+            // Strapi v5 requires array-style populate keys.
+            params.set('populate[0]', 'clipart');
+            params.set('populate[1]', 'images');
+            params.set('populate[2]', 'Benefits');
 
             fetchWrapper.get(`${baseUrl}?${params.toString()}`)
                 .then(res => {

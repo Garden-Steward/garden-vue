@@ -52,9 +52,9 @@ onMounted(() => {
 
 // Restore scroll position when navigating back from project
 const restoreScrollPosition = async () => {
-  if (!garden.value?.attributes?.slug) return;
+  if (!garden.value?.slug) return;
   
-  const scrollKey = `garden-scroll-${garden.value.attributes.slug}`;
+  const scrollKey = `garden-scroll-${garden.value.slug}`;
   const savedScrollPosition = sessionStorage.getItem(scrollKey);
   
   if (savedScrollPosition) {
@@ -74,7 +74,7 @@ const restoreScrollPosition = async () => {
 };
 
 // Watch for garden to load and restore scroll position
-watch(() => garden.value?.attributes?.slug, async (slug) => {
+watch(() => garden.value?.slug, async (slug) => {
   if (slug && !garden.value?.loading) {
     await restoreScrollPosition();
   }
@@ -100,9 +100,9 @@ const toggleDarkMode = () => {
 // Save scroll position before navigating to project
 const saveScrollPosition = () => {
   const container = document.querySelector('.garden-public-container');
-  if (container && garden.value?.attributes?.slug) {
+  if (container && garden.value?.slug) {
     const scrollPosition = container.scrollTop;
-    const scrollKey = `garden-scroll-${garden.value.attributes.slug}`;
+    const scrollKey = `garden-scroll-${garden.value.slug}`;
     sessionStorage.setItem(scrollKey, scrollPosition.toString());
   }
 };
@@ -156,13 +156,7 @@ const upcomingEvents = computed(() => {
   console.log('Current time:', now);
   
   const upcoming = eventsArray
-    .map(day => {
-      // Normalize Strapi format if needed
-      if (day.attributes) {
-        return { ...day.attributes, id: day.id };
-      }
-      return day;
-    })
+    .map(day => day)
     .filter(day => {
       // Skip if no startDatetime
       if (!day.startDatetime) {
@@ -220,13 +214,7 @@ const allPastEvents = computed(() => {
   const now = new Date();
   
   const pastEvents = eventsArray
-    .map(day => {
-      // Normalize Strapi format if needed
-      if (day.attributes) {
-        return { ...day.attributes, id: day.id };
-      }
-      return day;
-    })
+    .map(day => day)
     .filter(day => {
       // Skip if no startDatetime
       if (!day.startDatetime) {
@@ -299,8 +287,8 @@ const truncateDescription = (htmlString) => {
 };
 
 const isManager = computed(() => {
-  if (!garden.value?.attributes?.managers?.data || !user.value) return false;
-  return garden.value.attributes.managers.data.some(manager => manager.id === user.value.id);
+  if (!garden.value?.managers || !user.value) return false;
+  return garden.value.managers.some(manager => manager.id === user.value.id);
 });
 
 // Donation modal state
@@ -323,10 +311,7 @@ const organization = computed(() => {
     return null;
   }
   
-  return garden.value?.attributes?.organization?.data?.attributes ||
-         garden.value?.attributes?.organization?.attributes ||
-         garden.value?.organization?.attributes ||
-         null;
+  return garden.value?.organization || null;
 });
 
 // Get Venmo handle from organization (if available)
@@ -357,8 +342,8 @@ const venmoPaymentLink = computed(() => {
 // Get hero image for garden (use default if none available)
 const gardenHeroImage = computed(() => {
   // Check if garden has any image field (could be hero_image, primary_image, etc.)
-  const heroImageUrl = garden.value?.attributes?.hero_image?.data?.attributes?.url ||
-                       garden.value?.attributes?.primary_image?.data?.attributes?.url;
+  const heroImageUrl = garden.value?.hero_image?.url ||
+                       garden.value?.primary_image?.url;
   return heroImageUrl || getRandomDefaultImage();
 });
 
@@ -369,26 +354,26 @@ const featuredProjects = computed(() => {
   }
   
   // Get all projects
-  const allProjects = projects.value.filter(p => p.attributes);
-  
+  const allProjects = projects.value.filter(p => p?.id);
+
   if (allProjects.length === 0) return [];
-  
+
   // Get all featured projects
-  const featured = allProjects.filter(p => p.attributes?.featured);
-  
+  const featured = allProjects.filter(p => p.featured);
+
   // Sort featured projects by date_start (most recent first)
   if (featured.length > 0) {
     return featured.sort((a, b) => {
-      const dateA = a.attributes?.date_start ? new Date(a.attributes.date_start) : new Date(0);
-      const dateB = b.attributes?.date_start ? new Date(b.attributes.date_start) : new Date(0);
+      const dateA = a.date_start ? new Date(a.date_start) : new Date(0);
+      const dateB = b.date_start ? new Date(b.date_start) : new Date(0);
       return dateB - dateA;
     });
   }
-  
+
   // If no featured projects, return most recent project
   const sorted = [...allProjects].sort((a, b) => {
-    const dateA = a.attributes?.date_start ? new Date(a.attributes.date_start) : new Date(0);
-    const dateB = b.attributes?.date_start ? new Date(b.attributes.date_start) : new Date(0);
+    const dateA = a.date_start ? new Date(a.date_start) : new Date(0);
+    const dateB = b.date_start ? new Date(b.date_start) : new Date(0);
     return dateB - dateA;
   });
   
@@ -399,22 +384,20 @@ const featuredProjects = computed(() => {
 const getProjectHeroImage = (project) => {
   if (!project) return null;
   
-  const heroImage = project.attributes?.hero_image;
+  const heroImage = project.hero_image;
   if (!heroImage) return null;
-  
-  // Handle different image formats
-  const imageUrl = heroImage.url || 
-                   heroImage.formats?.medium?.url ||
-                   heroImage.data?.attributes?.url ||
-                   heroImage.data?.attributes?.formats?.medium?.url;
-  
+
+  // v5 media is flat
+  const imageUrl = heroImage.url ||
+                   heroImage.formats?.medium?.url;
+
   return getImageOrDefault(imageUrl);
 };
 
 // Get garden coordinates for map
 const gardenCoordinates = computed(() => {
-  const attrs = garden.value?.attributes;
-  
+  const attrs = garden.value;
+
   // Check if we have lat/lon
   const latitude = attrs?.latitude || attrs?.lat;
   const longitude = attrs?.longitude || attrs?.lon;
@@ -436,13 +419,13 @@ const mapLocationTrackings = computed(() => {
   return [{
     latitude: gardenCoordinates.value.latitude,
     longitude: gardenCoordinates.value.longitude,
-    label: garden.value?.attributes?.title || 'Garden Location'
+    label: garden.value?.title || 'Garden Location'
   }];
 });
 
 const showGardenMap = computed(() => {
   return !!(
-    garden.value?.attributes &&
+    garden.value?.id &&
     gardenCoordinates.value &&
     mapLocationTrackings.value.length > 0
   );
@@ -457,11 +440,8 @@ const googleMapsUrl = computed(() => {
 });
 
 const volunteerCount = computed(() => {
-  const v = garden.value?.attributes?.volunteers;
-  if (!v) return 0;
-  if (Array.isArray(v)) return v.length;
-  if (Array.isArray(v.data)) return v.data.length;
-  return 0;
+  const v = garden.value?.volunteers;
+  return Array.isArray(v) ? v.length : 0;
 });
 
 const activeVolunteersBubbleText = computed(() => {
@@ -471,8 +451,7 @@ const activeVolunteersBubbleText = computed(() => {
 });
 
 const gardenStartedAt = computed(() => {
-  const a = garden.value?.attributes;
-  return a?.createdAt || a?.publishedAt || garden.value?.createdAt || null;
+  return garden.value?.createdAt || garden.value?.publishedAt || null;
 });
 
 const formatStartedDate = (dateString) => {
@@ -490,7 +469,7 @@ const gardenStartedLabel = computed(() => formatStartedDate(gardenStartedAt.valu
 const gardenProjectsList = computed(() => {
   const list = projects.value;
   if (!list || !Array.isArray(list)) return [];
-  return list.filter((p) => p?.attributes);
+  return list.filter((p) => p?.id);
 });
 </script>
 
@@ -509,9 +488,9 @@ const gardenProjectsList = computed(() => {
     <!-- Full Screen Content -->
     <div class="garden-public-content">
       <!-- Title + blurb first -->
-      <div v-if="garden.attributes" class="garden-header garden-header-top">
-        <h1 class="garden-title">{{ garden.attributes.title }}</h1>
-        <p v-if="garden.attributes.blurb" class="garden-blurb">{{ garden.attributes.blurb }}</p>
+      <div v-if="garden.id" class="garden-header garden-header-top">
+        <h1 class="garden-title">{{ garden.title }}</h1>
+        <p v-if="garden.blurb" class="garden-blurb">{{ garden.blurb }}</p>
       </div>
       <div v-else-if="garden.loading" class="garden-header garden-header-top">
         <div class="garden-title h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
@@ -519,10 +498,10 @@ const gardenProjectsList = computed(() => {
       </div>
 
       <!-- Hero Image -->
-      <div v-if="garden.attributes" class="garden-hero-image">
-        <img 
-          :src="gardenHeroImage" 
-          :alt="garden.attributes.title || 'Garden Image'"
+      <div v-if="garden.id" class="garden-hero-image">
+        <img
+          :src="gardenHeroImage"
+          :alt="garden.title || 'Garden Image'"
           class="hero-image"
         />
       </div>
@@ -531,7 +510,7 @@ const gardenProjectsList = computed(() => {
       </div>
 
       <!-- Upcoming Events and Latest Events (before map / stats) -->
-      <section v-if="garden.attributes" class="two-column-section">
+      <section v-if="garden.id" class="two-column-section">
         <div class="two-column-layout">
           <!-- Left: Upcoming Events -->
           <div class="column-content">
@@ -593,13 +572,13 @@ const gardenProjectsList = computed(() => {
         </div>
       </section>
 
-      <section v-if="garden.attributes?.description" class="garden-section">
+      <section v-if="garden.description" class="garden-section">
 
-        <div class="section-content" v-html="garden.attributes.description.replace(/\n/g, '<br>')"></div>
+        <div class="section-content" v-html="garden.description.replace(/\n/g, '<br>')"></div>
       </section>
 
       <!-- Map (left) + stats (right) on wide screens -->
-      <section v-if="garden.attributes" class="garden-map-stats-section">
+      <section v-if="garden.id" class="garden-map-stats-section">
         <div
           class="garden-map-stats-row"
           :class="{ 'garden-map-stats-row--no-map': !showGardenMap }"
@@ -655,14 +634,14 @@ const gardenProjectsList = computed(() => {
                 class="garden-projects-mini-item"
               >
                 <router-link
-                  v-if="proj.attributes.slug && garden.attributes.slug"
-                  :to="`/gardens/${garden.attributes.slug}/p/${proj.attributes.slug}`"
+                  v-if="proj.slug && garden.slug"
+                  :to="`/gardens/${garden.slug}/p/${proj.slug}`"
                   class="garden-projects-mini-link"
                   @click="saveScrollPosition"
                 >
-                  {{ proj.attributes.title }}
+                  {{ proj.title }}
                 </router-link>
-                <span v-else class="garden-projects-mini-text">{{ proj.attributes.title }}</span>
+                <span v-else class="garden-projects-mini-text">{{ proj.title }}</span>
               </li>
             </ul>
           </div>
@@ -694,12 +673,12 @@ const gardenProjectsList = computed(() => {
           <div class="project-layout" :class="{ 'project-layout-reverse': index % 2 === 1 }">
             <!-- Copy/Text -->
             <div class="project-content">
-              <h3 class="project-title">{{ project.attributes.title }}</h3>
-              <div v-if="project.attributes.short_description" class="project-description" v-html="truncateDescription(project.attributes.short_description)"></div>
-              <div v-else-if="project.attributes.description" class="project-description" v-html="truncateDescription(project.attributes.description)"></div>
+              <h3 class="project-title">{{ project.title }}</h3>
+              <div v-if="project.short_description" class="project-description" v-html="truncateDescription(project.short_description)"></div>
+              <div v-else-if="project.description" class="project-description" v-html="truncateDescription(project.description)"></div>
               <router-link 
-                v-if="project.attributes.slug && garden?.attributes?.slug"
-                :to="`/gardens/${garden.attributes.slug}/p/${project.attributes.slug}`"
+                v-if="project.slug && garden?.slug"
+                :to="`/gardens/${garden.slug}/p/${project.slug}`"
                 class="btn-explore-project"
                 @click="saveScrollPosition"
               >
@@ -711,7 +690,7 @@ const gardenProjectsList = computed(() => {
             <div v-if="getProjectHeroImage(project)" class="project-image-wrapper">
               <img 
                 :src="getProjectHeroImage(project)" 
-                :alt="project.attributes.title || 'Project image'"
+                :alt="project.title || 'Project image'"
                 class="project-hero-image"
               />
             </div>
@@ -812,7 +791,7 @@ const gardenProjectsList = computed(() => {
             </svg>
           </button>
           
-          <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Donate to {{ garden.attributes?.title || 'This Garden' }}</h2>
+          <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Donate to {{ garden.title || 'This Garden' }}</h2>
           
           <div class="space-y-4">
             <p class="text-gray-700 dark:text-gray-300">

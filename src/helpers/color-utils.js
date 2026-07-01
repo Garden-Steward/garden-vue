@@ -57,13 +57,10 @@ export function getGardenColor(garden) {
   }
   
   // Try to get identifier from various possible locations
-  const identifier = 
-    garden.attributes?.slug ||
-    garden.attributes?.title ||
+  const identifier =
     garden.slug ||
     garden.title ||
-    garden.id ||
-    garden.attributes?.id;
+    garden.id;
   
   return getColorForIdentifier(identifier);
 }
@@ -82,13 +79,10 @@ export function getVolunteerColor(volunteer) {
   if (volunteer.color) return volunteer.color;
   
   // Try to get identifier from various possible locations
-  const identifier = 
+  const identifier =
     volunteer.username ||
     volunteer.email ||
-    volunteer.attributes?.username ||
-    volunteer.attributes?.email ||
-    volunteer.id ||
-    volunteer.attributes?.id;
+    volunteer.id;
   
   return getColorForIdentifier(identifier);
 }

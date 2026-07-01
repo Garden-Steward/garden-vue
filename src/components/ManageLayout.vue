@@ -23,8 +23,8 @@ gardensStore.getAll();
 const showPitch = ref(false);
 const openPitch = () => { showPitch.value = true; };
 
-const isGardenManager = (g) => (g.attributes?.managers?.data || []).some(m => (m.id || m) === user.value?.id);
-const isGardenVolunteer = (g) => (g.attributes?.volunteers?.data || []).some(v => (v.id || v) === user.value?.id);
+const isGardenManager = (g) => (g.managers || []).some(m => (m.id || m) === user.value?.id);
+const isGardenVolunteer = (g) => (g.volunteers || []).some(v => (v.id || v) === user.value?.id);
 const pitchGardens = computed(() =>
   Array.isArray(gardens.value) ? gardens.value.filter(g => isGardenManager(g) || isGardenVolunteer(g)) : []
 );

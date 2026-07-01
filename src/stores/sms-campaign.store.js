@@ -30,7 +30,7 @@ export const useSMSCampaignStore = defineStore({
         async update(id, data) {
             return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
                 .then(res => {
-                    this.smsCampaign = res.data.attributes;
+                    this.smsCampaign = res.data;
                 })
                 .catch(this.handleError);
             
@@ -42,7 +42,7 @@ export const useSMSCampaignStore = defineStore({
         async register(data) {
             return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
                 .then(res => {
-                    this.smsCampaigns.unshift(res.data.attributes);
+                    this.smsCampaigns.unshift(res.data);
                     this.smsCampaign = res.data;
                 })
                 .catch(this.handleError);

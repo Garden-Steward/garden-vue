@@ -1,43 +1,19 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, stripReadOnly } from '@/helpers';
 import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/garden-tasks`;
 const recurringUrl = `${import.meta.env.VITE_API_URL}/api/recurring-tasks`;
 
-/** Normalize recurring-task entity from API (flatten media; keep relations as returned). */
-function normalizeRecurringTaskEntity(entity) {
-    if (!entity?.attributes) return entity;
-    const attrs = { ...entity.attributes };
-    if (attrs.primary_image?.data) {
-        const imageData = attrs.primary_image.data;
-        attrs.primary_image = {
-            ...(imageData.attributes || imageData),
-            id: imageData.id
-        };
-    }
-    return { id: entity.id, attributes: attrs };
-}
-
-/** Normalize a single Strapi garden-task entity (same rules as getGardenTasks / update). */
-function normalizeGardenTaskEntity(task) {
-    if (!task?.attributes) return task;
-    const t = { id: task.id, attributes: { ...task.attributes } };
-    const vol = t.attributes.volunteers;
-    if (vol?.data) {
-        t.attributes.volunteers = vol.data;
-    } else if (!vol) {
-        t.attributes.volunteers = [];
-    }
-    if (t.attributes.primary_image?.data) {
-        const imageData = t.attributes.primary_image.data;
-        t.attributes.primary_image = {
-            ...(imageData.attributes || imageData),
-            id: imageData.id
-        };
-    }
-    return t;
+/**
+ * Strapi v5 returns flat entries with relations/media already de-nested.
+ * Guarantee the volunteers relation is always an array so consumers can iterate.
+ */
+function normalizeGardenTask(task) {
+    if (!task) return task;
+    if (!Array.isArray(task.volunteers)) task.volunteers = [];
+    return task;
 }
 
 export const useGardenTaskStore = defineStore({
@@ -56,15 +32,13 @@ export const useGardenTaskStore = defineStore({
         },
         async findById(id) {
             this.gardenTask = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=volunteers&populate[1]=primary_image&populate[2]=instruction&populate[3]=garden`)
+            // v5 core findOne keys on documentId; the route gives a numeric id,
+            // so resolve via a filter on the collection (permitted) and take [0].
+            return fetchWrapper.get(`${baseUrl}?filters[id][$eq]=${id}&populate[0]=volunteers&populate[1]=primary_image&populate[2]=instruction&populate[3]=garden`)
                 .then(response => {
-                    const task = response.data;
-                    if (task?.attributes?.volunteers?.data) {
-                        task.attributes.volunteers = task.attributes.volunteers.data;
-                    } else if (!task?.attributes?.volunteers) {
-                        task.attributes.volunteers = [];
-                    }
-                    this.gardenTask = task;
+                    const arr = Array.isArray(response.data) ? response.data : [];
+                    const task = arr.length ? normalizeGardenTask(arr[0]) : null;
+                    this.gardenTask = task ?? { error: 'Task not found' };
                     return task;
                 })
                 .catch(error => {
@@ -77,7 +51,7 @@ export const useGardenTaskStore = defineStore({
             return fetchWrapper.get(`${baseUrl}/user?populate[0]=garden&populate[1]=primary_image`)
                 .then(response => {
                     const raw = Array.isArray(response) ? response : (response?.data ?? []);
-                    const tasks = (Array.isArray(raw) ? raw : [raw]).map(normalizeGardenTaskEntity);
+                    const tasks = (Array.isArray(raw) ? raw : [raw]).map(normalizeGardenTask);
                     this.userTasks = tasks;
                     return tasks;
                 })
@@ -89,61 +63,49 @@ export const useGardenTaskStore = defineStore({
         async getGardenTasks(gardenId) {
             return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=instruction&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished`)
                 .then(response => {
-                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(task => {
-                        if (task.attributes?.volunteers?.data) {
-                            task.attributes.volunteers = task.attributes.volunteers.data;
-                        } else if (!task.attributes?.volunteers) {
-                            task.attributes.volunteers = [];
-                        }
-                        return task;
-                    });
+                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeGardenTask);
                     this.gardenTasks = tasks;
                     return tasks;
                 })
                 .catch(this.handleError);
         },
         async update(id, data) {
+            data = stripReadOnly(data);
             if (data.primary_image?.id) {
                 data.primary_image = {
                     id: data.primary_image.id
                 };
             }
-            
-            return fetchWrapper.put(`${baseUrl}/${id}?populate=primary_image`, { data: data })
+
+            // v5 core update keys on documentId; resolve it from the cached task
+            // (the numeric id comes from the route/props).
+            const cached = (Array.isArray(this.gardenTasks) ? this.gardenTasks : []).find(t => t.id === id)
+                || (this.gardenTask?.id === id ? this.gardenTask : null);
+            const documentId = cached?.documentId ?? id;
+
+            return fetchWrapper.put(`${baseUrl}/${documentId}?populate=primary_image`, { data: data })
                 .then(response => {
                     if (!response?.data) return response;
 
-                    const resData = response.data;
-                    const attrs = { ...resData.attributes };
-
-                    // Normalize primary_image from Strapi { data: { id, attributes } } to flat { id, url, formats, ... }
-                    if (attrs.primary_image?.data) {
-                        const imageData = attrs.primary_image.data;
-                        attrs.primary_image = {
-                            ...(imageData.attributes || imageData),
-                            id: imageData.id
-                        };
-                    }
+                    // v5 returns a flat entry.
+                    const updated = normalizeGardenTask(response.data);
 
                     // Update the single task in gardenTasks so UI (e.g. task cards) reflects the change
                     const tasks = Array.isArray(this.gardenTasks) ? this.gardenTasks : [];
-                    const index = tasks.findIndex(t => t.id === resData.id || t.id === id);
+                    const index = tasks.findIndex(t => t.id === updated.id || t.id === id);
                     if (index !== -1) {
-                        const existing = tasks[index];
-                        const mergedAttrs = { ...existing.attributes, ...attrs };
-                        this.gardenTasks = tasks.map((t, i) =>
-                            i === index ? { id: resData.id, attributes: mergedAttrs } : t
-                        );
+                        this.gardenTasks = tasks.map((t, i) => i === index ? { ...t, ...updated } : t);
                     } else {
                         // Task not in list (e.g. different garden); still push so refs stay in sync
-                        this.gardenTasks = [...tasks, { id: resData.id, attributes: attrs }];
+                        this.gardenTasks = [...tasks, updated];
                     }
 
-                    return attrs;
+                    return updated;
                 })
                 .catch(this.handleError);
         },
         async register(data) {
+            data = stripReadOnly(data);
             if (data.primary_image?.id) {
                 data.primary_image = {
                     id: data.primary_image.id
@@ -152,12 +114,12 @@ export const useGardenTaskStore = defineStore({
 
             return fetchWrapper.post(`${baseUrl}?populate=primary_image`, { data: data })
                 .then(response => {
-                    if (response?.data?.attributes) {
-                        const normalized = normalizeGardenTaskEntity(response.data);
+                    if (response?.data?.id) {
+                        const normalized = normalizeGardenTask(response.data);
                         const tasks = Array.isArray(this.gardenTasks) ? [...this.gardenTasks] : [];
                         const withoutDup = tasks.filter((t) => t.id !== normalized.id);
                         this.gardenTasks = [normalized, ...withoutDup];
-                        return normalized.attributes;
+                        return normalized;
                     }
                     return response;
                 })
@@ -185,6 +147,7 @@ export const useGardenTaskStore = defineStore({
                 })
         },
         async registerRecurring(data) {
+            data = stripReadOnly(data);
             if (data.primary_image?.id) {
                 data.primary_image = { id: data.primary_image.id };
             }
@@ -199,7 +162,7 @@ export const useGardenTaskStore = defineStore({
                 .catch(this.handleError);
         },
         async updateRecurring(id, data) {
-            const payload = { ...data };
+            const payload = stripReadOnly(data);
             if (payload.primary_image?.id) {
                 payload.primary_image = { id: payload.primary_image.id };
             }
@@ -213,11 +176,16 @@ export const useGardenTaskStore = defineStore({
                 payload.instruction = payload.instruction.id;
             }
 
-            return fetchWrapper.put(`${recurringUrl}/${id}?populate=*`, { data: payload })
+            // v5 core update keys on documentId; resolve it from the cached recurring task.
+            const cachedRecurring = (Array.isArray(this.recurringTasks) ? this.recurringTasks : []).find(t => t.id === id);
+            const recurringDocId = cachedRecurring?.documentId ?? id;
+
+            return fetchWrapper.put(`${recurringUrl}/${recurringDocId}?populate=*`, { data: payload })
                 .then(response => {
                     if (!response?.data) return response;
 
-                    const normalized = normalizeRecurringTaskEntity(response.data);
+                    // v5 returns a flat entry.
+                    const normalized = response.data;
                     const list = Array.isArray(this.recurringTasks) ? [...this.recurringTasks] : [];
                     const idx = list.findIndex((t) => t.id === normalized.id);
                     if (idx !== -1) {
@@ -227,7 +195,7 @@ export const useGardenTaskStore = defineStore({
                     }
                     this.recurringTasks = list;
 
-                    return normalized.attributes;
+                    return normalized;
                 })
                 .catch(this.handleError);
         },
@@ -239,11 +207,12 @@ export const useGardenTaskStore = defineStore({
             }
 
             // Only allow deletion if status is INITIALIZED
-            if (task.attributes.status !== 'INITIALIZED') {
+            if (task.status !== 'INITIALIZED') {
                 throw new Error('Cannot delete task: Only tasks with INITIALIZED status can be deleted');
             }
 
-            return fetchWrapper.delete(`${baseUrl}/${id}`)
+            // v5 core delete keys on documentId.
+            return fetchWrapper.delete(`${baseUrl}/${task.documentId ?? id}`)
                 .then(() => {
                     // Remove the task from the store
                     this.gardenTasks = this.gardenTasks.filter(t => t.id !== id);
@@ -254,14 +223,7 @@ export const useGardenTaskStore = defineStore({
         async getTasksByGardenSlug(slug) {
             return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=garden&populate[4]=instruction&filters[garden][slug][$eq]=${slug}&filters[status][$nei]=finished`)
                 .then(response => {
-                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(task => {
-                        if (task.attributes?.volunteers?.data) {
-                            task.attributes.volunteers = task.attributes.volunteers.data;
-                        } else if (!task.attributes?.volunteers) {
-                            task.attributes.volunteers = [];
-                        }
-                        return task;
-                    });
+                    const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeGardenTask);
                     this.gardenTasks = tasks;
                     return tasks;
                 })

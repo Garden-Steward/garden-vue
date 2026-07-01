@@ -1,12 +1,15 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, stripReadOnly } from '@/helpers';
 import { useGardensStore, useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
 
-// Populate string for event queries - recurring_template uses simple populate (like VolunteerActivity)
-const eventPopulate = 'populate=recurring_template&populate[0]=garden&populate[1]=garden.managers&populate[2]=confirmed&populate[3]=hero_image&populate[4]=featured_gallery';
+// Populate string for event queries. Strapi v5 rejects mixing index-style
+// (populate[0]) with nested object keys, and silently drops a bare
+// `populate=field` when other array keys are present — so use the object form
+// throughout, with nested populate for garden.managers.
+const eventPopulate = 'populate[recurring_template]=true&populate[confirmed]=true&populate[hero_image]=true&populate[featured_gallery]=true&populate[garden][populate][managers]=true';
 
 export const useEventStore = defineStore({
     id: 'event',
@@ -102,14 +105,11 @@ export const useEventStore = defineStore({
         },
         async findById(id) {
             this.event = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?${eventPopulate}`)
+            // v5 core findOne keys on documentId, but our /d/:id routes (and SMS
+            // links) use the numeric id — resolve via the custom by-id route,
+            // which populates server-side and returns a flat { data } entry.
+            return fetchWrapper.get(`${baseUrl}/by-id/${id}`)
                 .then(res => {
-                    // Debug: log recurring_template structure to verify populate is working
-                    if (res.data?.attributes?.recurring_template) {
-                        console.log('recurring_template in response:', res.data.attributes.recurring_template);
-                    } else {
-                        console.log('recurring_template NOT in response. Full event:', res.data);
-                    }
                     this.event = res.data;
                     return res.data;
                 })
@@ -173,11 +173,14 @@ export const useEventStore = defineStore({
             return this.loadingPromise;
         },
         async update(id, data) {
-            // Format hero_image if it's in Strapi response format
-            if (data.hero_image?.data?.id) {
-                data.hero_image = {
-                    id: data.hero_image.data.id
-                };
+            // Drop Strapi system keys (id/documentId/timestamps) in case the
+            // caller passed a spread entity.
+            data = stripReadOnly(data);
+            // Reduce hero_image to its id for the write payload (v5 flat object,
+            // or legacy { data: { id } }).
+            const heroId = data.hero_image?.id ?? data.hero_image?.data?.id;
+            if (heroId) {
+                data.hero_image = { id: heroId };
             }
             
             // Ensure featured_gallery is properly formatted
@@ -189,9 +192,15 @@ export const useEventStore = defineStore({
                     }));
             }
 
-            return fetchWrapper.put(`${baseUrl}/${id}?${eventPopulate}`, { data: data })
+            // v5 core update keys on documentId; the editor passes the numeric id,
+            // so use the loaded entity's documentId when it matches.
+            const documentId = (this.event?.id == id && this.event?.documentId)
+                ? this.event.documentId
+                : id;
+
+            return fetchWrapper.put(`${baseUrl}/${documentId}?${eventPopulate}`, { data: data })
                 .then(res => {
-                    this.volunteerDay = res.data.attributes;
+                    this.volunteerDay = res.data;
                     // Update the event in state if it matches
                     if (this.event.id === id) {
                         this.event = res.data;
@@ -212,17 +221,17 @@ export const useEventStore = defineStore({
 
         },
         async register(data) {
-            // TODO get id back from the register 
+            data = stripReadOnly(data);
             return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
                 .then(res => {
-                    let vday = res.data;
+                    // v5 returns a flat entry (fields + id directly on res.data).
+                    const vday = res.data;
                     // Ensure volunteerDays.days is an array before calling unshift
                     if (!this.volunteerDays.days || !Array.isArray(this.volunteerDays.days)) {
                         this.volunteerDays.days = [];
                     }
-                    this.volunteerDays.days.unshift(vday.attributes);
-                    this.volunteerDay = vday.attributes;
-                    this.volunteerDay.id = vday.id;
+                    this.volunteerDays.days.unshift(vday);
+                    this.volunteerDay = vday;
                 })
                 .catch(this.handleError);
             
