@@ -51,8 +51,8 @@ const addUserToSchedule = (volunteer, schedId) => {
 }
 const filterUsers = () => {
   filteredUsers.value = props.volunteers.filter(user =>
-    user.attributes.firstName?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    user.attributes.lastName?.toLowerCase().includes(searchQuery.value.toLowerCase())
+    user.firstName?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    user.lastName?.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 }
 
@@ -70,12 +70,12 @@ const filterUsers = () => {
           </h2>
           <div v-if="editMode == day" class="bg-gray-100 mb-1 rounded-md">
             <div v-for="sched in (weekscheduler[day] || [])" :key="sched.id">
-              <div v-if="sched.recurring_task?.data?.attributes?.scheduler_type !== 'No Schedule'" class="bg-gray-100 p-2 pl-4 rounded-md mb-1">
+              <div v-if="sched.recurring_task?.scheduler_type !== 'No Schedule'" class="bg-gray-100 p-2 pl-4 rounded-md mb-1">
                 <div class="flex flex-col md:flex-row md:items-center">
-                  <h3 class="text-sm font-semibold mb-1 md:mb-0 md:w-1/4">{{ sched.recurring_task?.data?.attributes?.title }}</h3>
+                  <h3 class="text-sm font-semibold mb-1 md:mb-0 md:w-1/4">{{ sched.recurring_task?.title }}</h3>
                   <div class="flex flex-wrap md:w-3/4 md:pl-2">
-                    <div v-for='volunteer of sched.backup_volunteers?.data || []' :key='volunteer?.id' class="flex items-center mr-1">
-                      <UserProfileDisplay v-if="volunteer?.attributes" :volunteer="volunteer.attributes" />
+                    <div v-for='volunteer of sched.backup_volunteers || []' :key='volunteer?.id' class="flex items-center mr-1">
+                      <UserProfileDisplay v-if="volunteer?.id" :volunteer="volunteer" />
                       <button v-if="editMode === day" @click="deleteUser(volunteer.id, sched.id)" class="ml-1 text-red-500">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                           <path fill-rule="evenodd" d="M2 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4zm3 6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V10z" clip-rule="evenodd"/>
@@ -96,7 +96,7 @@ const filterUsers = () => {
                 <input v-model="searchQuery" @input="filterUsers" placeholder="Search user..." class="w-full border-b focus:outline-none p-2" />
   
                 <ul v-if="filteredUsers.length > 0" class="py-2">
-                  <li v-for="volunteer in filteredUsers" :key="volunteer.id" @click="addUserToSchedule(volunteer,sched.id)" class="px-4 py-2 cursor-pointer hover:bg-gray-200">{{ volunteer.attributes.firstName }} {{ volunteer.attributes.lastName }}</li>
+                  <li v-for="volunteer in filteredUsers" :key="volunteer.id" @click="addUserToSchedule(volunteer,sched.id)" class="px-4 py-2 cursor-pointer hover:bg-gray-200">{{ volunteer.firstName }} {{ volunteer.lastName }}</li>
                 </ul>
                 <p v-else class="p-2">No matching users</p>
               </div>
@@ -107,12 +107,12 @@ const filterUsers = () => {
           <div v-else>
             <div v-if="weekscheduler[day] && weekscheduler[day].length > 0">
               <div v-for="sched in weekscheduler[day]" :key="sched.id">
-                <div v-if="sched.recurring_task?.data?.attributes?.scheduler_type !== 'No Schedule'" class="bg-gray-100 p-2 pl-4 rounded-md mb-1">
+                <div v-if="sched.recurring_task?.scheduler_type !== 'No Schedule'" class="bg-gray-100 p-2 pl-4 rounded-md mb-1">
                   <div class="flex flex-col md:flex-row md:items-center">
-                    <h3 class="text-sm font-semibold mb-1 md:mb-0 md:w-1/4">{{ sched.recurring_task?.data?.attributes?.title }}</h3>
+                    <h3 class="text-sm font-semibold mb-1 md:mb-0 md:w-1/4">{{ sched.recurring_task?.title }}</h3>
                     <div class="flex flex-wrap md:w-3/4 md:pl-2">
-                      <div v-for='volunteer of sched.backup_volunteers?.data || []' :key="volunteer?.id" class="flex items-center mr-1">
-                        <UserProfileDisplay v-if="volunteer?.attributes" :volunteer="volunteer.attributes" />
+                      <div v-for='volunteer of sched.backup_volunteers || []' :key="volunteer?.id" class="flex items-center mr-1">
+                        <UserProfileDisplay v-if="volunteer?.id" :volunteer="volunteer" />
                       </div>
                     </div>
                   </div>

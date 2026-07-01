@@ -41,11 +41,19 @@ jobs:
       run: npm install -g firebase-tools
 
     - name: Deploy to Firebase Hosting
-      env:
-        VITE_API_URL: ${{ secrets.VITE_API_URL }}
       run: |
-        set -e
-        npm run build && firebase deploy --only hosting:garden-steward --project garden-steward
+        # GitHub runs this with `bash -e`; without disabling errexit the step
+        # aborts the instant `firebase deploy` returns non-zero, before the
+        # no-op guard below can run.
+        set +e
+        output=$(firebase deploy --only hosting:garden-steward --project garden-steward 2>&1)
+        status=$?
+        echo "$output"
+        if [ $status -ne 0 ] && echo "$output" | grep -q "is the current active version"; then
+          echo "Version is already live — deployment is current, treating as success."
+          exit 0
+        fi
+        exit $status
       
     - name: Log Deployment Success
       run: echo "Deployment to Firebase Hosting was successful!"

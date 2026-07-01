@@ -5,11 +5,10 @@ import { fetchWrapper } from '@/helpers';
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/interests`;
 
 function gardenIdsFromStrapiEntry(entry) {
-  const attrs = entry?.attributes ?? entry;
-  const rel = attrs?.gardens?.data;
-  if (!rel) return [];
-  const list = Array.isArray(rel) ? rel : [];
-  return list.map((g) => g.id).filter(Boolean);
+  // v5: gardens is a flat relation array.
+  const rel = entry?.gardens;
+  if (!Array.isArray(rel)) return [];
+  return rel.map((g) => g.id).filter(Boolean);
 }
 
 export const useInterestsStore = defineStore({
@@ -30,7 +29,7 @@ export const useInterestsStore = defineStore({
         const rows = res.data ?? [];
         this.all = rows.map((row) => ({
           id: row.id,
-          tag: row.attributes?.tag ?? row.tag,
+          tag: row.tag,
           gardenIds: gardenIdsFromStrapiEntry(row),
         }));
       } catch (e) {

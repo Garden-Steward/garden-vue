@@ -20,27 +20,23 @@ const relationIds = (rel) => {
     const arr = rel?.data || rel || [];
     return (Array.isArray(arr) ? arr : []).map(x => x.id ?? x);
 };
-const interestedCount = (project) => relationIds(project.attributes?.interested).length;
-const isInterested = (project) => relationIds(project.attributes?.interested).includes(user.value?.id);
+const interestedCount = (project) => relationIds(project.interested).length;
+const isInterested = (project) => relationIds(project.interested).includes(user.value?.id);
 
 const pitchedBy = (project) => {
-    const cb = project.attributes?.created_by?.data?.attributes
-        || project.attributes?.created_by?.attributes
-        || project.attributes?.created_by;
+    const cb = project.created_by;
     if (!cb || typeof cb !== 'object') return 'A steward';
     const full = [cb.firstName, cb.lastName].filter(Boolean).join(' ').trim();
     return full || cb.username || cb.name || cb.email || 'A steward';
 };
 
 const gardenName = (project) => {
-    const g = project.attributes?.garden?.data?.attributes
-        || project.attributes?.garden?.attributes
-        || project.attributes?.garden;
+    const g = project.garden;
     return (g && typeof g === 'object') ? (g.title || '') : '';
 };
 
 const getImageUrl = (image) => {
-    const img = image?.data ? { ...image.data.attributes, id: image.data.id } : image;
+    const img = image;
     const url = img?.formats?.medium?.url || img?.formats?.small?.url || img?.url;
     if (!url) return '';
     return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
@@ -48,7 +44,7 @@ const getImageUrl = (image) => {
 
 const secondaryBadge = (project) => {
     if (interestedCount(project) >= 50) return 'Popular';
-    const created = project.attributes?.createdAt;
+    const created = project.createdAt;
     if (created && (Date.now() - new Date(created).getTime()) < 14 * 24 * 3600 * 1000) return 'Recent';
     return null;
 };
@@ -62,20 +58,20 @@ const projects = computed(() => {
     const q = search.value.trim().toLowerCase();
     if (q) {
         list = list.filter(p =>
-            (p.attributes?.title || '').toLowerCase().includes(q) ||
-            (p.attributes?.short_description || '').toLowerCase().includes(q)
+            (p.title || '').toLowerCase().includes(q) ||
+            (p.short_description || '').toLowerCase().includes(q)
         );
     }
     return [...list].sort((a, b) => {
         if (sortBy.value === 'interested') return interestedCount(b) - interestedCount(a);
-        return new Date(b.attributes?.createdAt || 0) - new Date(a.attributes?.createdAt || 0);
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 });
 
 const toggleInterest = async (project) => {
     if (togglingId.value) return;
     togglingId.value = project.id;
-    const ids = relationIds(project.attributes?.interested);
+    const ids = relationIds(project.interested);
     const next = ids.includes(user.value?.id)
         ? ids.filter(id => id !== user.value?.id)
         : [...ids, user.value?.id];
@@ -125,17 +121,17 @@ const toggleInterest = async (project) => {
         <article v-for="p in projects" :key="p.id" class="cproj-card">
           <div
             class="cproj-card__media"
-            :class="{ 'cproj-card__media--empty': !getImageUrl(p.attributes?.hero_image) }"
-            :style="getImageUrl(p.attributes?.hero_image) ? { backgroundImage: `url(${getImageUrl(p.attributes.hero_image)})` } : null"
+            :class="{ 'cproj-card__media--empty': !getImageUrl(p.hero_image) }"
+            :style="getImageUrl(p.hero_image) ? { backgroundImage: `url(${getImageUrl(p.hero_image)})` } : null"
           >
             <div class="cproj-card__flags">
-              <span v-if="p.attributes?.category" :class="getProjectCategoryBadgeClasses(p.attributes.category)">{{ p.attributes.category }}</span>
+              <span v-if="p.category" :class="getProjectCategoryBadgeClasses(p.category)">{{ p.category }}</span>
               <span v-if="secondaryBadge(p)" class="cproj-card__flag">{{ secondaryBadge(p) }}</span>
             </div>
           </div>
           <div class="cproj-card__body">
             <div class="cproj-card__titlerow">
-              <h3 class="cproj-card__title">{{ p.attributes?.title }}</h3>
+              <h3 class="cproj-card__title">{{ p.title }}</h3>
               <span class="cproj-card__count" title="People interested">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z" />
@@ -143,7 +139,7 @@ const toggleInterest = async (project) => {
                 {{ interestedCount(p) }}
               </span>
             </div>
-            <p class="cproj-card__desc">{{ p.attributes?.short_description }}</p>
+            <p class="cproj-card__desc">{{ p.short_description }}</p>
             <p class="cproj-card__pitch">
               Pitched by <strong>{{ pitchedBy(p) }}</strong>
               <span class="cproj-card__garden">{{ gardenName(p) ? '@ ' + gardenName(p) : 'Independent' }}</span>

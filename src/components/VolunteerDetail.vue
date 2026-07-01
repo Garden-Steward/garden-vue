@@ -47,26 +47,18 @@ defineOptions({ inheritAttrs: false })
 
 
 let ugArr, basicUgArr
-if (props.u_g_interests.data) {
-  ugArr = props.u_g_interests.data.filter((ugi)=> ugi.attributes.interest && ugi.attributes.garden.data.id == props.garden)
-  basicUgArr = ugArr.map((ugi)=> {
-      return ugi.attributes.interest.data.id
-  })
-  ugArr = ugArr.map((ugi)=> {
-      return {interest: ugi.attributes.interest.data.id, id: ugi.id}
-  })
-  console.log(ugArr)
+if (Array.isArray(props.u_g_interests)) {
+  // v5: u_g_interests is a flat relation array; interest/garden are flat objects.
+  ugArr = props.u_g_interests.filter((ugi)=> ugi.interest && ugi.garden?.id == props.garden)
+  basicUgArr = ugArr.map((ugi)=> ugi.interest.id)
+  ugArr = ugArr.map((ugi)=> ({ interest: ugi.interest.id, id: ugi.id }))
 }
 const prettyDay = format(new Date(props.createdAt), 'yyyy-MM-dd');
 const displayName = computed(() => (props.firstName || props.lastName) ? `${props.firstName} ${props.lastName}` : props.phoneNumber);
 const isManager = computed(() => props.managerIds.includes(props.id));
 const roleName = computed(() => {
-  if (!props.role) return null;
-  // Handle Strapi nested format: { data: { attributes: { name } } }
-  if (props.role.data?.attributes?.name) return props.role.data.attributes.name;
-  // Handle flat format: { name }
-  if (props.role.name) return props.role.name;
-  return null;
+  // v5: role is a flat relation object.
+  return props.role?.name ?? null;
 });
 const isAuthenticated = computed(() => roleName.value === 'Authenticated');
 

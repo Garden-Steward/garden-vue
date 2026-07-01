@@ -27,6 +27,9 @@ const isEditingTitle = ref(false);
 const autoSaveTimeout = ref(null);
 const isAutoSaving = ref(false);
 const showMediaFields = ref(false);
+// Gate the image/gallery auto-save watchers so they don't fire on initial load
+// (the values change from undefined → loaded during the first flush).
+const autoSaveReady = ref(false);
 
 const startEditingTitle = async () => {
   isEditingTitle.value = true;
@@ -44,43 +47,45 @@ const startEditingTitle = async () => {
 eventStore.findById(route.params.id);
 
 const prettyDay = computed(() => {
-  return format(new Date(event.value.attributes.startDatetime), 'PPP');
+  return format(new Date(event.value.startDatetime), 'PPP');
 });
 
 const templateInfo = computed(() => {
-  const t = event.value?.attributes?.recurring_template?.data;
+  // v5: recurring_template is a flat relation object (no .data/.attributes).
+  const t = event.value?.recurring_template;
   if (!t) return null;
-  const name = t.attributes?.title_template ?? 'Unknown';
-  return { name };
+  return { name: t.title_template ?? 'Unknown' };
 });
 
 watch(event, async (newEvent) => {
-  console.log('newEvent: ', newEvent);
-  if (newEvent?.attributes?.content) {
-    // await ArticleUtils.processImages();
-  }
-  if (!newEvent.attributes.accessibility) {
-    newEvent.attributes.accessibility = 'Public';
+  // v5 entries are flat; skip the loading/empty states.
+  if (!newEvent || !newEvent.id) return;
+
+  if (!newEvent.accessibility) {
+    newEvent.accessibility = 'Public';
   }
   // Initialize featured_gallery as empty array if it doesn't exist
-  if (!newEvent.attributes.featured_gallery) {
-    newEvent.attributes.featured_gallery = [];
+  if (!newEvent.featured_gallery) {
+    newEvent.featured_gallery = [];
   }
-  
+
   isLoading.value = false;
-  
+
   // Store original data for comparison when event loads (only once)
-  if (newEvent && newEvent.attributes && !originalEventData.value && newEvent.id) {
+  if (!originalEventData.value) {
     // Deep clone to prevent mutations
-    originalEventData.value = JSON.parse(JSON.stringify(newEvent.attributes));
+    originalEventData.value = JSON.parse(JSON.stringify(newEvent));
     hasChanges.value = false;
+    // Enable auto-save only AFTER this load flush settles, so the initial
+    // population of hero_image/featured_gallery doesn't trigger a PUT.
+    nextTick(() => { autoSaveReady.value = true; });
   }
 }, { deep: true });
 
 // Watch for changes to detect modifications
-watch(() => event.value?.attributes, (newAttributes) => {
-  if (!originalEventData.value || isLoading.value || !newAttributes) return;
-  
+watch(() => event.value, (newEvent) => {
+  if (!originalEventData.value || isLoading.value || !newEvent?.id) return;
+
   // Use the helper function for consistent change detection
   checkForChanges();
 }, { deep: true, immediate: false });
@@ -88,7 +93,7 @@ watch(() => event.value?.attributes, (newAttributes) => {
 // Also watch featured_gallery specifically to catch reordering
 watch(
   () => {
-    const gallery = event.value?.attributes?.featured_gallery;
+    const gallery = event.value?.featured_gallery;
     // Return a string representation of the array order for reliable change detection
     if (!gallery) return '';
     const ids = getGalleryIds(gallery);
@@ -105,11 +110,11 @@ watch(
 // Auto-save when hero_image changes (after upload)
 watch(
   () => {
-    const heroImage = event.value?.attributes?.hero_image;
+    const heroImage = event.value?.hero_image;
     return heroImage?.id || heroImage?.data?.id || null;
   },
   (newId, oldId) => {
-    if (!originalEventData.value || isLoading.value || isAutoSaving.value) return;
+    if (!autoSaveReady.value || !originalEventData.value || isLoading.value || isAutoSaving.value) return;
     // Only auto-save if image was added/changed (not removed or initial load)
     if (newId && newId !== oldId) {
       // Clear any existing timeout
@@ -127,13 +132,13 @@ watch(
 // Auto-save when featured_gallery changes (after upload)
 watch(
   () => {
-    const gallery = event.value?.attributes?.featured_gallery;
+    const gallery = event.value?.featured_gallery;
     if (!gallery) return '';
     const ids = getGalleryIds(gallery);
     return JSON.stringify(ids);
   },
   (newIds, oldIds) => {
-    if (!originalEventData.value || isLoading.value || isAutoSaving.value) return;
+    if (!autoSaveReady.value || !originalEventData.value || isLoading.value || isAutoSaving.value) return;
     // Only auto-save if gallery was modified (not initial load)
     if (oldIds && newIds !== oldIds) {
       // Clear any existing timeout
@@ -181,20 +186,20 @@ const getGalleryIds = (gallery) => {
 
 // Helper function to check for changes
 const checkForChanges = () => {
-  if (!originalEventData.value || isLoading.value || !event.value?.attributes) {
+  if (!originalEventData.value || isLoading.value || !event.value) {
     hasChanges.value = false;
     return;
   }
   
   // Get normalized gallery arrays for comparison - use consistent extraction
-  const currentGalleryIds = getGalleryIds(event.value.attributes.featured_gallery);
+  const currentGalleryIds = getGalleryIds(event.value.featured_gallery);
   const originalGalleryIds = getGalleryIds(originalEventData.value.featured_gallery);
   
   // Compare gallery order - arrays must match exactly in same order
   const galleryChanged = JSON.stringify(currentGalleryIds) !== JSON.stringify(originalGalleryIds);
   
   // Compare rest of the data (excluding gallery which we already checked)
-  const currentAttrs = { ...event.value.attributes };
+  const currentAttrs = { ...event.value };
   const originalAttrs = { ...originalEventData.value };
   
   // Remove gallery from comparison since we checked it separately
@@ -261,52 +266,34 @@ const normalizeEventData = (attributes) => {
 
 const saveEvent = async (isAutoSave = false) => {
   try {
-    // Create a copy of the attributes to modify
-    const eventData = { ...event.value.attributes }
-    
-    // Format hero_image correctly if it exists
-    if (eventData.hero_image) {
-      // Handle MediaSelector format: { id, url } or Strapi format: { id, data: {...} }
-      const heroImageId = eventData.hero_image.id || eventData.hero_image.data?.id
-      if (heroImageId) {
-        eventData.hero_image = {
-          id: heroImageId
-        }
-      } else {
-        // If no valid ID, set to null
-        eventData.hero_image = null
-      }
-    }
-    
-    // Format featured_gallery correctly if it exists
-    if (eventData.featured_gallery) {
-      // Handle Strapi format: { data: [...] } or direct array
-      let galleryArray = []
-      if (eventData.featured_gallery?.data && Array.isArray(eventData.featured_gallery.data)) {
-        galleryArray = eventData.featured_gallery.data
-      } else if (Array.isArray(eventData.featured_gallery)) {
-        galleryArray = eventData.featured_gallery
-      }
-      
-      if (galleryArray.length > 0) {
-        eventData.featured_gallery = galleryArray
-          .map(img => {
-            // Extract ID from different formats
-            const id = img?.id || img?.data?.id
-            return id ? { id } : null
-          })
-          .filter(img => img !== null)
-      } else {
-        eventData.featured_gallery = []
-      }
-    }
-    
+    // Send ONLY the editable fields. The event object is a flat v5 entry, so
+    // spreading it would include id/documentId/timestamps and relation objects
+    // (garden, recurring_template, confirmed) — Strapi rejects those on a PUT
+    // (e.g. "Invalid key id"). Build an explicit payload instead.
+    const src = event.value || {};
+    const eventData = {
+      title: src.title,
+      blurb: src.blurb,
+      endText: src.endText,
+      startDatetime: src.startDatetime,
+      content: src.content,
+      accessibility: src.accessibility,
+      smsLink: src.smsLink,
+    };
+
+    // hero_image → { id } | null
+    const heroImageId = src.hero_image?.id || src.hero_image?.data?.id;
+    eventData.hero_image = heroImageId ? { id: heroImageId } : null;
+
+    // featured_gallery → [{ id }]
+    eventData.featured_gallery = getGalleryIds(src.featured_gallery).map((id) => ({ id }));
+
     await eventStore.update(route.params.id, eventData)
     
     if (isAutoSave) {
       // For auto-save, just update originalEventData without refreshing to avoid interrupting uploads
-      if (event.value && event.value.attributes) {
-        originalEventData.value = JSON.parse(JSON.stringify(event.value.attributes));
+      if (event.value && event.value) {
+        originalEventData.value = JSON.parse(JSON.stringify(event.value));
         hasChanges.value = false;
       }
     } else {
@@ -314,8 +301,8 @@ const saveEvent = async (isAutoSave = false) => {
       await eventStore.findById(route.params.id)
       await nextTick()
       
-      if (event.value && event.value.attributes) {
-        originalEventData.value = JSON.parse(JSON.stringify(event.value.attributes));
+      if (event.value && event.value) {
+        originalEventData.value = JSON.parse(JSON.stringify(event.value));
         hasChanges.value = false;
       }
       
@@ -357,24 +344,24 @@ onBeforeUnmount(() => {
           <div class="flex-1">
             <!-- Back link -->
             <router-link 
-              :to="`/manage/gardens/${event?.attributes?.garden?.data?.attributes?.slug}#events`"
+              :to="`/manage/gardens/${event?.garden?.slug}#events`"
               class="inline-flex items-center text-white/90 hover:text-white mb-2"
             >
               <i class="fas fa-arrow-left mr-2"></i>
               Back to Garden
             </router-link>
             <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">Event Manager</h1>
-            <p v-if="event?.attributes?.title" class="text-white/90 text-lg mt-2">{{ event.attributes.title }}</p>
+            <p v-if="event?.title" class="text-white/90 text-lg mt-2">{{ event.title }}</p>
           </div>
           
           <!-- Header buttons and access controls -->
-          <div v-if="event?.attributes" class="flex items-start gap-4">
+          <div v-if="event?.id" class="flex items-start gap-4">
             <!-- Accessibility dropdown -->
             <div class="flex flex-col">
               <span class="text-sm font-semibold mb-1 text-white/90">Event Access:</span>
               <div class="w-48">
                 <DropDown
-                  v-model="event.attributes.accessibility"
+                  v-model="event.accessibility"
                   :options="[ 
                     { value: 'Public', label: 'Public' },
                     { value: 'Garden Members', label: 'Garden Members' },
@@ -416,7 +403,7 @@ onBeforeUnmount(() => {
             <!-- Title: Display as h1 with edit link, or show input when editing -->
             <div class="mb-4">
               <div v-if="!isEditingTitle" class="flex items-center gap-3">
-                <h1 class="text-3xl font-bold font-roboto mb-0 text-[#f5f5f5]">{{ event?.attributes?.title || 'Untitled Event' }}</h1>
+                <h1 class="text-3xl font-bold font-roboto mb-0 text-[#f5f5f5]">{{ event?.title || 'Untitled Event' }}</h1>
                 <button
                   @click="startEditingTitle"
                   class="text-custom-green hover:text-darker-green underline text-sm"
@@ -427,7 +414,7 @@ onBeforeUnmount(() => {
               <div v-else class="flex items-center gap-2">
                 <div class="flex-1 title-input-wrapper">
                   <TextInput
-                    v-model="event.attributes.title" 
+                    v-model="event.title" 
                     placeholder="Volunteer Day!" 
                     class="flex-1"
                     size="md"
@@ -455,15 +442,15 @@ onBeforeUnmount(() => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label class="block mb-2 text-[#f5f5f5]">Start Date & Time:</label>
-                <VueDatePicker v-model="event.attributes.startDatetime" class="mb-2" week-start="0"></VueDatePicker>
+                <VueDatePicker v-model="event.startDatetime" class="mb-2" week-start="0"></VueDatePicker>
                 <p class="text-sm text-[#d0d0d0]">{{ prettyDay }}</p>
-                <p class="text-sm text-[#d0d0d0]">{{ new Date(event.attributes.startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</p>
+                <p class="text-sm text-[#d0d0d0]">{{ new Date(event.startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</p>
               </div>
               
               <div>
                 <label for="endText" class="block mb-2 text-[#f5f5f5]">Ending Time:</label>
                 <TextInput
-                  v-model="event.attributes.endText" 
+                  v-model="event.endText" 
                   size="md"
                   placeholder="e.g., around noon" 
                   class="w-full md:w-1/2 ending-time-input"
@@ -483,7 +470,7 @@ onBeforeUnmount(() => {
               <!-- SMS toggle moved here -->
               <div class="ml-auto flex items-center">
                 
-                <Switch v-model="event.attributes.smsLink" >
+                <Switch v-model="event.smsLink" >
                   <span class="text-sm font-medium text-[#f5f5f5] mr-2">SMS sends with link</span>
                 </Switch>
               </div>
@@ -491,7 +478,7 @@ onBeforeUnmount(() => {
 
             <textarea
               id="blurb"
-              v-model="event.attributes.blurb"
+              v-model="event.blurb"
               rows="3"
               class="w-full p-2 border border-[#3d4d36]/50 rounded bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] mb-4"
             ></textarea>
@@ -499,10 +486,10 @@ onBeforeUnmount(() => {
             <label for="content" class="text-[#f5f5f5]">Content</label>
             <div class="w-full tiptap-wrapper -mx-6 border-l-4 border-custom-green pl-4">
               <Tiptap 
-                v-model="event.attributes.content" 
+                v-model="event.content" 
                 :editable="true"
-                :content="event.attributes.content"
-                @update:content="(newContent) => event.attributes.content = newContent"
+                :content="event.content"
+                @update:content="(newContent) => event.content = newContent"
               />
             </div>
             
@@ -529,8 +516,8 @@ onBeforeUnmount(() => {
             <!-- Media fields (hidden by default) -->
             <div v-if="showMediaFields" class="border-2 border-custom-green rounded-lg p-4 mt-4 bg-[rgba(26,26,26,0.4)]">
               <HeroImageCard
-                v-model="event.attributes.hero_image"
-                :gardenId="event?.attributes?.garden?.data?.id"
+                v-model="event.hero_image"
+                :gardenId="event?.garden?.id"
               />
 
               <!-- Featured Gallery Section -->
@@ -542,9 +529,9 @@ onBeforeUnmount(() => {
                   Add 3-8 photos from the event. These will appear in the event gallery. Drag to reorder.
                 </p>
                 <ImageGalleryUpload 
-                  v-model="event.attributes.featured_gallery"
+                  v-model="event.featured_gallery"
                   :event-id="event.id"
-                  :garden-id="event?.attributes?.garden?.data?.id"
+                  :garden-id="event?.garden?.id"
                   :max-images="8"
                 />
               </div>
@@ -566,16 +553,16 @@ onBeforeUnmount(() => {
                 
                 <h2 class="text-xl font-bold mb-3 text-[#f5f5f5]">
                   Volunteers RSVP'd 
-                  <span class="text-lg font-normal text-white/80">({{ event.attributes.confirmed?.data?.length || 0 }})</span>
+                  <span class="text-lg font-normal text-white/80">({{ event.confirmed?.length || 0 }})</span>
                 </h2>
                 
                 <div>
-                  <div v-if="!event.attributes.confirmed?.data?.length" class="text-[#d0d0d0]">
+                  <div v-if="!event.confirmed?.length" class="text-[#d0d0d0]">
                     No one has RSVP'd to this event yet
                   </div>
                   <ul v-else class="space-y-3">
-                    <li v-for="volunteer in event.attributes.confirmed?.data" :key="volunteer.id">
-                      <UserProfileDisplay :volunteer="volunteer.attributes" :showName="true" />
+                    <li v-for="volunteer in event.confirmed" :key="volunteer.id">
+                      <UserProfileDisplay :volunteer="volunteer" :showName="true" />
                     </li>
                   </ul>
                 </div>

@@ -1,10 +1,13 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRoute, useRouter } from 'vue-router';
 import { usePlantsStore } from '@/stores';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const plantsStore = usePlantsStore();
+const route = useRoute();
+const router = useRouter();
 const { plants, loading, error, pagination, query, allLoaded, totalCount } = storeToRefs(plantsStore);
 
 // ── Search with debounce ──
@@ -23,8 +26,11 @@ const clearSearch = () => {
   plantsStore.search('');
 };
 
-// ── Sort ──
+// ── Sort (synced with URL query param ?sort=field:order) ──
 const sortField = computed(() => plantsStore.sortField);
+
+// Prevents infinite loop when URL-initiated change bounces back
+let syncingFromUrl = false;
 
 const toggleSort = (field) => {
   plantsStore.setSort(field);
@@ -35,8 +41,58 @@ const sortChevron = (field) => {
   return plantsStore.sortOrder === 'asc' ? ' ↑' : ' ↓';
 };
 
+// Valid sort fields we support
+const validSortFields = ['title', 'latin', 'type', 'updatedAt'];
+const validSortOrders = ['asc', 'desc'];
+
+// Parse ?sort=field:order from URL (e.g. ?sort=updatedAt:desc)
+const parseSortParam = (val) => {
+  if (typeof val !== 'string') return null;
+  const parts = val.split(':');
+  if (parts.length === 2 && validSortFields.includes(parts[0]) && validSortOrders.includes(parts[1])) {
+    return { field: parts[0], order: parts[1] };
+  }
+  return null;
+};
+
+// Watch store sort changes → sync to URL (skip during URL-initiated changes)
+watch(
+  () => `${plantsStore.sortField}:${plantsStore.sortOrder}`,
+  (val) => {
+    if (syncingFromUrl) return;
+    const q = { ...route.query };
+    q.sort = val;
+    router.replace({ query: q });
+  }
+);
+
+// Watch URL sort changes → sync to store (handles back/forward nav)
+watch(
+  () => route.query.sort,
+  (newSort) => {
+    const parsed = parseSortParam(newSort);
+    if (!parsed) return;
+    if (plantsStore.sortField !== parsed.field || plantsStore.sortOrder !== parsed.order) {
+      syncingFromUrl = true;
+      plantsStore.sortField = parsed.field;
+      plantsStore.sortOrder = parsed.order;
+      syncingFromUrl = false;
+      plantsStore.search(plantsStore.query);
+    }
+  }
+);
+
 // ── Load more button ──
 onMounted(() => {
+  // Read sort from URL query params before initial load
+  const parsed = parseSortParam(route.query.sort);
+  if (parsed) {
+    syncingFromUrl = true;
+    plantsStore.sortField = parsed.field;
+    plantsStore.sortOrder = parsed.order;
+    // Don't call search() here — ensureLoaded will pick up the state
+    syncingFromUrl = false;
+  }
   plantsStore.ensureLoaded();
 });
 
@@ -47,19 +103,18 @@ const loadMore = () => {
 // ── Image helper ──
 const getThumbnailUrl = (plant) => {
   // Priority: clipart (small format) → first image (small) → clipart (full) → first image (full)
-  const clipart = plant.attributes?.clipart?.data?.attributes;
-  const images = plant.attributes?.images?.data;
+  const clipart = plant.clipart;
+  const images = plant.images;
 
   if (clipart?.formats?.small?.url) return clipart.formats.small.url;
   if (clipart?.url) return clipart.url;
-  if (images?.[0]?.attributes?.formats?.small?.url) return images[0].attributes.formats.small.url;
-  if (images?.[0]?.attributes?.url) return images[0].attributes.url;
+  if (images?.[0]?.formats?.small?.url) return images[0].formats.small.url;
+  if (images?.[0]?.url) return images[0].url;
   return null;
 };
 
 const getFullClipUrl = (plant) => {
-  const clipart = plant.attributes?.clipart?.data?.attributes;
-  return clipart?.url || null;
+  return plant.clipart?.url || null;
 };
 
 // ── Type badge color ──
@@ -139,6 +194,13 @@ const getTypeColor = (type) => {
       >
         Type{{ sortChevron('type') }}
       </button>
+      <button
+        class="plants-sort-btn"
+        :class="{ 'plants-sort-btn--active': sortField === 'updatedAt' }"
+        @click="toggleSort('updatedAt')"
+      >
+        Updated{{ sortChevron('updatedAt') }}
+      </button>
     </div>
 
     <!-- Loading (initial) -->
@@ -157,7 +219,7 @@ const getTypeColor = (type) => {
       <router-link
         v-for="plant in plants"
         :key="plant.id"
-        :to="`/manage/plant/${plant.attributes?.slug}`"
+        :to="`/manage/plant/${plant.slug}`"
         class="plant-card"
       >
         <!-- Thumbnail -->
@@ -165,7 +227,7 @@ const getTypeColor = (type) => {
           <img
             v-if="getThumbnailUrl(plant)"
             :src="getThumbnailUrl(plant)"
-            :alt="plant.attributes?.title || 'Plant'"
+            :alt="plant.title || 'Plant'"
             class="plant-card__img"
           />
           <div v-else class="plant-card__img-fallback">
@@ -179,14 +241,14 @@ const getTypeColor = (type) => {
 
         <!-- Info -->
         <div class="plant-card__body">
-          <h3 class="plant-card__name">{{ plant.attributes?.title }}</h3>
-          <p class="plant-card__latin">{{ plant.attributes?.latin }}</p>
+          <h3 class="plant-card__name">{{ plant.title }}</h3>
+          <p class="plant-card__latin">{{ plant.latin }}</p>
           <span
-            v-if="plant.attributes?.type"
+            v-if="plant.type"
             class="plant-card__type"
-            :class="getTypeColor(plant.attributes.type)"
+            :class="getTypeColor(plant.type)"
           >
-            {{ plant.attributes.type }}
+            {{ plant.type }}
           </span>
         </div>
       </router-link>

@@ -26,16 +26,11 @@ const fetchRecentTasks = async () => {
     
     // Handle Strapi response format
     const tasksArray = Array.isArray(response.data) ? response.data : [response.data].filter(Boolean);
-    tasks.value = tasksArray.map(task => {
-      // Normalize task structure
-      const normalizedTask = {
-        id: task.id,
-        ...task.attributes,
-        // Ensure volunteers is in the right format
-        volunteers: task.attributes?.volunteers?.data || task.attributes?.volunteers || []
-      };
-      return normalizedTask;
-    });
+    tasks.value = tasksArray.map(task => ({
+      // v5 entries are flat
+      ...task,
+      volunteers: Array.isArray(task.volunteers) ? task.volunteers : []
+    }));
   } catch (err) {
     error.value = err.message || 'Failed to load volunteer activity';
     console.error('Error fetching tasks:', err);
@@ -76,9 +71,8 @@ const volunteerActivities = computed(() => {
     const activityTimestamp = getActivityTimestamp(task);
     
     volunteers.forEach(volunteer => {
-      // Handle both direct volunteer objects and Strapi data structure
-      const volunteerId = volunteer.id || volunteer.attributes?.id;
-      const volunteerData = volunteer.attributes || volunteer;
+      const volunteerId = volunteer.id;
+      const volunteerData = volunteer;
       
       if (!volunteerId) return; // Skip if no valid ID
       
@@ -94,7 +88,7 @@ const volunteerActivities = computed(() => {
           taskTitle: task.title,
           taskType: task.type,
           status: task.status,
-          recurringTaskTitle: task.recurring_task?.data?.attributes?.title || task.recurring_task?.attributes?.title
+          recurringTaskTitle: task.recurring_task?.title
         });
       }
     });

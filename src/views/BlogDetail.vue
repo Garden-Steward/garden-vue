@@ -102,18 +102,13 @@ onBeforeUnmount(() => {
   }
 });
 
-/** Strapi /full returns a flat author; REST may use { data } or { data: { id, attributes } }. */
+/** v5 relations are flat objects; tolerate a legacy { data } wrapper just in case. */
 function unwrapRelation(rel) {
   if (rel == null) return null;
-  let inner = rel;
   if (Object.prototype.hasOwnProperty.call(rel, 'data')) {
-    inner = rel.data ?? null;
-    if (inner == null) return null;
+    return rel.data ?? null;
   }
-  if (inner.attributes && typeof inner.attributes === 'object') {
-    return { id: inner.id, ...inner.attributes };
-  }
-  return inner;
+  return rel;
 }
 
 const authorEntity = computed(() => unwrapRelation(blog.value?.author));

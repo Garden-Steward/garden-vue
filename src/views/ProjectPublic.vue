@@ -68,21 +68,20 @@ if (route.params.gardenSlug) {
 
 // Get hero image for project
 const projectHeroImage = computed(() => {
-  if (!project.value?.attributes?.hero_image) return null;
-  
-  const heroImage = project.value.attributes.hero_image;
-  const imageUrl = heroImage.url || 
+  if (!project.value?.hero_image) return null;
+
+  const heroImage = project.value.hero_image;
+  const imageUrl = heroImage.url ||
                    heroImage.formats?.medium?.url ||
-                   heroImage.formats?.large?.url ||
-                   heroImage.data?.attributes?.url;
-  
+                   heroImage.formats?.large?.url;
+
   return getImageOrDefault(imageUrl);
 });
 
 // Render description markdown
 const renderedDescription = computed(() => {
-  if (!project.value?.attributes?.description) return '';
-  return md.render(project.value.attributes.description);
+  if (!project.value?.description) return '';
+  return md.render(project.value.description);
 });
 
 // Format project dates
@@ -97,10 +96,10 @@ const formatProjectDate = (dateString) => {
 
 // Get formatted date range text
 const projectDateText = computed(() => {
-  if (!project.value?.attributes) return '';
-  
-  const dateStart = project.value.attributes.date_start;
-  const dateEnd = project.value.attributes.date_end;
+  if (!project.value?.id) return '';
+
+  const dateStart = project.value.date_start;
+  const dateEnd = project.value.date_end;
   
   if (dateStart && dateEnd) {
     return `From ${formatProjectDate(dateStart)} to ${formatProjectDate(dateEnd)}`;
@@ -114,81 +113,48 @@ const projectDateText = computed(() => {
 // Get garden info for breadcrumb (from loaded garden or project data)
 const gardenInfo = computed(() => {
   // Prefer loaded garden data if available
-  if (garden.value?.attributes) {
+  if (garden.value?.id) {
     return {
-      slug: garden.value.attributes.slug,
-      title: garden.value.attributes.title
+      slug: garden.value.slug,
+      title: garden.value.title
     };
   }
-  
-  // Fallback to project's garden data
-  const projectGarden = project.value?.attributes?.garden;
-  if (projectGarden?.data?.attributes) {
+
+  // Fallback to project's garden relation
+  const projectGarden = project.value?.garden;
+  if (projectGarden && typeof projectGarden === 'object') {
     return {
-      slug: projectGarden.data.attributes.slug,
-      title: projectGarden.data.attributes.title
+      slug: projectGarden.slug,
+      title: projectGarden.title
     };
   }
-  
+
   return null;
 });
 
 // Check if gallery has images (similar to Gallery component logic)
 const hasGalleryImages = computed(() => {
-  const gallery = project.value?.attributes?.featured_gallery;
-  if (!gallery) return false;
-  
-  // Handle Strapi format: { data: [...] } or direct array
-  let imagesArray = [];
-  if (gallery?.data && Array.isArray(gallery.data)) {
-    imagesArray = gallery.data;
-  } else if (Array.isArray(gallery)) {
-    imagesArray = gallery;
-  } else {
-    return false;
-  }
-  
+  const gallery = project.value?.featured_gallery;
+  if (!Array.isArray(gallery)) return false;
+
   // Check if any images have valid URLs
-  return imagesArray.some(img => {
-    const url = img?.url || img?.data?.attributes?.url || img?.attributes?.url || '';
+  return gallery.some(img => {
+    const url = img?.url || '';
     return url && url.trim() !== '';
   });
 });
 
 // Get related volunteer days/events
 const relatedVolunteerDays = computed(() => {
-  if (!project.value?.attributes?.related_events) return [];
-  
-  let eventsArray = [];
-  const relatedEvents = project.value.attributes.related_events;
-  
-  // Handle different Strapi formats
-  if (relatedEvents?.data && Array.isArray(relatedEvents.data)) {
-    eventsArray = relatedEvents.data;
-  } else if (Array.isArray(relatedEvents)) {
-    eventsArray = relatedEvents;
-  } else {
-    return [];
-  }
-  
-  const normalized = eventsArray.map(event => {
-    // Handle Strapi format: { id, attributes: { title, startDatetime, hero_image, ... } }
-    if (event.attributes) {
-      return {
-        id: event.id,
-        title: event.attributes.title,
-        startDatetime: event.attributes.startDatetime,
-        hero_image: event.attributes.hero_image
-      };
-    }
-    // Already normalized format
-    return {
-      id: event.id,
-      title: event.title,
-      startDatetime: event.startDatetime,
-      hero_image: event.hero_image
-    };
-  }).filter(event => event.title); // Only include events with titles
+  const relatedEvents = project.value?.related_events;
+  if (!Array.isArray(relatedEvents)) return [];
+
+  const normalized = relatedEvents.map(event => ({
+    id: event.id,
+    title: event.title,
+    startDatetime: event.startDatetime,
+    hero_image: event.hero_image
+  })).filter(event => event.title); // Only include events with titles
   
   // Sort by most recent first (by startDatetime)
   return normalized.sort((a, b) => {
@@ -233,11 +199,9 @@ const getEventImage = (event) => {
   if (!event?.hero_image) return null;
   
   const heroImage = event.hero_image;
-  const imageUrl = heroImage.url || 
-                   heroImage.formats?.medium?.url ||
-                   heroImage.data?.attributes?.url ||
-                   heroImage.data?.attributes?.formats?.medium?.url;
-  
+  const imageUrl = heroImage.url ||
+                   heroImage.formats?.medium?.url;
+
   return getImageOrDefault(imageUrl);
 };
 </script>
@@ -267,22 +231,22 @@ const getEventImage = (event) => {
       </div>
 
       <!-- Hero Image Strip -->
-      <div v-if="projectHeroImage && project?.attributes" class="project-hero-strip">
+      <div v-if="projectHeroImage && project?.id" class="project-hero-strip">
         <img 
           :src="projectHeroImage" 
-          :alt="project.attributes.title || 'Project Image'"
+          :alt="project.title || 'Project Image'"
           class="hero-strip-image"
         />
       </div>
 
       <!-- Header -->
-      <div v-if="project?.attributes" class="project-header">
-        <h1 class="project-title">{{ project.attributes.title }}</h1>
+      <div v-if="project?.id" class="project-header">
+        <h1 class="project-title">{{ project.title }}</h1>
         <p v-if="projectDateText" class="project-date-text">{{ projectDateText }}</p>
       </div>
 
       <!-- Description -->
-      <section v-if="project?.attributes?.description" class="project-section">
+      <section v-if="project?.description" class="project-section">
         <div class="section-content" v-html="renderedDescription"></div>
         <div v-if="gardenInfo" class="description-back-button">
           <router-link :to="`/gardens/${gardenInfo.slug}`" class="back-link-small">
@@ -329,21 +293,21 @@ const getEventImage = (event) => {
       <!-- Featured Gallery -->
       <section v-if="hasGalleryImages" class="project-section">
         <Gallery 
-          :gallery="project.attributes.featured_gallery"
+          :gallery="project.featured_gallery"
           title="Project Gallery"
-          :photo-album-url="project.attributes.photo_album_url"
+          :photo-album-url="project.photo_album_url"
         />
       </section>
 
       <!-- Garden Link -->
-      <section v-if="garden?.attributes" class="project-section garden-link-section">
+      <section v-if="garden?.id" class="project-section garden-link-section">
         <p class="garden-link-text">
           This project is part of 
           <router-link 
-            :to="`/gardens/${garden.attributes.slug}`"
+            :to="`/gardens/${garden.slug}`"
             class="garden-link"
           >
-            {{ garden.attributes.title }}
+            {{ garden.title }}
           </router-link>
         </p>
       </section>

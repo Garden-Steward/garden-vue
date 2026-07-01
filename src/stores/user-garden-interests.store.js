@@ -20,10 +20,12 @@ export const useUGInterestsStore = defineStore({
       async update(id, data) {
         return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
             .then(res => {
-                console.log("uginterest update resp:", res)
-                this.uginterests = res.data.attributes;
-                const idx = this.uginterests.findIndex(v=> v.id == res.data.id);
-                this.uginterests[idx] = res.data.attributes;
+                // v5 returns a flat entry; update it in the list if present.
+                const updated = res.data;
+                if (Array.isArray(this.uginterests)) {
+                    const idx = this.uginterests.findIndex(v => v.id == updated.id);
+                    if (idx !== -1) this.uginterests[idx] = updated;
+                }
             })
             .catch(this.handleError);
       },

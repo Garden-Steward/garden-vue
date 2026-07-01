@@ -21,7 +21,6 @@ const props = defineProps({
   category: String,
   volunteer_count: Number,
   hours_contributed: Number,
-  partiful_link: String,
   featured: Boolean,
   impact_metrics: Array,
   related_events: Array,
@@ -110,7 +109,6 @@ const form = ref({
   category: props.category || 'Community',
   volunteer_count: props.volunteer_count || null,
   hours_contributed: props.hours_contributed || null,
-  partiful_link: props.partiful_link || '',
   featured: props.featured || false,
   impact_metrics: props.impact_metrics ? [...props.impact_metrics] : [],
   related_events: props.related_events ? (Array.isArray(props.related_events) ? props.related_events : props.related_events.data || []) : [],
@@ -172,7 +170,6 @@ watch(() => props.description, (newVal) => { form.value.description = newVal || 
 watch(() => props.category, (newVal) => { form.value.category = newVal || 'Community'; });
 watch(() => props.volunteer_count, (newVal) => { form.value.volunteer_count = newVal || null; });
 watch(() => props.hours_contributed, (newVal) => { form.value.hours_contributed = newVal || null; });
-watch(() => props.partiful_link, (newVal) => { form.value.partiful_link = newVal || ''; });
 watch(() => props.featured, (newVal) => { form.value.featured = newVal || false; });
 watch(() => props.hero_image, (newVal) => {
   if (newVal) {
@@ -344,40 +341,13 @@ watch(() => validGalleryImages.value.length, (newLength) => {
 const heroThumbnailUrl = computed(() => {
   const heroImage = form.value.hero_image;
   if (!heroImage) return null;
-  
-  // Handle API response format: hero_image.data.attributes.formats.thumbnail.url
-  if (heroImage.data?.attributes?.formats?.thumbnail?.url) {
-    return heroImage.data.attributes.formats.thumbnail.url;
-  }
-  
-  // Handle normalized format: hero_image.formats.thumbnail.url
-  if (heroImage.formats?.thumbnail?.url) {
-    return heroImage.formats.thumbnail.url;
-  }
-  
-  // Fallback to small or medium if thumbnail not available
-  if (heroImage.data?.attributes?.formats?.small?.url) {
-    return heroImage.data.attributes.formats.small.url;
-  }
-  if (heroImage.formats?.small?.url) {
-    return heroImage.formats.small.url;
-  }
-  if (heroImage.data?.attributes?.formats?.medium?.url) {
-    return heroImage.data.attributes.formats.medium.url;
-  }
-  if (heroImage.formats?.medium?.url) {
-    return heroImage.formats.medium.url;
-  }
-  
-  // Last resort: use main URL
-  if (heroImage.data?.attributes?.url) {
-    return heroImage.data.attributes.url;
-  }
-  if (heroImage.url) {
-    return heroImage.url;
-  }
-  
-  return null;
+
+  // Strapi v5 media is flat: { url, formats: { thumbnail, small, medium } }
+  return heroImage.formats?.thumbnail?.url
+    || heroImage.formats?.small?.url
+    || heroImage.formats?.medium?.url
+    || heroImage.url
+    || null;
 });
 
 // Normalize related events for display
@@ -385,17 +355,8 @@ const normalizedRelatedEvents = computed(() => {
   if (!form.value.related_events || !Array.isArray(form.value.related_events)) {
     return [];
   }
-  return form.value.related_events.map(event => {
-    if (typeof event === 'object' && event !== null) {
-      // Handle Strapi format: { id, attributes: { title, ... } }
-      if (event.attributes) {
-        return { ...event.attributes, id: event.id };
-      }
-      // Handle already normalized format: { id, title, ... }
-      return event;
-    }
-    return event;
-  }).filter(Boolean);
+  // Strapi v5 returns flat event entries already.
+  return form.value.related_events.filter(Boolean);
 });
 
 // Fetch available events when component mounts or garden changes
@@ -579,7 +540,6 @@ const submit = async () => {
         category: 'Community',
         volunteer_count: null,
         hours_contributed: null,
-        partiful_link: '',
         featured: false,
         impact_metrics: [],
         related_events: [],
@@ -709,7 +669,7 @@ onUnmounted(() => {
               :key="event.id || event"
               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
             >
-              {{ event.title || event.attributes?.title || 'Untitled Event' }}
+              {{ event.title || 'Untitled Event' }}
             </span>
           </div>
         </div>
@@ -1046,11 +1006,6 @@ onUnmounted(() => {
               Garden must be set before selecting media
             </div>
           </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1 text-[#f5f5f5]">Partiful Link</label>
-            <TextInput v-model="form.partiful_link" placeholder="https://partiful.com/..." />
-          </div>
         </div>
 
 
@@ -1092,7 +1047,7 @@ onUnmounted(() => {
                 @click="addRelatedEvent(event.id)"
                 class="w-full text-left px-3 py-2 text-sm bg-[rgba(26,26,26,0.8)] hover:bg-[rgba(138,163,124,0.2)] text-[#f5f5f5] rounded border border-[#3d4d36] transition-colors"
               >
-                {{ event.title || event.attributes?.title || 'Untitled Event' }}
+                {{ event.title || 'Untitled Event' }}
               </button>
             </div>
           </div>
@@ -1104,7 +1059,7 @@ onUnmounted(() => {
               :key="event.id || event"
               class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[rgba(138,163,124,0.3)] text-[#8aa37c]"
             >
-              {{ event.title || event.attributes?.title || 'Untitled Event' }}
+              {{ event.title || 'Untitled Event' }}
               <button
                 v-if="editor"
                 @click="removeRelatedEvent(event.id || event)"
@@ -1286,7 +1241,7 @@ onUnmounted(() => {
                     :key="event.id || event"
                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
                   >
-                    {{ event.title || event.attributes?.title || 'Untitled Event' }}
+                    {{ event.title || 'Untitled Event' }}
                   </span>
                 </div>
               </div>
@@ -1343,20 +1298,6 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <!-- Partiful Link -->
-              <div v-if="form.partiful_link" class="mb-8">
-                <a 
-                  :href="form.partiful_link" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  RSVP via Partiful
-                </a>
-              </div>
             </div>
             </div>
       </div>

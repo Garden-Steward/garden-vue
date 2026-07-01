@@ -82,8 +82,8 @@ const displayedMedia = computed(() => {
   if (!props.multiple) {
     // Sort by createdAt descending (latest first), fallback to id if createdAt not available
     const sorted = [...allMedia].sort((a, b) => {
-      const aDate = a?.attributes?.createdAt || a?.data?.attributes?.createdAt || a?.createdAt || a?.id || 0
-      const bDate = b?.attributes?.createdAt || b?.data?.attributes?.createdAt || b?.createdAt || b?.id || 0
+      const aDate = a?.createdAt || a?.id || 0
+      const bDate = b?.createdAt || b?.id || 0
       return new Date(bDate) - new Date(aDate)
     })
     
@@ -139,8 +139,8 @@ const clearSelection = () => {
 
 // Check if a media item is selected
 const isSelected = (mediaItem) => {
-  // Handle Strapi format: could be { id, attributes: {...} } or { data: { id, attributes: {...} } }
-  const mediaId = mediaItem.id || mediaItem.data?.id || mediaItem.attributes?.id
+  // v5 media entries are flat
+  const mediaId = mediaItem.id
   if (!mediaId) return false
   
   if (props.multiple) {
@@ -161,7 +161,7 @@ const isSelected = (mediaItem) => {
 // Handle media selection
 const selectMedia = (mediaItem) => {
   // Handle Strapi format
-  const mediaId = mediaItem.id || mediaItem.data?.id || mediaItem.attributes?.id
+  const mediaId = mediaItem.id
   const mediaData = {
     id: mediaId,
     url: getImageUrl(mediaItem)
@@ -209,7 +209,7 @@ const getThumbnailUrl = (mediaItem) => {
   if (!mediaItem) return ''
   
   // Handle Strapi format - prioritize thumbnail format
-  const attrs = mediaItem.data?.attributes || mediaItem.attributes || mediaItem
+  const attrs = mediaItem
   
   // First try thumbnail format (best for grid display)
   if (attrs.formats?.thumbnail?.url) {
@@ -251,7 +251,7 @@ const getImageUrl = (mediaItem) => {
   if (!mediaItem) return ''
   
   // Handle Strapi format - prefer full-size URL
-  const attrs = mediaItem.data?.attributes || mediaItem.attributes || mediaItem
+  const attrs = mediaItem
   
   // Try main URL first (full size)
   if (attrs.url) {
@@ -301,7 +301,7 @@ const getMediaName = (mediaItem) => {
   if (!mediaItem) return 'Untitled'
   
   // Handle Strapi format
-  const attrs = mediaItem.data?.attributes || mediaItem.attributes || mediaItem
+  const attrs = mediaItem
   
   return attrs.name || 
          attrs.filename || 

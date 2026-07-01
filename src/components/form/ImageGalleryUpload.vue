@@ -57,7 +57,7 @@ const images = computed({
       if (typeof img === 'object' && img !== null) {
         return {
           id: img.id || img.data?.id,
-          url: img.url || img.data?.attributes?.url || img.attributes?.url || ''
+          url: img.url || ''
         }
       }
       return { id: null, url: img }
@@ -405,7 +405,7 @@ watch(() => images.value.length, (newLength) => {
 
 // Check if a media item is already in the gallery
 const isInGallery = (mediaItem) => {
-  const mediaId = mediaItem.id || mediaItem.data?.id || mediaItem.attributes?.id
+  const mediaId = mediaItem.id
   if (!mediaId) return false
   
   return images.value.some(img => {
@@ -421,7 +421,7 @@ const selectMedia = (mediaItem) => {
     return
   }
   
-  const mediaId = mediaItem.id || mediaItem.data?.id || mediaItem.attributes?.id
+  const mediaId = mediaItem.id
   const mediaUrl = getMediaImageUrl(mediaItem)
   
   if (!mediaId || !mediaUrl) return
@@ -445,7 +445,7 @@ const getMediaImageUrl = (mediaItem) => {
   if (!mediaItem) return ''
   
   // Handle Strapi format
-  const attrs = mediaItem.data?.attributes || mediaItem.attributes || mediaItem
+  const attrs = mediaItem
   
   // Try main URL first
   if (attrs.url) {
@@ -472,7 +472,7 @@ const getMediaImageUrl = (mediaItem) => {
 const getMediaThumbnailUrl = (mediaItem) => {
   if (!mediaItem) return ''
   
-  const attrs = mediaItem.data?.attributes || mediaItem.attributes || mediaItem
+  const attrs = mediaItem
   
   // Try thumbnail format first
   if (attrs.formats?.thumbnail?.url) {
@@ -564,7 +564,7 @@ watch(() => props.gardenId, async (newId) => {
             >
               <img
                 :src="getMediaThumbnailUrl(mediaItem)"
-                :alt="mediaItem.attributes?.name || mediaItem.data?.attributes?.name || 'Media'"
+                :alt="mediaItem.name || 'Media'"
                 class="w-full h-full object-cover"
               />
               

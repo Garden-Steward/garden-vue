@@ -39,7 +39,7 @@ const getGalleryImages = computed(() => {
     if (typeof img === 'object' && img !== null) {
       return {
         id: img.id || img.data?.id,
-        url: img.url || img.data?.attributes?.url || img.attributes?.url || ''
+        url: img.url || ''
       };
     }
     return { id: null, url: img };

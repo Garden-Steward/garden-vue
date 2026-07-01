@@ -62,10 +62,11 @@ gardenTaskStore.findById(route.params.taskId);
 
 // Task helpers
 const task = computed(() => gardenTask.value);
-const attrs = computed(() => task.value?.attributes);
+// v5 entries are flat — fields live directly on the task object.
+const attrs = computed(() => task.value);
 
-// Instruction data is already populated in the task response
-const taskInstruction = computed(() => gardenTask.value?.attributes?.instruction?.data?.attributes);
+// Instruction data is already populated in the task response (flat relation)
+const taskInstruction = computed(() => gardenTask.value?.instruction);
 
 // Process images when instruction content loads
 watch(taskInstruction, async (instr) => {
@@ -81,16 +82,14 @@ onMounted(async () => {
 const taskImageUrl = computed(() => {
   const img = attrs.value?.primary_image;
   if (!img) return null;
-  const url = img.url || img.formats?.medium?.url || img.data?.attributes?.url || img.data?.attributes?.formats?.medium?.url;
+  const url = img.url || img.formats?.medium?.url;
   if (!url) return null;
   return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || ''}${url}`;
 });
 
 const volunteerCount = computed(() => {
   const v = attrs.value?.volunteers;
-  if (Array.isArray(v)) return v.length;
-  if (v?.data && Array.isArray(v.data)) return v.data.length;
-  return 0;
+  return Array.isArray(v) ? v.length : 0;
 });
 
 const formatStatus = (status) => {
