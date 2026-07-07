@@ -15,7 +15,7 @@ onMounted(() => {
   plantsStore.fetchBySlug(slug);
 });
 
-// ── Image helpers ──
+// ── Image helpers (v5 flat) ──
 const getClipUrl = () => {
   const clip = plant.value?.clipart;
   if (!clip) return null;
@@ -23,7 +23,7 @@ const getClipUrl = () => {
 };
 
 const getImages = () => {
-  return plant.value?.images || [];
+  return Array.isArray(plant.value?.images) ? plant.value.images : [];
 };
 
 const hasClip = computed(() => !!getClipUrl());
@@ -44,6 +44,19 @@ const typeColors = {
 
 const getTypeColor = (type) => {
   return typeColors[type?.toLowerCase()] || 'bg-gray-100 text-gray-800';
+};
+
+// ── Invasive status display ──
+const invasiveLabels = {
+  native: { label: '🌱 Native', cls: 'bg-green-100 text-green-800 border-green-300' },
+  non_native_benign: { label: '🌿 Non-Native (Benign)', cls: 'bg-blue-100 text-blue-800 border-blue-200' },
+  invasive_ca: { label: '⚠️ Invasive (CA)', cls: 'bg-red-100 text-red-800 border-red-300' },
+  invasive_na: { label: '⚠️ Invasive (North America)', cls: 'bg-orange-100 text-orange-800 border-orange-300' },
+  caution: { label: '🔍 Caution', cls: 'bg-yellow-100 text-yellow-800 border-yellow-300' }
+};
+
+const getInvasiveStatus = (status) => {
+  return invasiveLabels[status] || null;
 };
 </script>
 
@@ -97,7 +110,23 @@ const getTypeColor = (type) => {
               >
                 {{ plant.type }}
               </span>
+              <span
+                v-if="plant.invasive_status"
+                class="plant-detail__badge plant-detail__badge--invasive"
+                :class="getInvasiveStatus(plant.invasive_status)?.cls"
+              >
+                {{ getInvasiveStatus(plant.invasive_status)?.label }}
+              </span>
               <span v-if="hasClip" class="plant-detail__badge plant-detail__badge--clipart">🖌️ Clipart</span>
+            </div>
+
+            <!-- Tags -->
+            <div v-if="plant.tags?.length" class="plant-detail__tags">
+              <span
+                v-for="tag in plant.tags"
+                :key="tag.documentId"
+                class="plant-detail__tag"
+              >#{{ tag.name }}</span>
             </div>
 
             <div class="plant-detail__meta">
@@ -294,6 +323,33 @@ html.dark .plant-detail__latin {
 
 html.dark .plant-detail__badge--clipart {
   color: #c2cbbb;
+}
+
+.plant-detail__badge--invasive {
+  border: 1px solid;
+}
+
+/* ── Tags ── */
+.plant-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+}
+
+.plant-detail__tag {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(138, 163, 124, 0.08);
+  transition: color 0.15s;
+}
+
+html.dark .plant-detail__tag {
+  color: #c2cbbb;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* ── Meta blocks ── */

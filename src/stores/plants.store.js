@@ -134,6 +134,7 @@ export const usePlantsStore = defineStore({
             params.set('populate[0]', 'clipart');
             params.set('populate[1]', 'images');
             params.set('populate[2]', 'Benefits');
+            params.set('populate[3]', 'tags');
 
             fetchWrapper.get(`${baseUrl}?${params.toString()}`)
                 .then(res => {
