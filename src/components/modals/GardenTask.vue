@@ -206,12 +206,8 @@ function instructionRelationToForm(rel) {
 }
 
 function normalizeMediaFromProps(media) {
-  if (!media) return null;
-  if (media.data) {
-    const d = media.data;
-    return { ...(d.attributes || d), id: d.id };
-  }
-  return media;
+  // v5 media is already a flat object.
+  return media || null;
 }
 
 async function loadInstructionOptions() {
@@ -302,15 +298,8 @@ watch(() => props.task, (newVal) => {
 
 // Add computed property for filtered volunteers
 const filteredVolunteers = computed(() => {
-  // If volunteers is an array, return it as-is (legacy support)
-  if (Array.isArray(props.volunteers)) {
-    return props.volunteers.filter(volunteer => volunteer?.attributes);
-  }
-  // If volunteers is an object with a data array, return that
-  if (props.volunteers?.data && Array.isArray(props.volunteers.data)) {
-    return props.volunteers.data.filter(volunteer => volunteer?.attributes);
-  }
-  return [];
+  // v5: volunteers is a flat array of user objects.
+  return Array.isArray(props.volunteers) ? props.volunteers.filter(v => v?.id) : [];
 });
 
 // Computed property to check if the form is dirty
@@ -326,17 +315,16 @@ const isDirty = computed(() => {
 // Computed property for recurring task titles
 const recurringTaskTitles = computed(() => {
   return (gardenTaskStore.recurringTasks || [])
-    .map(task => task?.attributes?.title)
+    .map(task => task?.title)
     .filter(Boolean);
 });
 
 // Track the selected recurring task for instruction display
 const selectedRecurringTask = ref(null);
 
-// Add this computed property
+// v5: instruction is a flat relation object on the recurring task.
 const taskInstruction = computed(() => {
-    return selectedRecurringTask.value?.attributes?.instruction?.data || 
-           form.value.recurring_task?.data?.attributes?.instruction?.data;
+    return selectedRecurringTask.value?.instruction || null;
 });
 
 // Add this computed property
@@ -365,8 +353,8 @@ const statusPillClass = computed(
 // Methods
 // Prepopulate form with recurring task data
 function prepopulateFromRecurring(recurringTask) {
-  if (!recurringTask?.attributes) return;
-  const attrs = recurringTask.attributes;
+  if (!recurringTask) return;
+  const attrs = recurringTask;
   // Only update fields that exist in both
   form.value.title = attrs.title || '';
   form.value.type = attrs.type || '';
@@ -452,7 +440,10 @@ const submit = async () => {
           initialForm.value = JSON.parse(JSON.stringify(form.value));
         }
       } else {
-        const updatedTask = await gardenTaskStore.update(props.id, form.value);
+        // is_group_task is a UI-only toggle (shows/hides group settings), not a schema field.
+        const taskPayload = { ...form.value };
+        delete taskPayload.is_group_task;
+        const updatedTask = await gardenTaskStore.update(props.id, taskPayload);
         message = 'Garden Task updated';
         if (updatedTask) {
           form.value = { ...form.value, ...updatedTask };
@@ -460,7 +451,10 @@ const submit = async () => {
       }
     } else {
       form.value.status = 'INITIALIZED';
-      const newTask = await gardenTaskStore.register(form.value);
+      // is_group_task is a UI-only toggle (shows/hides group settings), not a schema field.
+      const taskPayload = { ...form.value };
+      delete taskPayload.is_group_task;
+      const newTask = await gardenTaskStore.register(taskPayload);
       message = 'Garden Task added';
       if (newTask) {
         form.value = { ...form.value, ...newTask };
@@ -539,7 +533,7 @@ defineExpose({ openModal });
             <UserProfileDisplay 
               v-for="volunteer in filteredVolunteers" 
               :key="volunteer.id"
-              :volunteer="volunteer.attributes"
+              :volunteer="volunteer"
             />
           </div>
         </div>
@@ -570,7 +564,7 @@ defineExpose({ openModal });
             <UserProfileDisplay 
               v-for="volunteer in filteredVolunteers" 
               :key="volunteer.id"
-              :volunteer="volunteer.attributes"
+              :volunteer="volunteer"
             />
           </div>
         </div>
@@ -669,15 +663,15 @@ defineExpose({ openModal });
                     tabindex="0"
                     @click="pickTemplate(task)"
                   >
-                    {{ task.attributes.title }}
+                    {{ task.title }}
                   </span>
                 </div>
               </div>
 
               <div v-if="taskInstruction" class="text-sm">
                 <span class="gt-accent font-semibold">Task has an instruction </span>
-                <a class="gt-accent underline hover:opacity-80" :href="'/i/' + taskInstruction.attributes.slug" target="_blank">
-                  {{ taskInstruction.attributes.title }}
+                <a class="gt-accent underline hover:opacity-80" :href="'/i/' + taskInstruction.slug" target="_blank">
+                  {{ taskInstruction.title }}
                 </a>
               </div>
             </div>
@@ -889,7 +883,7 @@ defineExpose({ openModal });
                   :key="inst.id"
                   :value="inst.id"
                 >
-                  {{ inst.attributes?.title || `Instruction #${inst.id}` }}
+                  {{ inst.title || `Instruction #${inst.id}` }}
                 </option>
               </select>
             </div>
@@ -990,10 +984,10 @@ defineExpose({ openModal });
               <span class="gt-accent font-semibold">Task has an instruction </span>
               <a
                 class="gt-accent underline hover:opacity-80"
-                :href="'/i/' + taskInstruction.attributes.slug"
+                :href="'/i/' + taskInstruction.slug"
                 target="_blank"
               >
-                {{ taskInstruction.attributes.title }}
+                {{ taskInstruction.title }}
               </a>
             </div>
 
@@ -1636,5 +1630,71 @@ html.dark .gt-status-skipped-darkforce {
   background-color: rgba(148, 163, 184, 0.18) !important;
   color: #e5e7eb !important;
   border-color: rgba(148, 163, 184, 0.4) !important;
+}
+
+/*
+ * The modal is teleported to #modals, where the component's scoped
+ * :global(.dark) rules don't reliably win. Force the dark palette for the
+ * interactive elements from this non-scoped layer (same approach as .gt-input
+ * above), matching our other dark forms.
+ */
+html.dark .garden-task-modal-content .gt-text,
+html.dark .garden-task-modal-content .gt-status-label {
+  color: #f5f5f5 !important;
+}
+
+html.dark .garden-task-modal-content .gt-accent {
+  color: #8aa37c !important;
+}
+
+/* Task-type / choice buttons */
+html.dark .garden-task-modal-content .gt-type-btn {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  border-color: #3d4d36 !important;
+  color: #f5f5f5 !important;
+}
+html.dark .garden-task-modal-content .gt-type-btn:hover {
+  border-color: #8aa37c !important;
+  background-color: rgba(138, 163, 124, 0.18) !important;
+}
+html.dark .garden-task-modal-content .gt-type-btn-active {
+  border-color: #8aa37c !important;
+  background-color: #6c8a6a !important;
+  color: #ffffff !important;
+}
+
+/* Primary (Continue / submit) button */
+html.dark .garden-task-modal-content .gt-submit-btn {
+  background-color: #8aa37c !important;
+  color: #ffffff !important;
+}
+html.dark .garden-task-modal-content .gt-submit-btn:hover,
+html.dark .garden-task-modal-content .gt-submit-btn:focus {
+  background-color: #6c8a6a !important;
+}
+html.dark .garden-task-modal-content .gt-submit-btn:disabled {
+  background-color: #3d4d36 !important;
+  color: #8a8a8a !important;
+}
+
+/* Back button */
+html.dark .garden-task-modal-content .gt-back-btn {
+  background-color: transparent !important;
+  color: #d0d0d0 !important;
+  border-color: #3d4d36 !important;
+}
+html.dark .garden-task-modal-content .gt-back-btn:hover {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  color: #f5f5f5 !important;
+}
+
+/* "Create from Template" chips */
+html.dark .garden-task-modal-content .gt-template-chip {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  border-color: #3d4d36 !important;
+  color: #8aa37c !important;
+}
+html.dark .garden-task-modal-content .gt-template-chip:hover {
+  background-color: rgba(138, 163, 124, 0.18) !important;
 }
 </style>

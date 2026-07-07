@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, stripReadOnly } from '@/helpers';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/gardens`;
 
@@ -13,19 +13,12 @@ export const useGardensStore = defineStore({
     actions: {
         async getAll() {
             this.gardens = { loading: true };
-            fetchWrapper.get(`${baseUrl}?populate=managers,volunteers,hero_image`)
+            // Strapi v5: array-style populate (comma strings are rejected).
+            fetchWrapper.get(`${baseUrl}?populate[0]=managers&populate[1]=volunteers&populate[2]=hero_image`)
                 .then(res => {
-                    const gardens = (Array.isArray(res.data) ? res.data : []).map(garden => {
-                        if (garden.attributes?.hero_image?.data) {
-                            const imageData = garden.attributes.hero_image.data;
-                            garden.attributes.hero_image = {
-                                ...imageData.attributes,
-                                id: imageData.id
-                            };
-                        }
-                        return garden;
-                    });
-                    this.gardens = gardens;
+                    // v5 returns flat entries with relations/media already de-nested,
+                    // so hero_image is the media object directly — no remapping needed.
+                    this.gardens = Array.isArray(res.data) ? res.data : [];
                 })
                 .catch(error => this.gardens = { error })
         },
@@ -38,10 +31,11 @@ export const useGardensStore = defineStore({
         async getSlug(slug) {
             this.garden = { loading: true };
             fetchWrapper.get(`${baseUrl}/${slug}/full?populate=managers`)
-                .then(res => this.garden = res.data)
+                .then(res => this.garden = res.data ?? { error: 'Garden not found' })
                 .catch(error => this.garden = { error })
         },
         async update(id, data) {
+            data = stripReadOnly(data);
             // Format hero_image correctly if it exists
             if (data.hero_image?.id) {
                 data.hero_image = {

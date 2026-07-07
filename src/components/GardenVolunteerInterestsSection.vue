@@ -55,7 +55,7 @@ const addableInterests = computed(() =>
 const displayInterests = computed(() =>
   (props.currentInterests || []).map((i) => ({
     id: i.id,
-    tag: i.tag ?? i.attributes?.tag ?? '',
+    tag: i.tag ?? '',
   }))
 );
 

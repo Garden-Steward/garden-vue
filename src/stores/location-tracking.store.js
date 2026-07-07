@@ -14,12 +14,12 @@ export const useLocationTrackingStore = defineStore({
             this.locationTrackings = { loading: true };
             try {
                 const response = await fetchWrapper.get(`${baseUrl}?populate=plant&populate=plant.clipart&populate=plant_image&populate=user`);
+                // v5 entries are flat (relations/media already de-nested).
                 this.locationTrackings = response.data.map(item => ({
-                    id: item.id,
-                    ...item.attributes,
-                    thumbnail: item.attributes.plant_image?.data?.attributes?.formats?.thumbnail?.url,
-                    small_image: item.attributes.plant_image?.data?.attributes?.formats?.small?.url,
-                    user: item.attributes.user?.data?.attributes?.username
+                    ...item,
+                    thumbnail: item.plant_image?.formats?.thumbnail?.url,
+                    small_image: item.plant_image?.formats?.small?.url,
+                    user: item.user?.username
                 }));
             } catch (error) {
                 this.locationTrackings = { error };
@@ -29,11 +29,8 @@ export const useLocationTrackingStore = defineStore({
             this.locationTracking = { loading: true };
             try {
                 const response = await fetchWrapper.get(`${baseUrl}/${id}?populate=plant&populate=plant_image`);
-                // Process the response to extract the single item
-                this.locationTracking = {
-                    id: response.data.id,
-                    ...response.data.attributes
-                };
+                // v5 entries are flat.
+                this.locationTracking = { ...response.data };
             } catch (error) {
                 this.locationTracking = { error };
             }
@@ -44,17 +41,14 @@ export const useLocationTrackingStore = defineStore({
             this.locationTrackings = { loading: true };
             try {
                 const response = await fetchWrapper.get(`${baseUrl}?populate=plant&populate=plant.Benefits&populate=plant.clipart&populate=plant_image&populate=location_image&populate=user&pagination[pageSize]=100`);
+                // v5 entries are flat; plant/plant_image/location_image/user are de-nested.
                 const allTrackings = response.data.map(item => ({
-                    id: item.id,
-                    ...item.attributes,
-                    plant: item.attributes.plant?.data ? {
-                        id: item.attributes.plant.data.id,
-                        ...item.attributes.plant.data.attributes
-                    } : null,
-                    thumbnail: item.attributes.plant_image?.data?.attributes?.formats?.thumbnail?.url,
-                    small_image: item.attributes.plant_image?.data?.attributes?.formats?.small?.url || item.attributes.plant_image?.data?.attributes?.url,
-                    location_thumbnail: item.attributes.location_image?.data?.attributes?.formats?.thumbnail?.url,
-                    user: item.attributes.user?.data?.attributes?.username
+                    ...item,
+                    plant: item.plant ?? null,
+                    thumbnail: item.plant_image?.formats?.thumbnail?.url,
+                    small_image: item.plant_image?.formats?.small?.url || item.plant_image?.url,
+                    location_thumbnail: item.location_image?.formats?.thumbnail?.url,
+                    user: item.user?.username
                 }));
                 
                 // Filter by proximity if garden has coords

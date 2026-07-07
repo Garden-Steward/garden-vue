@@ -156,9 +156,9 @@ async function submitApplication() {
 // Prepare submission payload with API field names
 function prepareSubmissionPayload() {
   return {
-    project_type: formData.value.projectType, // Maps to project_type for API
+    project_type: formData.value.projectType,
     location: formData.value.location,
-    city_name: formData.value.cityName,
+    city: formData.value.cityName, // schema field is `city`
     requires_maintenance: formData.value.requiresMaintenance,
     name: formData.value.name,
     email: formData.value.email,
@@ -266,13 +266,13 @@ function prevStep() {
               @keyup.enter="handleProjectTitle"
               type="text"
               placeholder="Enter project name"
-              class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none"
+              class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none dark:bg-[rgba(26,26,26,0.6)] dark:border-[#3d4d36] dark:text-[#f5f5f5] dark:placeholder-[#9ca3af] dark:focus:border-[#8aa37c] dark:focus:ring-[#8aa37c]/30"
               autofocus
             />
             <button
               @click="handleProjectTitle"
               :disabled="!formData.title.trim()"
-              class="mt-6 w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-lg"
+              class="mt-6 w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-[#3d4d36] dark:disabled:text-[#8a8a8a] font-medium text-lg"
             >
               Continue
             </button>
@@ -306,13 +306,13 @@ function prevStep() {
                 @keyup.enter="handleLocationInput"
                 type="text"
                 placeholder="Enter city or location"
-                class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none"
+                class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none dark:bg-[rgba(26,26,26,0.6)] dark:border-[#3d4d36] dark:text-[#f5f5f5] dark:placeholder-[#9ca3af] dark:focus:border-[#8aa37c] dark:focus:ring-[#8aa37c]/30"
                 autofocus
               />
               <button
                 @click="handleLocationInput"
                 :disabled="!formData.cityName.trim()"
-                class="mt-6 w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-lg"
+                class="mt-6 w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-[#3d4d36] dark:disabled:text-[#8a8a8a] font-medium text-lg"
               >
                 Continue
               </button>
@@ -344,13 +344,13 @@ function prevStep() {
               v-model="formData.description"
               placeholder="Describe your project in detail..."
               rows="6"
-              class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none resize-y"
+              class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none dark:bg-[rgba(26,26,26,0.6)] dark:border-[#3d4d36] dark:text-[#f5f5f5] dark:placeholder-[#9ca3af] dark:focus:border-[#8aa37c] dark:focus:ring-[#8aa37c]/30 resize-y"
               autofocus
             ></textarea>
             <button
               @click="handleDescription"
               :disabled="!formData.description.trim()"
-              class="mt-6 w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-lg"
+              class="mt-6 w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-[#3d4d36] dark:disabled:text-[#8a8a8a] font-medium text-lg"
             >
               Continue
             </button>
@@ -362,32 +362,32 @@ function prevStep() {
           <h2 class="text-2xl font-semibold mb-6 text-center text-gray-900 dark:text-[#f5f5f5]">What's your name and email?</h2>
           <div class="max-w-md mx-auto space-y-4">
             <div>
-              <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+              <label for="name" class="block text-sm font-medium text-gray-700 dark:text-[#d0d0d0] mb-2">Name</label>
               <input
                 id="name"
                 v-model="formData.name"
                 @keyup.enter="handleContactInfo"
                 type="text"
                 placeholder="Your name"
-                class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none"
+                class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none dark:bg-[rgba(26,26,26,0.6)] dark:border-[#3d4d36] dark:text-[#f5f5f5] dark:placeholder-[#9ca3af] dark:focus:border-[#8aa37c] dark:focus:ring-[#8aa37c]/30"
                 autofocus
               />
             </div>
             <div>
-              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <label for="email" class="block text-sm font-medium text-gray-700 dark:text-[#d0d0d0] mb-2">Email</label>
               <input
                 id="email"
                 v-model="formData.email"
                 @keyup.enter="handleContactInfo"
                 type="email"
                 placeholder="your.email@example.com"
-                class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none"
+                class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all duration-300 outline-none dark:bg-[rgba(26,26,26,0.6)] dark:border-[#3d4d36] dark:text-[#f5f5f5] dark:placeholder-[#9ca3af] dark:focus:border-[#8aa37c] dark:focus:ring-[#8aa37c]/30"
               />
             </div>
             <button
               @click="handleContactInfo"
               :disabled="!formData.name.trim() || !formData.email.trim()"
-              class="mt-6 w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-lg"
+              class="mt-6 w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-[#3d4d36] dark:disabled:text-[#8a8a8a] font-medium text-lg"
             >
               Continue
             </button>
@@ -401,12 +401,12 @@ function prevStep() {
       <button
         v-if="currentStep > 0"
         @click="prevStep"
-        class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors duration-200"
+        class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors duration-200 dark:bg-[#3d4d36] dark:text-[#f5f5f5] dark:hover:bg-[#4d6044]"
       >
         ← Back
       </button>
       <div v-else></div>
-      <div class="text-sm text-gray-600">
+      <div class="text-sm text-gray-600 dark:text-[#d0d0d0]">
         Step {{ currentStep + 1 }} of {{ visibleSteps.length }}
       </div>
     </div>

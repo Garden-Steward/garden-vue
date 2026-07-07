@@ -19,7 +19,7 @@ const deduplicateMessages = (messages) => {
   const seen = new Map();
   messages.forEach((msg) => {
     const key = `${msg.type}::${msg.body}`;
-    const at = msg.createdAt || msg.attributes?.createdAt;
+    const at = msg.createdAt;
     if (seen.has(key)) {
       const entry = seen.get(key);
       entry.count++;
@@ -225,7 +225,7 @@ const getMessageBorderColor = (type) => {
                 </div>
                 <div class="text-right shrink-0 max-w-[58%] sm:max-w-[50%]">
                   <div class="text-sm text-[#3d4d36] dark:text-[#b8c9b0]">
-                    {{ formatDate(message.createdAt || message.attributes?.createdAt) }}
+                    {{ formatDate(message.createdAt) }}
                   </div>
                   <div
                     v-if="count > 1 && times?.length"

@@ -59,15 +59,8 @@ const latestEvents = computed(() => {
     return [];
   }
   
-  // Normalize events (handle both Strapi format and normalized format)
-  const normalizedEvents = props.volunteerDays.days.map(event => {
-    // Handle Strapi format: { id, attributes: { title, startDatetime, ... } }
-    if (event.attributes) {
-      return { ...event.attributes, id: event.id };
-    }
-    // Already normalized format
-    return event;
-  });
+  // v5 events are flat already.
+  const normalizedEvents = props.volunteerDays.days;
   
   // Filter out events without startDatetime and sort by startDatetime (soonest first)
   const sortedEvents = normalizedEvents
@@ -99,7 +92,7 @@ const isSavingHeroImage = ref(false);
 const isInitialLoad = ref(true);
 
 // Initialize hero_image from garden (for HeroImageCard v-model)
-watch(() => props.garden?.attributes?.hero_image, (newVal) => {
+watch(() => props.garden?.hero_image, (newVal) => {
   if (newVal) {
     // Handle Strapi format: { data: { id, attributes: { ... } } }
     if (newVal.data) {
@@ -165,31 +158,31 @@ const welcomeEmailBodyValue = ref('');
 const isSavingText = ref(false);
 
 // Initialize text values from garden
-watch(() => props.garden?.attributes?.welcome_text, (newVal) => {
+watch(() => props.garden?.welcome_text, (newVal) => {
   if (!editingWelcomeText.value) {
     welcomeTextValue.value = newVal || '';
   }
 }, { immediate: true });
 
-watch(() => props.garden?.attributes?.blurb, (newVal) => {
+watch(() => props.garden?.blurb, (newVal) => {
   if (!editingBlurb.value) {
     blurbValue.value = newVal || '';
   }
 }, { immediate: true });
 
-watch(() => props.garden?.attributes?.description, (newVal) => {
+watch(() => props.garden?.description, (newVal) => {
   if (!editingDescription.value) {
     descriptionValue.value = newVal || '';
   }
 }, { immediate: true });
 
-watch(() => props.garden?.attributes?.welcome_email_subject, (newVal) => {
+watch(() => props.garden?.welcome_email_subject, (newVal) => {
   if (!editingWelcomeEmail.value) {
     welcomeEmailSubjectValue.value = newVal || '';
   }
 }, { immediate: true });
 
-watch(() => props.garden?.attributes?.welcome_email_body, (newVal) => {
+watch(() => props.garden?.welcome_email_body, (newVal) => {
   if (!editingWelcomeEmail.value) {
     welcomeEmailBodyValue.value = newVal || '';
   }
@@ -197,45 +190,45 @@ watch(() => props.garden?.attributes?.welcome_email_body, (newVal) => {
 
 // Start editing functions
 const startEditingWelcomeEmail = () => {
-  welcomeEmailSubjectValue.value = props.garden?.attributes?.welcome_email_subject || '';
-  welcomeEmailBodyValue.value = props.garden?.attributes?.welcome_email_body || '';
+  welcomeEmailSubjectValue.value = props.garden?.welcome_email_subject || '';
+  welcomeEmailBodyValue.value = props.garden?.welcome_email_body || '';
   editingWelcomeEmail.value = true;
 };
 
 const startEditingWelcomeText = () => {
-  welcomeTextValue.value = props.garden?.attributes?.welcome_text || '';
+  welcomeTextValue.value = props.garden?.welcome_text || '';
   editingWelcomeText.value = true;
 };
 
 const startEditingBlurb = () => {
-  blurbValue.value = props.garden?.attributes?.blurb || '';
+  blurbValue.value = props.garden?.blurb || '';
   editingBlurb.value = true;
 };
 
 const startEditingDescription = () => {
-  descriptionValue.value = props.garden?.attributes?.description || '';
+  descriptionValue.value = props.garden?.description || '';
   editingDescription.value = true;
 };
 
 // Cancel editing functions
 const cancelEditingWelcomeEmail = () => {
-  welcomeEmailSubjectValue.value = props.garden?.attributes?.welcome_email_subject || '';
-  welcomeEmailBodyValue.value = props.garden?.attributes?.welcome_email_body || '';
+  welcomeEmailSubjectValue.value = props.garden?.welcome_email_subject || '';
+  welcomeEmailBodyValue.value = props.garden?.welcome_email_body || '';
   editingWelcomeEmail.value = false;
 };
 
 const cancelEditingWelcomeText = () => {
-  welcomeTextValue.value = props.garden?.attributes?.welcome_text || '';
+  welcomeTextValue.value = props.garden?.welcome_text || '';
   editingWelcomeText.value = false;
 };
 
 const cancelEditingBlurb = () => {
-  blurbValue.value = props.garden?.attributes?.blurb || '';
+  blurbValue.value = props.garden?.blurb || '';
   editingBlurb.value = false;
 };
 
 const cancelEditingDescription = () => {
-  descriptionValue.value = props.garden?.attributes?.description || '';
+  descriptionValue.value = props.garden?.description || '';
   editingDescription.value = false;
 };
 
@@ -381,7 +374,7 @@ const saveDescription = async () => {
         </div>
         <div class="mt-1.5 h-px w-full bg-[rgba(138,163,124,0.4)]" aria-hidden="true" />
         <div v-if="!editingBlurb" class="mt-6">
-          <p class="text-[#d0d0d0]">{{ garden.attributes.blurb || 'No blurb available.' }}</p>
+          <p class="text-[#d0d0d0]">{{ garden.blurb || 'No blurb available.' }}</p>
         </div>
         <div v-else class="space-y-2 mt-6">
           <textarea
@@ -427,7 +420,7 @@ const saveDescription = async () => {
         </div>
         <div class="mt-1.5 h-px w-full bg-[rgba(138,163,124,0.4)]" aria-hidden="true" />
         <div v-if="!editingDescription" class="mt-6">
-          <p class="text-[#d0d0d0] whitespace-pre-wrap">{{ garden.attributes.description || 'No description available.' }}</p>
+          <p class="text-[#d0d0d0] whitespace-pre-wrap">{{ garden.description || 'No description available.' }}</p>
         </div>
         <div v-else class="space-y-2 mt-6">
           <textarea
@@ -473,7 +466,7 @@ const saveDescription = async () => {
         </div>
         <div class="mt-1.5 h-px w-full bg-[rgba(138,163,124,0.4)]" aria-hidden="true" />
         <div v-if="!editingWelcomeText" class="mt-6">
-          <p class="text-[#d0d0d0]">{{ garden.attributes.welcome_text || 'No welcome text available.' }}</p>
+          <p class="text-[#d0d0d0]">{{ garden.welcome_text || 'No welcome text available.' }}</p>
         </div>
         <div v-else class="space-y-2 mt-6">
           <textarea
@@ -521,11 +514,11 @@ const saveDescription = async () => {
         <div v-if="!editingWelcomeEmail" class="space-y-3 mt-6">
           <div>
             <p class="text-xs text-[#a8b89e] uppercase tracking-wide mb-1">Subject</p>
-            <p class="text-[#d0d0d0]">{{ garden.attributes.welcome_email_subject || 'No subject set.' }}</p>
+            <p class="text-[#d0d0d0]">{{ garden.welcome_email_subject || 'No subject set.' }}</p>
           </div>
           <div>
             <p class="text-xs text-[#a8b89e] uppercase tracking-wide mb-1">Body</p>
-            <p class="text-[#d0d0d0] whitespace-pre-wrap">{{ garden.attributes.welcome_email_body || 'No email body set.' }}</p>
+            <p class="text-[#d0d0d0] whitespace-pre-wrap">{{ garden.welcome_email_body || 'No email body set.' }}</p>
           </div>
         </div>
 

@@ -53,7 +53,7 @@ const isValidPhone = computed(() => {
 });
 
 const taskTitle = computed(() => {
-  return props.task?.attributes?.title || 'this task';
+  return props.task?.title || 'this task';
 });
 
 const close = () => {

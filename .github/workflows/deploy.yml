@@ -12,12 +12,12 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
-        node-version: '22' # LTS; engines allow ^20.19.0 || ^22.0.0
+        node-version: '22' # active LTS; engines require ^22.0.0
 
     - name: Install dependencies
       run: yarn install --frozen-lockfile
@@ -28,12 +28,12 @@ jobs:
       run: npm run build
 
     - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
+      uses: google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
 
     - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
+      uses: google-github-actions/setup-gcloud@v3
       with:
         project_id: ${{ github.ref == 'refs/heads/main' && 'garden-steward' || 'garden-steward' }}
 
@@ -41,11 +41,19 @@ jobs:
       run: npm install -g firebase-tools
 
     - name: Deploy to Firebase Hosting
-      env:
-        VITE_API_URL: ${{ secrets.VITE_API_URL }}
       run: |
-        set -e
-        npm run build && firebase deploy --only hosting:garden-steward --project garden-steward
+        # GitHub runs this with `bash -e`; without disabling errexit the step
+        # aborts the instant `firebase deploy` returns non-zero, before the
+        # no-op guard below can run.
+        set +e
+        output=$(firebase deploy --only hosting:garden-steward --project garden-steward 2>&1)
+        status=$?
+        echo "$output"
+        if [ $status -ne 0 ] && echo "$output" | grep -q "is the current active version"; then
+          echo "Version is already live — deployment is current, treating as success."
+          exit 0
+        fi
+        exit $status
       
     - name: Log Deployment Success
       run: echo "Deployment to Firebase Hosting was successful!"

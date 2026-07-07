@@ -73,17 +73,12 @@ const getImageUrl = (image) => {
 const latestEventsToShow = ref(3);
 const upcomingEventsToShow = ref(3);
 
-// Helper function to normalize event data (handle both Strapi format and normalized format)
-const normalizeEvent = (event) => {
-    if (event.attributes) {
-        return { ...event.attributes, id: event.id };
-    }
-    return event;
-};
+// Strapi v5 events are flat already.
+const normalizeEvent = (event) => event;
 
 // Helper: check if user is a manager of a garden
 const isManager = (garden) => {
-    const managers = garden.attributes?.managers?.data || [];
+    const managers = garden.managers || [];
     return managers.some(manager => {
         const managerId = manager.id || manager;
         return managerId === user.value?.id;
@@ -92,7 +87,7 @@ const isManager = (garden) => {
 
 // Helper: check if user is a volunteer (member) of a garden
 const isVolunteer = (garden) => {
-    const volunteers = garden.attributes?.volunteers?.data || [];
+    const volunteers = garden.volunteers || [];
     return volunteers.some(volunteer => {
         const volunteerId = volunteer.id || volunteer;
         return volunteerId === user.value?.id;
@@ -112,12 +107,12 @@ const memberGardens = computed(() => {
 });
 
 // Garden counts shown on each card
-const managersCount = (garden) => garden.attributes?.managers?.data?.length || 0;
-const volunteersCount = (garden) => garden.attributes?.volunteers?.data?.length || 0;
+const managersCount = (garden) => garden.managers?.length || 0;
+const volunteersCount = (garden) => garden.volunteers?.length || 0;
 
 // "Draft" badge — only when the API explicitly reports an unpublished garden.
 const isDraft = (garden) =>
-    garden.attributes && 'publishedAt' in garden.attributes && !garden.attributes.publishedAt;
+    'publishedAt' in garden && !garden.publishedAt;
 
 // ── Cross-garden tasks ─────────────────────────────────
 const userActiveTasks = computed(() =>
@@ -125,11 +120,11 @@ const userActiveTasks = computed(() =>
 );
 
 const taskGarden = (task) => {
-    const g = task.attributes?.garden?.data || task.attributes?.garden;
+    const g = task.garden;
     if (!g) return { title: '', slug: '' };
     return {
-        title: g.attributes?.title || g.title || '',
-        slug: g.attributes?.slug || g.slug || ''
+        title: g.title || '',
+        slug: g.slug || ''
     };
 };
 
@@ -139,32 +134,32 @@ const userProjectsList = computed(() =>
 );
 
 const projectGarden = (project) => {
-    const g = project.attributes?.garden?.data || project.attributes?.garden;
+    const g = project.garden;
     if (!g) return { title: '', slug: '' };
     return {
-        title: g.attributes?.title || g.title || '',
-        slug: g.attributes?.slug || g.slug || ''
+        title: g.title || '',
+        slug: g.slug || ''
     };
 };
 
-// Relation ids from a Strapi m2m field (handles { data: [...] } or a plain array).
+// Relation ids from a Strapi v5 relation array (or a plain array of ids).
 const relationIds = (rel) => {
-    const arr = rel?.data || rel || [];
-    return (Array.isArray(arr) ? arr : []).map(x => x.id ?? x);
+    const arr = Array.isArray(rel) ? rel : [];
+    return arr.map(x => x.id ?? x);
 };
 
 const projectCreatorId = (project) => {
-    const cb = project.attributes?.created_by;
-    return cb?.data?.id ?? cb?.id ?? cb ?? null;
+    const cb = project.created_by;
+    return cb?.id ?? cb ?? null;
 };
 const isProjectCreator = (project) => {
     const id = projectCreatorId(project);
     return id != null && id === user.value?.id;
 };
 const isProjectManager = (project) =>
-    relationIds(project.attributes?.managers).includes(user.value?.id);
+    relationIds(project.managers).includes(user.value?.id);
 const isProjectInterested = (project) =>
-    relationIds(project.attributes?.interested).includes(user.value?.id);
+    relationIds(project.interested).includes(user.value?.id);
 
 // The Interested toggle only applies to projects the user neither manages nor created.
 const canExpressInterest = (project) => !isProjectManager(project) && !isProjectCreator(project);
@@ -182,7 +177,7 @@ const togglingInterestId = ref(null);
 const toggleInterest = async (project) => {
     if (togglingInterestId.value) return;
     togglingInterestId.value = project.id;
-    const ids = relationIds(project.attributes?.interested);
+    const ids = relationIds(project.interested);
     const next = ids.includes(user.value?.id)
         ? ids.filter(id => id !== user.value?.id)
         : [...ids, user.value?.id];
@@ -207,10 +202,10 @@ const dashboardEvents = computed(() => {
 });
 
 const eventGardenId = (event) => {
-    const g = event.garden?.data || event.garden;
+    const g = event.garden;
     if (!g) return null;
     if (typeof g === 'number') return g;
-    return g.id ?? g.attributes?.id ?? null;
+    return g.id ?? null;
 };
 
 // Edit is only offered for events whose garden the user manages.
@@ -220,9 +215,9 @@ const canEditEvent = (event) => {
 };
 
 const eventGarden = (event) => {
-    const g = event.garden?.data || event.garden;
+    const g = event.garden;
     if (!g) return '';
-    return g.attributes?.title || g.title || '';
+    return g.title || '';
 };
 
 const upcomingEvents = computed(() => {
@@ -250,7 +245,7 @@ const loadMoreLatestEvents = () => { latestEventsToShow.value += 2; };
 // ── Actions ────────────────────────────────────────────
 // Placeholder until a manage-request endpoint exists (see plan: deferred).
 const requestToManage = (garden) => {
-    alertStore.success(`Request to manage "${garden.attributes?.title}" is coming soon.`);
+    alertStore.success(`Request to manage "${garden.title}" is coming soon.`);
 };
 
 const rsvp = async (event) => {
@@ -292,12 +287,12 @@ const rsvp = async (event) => {
                     :href="taskGarden(task).slug ? `/manage/gardens/${taskGarden(task).slug}#tasks` : undefined"
                 >
                     <div class="task-card__head">
-                        <span class="task-card__title">{{ task.attributes?.title }}</span>
-                        <span v-if="task.attributes?.type" :class="getRecurringTaskTypeBadgeClasses(task.attributes.type)">
-                            {{ getRecurringTaskTypeDisplayLabel(task.attributes.type) }}
+                        <span class="task-card__title">{{ task.title }}</span>
+                        <span v-if="task.type" :class="getRecurringTaskTypeBadgeClasses(task.type)">
+                            {{ getRecurringTaskTypeDisplayLabel(task.type) }}
                         </span>
                     </div>
-                    <span class="task-card__status">{{ getTaskStatusOption(task.attributes?.status).label }}</span>
+                    <span class="task-card__status">{{ getTaskStatusOption(task.status).label }}</span>
                     <span v-if="taskGarden(task).title" class="task-card__garden">{{ taskGarden(task).title }}</span>
                 </a>
             </div>
@@ -310,23 +305,23 @@ const rsvp = async (event) => {
                 v-for="garden in managedGardens"
                 :key="garden.id"
                 class="garden-card"
-                @click="rowClick(garden.attributes.slug)"
+                @click="rowClick(garden.slug)"
             >
                 <div
                     class="garden-card__media"
-                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.attributes?.hero_image) }"
-                    :style="getImageUrl(garden.attributes?.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.attributes.hero_image)})` } : null"
+                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.hero_image) }"
+                    :style="getImageUrl(garden.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.hero_image)})` } : null"
                 ></div>
                 <div class="garden-card__body">
-                    <h4 class="garden-card__title">{{ garden.attributes?.title }}</h4>
-                    <p class="garden-card__blurb">{{ garden.attributes?.blurb }}</p>
+                    <h4 class="garden-card__title">{{ garden.title }}</h4>
+                    <p class="garden-card__blurb">{{ garden.blurb }}</p>
                     <div class="garden-card__badges">
                         <span class="dash-badge dash-badge--manager">Manager</span>
                         <span v-if="isDraft(garden)" class="dash-badge dash-badge--draft">Draft</span>
                     </div>
                     <div class="garden-card__footer">
                         <span class="garden-card__counts">{{ managersCount(garden) }} Managers, {{ volunteersCount(garden) }} Volunteers</span>
-                        <a class="dash-link" :href="`/manage/gardens/${garden.attributes?.slug}`" @click.stop>Edit</a>
+                        <a class="dash-link" :href="`/manage/gardens/${garden.slug}`" @click.stop>Edit</a>
                     </div>
                 </div>
             </div>
@@ -344,16 +339,16 @@ const rsvp = async (event) => {
                 v-for="garden in memberGardens"
                 :key="garden.id"
                 class="garden-card"
-                @click="rowClick(garden.attributes.slug)"
+                @click="rowClick(garden.slug)"
             >
                 <div
                     class="garden-card__media"
-                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.attributes?.hero_image) }"
-                    :style="getImageUrl(garden.attributes?.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.attributes.hero_image)})` } : null"
+                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.hero_image) }"
+                    :style="getImageUrl(garden.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.hero_image)})` } : null"
                 ></div>
                 <div class="garden-card__body">
-                    <h4 class="garden-card__title">{{ garden.attributes?.title }}</h4>
-                    <p class="garden-card__blurb">{{ garden.attributes?.blurb }}</p>
+                    <h4 class="garden-card__title">{{ garden.title }}</h4>
+                    <p class="garden-card__blurb">{{ garden.blurb }}</p>
                     <div class="garden-card__badges">
                         <span class="dash-badge dash-badge--volunteer">Volunteer</span>
                         <span v-if="isDraft(garden)" class="dash-badge dash-badge--draft">Draft</span>
@@ -380,9 +375,9 @@ const rsvp = async (event) => {
                 @click="viewProjectClick(project.id)"
             >
                 <div class="project-card__head">
-                    <span class="project-card__title">{{ project.attributes?.title }}</span>
-                    <span v-if="project.attributes?.category" :class="getProjectCategoryBadgeClasses(project.attributes.category)">
-                        {{ project.attributes.category }}
+                    <span class="project-card__title">{{ project.title }}</span>
+                    <span v-if="project.category" :class="getProjectCategoryBadgeClasses(project.category)">
+                        {{ project.category }}
                     </span>
                 </div>
                 <p v-if="projectGarden(project).title" class="project-card__garden">{{ projectGarden(project).title }}</p>
@@ -390,9 +385,9 @@ const rsvp = async (event) => {
                     <span v-if="projectOwnership(project)" class="project-card__ownership">{{ projectOwnership(project) }}</span>
                     <span class="project-card__actions">
                         <a
-                            v-if="projectGarden(project).slug && project.attributes?.slug"
+                            v-if="projectGarden(project).slug && project.slug"
                             class="dash-link"
-                            :href="`/gardens/${projectGarden(project).slug}/p/${project.attributes.slug}`"
+                            :href="`/gardens/${projectGarden(project).slug}/p/${project.slug}`"
                             @click.stop
                         >View</a>
                         <button

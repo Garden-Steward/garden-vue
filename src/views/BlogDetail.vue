@@ -1,16 +1,19 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { watch, computed, onMounted } from 'vue';
+import { watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, RouterLink } from "vue-router";
 import { StrapiBlocks } from 'vue-strapi-blocks-renderer';
 
 import { useBlogStore } from '@/stores';
 import { ArticleUtils } from '@/helpers/article-utils';
+import { initPlantTooltips } from '@/components/PlantTooltips';
 
 const blogStore = useBlogStore();
 const route = useRoute();
 const { blog } = storeToRefs(blogStore);
 const baseUrl = `${import.meta.env.VITE_API_URL}`;
+
+let plantTooltipsCleanup = null;
 
 let heroImage = function(blog) {
   console.log('hero', blog.hero)
@@ -49,6 +52,10 @@ let coAuthorImage = function(coAuthor) {
 
 // Watch for changes in the route parameters
 watch(() => route.params.slug, (newSlug) => {
+  if (plantTooltipsCleanup) {
+    plantTooltipsCleanup();
+    plantTooltipsCleanup = null;
+  }
   blogStore.findSlug(newSlug);
   window.scrollTo(0, 0);
 });
@@ -74,24 +81,34 @@ watch(blog, async (newBlog) => {
     await ArticleUtils.processImages();
   }
   latestBlogId = newBlog?.id || null;
+
+  // Initialize plant tooltips after content renders
+  if (newBlog?.plants && newBlog.plants.length) {
+    // Use nextTick to ensure DOM is updated
+    await new Promise(resolve => setTimeout(resolve, 100));
+    if (plantTooltipsCleanup) plantTooltipsCleanup();
+    plantTooltipsCleanup = initPlantTooltips(newBlog.plants);
+  }
 }, { deep: true });
 
 onMounted(async () => {
   await ArticleUtils.processImages();
 });
 
-/** Strapi /full returns a flat author; REST may use { data } or { data: { id, attributes } }. */
+onBeforeUnmount(() => {
+  if (plantTooltipsCleanup) {
+    plantTooltipsCleanup();
+    plantTooltipsCleanup = null;
+  }
+});
+
+/** v5 relations are flat objects; tolerate a legacy { data } wrapper just in case. */
 function unwrapRelation(rel) {
   if (rel == null) return null;
-  let inner = rel;
   if (Object.prototype.hasOwnProperty.call(rel, 'data')) {
-    inner = rel.data ?? null;
-    if (inner == null) return null;
+    return rel.data ?? null;
   }
-  if (inner.attributes && typeof inner.attributes === 'object') {
-    return { id: inner.id, ...inner.attributes };
-  }
-  return inner;
+  return rel;
 }
 
 const authorEntity = computed(() => unwrapRelation(blog.value?.author));
