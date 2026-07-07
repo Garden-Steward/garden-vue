@@ -104,12 +104,12 @@ const loadMore = () => {
 const getThumbnailUrl = (plant) => {
   // Priority: clipart (small format) → first image (small) → clipart (full) → first image (full)
   const clipart = plant.clipart;
-  const images = plant.images;
+  const images = Array.isArray(plant.images) ? plant.images : [];
 
   if (clipart?.formats?.small?.url) return clipart.formats.small.url;
   if (clipart?.url) return clipart.url;
-  if (images?.[0]?.formats?.small?.url) return images[0].formats.small.url;
-  if (images?.[0]?.url) return images[0].url;
+  if (images[0]?.formats?.small?.url) return images[0].formats.small.url;
+  if (images[0]?.url) return images[0].url;
   return null;
 };
 
