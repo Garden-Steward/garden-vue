@@ -142,39 +142,67 @@ const getInvasiveStatus = (status) => {
           </div>
         </div>
 
-        <!-- ── Description / text content ── -->
+        <!-- ── Anchor nav ── -->
+        <nav v-if="plant.magic || plant.description || plant.uses" class="plant-detail__nav">
+          <a v-if="plant.magic" href="#magic" class="plant-detail__nav-link">✨ Magic</a>
+          <a v-if="plant.description" href="#description" class="plant-detail__nav-link">📖 Description</a>
+          <a v-if="plant.uses" href="#uses" class="plant-detail__nav-link">🔧 Uses</a>
+        </nav>
+
+        <!-- ── Body: content left, tags sidebar right ── -->
         <div class="plant-detail__body">
-          <div v-if="plant.magic" class="plant-detail__section">
-            <h2 class="plant-detail__section-title">Magic</h2>
-            <div class="plant-detail__text plant-detail__text--magic">{{ plant.magic }}</div>
-          </div>
+          <div class="plant-detail__content">
+            <div v-if="plant.magic" id="magic" class="plant-detail__section">
+              <h2 class="plant-detail__section-title">Magic</h2>
+              <div class="plant-detail__text plant-detail__text--magic" v-html="plant.magic"></div>
+            </div>
 
-          <div v-if="plant.description" class="plant-detail__section">
-            <h2 class="plant-detail__section-title">Description</h2>
-            <div class="plant-detail__text">{{ plant.description }}</div>
-          </div>
+            <div v-if="plant.description" id="description" class="plant-detail__section">
+              <h2 class="plant-detail__section-title">Description</h2>
+              <div class="plant-detail__text" v-html="plant.description"></div>
+            </div>
 
-          <div v-if="plant.Benefits?.length" class="plant-detail__section">
-            <h2 class="plant-detail__section-title">Benefits</h2>
-            <div class="plant-detail__benefits">
-              <span v-for="b in plant.Benefits" :key="b.id" class="plant-detail__benefit-tag">
-                {{ b.title }}
-              </span>
+            <div v-if="plant.uses" id="uses" class="plant-detail__section">
+              <h2 class="plant-detail__section-title">Uses</h2>
+              <div class="plant-detail__text" v-html="plant.uses"></div>
+            </div>
+
+            <div v-if="plant.Benefits?.length" class="plant-detail__section">
+              <h2 class="plant-detail__section-title">Benefits</h2>
+              <div class="plant-detail__benefits">
+                <span v-for="b in plant.Benefits" :key="b.id" class="plant-detail__benefit-tag">
+                  {{ b.title }}
+                </span>
+              </div>
+            </div>
+
+            <div v-if="getImages().length > 0" class="plant-detail__section">
+              <h2 class="plant-detail__section-title">Photos</h2>
+              <div class="plant-detail__gallery">
+                <img
+                  v-for="img in getImages()"
+                  :key="img.id"
+                  :src="img.formats?.medium?.url || img.url"
+                  :alt="img.alternativeText || plant.title"
+                  class="plant-detail__gallery-img"
+                />
+              </div>
             </div>
           </div>
 
-          <div v-if="getImages().length > 0" class="plant-detail__section">
-            <h2 class="plant-detail__section-title">Photos</h2>
-            <div class="plant-detail__gallery">
-              <img
-                v-for="img in getImages()"
-                :key="img.id"
-                :src="img.formats?.medium?.url || img.url"
-                :alt="img.alternativeText || plant.title"
-                class="plant-detail__gallery-img"
-              />
+          <!-- ── Sidebar: tags ── -->
+          <aside v-if="plant.tags?.length" class="plant-detail__sidebar">
+            <div class="plant-detail__tags-panel">
+              <h3 class="plant-detail__sidebar-title">Tags</h3>
+              <div class="plant-detail__tags">
+                <span
+                  v-for="tag in plant.tags"
+                  :key="tag.documentId"
+                  class="plant-detail__tag"
+                >#{{ tag.name }}</span>
+              </div>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </template>
@@ -232,7 +260,7 @@ html.dark .plant-detail__card {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
   gap: 1.75rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 @media (max-width: 768px) {
@@ -329,7 +357,7 @@ html.dark .plant-detail__badge--clipart {
   border: 1px solid;
 }
 
-/* ── Tags ── */
+/* ── Tags (inline, kept for other views) ── */
 .plant-detail__tags {
   display: flex;
   flex-wrap: wrap;
@@ -350,6 +378,48 @@ html.dark .plant-detail__badge--clipart {
 html.dark .plant-detail__tag {
   color: #c2cbbb;
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* ── Anchor nav ── */
+.plant-detail__nav {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid #ddd6c4;
+  border-bottom: 1px solid #ddd6c4;
+}
+
+html.dark .plant-detail__nav {
+  border-color: #3d4d36;
+}
+
+.plant-detail__nav-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3d5a3e;
+  text-decoration: none;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  background: rgba(138, 163, 124, 0.1);
+  transition: background 0.15s, color 0.15s;
+}
+
+.plant-detail__nav-link:hover {
+  background: #2d4a2e;
+  color: #fff;
+}
+
+html.dark .plant-detail__nav-link {
+  color: #c2cbbb;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .plant-detail__nav-link:hover {
+  background: #8aa37c;
+  color: #1a1a1a;
+}
 }
 
 /* ── Meta blocks ── */
@@ -395,12 +465,26 @@ html.dark .plant-detail__meta-text {
   color: #d1d5db;
 }
 
-/* ── Body sections ── */
+/* ── Body: two-column layout ── */
 .plant-detail__body {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 2rem;
+  padding-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .plant-detail__body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Content column ── */
+.plant-detail__content {
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
-  padding-bottom: 1rem;
+  min-width: 0;
 }
 
 .plant-detail__section {
@@ -419,6 +503,7 @@ html.dark .plant-detail__meta-text {
   margin: 0 0 0.65rem;
   padding-bottom: 0.35rem;
   border-bottom: 2px solid #ddd6c4;
+  scroll-margin-top: 1rem;
 }
 
 html.dark .plant-detail__section-title {
@@ -493,6 +578,71 @@ html.dark .plant-detail__benefit-tag {
 
 html.dark .plant-detail__gallery-img {
   border-color: #3d4d36;
+}
+
+/* ── Tags sidebar ── */
+.plant-detail__sidebar {
+  position: sticky;
+  top: 1.5rem;
+  align-self: start;
+}
+
+.plant-detail__tags-panel {
+  background: rgba(138, 163, 124, 0.08);
+  border: 1px solid #ddd6c4;
+  border-radius: 0.85rem;
+  padding: 1rem;
+}
+
+html.dark .plant-detail__tags-panel {
+  border-color: #3d4d36;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.plant-detail__sidebar-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d4a2e;
+  margin: 0 0 0.65rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #ddd6c4;
+}
+
+html.dark .plant-detail__sidebar-title {
+  color: #c8dbbf;
+  border-bottom-color: #3d4d36;
+}
+
+.plant-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.plant-detail__tag {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(138, 163, 124, 0.1);
+  transition: color 0.15s, background 0.15s;
+}
+
+.plant-detail__tag:hover {
+  color: #2d4a2e;
+  background: rgba(138, 163, 124, 0.2);
+}
+
+html.dark .plant-detail__tag {
+  color: #c2cbbb;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .plant-detail__tag:hover {
+  color: #e6f0db;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* ── States ── */
