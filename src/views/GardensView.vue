@@ -198,7 +198,13 @@ const dashboardEvents = computed(() => {
     if (!volunteerDays.value?.days || !Array.isArray(volunteerDays.value.days) || !user.value) {
         return [];
     }
-    return volunteerDays.value.days.map(normalizeEvent);
+    // Deduplicate by event id — Strapi v5 nested populate can return duplicates
+    const seen = new Set();
+    return volunteerDays.value.days.filter(event => {
+        if (!event || seen.has(event.id)) return false;
+        seen.add(event.id);
+        return true;
+    }).map(normalizeEvent);
 });
 
 const eventGardenId = (event) => {
