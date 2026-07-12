@@ -420,7 +420,6 @@ html.dark .plant-detail__nav-link:hover {
   background: #8aa37c;
   color: #1a1a1a;
 }
-}
 
 /* ── Meta blocks ── */
 .plant-detail__meta {
@@ -518,51 +517,8 @@ html.dark .plant-detail__section-title {
   padding: 0 0.5rem;
 }
 
-.plant-detail__text h2 {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #2f5233;
-  margin: 1.5rem 0 0.6rem 0;
-  padding-bottom: 0.25rem;
-  border-bottom: 2px solid #d7e8c8;
-}
-
-.plant-detail__text h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #3d5a3e;
-  margin: 1.2rem 0 0.4rem 0;
-}
-
-.plant-detail__text p {
-  margin: 0.4rem 0 0.8rem 0;
-}
-
-.plant-detail__text b, .plant-detail__text strong {
-  color: #2f5233;
-  font-weight: 600;
-}
-
-.plant-detail__text i, .plant-detail__text em {
-  font-style: italic;
-}
-
 html.dark .plant-detail__text {
   color: #d1d5db;
-}
-
-html.dark .plant-detail__text h2 {
-  color: #c8dbbf;
-  border-bottom-color: #3d4d36;
-}
-
-html.dark .plant-detail__text h3 {
-  color: #d4e8c8;
-}
-
-html.dark .plant-detail__text b,
-html.dark .plant-detail__text strong {
-  color: #e6f0db;
 }
 
 .plant-detail__text--magic {
@@ -707,5 +663,51 @@ html.dark .plant-detail__error {
   font-size: 1.1rem;
   color: #a0a8a0;
   margin: 0 0 0.75rem;
+}
+</style>
+
+<style>
+/* ── Rich text content (description, uses) — non-scoped so h2/h3/p selectors work ── */
+.plant-detail__text h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #2f5233;
+  margin: 1.5rem 0 0.6rem 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 2px solid #d7e8c8;
+}
+
+.plant-detail__text h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #3d5a3e;
+  margin: 1.2rem 0 0.4rem 0;
+}
+
+.plant-detail__text p {
+  margin: 0.4rem 0 0.8rem 0;
+}
+
+.plant-detail__text b, .plant-detail__text strong {
+  color: #2f5233;
+  font-weight: 600;
+}
+
+.plant-detail__text i, .plant-detail__text em {
+  font-style: italic;
+}
+
+html.dark .plant-detail__text h2 {
+  color: #c8dbbf;
+  border-bottom-color: #3d4d36;
+}
+
+html.dark .plant-detail__text h3 {
+  color: #d4e8c8;
+}
+
+html.dark .plant-detail__text b,
+html.dark .plant-detail__text strong {
+  color: #e6f0db;
 }
 </style>
