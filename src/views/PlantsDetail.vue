@@ -158,36 +158,36 @@ const getInvasiveStatus = (status) => {
             </div>
 
             <div v-if="plant.description" id="description" class="plant-detail__section">
-              <h2 class="plant-detail__section-title">Description</h2>
-              <div class="plant-detail__text" v-html="plant.description"></div>
-            </div>
+                          <h2 class="plant-detail__section-title">Description</h2>
+                          <div class="plant-detail__text" v-html="plant.description"></div>
+                        </div>
 
-            <div v-if="plant.uses" id="uses" class="plant-detail__section">
-              <h2 class="plant-detail__section-title">Uses</h2>
-              <div class="plant-detail__text" v-html="plant.uses"></div>
-            </div>
+                        <div v-if="plant.Benefits?.length" class="plant-detail__section">
+                          <h2 class="plant-detail__section-title">Benefits</h2>
+                          <div class="plant-detail__benefits">
+                            <span v-for="b in plant.Benefits" :key="b.id" class="plant-detail__benefit-tag">
+                              {{ b.title }}
+                            </span>
+                          </div>
+                        </div>
 
-            <div v-if="plant.Benefits?.length" class="plant-detail__section">
-              <h2 class="plant-detail__section-title">Benefits</h2>
-              <div class="plant-detail__benefits">
-                <span v-for="b in plant.Benefits" :key="b.id" class="plant-detail__benefit-tag">
-                  {{ b.title }}
-                </span>
-              </div>
-            </div>
+                        <div v-if="getImages().length > 0" class="plant-detail__section">
+                          <h2 class="plant-detail__section-title">Photos</h2>
+                          <div class="plant-detail__gallery">
+                            <img
+                              v-for="img in getImages()"
+                              :key="img.id"
+                              :src="img.formats?.medium?.url || img.url"
+                              :alt="img.alternativeText || plant.title"
+                              class="plant-detail__gallery-img"
+                            />
+                          </div>
+                        </div>
 
-            <div v-if="getImages().length > 0" class="plant-detail__section">
-              <h2 class="plant-detail__section-title">Photos</h2>
-              <div class="plant-detail__gallery">
-                <img
-                  v-for="img in getImages()"
-                  :key="img.id"
-                  :src="img.formats?.medium?.url || img.url"
-                  :alt="img.alternativeText || plant.title"
-                  class="plant-detail__gallery-img"
-                />
-              </div>
-            </div>
+                        <div v-if="plant.uses" id="uses" class="plant-detail__section">
+                          <h2 class="plant-detail__section-title">Uses</h2>
+                          <div class="plant-detail__text" v-html="plant.uses"></div>
+                        </div>
           </div>
 
           <!-- ── Sidebar: tags ── -->
