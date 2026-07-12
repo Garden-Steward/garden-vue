@@ -1,11 +1,12 @@
 <script setup>
 import { computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { usePlantsStore } from '@/stores';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const route = useRoute();
+const router = useRouter();
 const plantsStore = usePlantsStore();
 const { plant, plantLoading, plantError } = storeToRefs(plantsStore);
 
@@ -57,6 +58,11 @@ const invasiveLabels = {
 
 const getInvasiveStatus = (status) => {
   return invasiveLabels[status] || null;
+};
+
+// ── Tag click → navigate to plants page filtered by tag ──
+const goToTag = (tag) => {
+  router.push({ name: 'manage-plants', query: { tag } });
 };
 </script>
 
@@ -123,9 +129,10 @@ const getInvasiveStatus = (status) => {
             <!-- Tags -->
             <div v-if="plant.tags?.length" class="plant-detail__tags">
               <span
-                v-for="tag in plant.tags"
-                :key="tag.documentId"
-                class="plant-detail__tag"
+              v-for="tag in plant.tags"
+              :key="tag.documentId"
+              class="plant-detail__tag"
+              @click="goToTag(tag.name)"
               >#{{ tag.name }}</span>
             </div>
 
@@ -160,7 +167,7 @@ const getInvasiveStatus = (status) => {
             <div v-if="plant.description" id="description" class="plant-detail__section">
                           <h2 class="plant-detail__section-title">Description</h2>
                           <div class="plant-detail__text" v-html="plant.description"></div>
-                        </div>
+            </div>
 
                         <div v-if="plant.Benefits?.length" class="plant-detail__section">
                           <h2 class="plant-detail__section-title">Benefits</h2>
@@ -169,7 +176,7 @@ const getInvasiveStatus = (status) => {
                               {{ b.title }}
                             </span>
                           </div>
-                        </div>
+            </div>
 
                         <div v-if="getImages().length > 0" class="plant-detail__section">
                           <h2 class="plant-detail__section-title">Photos</h2>
@@ -182,12 +189,12 @@ const getInvasiveStatus = (status) => {
                               class="plant-detail__gallery-img"
                             />
                           </div>
-                        </div>
+            </div>
 
                         <div v-if="plant.uses" id="uses" class="plant-detail__section">
                           <h2 class="plant-detail__section-title">Uses</h2>
                           <div class="plant-detail__text" v-html="plant.uses"></div>
-                        </div>
+            </div>
           </div>
 
           <!-- ── Sidebar: tags ── -->
@@ -372,12 +379,23 @@ html.dark .plant-detail__badge--clipart {
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
   background: rgba(138, 163, 124, 0.08);
-  transition: color 0.15s;
+  transition: color 0.15s, background 0.15s;
+  cursor: pointer;
+}
+
+.plant-detail__tag:hover {
+  color: #2f5233;
+  background: rgba(138, 163, 124, 0.2);
 }
 
 html.dark .plant-detail__tag {
   color: #c2cbbb;
   background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark .plant-detail__tag:hover {
+  color: #e6f0db;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* ── Anchor nav ── */

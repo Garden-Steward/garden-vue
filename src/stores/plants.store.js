@@ -15,6 +15,8 @@ export const usePlantsStore = defineStore({
         pagination: { page: 1, pageSize: 25, total: 0, pageCount: 0 },
         /** Current search query (mirrors the UI input). */
         query: '',
+        /** Current tag filter name (empty = no tag filter). */
+        tagFilter: '',
         /** Sort column — matches Strapi field name or null for default. */
         sortField: 'title',
         sortOrder: 'asc',
@@ -67,6 +69,11 @@ export const usePlantsStore = defineStore({
                 params.set('filters[$or][1][latin][$containsi]', this.query.trim());
             }
 
+            // Tag filter
+            if (this.tagFilter) {
+                params.set('filters[tags][name][$eq]', this.tagFilter);
+            }
+
             fetchWrapper.get(`${baseUrl}?${params.toString()}`)
                 .then(res => {
                     const incoming = Array.isArray(res.data) ? res.data : [];
@@ -90,10 +97,22 @@ export const usePlantsStore = defineStore({
         },
 
         /**
-         * First page of a new search/sort. Resets the list.
+         * First page of a new text search. Resets list and tag filter.
          */
         async search(query) {
             this.query = query || '';
+            this.tagFilter = '';
+            this.plants = [];
+            this.pagination.page = 1;
+            await this.fetchPage(1);
+        },
+
+        /**
+         * First page of a tag filter. Resets list and text query.
+         */
+        async searchByTag(tag) {
+            this.tagFilter = tag || '';
+            this.query = '';
             this.plants = [];
             this.pagination.page = 1;
             await this.fetchPage(1);

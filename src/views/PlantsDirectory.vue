@@ -8,7 +8,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue';
 const plantsStore = usePlantsStore();
 const route = useRoute();
 const router = useRouter();
-const { plants, loading, error, pagination, query, allLoaded, totalCount } = storeToRefs(plantsStore);
+const { plants, loading, error, pagination, query, allLoaded, totalCount, tagFilter } = storeToRefs(plantsStore);
 
 // ── Search with debounce ──
 const searchInput = ref('');
@@ -23,6 +23,11 @@ const onSearchInput = () => {
 
 const clearSearch = () => {
   searchInput.value = '';
+  plantsStore.search('');
+};
+
+const clearTagFilter = () => {
+  router.replace({ query: { ...route.query, tag: undefined } });
   plantsStore.search('');
 };
 
@@ -90,10 +95,14 @@ onMounted(() => {
     syncingFromUrl = true;
     plantsStore.sortField = parsed.field;
     plantsStore.sortOrder = parsed.order;
-    // Don't call search() here — ensureLoaded will pick up the state
     syncingFromUrl = false;
   }
-  plantsStore.ensureLoaded();
+  // Read tag filter from URL
+  if (route.query.tag) {
+    plantsStore.searchByTag(route.query.tag);
+  } else {
+    plantsStore.ensureLoaded();
+  }
 });
 
 const loadMore = () => {
@@ -202,6 +211,13 @@ const getTypeColor = (type) => {
       >
         Updated{{ sortChevron('updatedAt') }}
       </button>
+    </div>
+
+    <!-- Tag filter indicator -->
+    <div v-if="tagFilter" class="plants-tag-filter">
+      <span class="plants-tag-filter__label">Filtered by tag:</span>
+      <span class="plants-tag-filter__tag">#{{ tagFilter }}</span>
+      <button class="plants-tag-filter__clear" @click="clearTagFilter" title="Clear tag filter">×</button>
     </div>
 
     <!-- Loading (initial) -->
@@ -438,6 +454,61 @@ html.dark .plants-sort-btn:hover {
 html.dark .plants-sort-btn--active {
   background: rgba(138, 163, 124, 0.3);
   border-color: #8aa37c;
+  color: #e6f0db;
+}
+
+/* ── Tag filter indicator ── */
+.plants-tag-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  background: #d7e8c8;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.plants-tag-filter__label {
+  color: #2f5233;
+  font-weight: 500;
+}
+
+.plants-tag-filter__tag {
+  font-weight: 700;
+  color: #1e3a21;
+  font-size: 0.95rem;
+}
+
+.plants-tag-filter__clear {
+  margin-left: auto;
+  border: none;
+  background: rgba(0,0,0,0.1);
+  color: #2f5233;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.plants-tag-filter__clear:hover {
+  background: rgba(0,0,0,0.2);
+}
+
+html.dark .plants-tag-filter {
+  background: rgba(138, 163, 124, 0.25);
+}
+
+html.dark .plants-tag-filter__label {
+  color: #c8dbbf;
+}
+
+html.dark .plants-tag-filter__tag {
   color: #e6f0db;
 }
 
