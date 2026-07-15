@@ -64,6 +64,19 @@ const getInvasiveStatus = (status) => {
 const goToTag = (tag) => {
   router.push({ name: 'manage-plants', query: { tag } });
 };
+
+// ── Benefits potency display ──
+const potencyConfig = {
+  minimal:  { dots: 1, label: 'Minimal',  cls: 'benefit--minimal' },
+  mild:     { dots: 2, label: 'Mild',     cls: 'benefit--mild' },
+  moderate: { dots: 3, label: 'Moderate', cls: 'benefit--moderate' },
+  strong:   { dots: 4, label: 'Strong',   cls: 'benefit--strong' },
+  profound: { dots: 5, label: 'Profound', cls: 'benefit--profound' },
+};
+
+const getPotency = (potency) => {
+  return potencyConfig[potency] || { dots: 0, label: 'Unknown', cls: '' };
+};
 </script>
 
 <template>
@@ -150,7 +163,8 @@ const goToTag = (tag) => {
         </div>
 
         <!-- ── Anchor nav ── -->
-        <nav v-if="plant.magic || plant.description || plant.uses" class="plant-detail__nav">
+        <nav v-if="plant.magic || plant.description || plant.uses || plant.Benefits?.length" class="plant-detail__nav">
+          <a v-if="plant.Benefits?.length" href="#benefits" class="plant-detail__nav-link">💪 Benefits</a>
           <a v-if="plant.magic" href="#magic" class="plant-detail__nav-link">✨ Magic</a>
           <a v-if="plant.description" href="#description" class="plant-detail__nav-link">📖 Description</a>
           <a v-if="plant.uses" href="#uses" class="plant-detail__nav-link">🔧 Uses</a>
@@ -159,6 +173,30 @@ const goToTag = (tag) => {
         <!-- ── Body: content left, tags sidebar right ── -->
         <div class="plant-detail__body">
           <div class="plant-detail__content">
+            <!-- ── Benefits (top — right after nav) ── -->
+            <div v-if="plant.Benefits?.length" id="benefits" class="plant-detail__section">
+              <h2 class="plant-detail__section-title">Benefits</h2>
+              <div class="plant-detail__benefits">
+                <div
+                  v-for="b in plant.Benefits"
+                  :key="b.id"
+                  class="plant-detail__benefit-row"
+                  :class="getPotency(b.potency)?.cls"
+                >
+                  <div class="plant-detail__benefit-dots">
+                    <span
+                      v-for="i in 5"
+                      :key="i"
+                      class="plant-detail__benefit-dot"
+                      :class="{ 'plant-detail__benefit-dot--filled': i <= getPotency(b.potency)?.dots }"
+                    ></span>
+                  </div>
+                  <span class="plant-detail__benefit-title">{{ b.title }}</span>
+                  <span class="plant-detail__benefit-label">{{ getPotency(b.potency)?.label }}</span>
+                </div>
+              </div>
+            </div>
+
             <div v-if="plant.magic" id="magic" class="plant-detail__section">
               <h2 class="plant-detail__section-title">Magic</h2>
               <div class="plant-detail__text plant-detail__text--magic" v-html="plant.magic"></div>
@@ -167,15 +205,6 @@ const goToTag = (tag) => {
             <div v-if="plant.description" id="description" class="plant-detail__section">
                           <h2 class="plant-detail__section-title">Description</h2>
                           <div class="plant-detail__text" v-html="plant.description"></div>
-            </div>
-
-                        <div v-if="plant.Benefits?.length" class="plant-detail__section">
-                          <h2 class="plant-detail__section-title">Benefits</h2>
-                          <div class="plant-detail__benefits">
-                            <span v-for="b in plant.Benefits" :key="b.id" class="plant-detail__benefit-tag">
-                              {{ b.title }}
-                            </span>
-                          </div>
             </div>
 
                         <div v-if="getImages().length > 0" class="plant-detail__section">
@@ -556,25 +585,102 @@ html.dark .plant-detail__text--magic {
   border-left-color: #6a8360;
 }
 
-/* ── Benefits ── */
+/* ── Benefits (potency rows) ── */
 .plant-detail__benefits {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.plant-detail__benefit-tag {
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
+.plant-detail__benefit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.75rem;
+  background: rgba(138, 163, 124, 0.08);
+  border: 1px solid #ddd6c4;
+  transition: border-color 0.15s;
+}
+
+html.dark .plant-detail__benefit-row {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: #3d4d36;
+}
+
+.plant-detail__benefit-dots {
+  display: flex;
+  gap: 0.22rem;
+  flex-shrink: 0;
+}
+
+.plant-detail__benefit-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
   background: #d7e8c8;
-  color: #2f5233;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border: 1px solid #b3cfa0;
+  transition: background 0.2s, border-color 0.2s;
 }
 
-html.dark .plant-detail__benefit-tag {
-  background: rgba(138, 163, 124, 0.25);
+.plant-detail__benefit-dot--filled {
+  background: #5a8a3c;
+  border-color: #4a7530;
+}
+
+html.dark .plant-detail__benefit-dot {
+  background: rgba(138, 163, 124, 0.2);
+  border-color: #3d4d36;
+}
+
+html.dark .plant-detail__benefit-dot--filled {
+  background: #8aa37c;
+  border-color: #6a8360;
+}
+
+.plant-detail__benefit-title {
+  flex: 1;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #2f5233;
+}
+
+html.dark .plant-detail__benefit-title {
   color: #e6f0db;
+}
+
+.plant-detail__benefit-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #5a8a3c;
+  flex-shrink: 0;
+}
+
+html.dark .plant-detail__benefit-label {
+  color: #8aa37c;
+}
+
+/* Potency accent colors per row */
+.plant-detail__benefit-row.benefit--profound {
+  border-color: #5a8a3c;
+  background: rgba(90, 138, 60, 0.1);
+}
+html.dark .benefit--profound {
+  border-color: #8aa37c;
+  background: rgba(138, 163, 124, 0.12);
+}
+
+.plant-detail__benefit-row.benefit--strong {
+  border-color: #6a9a4a;
+}
+html.dark .benefit--strong {
+  border-color: #7a946a;
+}
+
+.plant-detail__benefit-row.benefit--minimal {
+  opacity: 0.6;
 }
 
 /* ── Gallery ── */
