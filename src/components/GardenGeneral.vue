@@ -62,9 +62,9 @@ const latestEvents = computed(() => {
   // v5 events are flat already.
   const normalizedEvents = props.volunteerDays.days;
   
-  // Filter out events without startDatetime and sort by startDatetime (soonest first)
+  // Filter out events without startDatetime or canceled, and sort by startDatetime (soonest first)
   const sortedEvents = normalizedEvents
-    .filter(event => event.startDatetime)
+    .filter(event => event.startDatetime && !event.canceled)
     .sort((a, b) => {
       const dateA = new Date(a.startDatetime);
       const dateB = new Date(b.startDatetime);
