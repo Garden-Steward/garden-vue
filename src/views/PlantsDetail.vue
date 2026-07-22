@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { usePlantsStore } from '@/stores';
@@ -64,6 +64,11 @@ const getInvasiveStatus = (status) => {
 const goToTag = (tag) => {
   router.push({ name: 'manage-plants', query: { tag } });
 };
+
+// ── Lightbox / image zoom ──
+const lightboxImage = ref(null);
+const openLightbox = (url) => { lightboxImage.value = url; };
+const closeLightbox = () => { lightboxImage.value = null; };
 
 // ── Benefits potency display ──
 const potencyConfig = {
@@ -216,6 +221,7 @@ const getPotency = (potency) => {
                               :src="img.formats?.medium?.url || img.url"
                               :alt="img.alternativeText || plant.title"
                               class="plant-detail__gallery-img"
+                              @click="openLightbox(img.formats?.large?.url || img.url)"
                             />
                           </div>
             </div>
@@ -243,6 +249,14 @@ const getPotency = (potency) => {
       </div>
     </template>
   </div>
+
+  <!-- ── Lightbox overlay ── -->
+  <Teleport to="body">
+    <div v-if="lightboxImage" class="lightbox-overlay" @click="closeLightbox">
+      <img :src="lightboxImage" class="lightbox-image" @click.stop />
+      <button class="lightbox-close" @click="closeLightbox">&times;</button>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -696,6 +710,11 @@ html.dark .benefit--strong {
   object-fit: cover;
   border-radius: 0.6rem;
   border: 1px solid #ddd6c4;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.plant-detail__gallery-img:hover {
+  transform: scale(1.03);
 }
 
 html.dark .plant-detail__gallery-img {
@@ -833,5 +852,42 @@ html.dark .plant-detail__text h3 {
 html.dark .plant-detail__text b,
 html.dark .plant-detail__text strong {
   color: #e6f0db;
+}
+
+/* ── Lightbox overlay (Teleported to body, needs non-scoped) ── */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.lightbox-image {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  cursor: default;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.lightbox-close:hover {
+  opacity: 1;
 }
 </style>
