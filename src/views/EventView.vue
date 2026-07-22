@@ -37,6 +37,8 @@ const isEventPast = computed(() => {
   return eventDate < now;
 });
 
+const isEventCanceled = computed(() => event.value?.canceled === true);
+
 // Check if user is a manager of the event's garden
 const isManager = computed(() => {
   if (!event.value?.garden?.managers || !user.value) return false;
@@ -150,6 +152,9 @@ const handleKeyPress = (event) => {
           </router-link>
         </div>
         <h4 class="text-lg font-bold mb-6 text-gray-700 dark:text-[#e8e8e8]">{{ processDate(event?.startDatetime) }}</h4>
+        <p v-if="isEventCanceled" class="mb-6 px-3 py-2 rounded bg-red-700 text-white font-semibold inline-block">
+          This event has been canceled.
+        </p>
         <div v-if="event?.blurb" class="text-left brief-box dark:bg-[#2d3e26] dark:text-[#e8e8e8]">
             <div v-html="event?.blurb"></div>
         </div>
@@ -165,14 +170,14 @@ const handleKeyPress = (event) => {
         />
         
         <div v-if="user?.id" class="text-left mt-5 dark:text-[#e8e8e8]">
-            <div v-if="!isRSVPed && !isEventPast" style="font-size: 1.2rem; font-weight: bold;" class="mb-2">Hello {{ user?.firstName }} {{ user?.lastName }}
+            <div v-if="!isRSVPed && !isEventPast && !isEventCanceled" style="font-size: 1.2rem; font-weight: bold;" class="mb-2">Hello {{ user?.firstName }} {{ user?.lastName }}
               <p>Would you like to RSVP for this event?</p>
             </div>
             <p v-if="isEventPast" class="text-gray-600 dark:text-[#b8b8b8] font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
-            <a v-if="event?.partiful_link && !isEventPast" :href="event.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
+            <a v-if="event?.partiful_link && !isEventPast && !isEventCanceled" :href="event.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
               {{ isRSVPed ? 'RSVP Initiated' : 'RSVP via Partiful' }}
             </a>
-            <button v-else-if="!isEventPast" :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer no-underline" @click="rsvpEvent" :disabled="isRSVPed">
+            <button v-else-if="!isEventPast && !isEventCanceled" :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer no-underline" @click="rsvpEvent" :disabled="isRSVPed">
               {{ isRSVPed ? 'RSVP Initiated' : 'RSVP' }}
             </button>
             <p v-if="isRSVPed">Thank you for RSVPing {{ user?.firstName }} {{ user?.lastName }}!</p>
@@ -182,10 +187,10 @@ const handleKeyPress = (event) => {
         <!-- Conditional rendering of the agreement button -->
         <div v-else class="mt-6 dark:text-[#e8e8e8]">
           <p v-if="isEventPast" class="text-gray-600 dark:text-[#b8b8b8] font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
-          <a v-if="event?.partiful_link && !isEventPast" :href="event.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block text-white font-bold py-2 px-4 rounded text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
+          <a v-if="event?.partiful_link && !isEventPast && !isEventCanceled" :href="event.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block text-white font-bold py-2 px-4 rounded text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
             {{ isRSVPed ? 'RSVP Initiated' : 'RSVP via Partiful' }}
           </a>
-          <button v-else-if="!isEventPast" :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="text-white font-bold py-2 px-4 rounded" @click="rsvpEvent" :disabled="isRSVPed">
+          <button v-else-if="!isEventPast && !isEventCanceled" :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="text-white font-bold py-2 px-4 rounded" @click="rsvpEvent" :disabled="isRSVPed">
             {{ isRSVPed ? 'RSVP Initiated' : 'RSVP' }}
           </button>
           <p class="text-sm mt-2">

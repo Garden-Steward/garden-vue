@@ -208,6 +208,9 @@ export const useEventStore = defineStore({
                 })
                 .catch(this.handleError);
         },
+        async cancel(id) {
+            return this.update(id, { canceled: true });
+        },
         async rsvpEvent(data) {
             return fetchWrapper.post(`${baseUrl}/rsvp/${data.id}`,{data: data})
                 .then(res => {
