@@ -678,6 +678,9 @@ const openEventEditor = (day) => {
                         class="sm:hidden w-12 h-12 object-cover rounded flex-shrink-0"
                       />
                       <span class="font-semibold text-lg leading-snug sm:text-base sm:font-medium">{{ day.title }}</span>
+                      <span v-if="day.canceled" class="inline-block px-2 py-0.5 text-xs font-semibold bg-red-700 text-white rounded">
+                        Canceled
+                      </span>
                     </div>
                   </td>
 

@@ -27,6 +27,8 @@ const isEditingTitle = ref(false);
 const autoSaveTimeout = ref(null);
 const isAutoSaving = ref(false);
 const showMediaFields = ref(false);
+const showCancelConfirm = ref(false);
+const isCanceling = ref(false);
 // Gate the image/gallery auto-save watchers so they don't fire on initial load
 // (the values change from undefined → loaded during the first flush).
 const autoSaveReady = ref(false);
@@ -315,6 +317,29 @@ const saveEvent = async (isAutoSave = false) => {
   }
 }
 
+const openCancelConfirm = () => {
+  showCancelConfirm.value = true;
+};
+
+const closeCancelConfirm = () => {
+  showCancelConfirm.value = false;
+};
+
+const confirmCancelEvent = async () => {
+  if (!event.value?.id) return;
+  isCanceling.value = true;
+  try {
+    await eventStore.cancel(event.value.id);
+    showCancelConfirm.value = false;
+    alertStore.success('Event canceled. It will no longer send SMS reminders or appear in upcoming events.');
+  } catch (error) {
+    console.error('Error canceling event:', error);
+    alertStore.error('Failed to cancel event. Please try again.');
+  } finally {
+    isCanceling.value = false;
+  }
+};
+
 // Auto-save function for image uploads
 const autoSaveEvent = async () => {
   if (isAutoSaving.value) return;
@@ -351,7 +376,12 @@ onBeforeUnmount(() => {
               Back to Garden
             </router-link>
             <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">Event Manager</h1>
-            <p v-if="event?.title" class="text-white/90 text-lg mt-2">{{ event.title }}</p>
+            <p v-if="event?.title" class="text-white/90 text-lg mt-2 flex items-center gap-2">
+              {{ event.title }}
+              <span v-if="event.canceled" class="inline-block px-2 py-0.5 text-sm font-semibold bg-red-700 text-white rounded">
+                Canceled
+              </span>
+            </p>
           </div>
           
           <!-- Header buttons and access controls -->
@@ -568,18 +598,56 @@ onBeforeUnmount(() => {
                 </div>
                 
                 <!-- Public Event Page Link -->
-                <button 
-                  @click="$router.push(`/d/${event.id}`)" 
+                <button
+                  @click="$router.push(`/d/${event.id}`)"
                   class="w-full bg-custom-green hover:bg-darker-green text-white font-bold py-2 px-4 rounded mt-4"
                 >
                   Public Event Page
                 </button>
+
+                <!-- Cancel Event -->
+                <p v-if="event.canceled" class="text-sm text-red-400 mt-4">
+                  This event has been canceled.
+                </p>
+                <a
+                  v-else
+                  href="#"
+                  class="block text-center text-sm text-red-400 hover:text-red-300 hover:underline mt-4"
+                  @click.prevent="openCancelConfirm"
+                >
+                  Cancel Event
+                </a>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div
+      v-if="showCancelConfirm"
+      class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/70"
+      @click.self="closeCancelConfirm"
+    >
+      <div class="w-full max-w-md rounded-lg shadow-xl bg-[#2d3e26] text-[#f5f5f5] p-4 border border-[#3d4d36]" @click.stop>
+        <p class="text-sm mb-4">
+          Are you sure you want to cancel this event? It will stop sending SMS reminders and will no longer appear in upcoming events. This cannot be undone here.
+        </p>
+        <div class="flex justify-end gap-2">
+          <button class="px-3 py-2 text-sm text-[#f5f5f5] hover:underline" @click="closeCancelConfirm">
+            Keep Event
+          </button>
+          <button
+            :disabled="isCanceling"
+            class="px-3 py-2 text-sm bg-red-700 text-white rounded hover:bg-red-800 disabled:opacity-50"
+            @click="confirmCancelEvent"
+          >
+            Cancel Event
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>

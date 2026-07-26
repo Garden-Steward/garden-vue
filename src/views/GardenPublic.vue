@@ -169,7 +169,7 @@ const upcomingEvents = computed(() => {
       console.log(`Event "${day.title}": ${eventDate} >= ${now}?`, eventDate >= now);
       
       // Include events that haven't passed yet (disabled events still show, they just don't send SMS)
-      return eventDate >= now;
+      return eventDate >= now && day.canceled !== true;
     })
     .sort((a, b) => {
       // Sort by startDatetime, earliest first
@@ -225,7 +225,12 @@ const allPastEvents = computed(() => {
       if (day.disabled === true) {
         return false;
       }
-      
+
+      // Skip canceled events
+      if (day.canceled === true) {
+        return false;
+      }
+
       // Only include past events (events that have already happened)
       const eventDate = new Date(day.startDatetime);
       return eventDate < now;
