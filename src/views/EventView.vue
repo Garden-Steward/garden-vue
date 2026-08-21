@@ -8,6 +8,7 @@ import markdownItAttrs from 'markdown-it-attrs';
 import { useEventStore, useAuthStore  } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
+import { PrintDaySheetModal } from '@/components/modals';
 const md = new MarkdownIt().use(markdownItAttrs);
 
 
@@ -17,6 +18,7 @@ const eventStore = useEventStore();
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 const showModal = ref(false);
+const showPrintDaySheet = ref(false);
 const phoneNumber = ref('');
 const phoneError = ref('');
 const isRSVPed = ref(false);
@@ -143,13 +145,21 @@ const handleKeyPress = (event) => {
         </div>
         <div class="flex justify-between items-start mb-6">
           <h1 class="text-3xl font-bold text-gray-900 dark:text-[#c9d966]">{{ event?.title }}</h1>
-          <router-link 
-            v-if="user && isManager && event?.id"
-            :to="`/manage/events/${event.id}/edit`"
-            class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded no-underline"
-          >
-            Edit Event
-          </router-link>
+          <div v-if="user && isManager && event?.id" class="flex gap-2">
+            <router-link
+              :to="`/manage/events/${event.id}/edit`"
+              class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded no-underline"
+            >
+              Edit Event
+            </router-link>
+            <button
+              type="button"
+              class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded"
+              @click="showPrintDaySheet = true"
+            >
+              Print day sheet
+            </button>
+          </div>
         </div>
         <h4 class="text-lg font-bold mb-6 text-gray-700 dark:text-[#e8e8e8]">{{ processDate(event?.startDatetime) }}</h4>
         <p v-if="isEventCanceled" class="mb-6 px-3 py-2 rounded bg-red-700 text-white font-semibold inline-block">
@@ -237,6 +247,12 @@ const handleKeyPress = (event) => {
           </div>
         </div>
       </div>
+
+      <PrintDaySheetModal
+        v-model="showPrintDaySheet"
+        :event-id="event?.id"
+        :is-manager="isManager"
+      />
 
 </template>
 

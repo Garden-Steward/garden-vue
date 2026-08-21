@@ -32,7 +32,8 @@ export const useEventStore = defineStore({
         },
         currentGardenSlug: null, // Track which garden slug's data is currently loaded
         loadingGardenSlug: null, // Track which slug is currently being loaded
-        loadingPromise: null // Track the in-flight promise for the current request
+        loadingPromise: null, // Track the in-flight promise for the current request
+        daySheet: {}
     }),
     actions: {
         handleError(err) {
@@ -111,6 +112,37 @@ export const useEventStore = defineStore({
             return fetchWrapper.get(`${baseUrl}/by-id/${id}`)
                 .then(res => {
                     this.event = res.data;
+                    return res.data;
+                })
+                .catch(this.handleError);
+        },
+        async fetchDaySheet(id) {
+            return fetchWrapper.get(`${baseUrl}/by-id/${id}/day-sheet`)
+                .then(res => {
+                    const data = res?.data ?? {};
+                    // Defensive normalization — the view indexes these unconditionally.
+                    if (!Array.isArray(data.standing)) data.standing = [];
+                    if (!Array.isArray(data.tasks)) data.tasks = [];
+                    this.daySheet = data;
+                    return data;
+                })
+                .catch(this.handleError);
+        },
+        daySheetPrintUrl(id, { excludeKeys = [], hiddenTaskIds = [], extras = [] } = {}) {
+            // Returns a string. Performs NO fetch.
+            const parts = [];
+            if (excludeKeys.length) parts.push(`exclude=${excludeKeys.join(',')}`);
+            if (hiddenTaskIds.length) parts.push(`hideTasks=${hiddenTaskIds.join(',')}`);
+            extras.forEach(line => parts.push(`extra=${encodeURIComponent(line)}`));
+            const qs = parts.length ? `?${parts.join('&')}` : '';
+            return `${baseUrl}/by-id/${id}/day-sheet.html${qs}`;
+        },
+        async saveStandingTasks(items) {
+            return fetchWrapper.put(`${import.meta.env.VITE_API_URL}/api/day-sheet-standing-tasks/list`,
+                                    { data: { standing_tasks: items } })
+                .then(res => {
+                    const standing = Array.isArray(res?.data?.standing) ? res.data.standing : [];
+                    this.daySheet = { ...this.daySheet, standing };
                     return res.data;
                 })
                 .catch(this.handleError);
