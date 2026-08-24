@@ -455,7 +455,7 @@ const displayInterests = computed(() =>
 );
 
 const addableInterests = computed(() =>
-  interestsStore.all.filter(i => !i.gardenIds.includes(garden.value?.id))
+  interestsStore.all
 );
 
 const onAddInterest = async () => {
