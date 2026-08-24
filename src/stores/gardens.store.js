@@ -71,6 +71,33 @@ export const useGardensStore = defineStore({
                     console.error('Error uploading image:', error);
                     throw error;
                 });
+        },
+        async addManager(gardenId, userId) {
+            const currentManagers = (Array.isArray(this.garden.managers) ? this.garden.managers : []).map(m => m.id || m);
+            if (currentManagers.includes(userId)) return this.garden;
+            const updatedManagers = [...currentManagers, userId];
+            return fetchWrapper.put(`${baseUrl}/${gardenId}`, { data: { managers: updatedManagers } })
+                .then(res => {
+                    if (this.garden.id === gardenId) this.garden = res.data;
+                    return res.data;
+                })
+                .catch(error => {
+                    console.error('Error adding manager:', error);
+                    throw error;
+                });
+        },
+        async removeManager(gardenId, userId) {
+            const currentManagers = (Array.isArray(this.garden.managers) ? this.garden.managers : []).map(m => m.id || m);
+            const updatedManagers = currentManagers.filter(id => id !== userId);
+            return fetchWrapper.put(`${baseUrl}/${gardenId}`, { data: { managers: updatedManagers } })
+                .then(res => {
+                    if (this.garden.id === gardenId) this.garden = res.data;
+                    return res.data;
+                })
+                .catch(error => {
+                    console.error('Error removing manager:', error);
+                    throw error;
+                });
         }
     }
 });
