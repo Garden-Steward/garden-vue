@@ -429,15 +429,24 @@ const selectedInterest = ref('');
 const editingInterests = ref(false);
 const removingInterestId = ref(null);
 
-// Load full interest list when volunteers tab is active
+// Load full interest list when entering the volunteers tab
 watch(
-  () => [activeSection.value, editor.value, garden.value?.id],
-  ([active, ed, gid]) => {
-    if (active === 'volunteers' && ed && gid) {
+  () => activeSection.value,
+  (section) => {
+    if (section === 'volunteers' && garden.value?.id) {
       interestsStore.findAll();
     }
-  },
-  { immediate: true }
+  }
+);
+
+// Also reload whenever interests section is expanded (catch-up if first tab visit missed it)
+watch(
+  () => expandedInterests.value,
+  (expanded) => {
+    if (expanded && garden.value?.id) {
+      interestsStore.findAll();
+    }
+  }
 );
 
 // Collapse sections when leaving volunteers tab
