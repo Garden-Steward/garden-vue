@@ -2,7 +2,7 @@
 import { onMounted, ref, computed, defineOptions, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore, useLocationTrackingStore } from '@/stores';
+import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore, useLocationTrackingStore, useInterestsStore } from '@/stores';
 import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
 import SmsCampaignModal from '@/components/modals/SmsCampaignModal.vue';
 import Volunteer from '@/components/VolunteerDetail.vue';
@@ -13,7 +13,6 @@ import GardenSidebar from '@/components/GardenSidebar.vue';
 import GardenGeneral from '@/components/GardenGeneral.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import PlantsCatalog from '@/components/PlantsCatalog.vue';
-import GardenVolunteerInterestsSection from '@/components/GardenVolunteerInterestsSection.vue';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
@@ -421,6 +420,72 @@ const getVolunteerName = (volunteerId) => {
   return `User #${volunteerId}`;
 };
 
+// ── Interest management (inlined from GardenVolunteerInterestsSection) ──
+const interestsStore = useInterestsStore();
+const { loading: interestsLoading } = storeToRefs(interestsStore);
+const expandedInterests = ref(false);
+const selectedInterest = ref('');
+const editingInterests = ref(false);
+const removingInterestId = ref(null);
+
+// Load full interest list when volunteers tab is active
+watch(
+  () => [activeSection.value, editor.value, garden.value?.id],
+  ([active, ed, gid]) => {
+    if (active === 'volunteers' && ed && gid) {
+      interestsStore.findAll();
+    }
+  },
+  { immediate: true }
+);
+
+// Collapse interests when leaving volunteers tab
+watch(() => activeSection.value, (section) => {
+  if (section !== 'volunteers') {
+    expandedInterests.value = false;
+    editingInterests.value = false;
+  }
+});
+
+const displayInterests = computed(() =>
+  (garden.value?.interests || []).map(i => ({
+    id: i.id,
+    tag: i.tag ?? ''
+  }))
+);
+
+const addableInterests = computed(() =>
+  interestsStore.all.filter(i => !i.gardenIds.includes(garden.value?.id))
+);
+
+const onAddInterest = async () => {
+  const raw = selectedInterest.value;
+  if (!raw) return;
+  const interestId = Number(raw);
+  selectedInterest.value = '';
+  try {
+    await interestsStore.addGardenToInterest(interestId, garden.value.id);
+    await gardensStore.getSlug(route.params.slug);
+    alertStore.success('Interest added.');
+  } catch (e) {
+    alertStore.error(typeof e === 'string' ? e : e?.message || 'Failed to add interest.');
+  }
+};
+
+const onRemoveInterest = async (interestId) => {
+  if (removingInterestId.value != null) return;
+  removingInterestId.value = interestId;
+  try {
+    await interestsStore.removeGardenFromInterest(interestId, garden.value.id);
+    await gardensStore.getSlug(route.params.slug);
+    alertStore.success('Interest removed.');
+  } catch (e) {
+    alertStore.error(typeof e === 'string' ? e : e?.message || 'Failed to remove interest.');
+  } finally {
+    removingInterestId.value = null;
+  }
+};
+
 </script>
 
 <template>
@@ -568,81 +633,157 @@ const getVolunteerName = (volunteerId) => {
                 <div v-if="activeSection === 'volunteers'" class="gm-panel rounded-lg shadow-md p-6">
 
                   <!-- Managers Section -->
-                  <div class="mb-6 p-4 rounded-lg border border-[#3d4d36]/40 bg-[rgba(26,26,26,0.35)]">
-                    <h3 class="text-lg font-medium text-[#f5f5f5] mb-2">Managers ({{ (garden.managers || []).length }})</h3>
-                    <p class="text-sm text-[#c8c8c8] mb-3">
-                      Managers can edit garden settings, manage volunteers, and create events and campaigns.
-                    </p>
+                                    <div class="mb-6 p-4 rounded-lg border border-[#3d4d36]/40 bg-[rgba(26,26,26,0.35)]">
+                                      <h3 class="text-lg font-medium text-[#f5f5f5] mb-2">Managers ({{ (garden.managers || []).length }})</h3>
+                                      <p class="text-sm text-[#c8c8c8] mb-3">
+                                        Managers can edit garden settings, manage volunteers, and create events and campaigns.
+                                      </p>
 
-                    <!-- Current Managers -->
-                    <div v-if="garden.managers?.length" class="flex flex-wrap gap-2 mb-3">
-                      <span
-                        v-for="manager in garden.managers"
-                        :key="manager.id || manager"
-                        class="inline-flex items-center gap-1 rounded-full bg-[#8aa37c]/40 text-[#f5f5f5] px-3 py-1 text-sm"
-                      >
-                        <span>{{ manager.firstName || manager.username || getVolunteerName(manager.id || manager) }}</span>
-                        <button
-                          v-if="editor"
-                          type="button"
-                          class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#f5f5f5] hover:bg-[rgba(0,0,0,0.3)] focus:outline-none focus:ring-2 focus:ring-[#c2410c]/50"
-                          :aria-label="`Remove ${manager.firstName || getVolunteerName(manager.id || manager)} as manager`"
-                          @click.stop="removeManager(manager.id || manager)"
-                        >
-                          <span class="text-xs font-light leading-none" aria-hidden="true">×</span>
-                        </button>
-                      </span>
-                    </div>
-                    <p v-else class="text-[#a0a0a0] text-sm mb-3">No managers assigned yet.</p>
+                                      <!-- Current Managers -->
+                                      <div v-if="garden.managers?.length" class="flex flex-wrap gap-2 mb-3">
+                                        <span
+                                          v-for="manager in garden.managers"
+                                          :key="manager.id || manager"
+                                          class="inline-flex items-center gap-1 rounded-full bg-[#8aa37c]/40 text-[#f5f5f5] px-3 py-1 text-sm"
+                                        >
+                                          <span>{{ manager.firstName || manager.username || getVolunteerName(manager.id || manager) }}</span>
+                                          <button
+                                            v-if="editor"
+                                            type="button"
+                                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#f5f5f5] hover:bg-[rgba(0,0,0,0.3)] focus:outline-none focus:ring-2 focus:ring-[#c2410c]/50"
+                                            :aria-label="`Remove ${manager.firstName || getVolunteerName(manager.id || manager)} as manager`"
+                                            @click.stop="removeManager(manager.id || manager)"
+                                          >
+                                            <span class="text-xs font-light leading-none" aria-hidden="true">×</span>
+                                          </button>
+                                        </span>
+                                      </div>
+                                      <p v-else class="text-[#a0a0a0] text-sm mb-3">No managers assigned yet.</p>
 
-                    <!-- Add Manager (editor only) -->
-                    <div v-if="editor" class="flex flex-col sm:flex-row sm:items-start gap-2">
-                      <div class="relative flex-1">
-                        <input
-                          v-model="managerSearch"
-                          type="text"
-                          placeholder="Search for a volunteer to add as manager…"
-                          class="w-full rounded-md border border-[#3d4d36] bg-[#2d3e26] text-[#f5f5f5] px-3 py-2 shadow-inner focus:outline-none focus:ring-2 focus:ring-[#8aa37c]/35 focus:border-[#8aa37c] placeholder:text-[#7a7a7a]"
-                          :disabled="addingManager"
-                        />
-                        <!-- Dropdown -->
-                        <div v-if="filteredManagerCandidates.length" class="absolute z-10 mt-1 w-full rounded-md border border-[#3d4d36] bg-[#2d3e26] shadow-lg max-h-48 overflow-y-auto">
-                          <button
-                            v-for="candidate in filteredManagerCandidates"
-                            :key="candidate.id"
-                            type="button"
-                            class="w-full text-left px-3 py-2 text-sm text-[#f5f5f5] hover:bg-[#3d4d36] transition-colors"
-                            @click="addManager(candidate.id)"
-                          >
-                            {{ candidate.firstName }} {{ candidate.lastName }}
-                          </button>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        class="gm-primary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
-                        :disabled="addingManager || !filteredManagerCandidates.length"
-                        @click="filteredManagerCandidates.length && addManager(filteredManagerCandidates[0].id)"
-                      >
-                        {{ addingManager ? 'Adding…' : 'Add' }}
-                      </button>
-                    </div>
-                  </div>
+                                      <!-- Add Manager (editor only) -->
+                                      <div v-if="editor" class="flex flex-col sm:flex-row sm:items-start gap-2">
+                                        <div class="relative flex-1">
+                                          <input
+                                            v-model="managerSearch"
+                                            type="text"
+                                            placeholder="Search for a volunteer to add as manager…"
+                                            class="w-full rounded-md border border-[#3d4d36] bg-[#2d3e26] text-[#f5f5f5] px-3 py-2 shadow-inner focus:outline-none focus:ring-2 focus:ring-[#8aa37c]/35 focus:border-[#8aa37c] placeholder:text-[#7a7a7a]"
+                                            :disabled="addingManager"
+                                          />
+                                          <div v-if="filteredManagerCandidates.length" class="absolute z-10 mt-1 w-full rounded-md border border-[#3d4d36] bg-[#2d3e26] shadow-lg max-h-48 overflow-y-auto">
+                                            <button
+                                              v-for="candidate in filteredManagerCandidates"
+                                              :key="candidate.id"
+                                              type="button"
+                                              class="w-full text-left px-3 py-2 text-sm text-[#f5f5f5] hover:bg-[#3d4d36] transition-colors"
+                                              @click="addManager(candidate.id)"
+                                            >
+                                              {{ candidate.firstName }} {{ candidate.lastName }}
+                                            </button>
+                                          </div>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          class="gm-primary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
+                                          :disabled="addingManager || !filteredManagerCandidates.length"
+                                          @click="filteredManagerCandidates.length && addManager(filteredManagerCandidates[0].id)"
+                                        >
+                                          {{ addingManager ? 'Adding…' : 'Add' }}
+                                        </button>
+                                      </div>
 
-                  <div class="flex justify-between items-center mb-4">
-                    <h2 class="gm-heading text-2xl font-light font-serif">Volunteers ({{ garden.volunteers?.length || 0 }})</h2>
-                    <a v-if="editor" @click="clearTemp" class="text-sm text-blue-400 hover:text-blue-300 cursor-pointer">Clear Temps</a>
-                  </div>
+                                      <!-- Interests (collapsed / expanded) -->
+                                      <div class="mt-4 pt-4 border-t border-[#3d4d36]/30">
+                                        <!-- Collapsed: single line -->
+                                        <div v-if="!expandedInterests" class="flex items-center gap-2 flex-wrap">
+                                          <span class="text-sm text-[#c8c8c8]">Interests ({{ displayInterests.length }}):</span>
+                                          <span v-if="displayInterests.length"
+                                            v-for="interest in displayInterests"
+                                            :key="interest.id"
+                                            class="inline-flex items-center rounded-full bg-[#3d4d36]/60 text-[#f5f5f5] px-3 py-1 text-sm"
+                                          >{{ interest.tag }}</span>
+                                          <span v-else class="text-[#a0a0a0] text-sm">None</span>
+                                          <button
+                                            v-if="editor"
+                                            type="button"
+                                            class="text-sm text-blue-400 hover:text-blue-300 underline ml-1"
+                                            @click="expandedInterests = true"
+                                          >expand</button>
+                                        </div>
 
-          <GardenVolunteerInterestsSection
-            v-if="garden?.id"
-            :garden-id="garden.id"
-            :current-interests="garden.interests || []"
-            :editor="editor"
-            :active="activeSection === 'volunteers'"
-          />
+                                        <!-- Expanded: full edit / add -->
+                                        <div v-else>
+                                          <div class="flex items-center gap-3 mb-3">
+                                            <span class="text-sm text-[#c8c8c8]">Interests ({{ displayInterests.length }}):</span>
+                                            <button
+                                              type="button"
+                                              class="text-sm text-blue-400 hover:text-blue-300 underline"
+                                              @click="expandedInterests = false"
+                                            >collapse</button>
+                                            <button
+                                              v-if="editor && displayInterests.length"
+                                              type="button"
+                                              class="text-sm text-blue-400 hover:text-blue-300 underline"
+                                              @click="editingInterests = !editingInterests"
+                                            >{{ editingInterests ? 'Done' : 'Edit' }}</button>
+                                          </div>
+
+                                          <!-- Pill display with edit -->
+                                          <div v-if="displayInterests.length" class="flex flex-wrap gap-2 mb-3">
+                                            <span
+                                              v-for="interest in displayInterests"
+                                              :key="interest.id"
+                                              class="inline-flex items-center rounded-full bg-[#3d4d36]/60 text-[#f5f5f5] text-sm"
+                                              :class="[
+                                                editor && editingInterests ? 'gap-1 pl-3 pr-1' : 'px-3 py-1',
+                                                { 'opacity-60': removingInterestId === interest.id }
+                                              ]"
+                                            >
+                                              <span class="py-1">{{ interest.tag }}</span>
+                                              <button
+                                                v-if="editor && editingInterests"
+                                                type="button"
+                                                class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#f5f5f5] hover:bg-[rgba(0,0,0,0.25)] focus:outline-none focus:ring-2 focus:ring-[#8aa37c]/50 disabled:opacity-40"
+                                                :disabled="removingInterestId != null"
+                                                :aria-label="`Remove ${interest.tag} interest`"
+                                                @click.stop="onRemoveInterest(interest.id)"
+                                              >
+                                                <span class="text-xs font-light leading-none" aria-hidden="true">×</span>
+                                              </button>
+                                            </span>
+                                          </div>
+                                          <p v-else class="text-[#a0a0a0] text-sm mb-3">No interests yet.</p>
+
+                                          <!-- Add dropdown (editor, expanded) -->
+                                          <div v-if="editor" class="flex flex-col sm:flex-row sm:items-start gap-2">
+                                            <div class="flex-shrink-0 w-full sm:w-auto sm:min-w-[14rem]">
+                                              <select
+                                                v-model="selectedInterest"
+                                                :disabled="interestsLoading"
+                                                class="w-full rounded-md border border-[#3d4d36] bg-[#2d3e26] text-[#f5f5f5] px-3 py-2 shadow-inner focus:outline-none focus:ring-2 focus:ring-[#8aa37c]/35 focus:border-[#8aa37c] disabled:opacity-60"
+                                                @change="onAddInterest"
+                                              >
+                                                <option value="">Choose an interest…</option>
+                                                <option v-for="i in addableInterests" :key="i.id" :value="String(i.id)">
+                                                  {{ i.tag }}
+                                                </option>
+                                              </select>
+                                            </div>
+                                          </div>
+
+                                          <p class="text-xs text-[#9a9a9a] mt-2">
+                                            These interests appear when volunteers choose what they care about and when you create volunteer days or SMS campaigns.
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                                      <div class="flex justify-between items-center mb-4">
+                                      <h2 class="gm-heading text-2xl font-light font-serif">Volunteers ({{ garden.volunteers?.length || 0 }})</h2>
+                                      <a v-if="editor" @click="clearTemp" class="text-sm text-blue-400 hover:text-blue-300 cursor-pointer">Clear Temps</a>
+                                    </div>
           
-          <div v-if="garden.volunteers?.length" class="relative">
+                                              <div v-if="garden.volunteers?.length" class="relative">
             <table class="w-full">
               <thead>
                 <tr class="tr-class gm-border-b-strong border-b-2">
@@ -887,8 +1028,7 @@ export default {
     GardenSidebar,
     GardenGeneral,
     LoadingSpinner,
-    GardenVolunteerInterestsSection
-  }
+      }
 };
 </script>
 
