@@ -758,4 +758,15 @@ html.dark .gs-navbar.navbar.bg-custom-light {
         z-index: 1500;
     }
 }
+
+/* Prevent mobile logo overlapping the Login button on narrow screens */
+@media (max-width: 420px) {
+    .mobile-logo .logo-img {
+        max-width: 140px;
+    }
+    .nav-right-section .login-btn {
+        padding: 0.35rem 0.8rem;
+        font-size: 0.875rem;
+    }
+}
 </style>
