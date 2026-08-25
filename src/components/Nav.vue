@@ -759,14 +759,22 @@ html.dark .gs-navbar.navbar.bg-custom-light {
     }
 }
 
-/* Prevent mobile logo overlapping the Login button on narrow screens */
-@media (max-width: 420px) {
-    .mobile-logo .logo-img {
-        max-width: 140px;
-    }
+/* On mobile, Login is a simple text link — not a pill button */
+@media (max-width: 768px) {
     .nav-right-section .login-btn {
-        padding: 0.35rem 0.8rem;
-        font-size: 0.875rem;
+        background-color: transparent !important;
+        color: #376451 !important;
+        -webkit-text-fill-color: #376451 !important;
+        padding: 0 0.25rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border-radius: 0;
+    }
+    .nav-right-section .login-btn:hover {
+        background-color: transparent !important;
+        color: #2d4a2e !important;
+        -webkit-text-fill-color: #2d4a2e !important;
+        text-decoration: underline;
     }
 }
 </style>
