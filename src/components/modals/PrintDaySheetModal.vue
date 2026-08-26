@@ -3,10 +3,14 @@ import { ref, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useEventStore } from '@/stores';
 
+// The sheet has two anchors. Pass `eventId` for one volunteer day's tasks, or
+// `gardenSlug` for every task the garden currently has open. The payload shape
+// is identical either way, so everything below this line is anchor-agnostic.
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  eventId: { type: [Number, String], required: true },
-  isManager: { type: Boolean, default: false } // used by Task 9; accepted now
+  eventId: { type: [Number, String], default: null },
+  gardenSlug: { type: String, default: null },
+  isManager: { type: Boolean, default: false }
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -56,7 +60,9 @@ watch(() => props.modelValue, async (open) => {
   resetEphemeral();
   loading.value = true;
   try {
-    await eventStore.fetchDaySheet(props.eventId);
+    await (props.gardenSlug
+      ? eventStore.fetchGardenDaySheet(props.gardenSlug)
+      : eventStore.fetchDaySheet(props.eventId));
   } catch (e) {
     // store already alerted via handleError, which rethrows
   } finally {
@@ -207,11 +213,16 @@ const printedStandingCount = computed(() => (daySheet.value.standing || []).leng
 const printedTasksCount = computed(() => (daySheet.value.tasks || []).length - hiddenTaskIds.value.length);
 const totalTasksCount = computed(() => (daySheet.value.tasks || []).length);
 
-const printUrl = computed(() => eventStore.daySheetPrintUrl(props.eventId, {
-  excludeKeys: skippedKeys.value,
-  hiddenTaskIds: hiddenTaskIds.value,
-  extras: extras.value
-}));
+const printUrl = computed(() => {
+  const opts = {
+    excludeKeys: skippedKeys.value,
+    hiddenTaskIds: hiddenTaskIds.value,
+    extras: extras.value
+  };
+  return props.gardenSlug
+    ? eventStore.gardenDaySheetPrintUrl(props.gardenSlug, opts)
+    : eventStore.daySheetPrintUrl(props.eventId, opts);
+});
 
 const openPrintSheet = () => {
   window.open(printUrl.value, '_blank', 'noopener');

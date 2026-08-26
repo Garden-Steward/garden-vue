@@ -137,6 +137,29 @@ export const useEventStore = defineStore({
             const qs = parts.length ? `?${parts.join('&')}` : '';
             return `${baseUrl}/by-id/${id}/day-sheet.html${qs}`;
         },
+        // The garden-anchored sheet: the same standing checklist, but every task
+        // the garden currently has open rather than one event's. Backed by a
+        // different endpoint; identical payload shape, so the modal renders both.
+        async fetchGardenDaySheet(slug) {
+            return fetchWrapper.get(`${import.meta.env.VITE_API_URL}/api/gardens/${slug}/day-sheet`)
+                .then(res => {
+                    const data = res?.data ?? {};
+                    if (!Array.isArray(data.standing)) data.standing = [];
+                    if (!Array.isArray(data.tasks)) data.tasks = [];
+                    this.daySheet = data;
+                    return data;
+                })
+                .catch(this.handleError);
+        },
+        gardenDaySheetPrintUrl(slug, { excludeKeys = [], hiddenTaskIds = [], extras = [] } = {}) {
+            // Returns a string. Performs NO fetch.
+            const parts = [];
+            if (excludeKeys.length) parts.push(`exclude=${excludeKeys.join(',')}`);
+            if (hiddenTaskIds.length) parts.push(`hideTasks=${hiddenTaskIds.join(',')}`);
+            extras.forEach(line => parts.push(`extra=${encodeURIComponent(line)}`));
+            const qs = parts.length ? `?${parts.join('&')}` : '';
+            return `${import.meta.env.VITE_API_URL}/api/gardens/${slug}/day-sheet.html${qs}`;
+        },
         async saveStandingTasks(items) {
             return fetchWrapper.put(`${import.meta.env.VITE_API_URL}/api/day-sheet-standing-tasks/list`,
                                     { data: { standing_tasks: items } })

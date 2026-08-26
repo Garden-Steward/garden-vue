@@ -13,6 +13,7 @@ import GardenSidebar from '@/components/GardenSidebar.vue';
 import GardenGeneral from '@/components/GardenGeneral.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import PlantsCatalog from '@/components/PlantsCatalog.vue';
+import PrintDaySheetModal from '@/components/modals/PrintDaySheetModal.vue';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
@@ -90,6 +91,10 @@ watch(() => route.hash, (newHash) => {
 });
 
 let editor = ref(false);
+
+// Print day sheet wizard for the whole garden. This view is already behind the
+// manage route, so no further gating is needed here.
+const showPrintDaySheet = ref(false);
 
 const isEditor = computed(() => {
   if (!garden.value?.managers || !user.value) return false;
@@ -876,17 +881,33 @@ const onRemoveInterest = async (interestId) => {
         <div v-if="activeSection === 'tasks'" class="gm-panel rounded-lg shadow-md p-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="gm-heading text-2xl font-light font-serif">Tasks</h2>
-            <router-link
-              v-if="garden.slug"
-              :to="`/gardens/${garden.slug}/tasks`"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="gm-secondary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
-            >
-              View Public Tasks Page
-            </router-link>
+            <div class="flex items-center gap-2">
+              <button
+                v-if="garden.slug"
+                type="button"
+                @click="showPrintDaySheet = true"
+                class="gm-secondary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
+              >
+                Print day sheet
+              </button>
+              <router-link
+                v-if="garden.slug"
+                :to="`/gardens/${garden.slug}/tasks`"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="gm-secondary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
+              >
+                View Public Tasks Page
+              </router-link>
+            </div>
           </div>
           <GardenTaskList :garden="garden" :editor="editor" />
+          <PrintDaySheetModal
+            v-if="garden.slug"
+            v-model="showPrintDaySheet"
+            :garden-slug="garden.slug"
+            :is-manager="editor"
+          />
         </div>
 
         <!-- Plants Section -->
