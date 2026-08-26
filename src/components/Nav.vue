@@ -22,6 +22,7 @@ const isManageNavActive = computed(() => route.path.startsWith('/manage'));
 const theme = ref('system');
 const showProfileOptions = ref(false);
 const isMobileMenuOpen = ref(false);
+const showAboutDropdown = ref(false);
 const mobileMenu = ref(null);
 const profileMenuRef = ref(null);
 const profileButtonRef = ref(null);
@@ -212,6 +213,7 @@ const handleEscape = (e) => {
                 >Manage</router-link>
                 <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
                 <router-link to="/join" class="nav-item nav-link" @click="toggleMobileMenu">Join</router-link>
+                <router-link to="/about" class="nav-item nav-link" @click="toggleMobileMenu">About</router-link>
                 <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
                 <router-link to="/manifesto" class="nav-item nav-link" @click="toggleMobileMenu">Manifesto</router-link>
                 <router-link to="/help" class="nav-item nav-link" @click="toggleMobileMenu">Help</router-link>
@@ -252,10 +254,10 @@ const handleEscape = (e) => {
             </div>
 
             <button class="sidemenu__btn" v-on:click="navOpen=!navOpen" v-bind:class="{active:navOpen}">
-				<span class="top"></span>
-				<span class="mid"></span>
-				<span class="bottom"></span>
-			</button>
+                <span class="top"></span>
+                <span class="mid"></span>
+                <span class="bottom"></span>
+            </button>
             <router-link to="/" class="nav-item image mobile-logo">
                 <img src="/public/gs-logo-name.png" alt="GS Logo" class="logo-img h-7">
             </router-link>
@@ -275,8 +277,19 @@ const handleEscape = (e) => {
                     >Manage</router-link>
                     <router-link to="/join" class="nav-item nav-link">Join</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
-                    <router-link to="/blog" class="nav-item nav-link">Blog</router-link>
-                    <router-link to="/manifesto" class="nav-item nav-link">Manifesto</router-link>
+
+                    <!-- About dropdown -->
+                    <div class="nav-about-dropdown" @mouseenter="showAboutDropdown = true" @mouseleave="showAboutDropdown = false">
+                      <router-link to="/about" class="nav-item nav-link nav-about-trigger">
+                        About
+                        <svg class="dropdown-chevron" width="10" height="6" viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                      </router-link>
+                      <div class="nav-about-menu" v-show="showAboutDropdown">
+                        <router-link to="/blog" class="nav-item nav-link nav-dropdown-item">Blog</router-link>
+                        <router-link to="/manifesto" class="nav-item nav-link nav-dropdown-item">Manifesto</router-link>
+                      </div>
+                    </div>
+
                     <router-link v-show="!authStore.user" to="/help" class="nav-item nav-link">Help</router-link>
 
                 </div>
@@ -364,6 +377,58 @@ html.dark .gs-navbar.navbar.bg-custom-light {
     background-color: #065f46;
     color: #fff !important;
     -webkit-text-fill-color: #fff !important;
+    text-decoration: none !important;
+}
+
+/* ── About dropdown ──────────────────────────────────── */
+.nav-about-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.nav-about-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.dropdown-chevron {
+    margin-left: 2px;
+    opacity: 0.6;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.nav-about-dropdown:hover .dropdown-chevron {
+    opacity: 1;
+    transform: rotate(180deg);
+}
+
+.nav-about-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 160px;
+    background: #f7f1e3;
+    border: 1px solid rgba(138, 163, 124, 0.35);
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    z-index: 2000;
+    padding: 0.35rem 0;
+    margin-top: 2px;
+}
+
+.nav-dropdown-item {
+    display: block;
+    margin: 0 !important;
+    padding: 0.5rem 1.25rem !important;
+    font-size: 1rem !important;
+    white-space: nowrap;
+}
+
+.nav-dropdown-item:hover {
+    background-color: rgba(138, 163, 124, 0.12);
     text-decoration: none !important;
 }
 
