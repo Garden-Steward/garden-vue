@@ -273,7 +273,7 @@ const openPrintSheet = () => {
 
                 <p v-if="skipsClearedNote" class="text-xs italic mb-2">Skips cleared — review the list again</p>
 
-                <div v-if="editMode" class="mb-3 rounded p-3 bg-dark-orange text-white text-sm">
+                <div v-if="editMode" class="mb-3 rounded p-3 bg-custom-peach text-darkest-green font-medium text-sm">
                   You're editing the shared standing list — changes apply to every garden and every future sheet
                 </div>
 
@@ -343,7 +343,7 @@ const openPrintSheet = () => {
                         </button>
                         <button
                           type="button"
-                          class="text-white text-xs py-1 px-2 rounded bg-dark-orange"
+                          class="text-darkest-green text-xs py-1 px-2 rounded bg-custom-peach border border-darkest-green"
                           aria-label="Delete from the list"
                           title="Delete from the list"
                           @click="removeDraftRow(index)"
@@ -365,21 +365,21 @@ const openPrintSheet = () => {
                     Add task
                   </button>
 
-                  <p v-if="saveError" class="text-xs text-dark-orange dark:text-white">{{ saveError }}</p>
+                  <p v-if="saveError" class="text-xs text-darkest-green dark:text-custom-peach">{{ saveError }}</p>
 
-                  <div v-if="pendingEmptyConfirm" class="rounded p-3 bg-dark-orange text-white text-sm space-y-2">
+                  <div v-if="pendingEmptyConfirm" class="rounded p-3 bg-custom-peach text-darkest-green text-sm space-y-2">
                     <p>This clears the list — sheets will fall back to the five built-in defaults.</p>
                     <div class="flex gap-2">
                       <button
                         type="button"
-                        class="text-dark-orange bg-white font-semibold py-1 px-3 rounded"
+                        class="text-white bg-darkest-green hover:bg-darker-green font-semibold py-1 px-3 rounded"
                         @click="confirmEmptySave"
                       >
                         Confirm
                       </button>
                       <button
                         type="button"
-                        class="text-white border border-white font-semibold py-1 px-3 rounded"
+                        class="text-darkest-green border border-darkest-green font-semibold py-1 px-3 rounded"
                         @click="cancelEmptySave"
                       >
                         Cancel
@@ -390,7 +390,7 @@ const openPrintSheet = () => {
                   <div class="flex gap-2 pt-2">
                     <button
                       type="button"
-                      class="text-white font-bold py-2 px-4 rounded bg-dark-orange disabled:opacity-50"
+                      class="text-white font-bold py-2 px-4 rounded bg-darkest-green hover:bg-darker-green disabled:opacity-50"
                       :disabled="saving"
                       @click="attemptSaveStandingTasks"
                     >
@@ -406,33 +406,6 @@ const openPrintSheet = () => {
                   </div>
                 </div>
 
-                <div class="mt-4">
-                  <div class="flex flex-wrap gap-2 items-center">
-                    <input
-                      v-model="extraDraft"
-                      type="text"
-                      maxlength="120"
-                      placeholder="Add an extra line for today"
-                      class="flex-1 min-w-[200px] p-2 rounded border border-forest-border bg-custom-light dark:bg-forest-page text-darkest-green dark:text-white"
-                      @keyup.enter="addExtraLine"
-                    />
-                    <button
-                      type="button"
-                      class="text-white text-xs font-semibold py-2 px-3 rounded bg-primary disabled:opacity-50"
-                      :disabled="extrasAtLimit"
-                      @click="addExtraLine"
-                    >
-                      Add line
-                    </button>
-                  </div>
-                  <p v-if="extrasAtLimit" class="text-xs mt-1">Five extra lines is the limit.</p>
-                  <ul class="mt-2 space-y-1">
-                    <li v-for="(line, index) in extras" :key="index" class="flex items-center justify-between gap-2 text-sm">
-                      <span>{{ line }}</span>
-                      <button type="button" class="text-darkest-green dark:text-white underline text-xs" @click="removeExtraLine(index)">Remove</button>
-                    </li>
-                  </ul>
-                </div>
               </section>
 
               <section class="mb-6">
@@ -454,19 +427,47 @@ const openPrintSheet = () => {
                     </div>
                     <button
                       type="button"
-                      class="shrink-0 text-white text-xs font-semibold py-1 px-3 rounded bg-primary"
+                      class="shrink-0 text-darkest-green text-xs font-semibold py-1 px-3 rounded bg-custom-peach border border-darkest-green"
                       @click="toggleHidden(task.id)"
                     >
                       {{ hiddenTaskIds.includes(task.id) ? 'Show on sheet' : 'Hide from sheet' }}
                     </button>
                   </li>
                 </ul>
+                <div class="mt-3">
+                  <div class="flex flex-wrap gap-2 items-center">
+                    <input
+                      v-model="extraDraft"
+                      type="text"
+                      maxlength="120"
+                      placeholder="Add a one-off task for today"
+                      class="flex-1 min-w-[200px] p-2 rounded border border-forest-border bg-custom-light dark:bg-forest-page text-darkest-green dark:text-white"
+                      @keyup.enter="addExtraLine"
+                    />
+                    <button
+                      type="button"
+                      class="text-white text-xs font-semibold py-2 px-3 rounded bg-darkest-green hover:bg-darker-green disabled:opacity-50"
+                      :disabled="extrasAtLimit"
+                      @click="addExtraLine"
+                    >
+                      Add task
+                    </button>
+                  </div>
+                  <p class="text-xs mt-1 italic">Prints with today's tasks, on this sheet only.</p>
+                  <p v-if="extrasAtLimit" class="text-xs mt-1">Five added tasks is the limit.</p>
+                  <ul class="mt-2 space-y-1">
+                    <li v-for="(line, index) in extras" :key="index" class="flex items-center justify-between gap-2 text-sm">
+                      <span>{{ line }}</span>
+                      <button type="button" class="text-darkest-green dark:text-white underline text-xs" @click="removeExtraLine(index)">Remove</button>
+                    </li>
+                  </ul>
+                </div>
               </section>
 
               <div class="flex justify-end">
                 <button
                   type="button"
-                  class="text-white font-bold py-2 px-4 rounded bg-dark-orange"
+                  class="text-white font-bold py-2 px-4 rounded bg-darkest-green hover:bg-darker-green"
                   @click="goToPrintStep"
                 >
                   Continue to print
@@ -492,7 +493,7 @@ const openPrintSheet = () => {
                   :href="printUrl"
                   target="_blank"
                   rel="noopener"
-                  class="text-white font-bold py-2 px-4 rounded bg-dark-orange no-underline"
+                  class="text-white font-bold py-2 px-4 rounded bg-darkest-green hover:bg-darker-green no-underline"
                   @click.prevent="openPrintSheet"
                 >
                   Open print sheet
