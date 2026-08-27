@@ -324,52 +324,6 @@ onUnmounted(() => {
   color: #6b7280;
 }
 
-/* ── Dark mode overrides ── */
-:global(.dark) .pl-toolbar {
-  background-color: #344a34;
-  border-color: #3d4d36;
-}
-
-:global(.dark) .pl-label {
-  color: #f5f5f5;
-}
-
-:global(.dark) .pl-select {
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #f5f5f5;
-  border-color: rgba(61, 77, 54, 0.5);
-}
-
-:global(.dark) .pl-select:hover {
-  border-color: #3d4d36;
-}
-
-:global(.dark) .pl-select option {
-  background-color: rgba(26, 26, 26, 0.8);
-}
-
-:global(.dark) .pl-dropdown-menu {
-  background-color: rgba(26, 26, 26, 0.95);
-  border-color: rgba(61, 77, 54, 0.5);
-}
-
-:global(.dark) .pl-dropdown-item {
-  color: #f5f5f5;
-}
-
-:global(.dark) .pl-dropdown-item:hover {
-  background-color: rgba(138, 163, 124, 0.3);
-}
-
-:global(.dark) .pl-dropdown-item.is-active {
-  background-color: rgba(138, 163, 124, 0.2);
-}
-
-:global(.dark) .pl-count,
-:global(.dark) .pl-empty {
-  color: #d0d0d0;
-}
-
 /* Dropdown transition */
 .dropdown-enter-active,
 .dropdown-leave-active {
@@ -410,5 +364,61 @@ onUnmounted(() => {
 
 .event-dropdown-container div::-webkit-scrollbar-thumb:hover {
   background: rgba(138, 163, 124, 0.7);
+}
+</style>
+
+<!--
+  `:global()` combined with a trailing descendant selector does not survive
+  this project's production CSS minification (lightningcss drops everything
+  after the :global() token, e.g. ":global(.dark) .pl-toolbar" compiles to
+  the bare, incorrect rule ".dark { ... }"). Dark-mode overrides live here
+  instead, in a plain (non-scoped) <style> block with a literal
+  "html.dark ..." selector — the same pattern GardenDetail.vue uses for its
+  gm-* dark overrides.
+-->
+<style>
+html.dark .pl-toolbar {
+  background-color: #344a34;
+  border-color: #3d4d36;
+}
+
+html.dark .pl-label {
+  color: #f5f5f5;
+}
+
+html.dark .pl-select {
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
+  border-color: rgba(61, 77, 54, 0.5);
+}
+
+html.dark .pl-select:hover {
+  border-color: #3d4d36;
+}
+
+html.dark .pl-select option {
+  background-color: rgba(26, 26, 26, 0.8);
+}
+
+html.dark .pl-dropdown-menu {
+  background-color: rgba(26, 26, 26, 0.95);
+  border-color: rgba(61, 77, 54, 0.5);
+}
+
+html.dark .pl-dropdown-item {
+  color: #f5f5f5;
+}
+
+html.dark .pl-dropdown-item:hover {
+  background-color: rgba(138, 163, 124, 0.3);
+}
+
+html.dark .pl-dropdown-item.is-active {
+  background-color: rgba(138, 163, 124, 0.2);
+}
+
+html.dark .pl-count,
+html.dark .pl-empty {
+  color: #d0d0d0;
 }
 </style>

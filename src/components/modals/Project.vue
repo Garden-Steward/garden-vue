@@ -1355,37 +1355,6 @@ onUnmounted(() => {
   color: #344a34;
 }
 
-/* ── Dark mode overrides ── */
-:global(.dark) .proj-step-inactive {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: #d0d0d0;
-}
-:global(.dark) .proj-step-bar-inactive {
-  background-color: rgba(255, 255, 255, 0.15);
-}
-:global(.dark) .proj-type-btn {
-  background-color: rgba(26, 26, 26, 0.6);
-  border-color: #3d4d36;
-  color: #f5f5f5;
-}
-:global(.dark) .proj-type-btn:hover {
-  border-color: #8aa37c;
-  background-color: rgba(138, 163, 124, 0.18);
-}
-:global(.dark) .proj-type-btn-active {
-  border-color: #8aa37c;
-  background-color: rgba(138, 163, 124, 0.28);
-  color: #ffffff;
-}
-:global(.dark) .proj-back-btn {
-  color: #d0d0d0;
-  border-color: #3d4d36;
-}
-:global(.dark) .proj-back-btn:hover {
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #f5f5f5;
-}
-
 /* ── Modal chrome (light mode default) ── */
 .proj-modal {
   background-color: #ffffff;
@@ -1451,97 +1420,10 @@ onUnmounted(() => {
   color: #2f5233;
 }
 
-/* ── Modal chrome (dark mode) ── */
-:global(.dark) .proj-modal {
-  background-color: #344a34;
-  color: #f5f5f5;
-  border-color: #3d4d36;
-}
-:global(.dark) .proj-modal-close {
-  color: #d0d0d0;
-}
-:global(.dark) .proj-modal-close:hover {
-  color: #f5f5f5;
-}
-:global(.dark) .proj-modal-heading,
-:global(.dark) .proj-modal-text {
-  color: #f5f5f5;
-}
-:global(.dark) .proj-modal-text-muted {
-  color: #d0d0d0;
-}
-:global(.dark) .proj-modal-divider {
-  border-color: #3d4d36;
-}
-:global(.dark) .proj-modal-input {
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #f5f5f5;
-  border-color: #3d4d36;
-}
-:global(.dark) .proj-modal-input::placeholder {
-  color: #d0d0d0;
-}
-:global(.dark) .proj-modal-panel {
-  background-color: rgba(26, 26, 26, 0.4);
-  border-color: #3d4d36;
-}
-:global(.dark) .proj-modal-secondary-btn {
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #f5f5f5;
-  border-color: #3d4d36;
-}
-:global(.dark) .proj-modal-secondary-btn:hover {
-  background-color: rgba(26, 26, 26, 0.8);
-}
-:global(.dark) .proj-modal-list-btn {
-  background-color: rgba(26, 26, 26, 0.8);
-  color: #f5f5f5;
-  border-color: #3d4d36;
-}
-:global(.dark) .proj-modal-list-btn:hover {
-  background-color: rgba(138, 163, 124, 0.2);
-}
-:global(.dark) .proj-tag {
-  background-color: rgba(138, 163, 124, 0.3);
-  color: #8aa37c;
-}
-:global(.dark) .proj-tag button {
-  color: #8aa37c;
-}
-:global(.dark) .proj-tag button:hover {
-  color: #a0b890;
-}
-
 /* Date inputs (light default) */
 input[type="date"] {
   color-scheme: light;
   color: #344a34;
-}
-
-/* Date inputs (dark mode) */
-:global(.dark) input[type="date"] {
-  color-scheme: dark;
-  color: #f5f5f5;
-}
-
-:global(.dark) input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  cursor: pointer;
-}
-
-:global(.dark) input[type="date"]::-webkit-datetime-edit-text,
-:global(.dark) input[type="date"]::-webkit-datetime-edit-month-field,
-:global(.dark) input[type="date"]::-webkit-datetime-edit-day-field,
-:global(.dark) input[type="date"]::-webkit-datetime-edit-year-field {
-  color: #f5f5f5;
-}
-
-:global(.dark) input[type="date"]::-webkit-datetime-edit-text:focus,
-:global(.dark) input[type="date"]::-webkit-datetime-edit-month-field:focus,
-:global(.dark) input[type="date"]::-webkit-datetime-edit-day-field:focus,
-:global(.dark) input[type="date"]::-webkit-datetime-edit-year-field:focus {
-  background-color: rgba(138, 163, 124, 0.2);
-  color: #f5f5f5;
 }
 
 /*
@@ -1550,4 +1432,130 @@ input[type="date"] {
  * no overrides needed here; forcing them unconditionally dark previously
  * broke light mode for Title, Category, and every other field using them.
  */
+</style>
+
+<!--
+  `:global()` combined with a trailing descendant selector does not survive
+  this project's production CSS minification (lightningcss drops everything
+  after the :global() token, e.g. ":global(.dark) .proj-modal" compiles to
+  the bare, incorrect rule ".dark { ... }", silently no-op-ing every dark
+  override above). Dark-mode overrides live here instead, in a plain
+  (non-scoped) <style> block using literal "html.dark ..." selectors — the
+  same pattern GardenDetail.vue uses for its gm-* dark overrides.
+-->
+<style>
+html.dark .proj-step-inactive {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #d0d0d0;
+}
+html.dark .proj-step-bar-inactive {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+html.dark .proj-type-btn {
+  background-color: rgba(26, 26, 26, 0.6);
+  border-color: #3d4d36;
+  color: #f5f5f5;
+}
+html.dark .proj-type-btn:hover {
+  border-color: #8aa37c;
+  background-color: rgba(138, 163, 124, 0.18);
+}
+html.dark .proj-type-btn-active {
+  border-color: #8aa37c;
+  background-color: rgba(138, 163, 124, 0.28);
+  color: #ffffff;
+}
+html.dark .proj-back-btn {
+  color: #d0d0d0;
+  border-color: #3d4d36;
+}
+html.dark .proj-back-btn:hover {
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
+}
+
+html.dark .proj-modal {
+  background-color: #344a34;
+  color: #f5f5f5;
+  border-color: #3d4d36;
+}
+html.dark .proj-modal-close {
+  color: #d0d0d0;
+}
+html.dark .proj-modal-close:hover {
+  color: #f5f5f5;
+}
+html.dark .proj-modal-heading,
+html.dark .proj-modal-text {
+  color: #f5f5f5;
+}
+html.dark .proj-modal-text-muted {
+  color: #d0d0d0;
+}
+html.dark .proj-modal-divider {
+  border-color: #3d4d36;
+}
+html.dark .proj-modal-input {
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
+  border-color: #3d4d36;
+}
+html.dark .proj-modal-input::placeholder {
+  color: #d0d0d0;
+}
+html.dark .proj-modal-panel {
+  background-color: rgba(26, 26, 26, 0.4);
+  border-color: #3d4d36;
+}
+html.dark .proj-modal-secondary-btn {
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
+  border-color: #3d4d36;
+}
+html.dark .proj-modal-secondary-btn:hover {
+  background-color: rgba(26, 26, 26, 0.8);
+}
+html.dark .proj-modal-list-btn {
+  background-color: rgba(26, 26, 26, 0.8);
+  color: #f5f5f5;
+  border-color: #3d4d36;
+}
+html.dark .proj-modal-list-btn:hover {
+  background-color: rgba(138, 163, 124, 0.2);
+}
+html.dark .proj-tag {
+  background-color: rgba(138, 163, 124, 0.3);
+  color: #8aa37c;
+}
+html.dark .proj-tag button {
+  color: #8aa37c;
+}
+html.dark .proj-tag button:hover {
+  color: #a0b890;
+}
+
+html.dark .proj-modal input[type="date"] {
+  color-scheme: dark;
+  color: #f5f5f5;
+}
+
+html.dark .proj-modal input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+html.dark .proj-modal input[type="date"]::-webkit-datetime-edit-text,
+html.dark .proj-modal input[type="date"]::-webkit-datetime-edit-month-field,
+html.dark .proj-modal input[type="date"]::-webkit-datetime-edit-day-field,
+html.dark .proj-modal input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #f5f5f5;
+}
+
+html.dark .proj-modal input[type="date"]::-webkit-datetime-edit-text:focus,
+html.dark .proj-modal input[type="date"]::-webkit-datetime-edit-month-field:focus,
+html.dark .proj-modal input[type="date"]::-webkit-datetime-edit-day-field:focus,
+html.dark .proj-modal input[type="date"]::-webkit-datetime-edit-year-field:focus {
+  background-color: rgba(138, 163, 124, 0.2);
+  color: #f5f5f5;
+}
 </style>
