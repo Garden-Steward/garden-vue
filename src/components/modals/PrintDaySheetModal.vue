@@ -277,7 +277,7 @@ const openPrintSheet = () => {
                   You're editing the shared standing list — changes apply to every garden and every future sheet
                 </div>
 
-                <ul class="space-y-2">
+                <ul v-if="!editMode" class="space-y-2">
                   <li
                     v-for="item in daySheet.standing"
                     :key="item.key"

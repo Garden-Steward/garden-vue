@@ -140,6 +140,22 @@ select {
 }
 
 select option {
+  background-color: #ffffff;
+  color: #1f2937;
+}
+</style>
+
+<!--
+  `:global()` combined with a trailing descendant selector does not survive
+  this project's production CSS minification (lightningcss drops everything
+  after the :global() token, e.g. ":global(html.dark) select option" becomes
+  the bare, incorrect rule "html.dark { ... }"). Dark-mode overrides for
+  scoped components must instead live in a plain (non-scoped) <style> block
+  using a literal "html.dark ..." selector, scoped by this component's own
+  root class so it doesn't leak into unrelated selects elsewhere.
+-->
+<style>
+html.dark .dropdown-container select option {
   background-color: rgba(26, 26, 26, 0.95);
   color: #f5f5f5;
 }
