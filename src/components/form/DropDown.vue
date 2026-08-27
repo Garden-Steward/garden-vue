@@ -140,6 +140,11 @@ select {
 }
 
 select option {
+  background-color: #ffffff;
+  color: #1f2937;
+}
+
+:global(html.dark) select option {
   background-color: rgba(26, 26, 26, 0.95);
   color: #f5f5f5;
 }
