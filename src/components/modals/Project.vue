@@ -1312,14 +1312,14 @@ onUnmounted(() => {
   color: #ffffff;
 }
 .proj-step-inactive {
-  background-color: #e5e9df;
+  background-color: #d6cfb8;
   color: #6b7280;
 }
 .proj-step-bar-active {
   background-color: #8aa37c;
 }
 .proj-step-bar-inactive {
-  background-color: #e2dccb;
+  background-color: #d6cfb8;
 }
 
 .proj-step {
@@ -1357,7 +1357,7 @@ onUnmounted(() => {
 
 /* ── Modal chrome (light mode default) ── */
 .proj-modal {
-  background-color: #ffffff;
+  background-color: #f7f1e3;
   color: #344a34;
   border-color: #e2dccb;
 }
@@ -1390,8 +1390,8 @@ onUnmounted(() => {
   outline: none;
 }
 .proj-modal-panel {
-  background-color: rgba(138, 163, 124, 0.08);
-  border-color: #e2dccb;
+  background-color: rgba(138, 163, 124, 0.12);
+  border-color: #d6cfb8;
 }
 .proj-modal-secondary-btn {
   background-color: #ffffff;
