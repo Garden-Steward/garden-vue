@@ -27,6 +27,7 @@ const props = defineProps({
   id: Number,
   garden: Number,
   gardenSlug: String,
+  review_status: String,
   editor: {
     type: Boolean,
     default: false
@@ -592,6 +593,33 @@ const toggleShow = () => {
   }
 };
 
+// ── Review workflow (manager-only, shown on the card in the manage view) ──
+const reviewing = ref(false);
+
+const reviewLabel = computed(() => {
+  const map = {
+    CREATED: 'Pending review',
+    APPROVED: 'Approved',
+    REJECTED: 'Denied',
+    COMPLETED: 'Completed',
+    ARCHIVED: 'Archived'
+  };
+  return map[props.review_status] || props.review_status || '';
+});
+
+const setReviewStatus = async (status) => {
+  if (reviewing.value || !props.id) return;
+  reviewing.value = true;
+  try {
+    await projectsStore.review(props.id, status);
+    alertStore.success(status === 'APPROVED' ? 'Project approved.' : `Project ${reviewLabel.value.toLowerCase()}.`);
+  } catch (err) {
+    alertStore.error('Could not update the project status. Please try again.');
+  } finally {
+    reviewing.value = false;
+  }
+};
+
 const openViewModal = () => {
   if (props.editor) {
     // In editor mode, open edit modal
@@ -657,11 +685,48 @@ onUnmounted(() => {
         
         <!-- Text content - full width on mobile, flex-1 on desktop -->
         <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-[#f5f5f5]">{{ form.title || 'Untitled Project' }}</h3>
-            <span class="text-sm text-[#d0d0d0]">{{ form.category }}</span>
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <h3 class="text-lg font-semibold text-[#f5f5f5] truncate">{{ form.title || 'Untitled Project' }}</h3>
+              <span
+                v-if="editor && review_status && review_status !== 'APPROVED'"
+                class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
+                :class="{
+                  'bg-yellow-500/20 text-yellow-300': review_status === 'CREATED',
+                  'bg-red-500/20 text-red-300': review_status === 'REJECTED',
+                  'bg-[rgba(138,163,124,0.3)] text-[#8aa37c]': review_status === 'COMPLETED' || review_status === 'ARCHIVED'
+                }"
+              >
+                {{ reviewLabel }}
+              </span>
+            </div>
+            <span class="text-sm text-[#d0d0d0] flex-shrink-0">{{ form.category }}</span>
           </div>
           <p v-if="form.short_description" class="text-sm text-[#d0d0d0] mt-1">{{ form.short_description }}</p>
+
+          <!-- Review actions (garden managers, pending / denied projects) -->
+          <div
+            v-if="editor && (review_status === 'CREATED' || review_status === 'REJECTED')"
+            class="flex items-center gap-2 mt-3"
+          >
+            <button
+              type="button"
+              :disabled="reviewing"
+              @click.stop="setReviewStatus('APPROVED')"
+              class="px-3 py-1 text-xs font-medium bg-custom-green text-white rounded shadow-sm hover:bg-darker-green focus:outline-none focus:ring-0 transition disabled:opacity-50"
+            >
+              Approve
+            </button>
+            <button
+              v-if="review_status === 'CREATED'"
+              type="button"
+              :disabled="reviewing"
+              @click.stop="setReviewStatus('REJECTED')"
+              class="px-3 py-1 text-xs font-medium bg-transparent border border-red-400/60 text-red-300 rounded hover:bg-red-500/10 focus:outline-none focus:ring-0 transition disabled:opacity-50"
+            >
+              Deny
+            </button>
+          </div>
           <!-- Related Events Tags -->
           <div v-if="normalizedRelatedEvents.length > 0" class="flex flex-wrap gap-2 mt-2">
             <span 
