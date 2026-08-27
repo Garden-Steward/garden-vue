@@ -14,6 +14,7 @@ import GardenGeneral from '@/components/GardenGeneral.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import PlantsCatalog from '@/components/PlantsCatalog.vue';
 import PrintDaySheetModal from '@/components/modals/PrintDaySheetModal.vue';
+import StandingTasksEditor from '@/components/StandingTasksEditor.vue';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
@@ -902,6 +903,11 @@ const onRemoveInterest = async (interestId) => {
             </div>
           </div>
           <GardenTaskList :garden="garden" :editor="editor" />
+          <StandingTasksEditor
+            v-if="garden.slug"
+            :garden-slug="garden.slug"
+            :can-edit="editor"
+          />
           <PrintDaySheetModal
             v-if="garden.slug"
             v-model="showPrintDaySheet"
