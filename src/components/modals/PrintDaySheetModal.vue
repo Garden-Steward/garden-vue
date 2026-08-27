@@ -264,7 +264,7 @@ const openPrintSheet = () => {
                   <button
                     v-if="isManager && !editMode"
                     type="button"
-                    class="text-darkest-green dark:text-white text-xs font-semibold py-1 px-3 rounded border border-forest-border bg-primary/30"
+                    class="text-darkest-green dark:text-white text-xs font-semibold py-1 px-3 rounded border-2 border-forest-border bg-custom-green/30"
                     @click="enterEditMode"
                   >
                     Edit list
@@ -273,7 +273,7 @@ const openPrintSheet = () => {
 
                 <p v-if="skipsClearedNote" class="text-xs italic mb-2">Skips cleared — review the list again</p>
 
-                <div v-if="editMode" class="mb-3 rounded p-3 bg-custom-peach text-darkest-green font-medium text-sm">
+                <div v-if="editMode" class="on-light mb-3 rounded p-3 bg-custom-peach text-darkest-green font-medium text-sm">
                   You're editing the shared standing list — changes apply to every garden and every future sheet
                 </div>
 
@@ -289,7 +289,7 @@ const openPrintSheet = () => {
                     </div>
                     <button
                       type="button"
-                      class="shrink-0 text-white text-xs font-semibold py-1 px-3 rounded bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="shrink-0 text-white text-xs font-semibold py-1 px-3 rounded bg-custom-green disabled:opacity-50 disabled:cursor-not-allowed"
                       :disabled="editMode"
                       @click="toggleSkip(item.key)"
                     >
@@ -343,7 +343,7 @@ const openPrintSheet = () => {
                         </button>
                         <button
                           type="button"
-                          class="text-darkest-green text-xs py-1 px-2 rounded bg-custom-peach border border-darkest-green"
+                          class="on-light text-darkest-green text-xs py-1 px-2 rounded bg-custom-peach border-2 border-darkest-green"
                           aria-label="Delete from the list"
                           title="Delete from the list"
                           @click="removeDraftRow(index)"
@@ -359,7 +359,7 @@ const openPrintSheet = () => {
 
                   <button
                     type="button"
-                    class="text-darkest-green dark:text-white text-xs font-semibold py-1 px-3 rounded border border-forest-border bg-primary/30"
+                    class="text-darkest-green dark:text-white text-xs font-semibold py-1 px-3 rounded border-2 border-forest-border bg-custom-green/30"
                     @click="addDraftRow"
                   >
                     Add task
@@ -367,7 +367,7 @@ const openPrintSheet = () => {
 
                   <p v-if="saveError" class="text-xs text-darkest-green dark:text-custom-peach">{{ saveError }}</p>
 
-                  <div v-if="pendingEmptyConfirm" class="rounded p-3 bg-custom-peach text-darkest-green text-sm space-y-2">
+                  <div v-if="pendingEmptyConfirm" class="on-light rounded p-3 bg-custom-peach text-darkest-green text-sm space-y-2">
                     <p>This clears the list — sheets will fall back to the five built-in defaults.</p>
                     <div class="flex gap-2">
                       <button
@@ -398,7 +398,7 @@ const openPrintSheet = () => {
                     </button>
                     <button
                       type="button"
-                      class="text-darkest-green dark:text-white font-medium py-2 px-4 rounded bg-primary/30 border border-forest-border"
+                      class="text-darkest-green dark:text-white font-medium py-2 px-4 rounded bg-custom-green/30 border-2 border-forest-border"
                       @click="cancelEditMode"
                     >
                       Cancel
@@ -427,7 +427,7 @@ const openPrintSheet = () => {
                     </div>
                     <button
                       type="button"
-                      class="shrink-0 text-darkest-green text-xs font-semibold py-1 px-3 rounded bg-custom-peach border border-darkest-green"
+                      class="on-light shrink-0 text-darkest-green text-xs font-semibold py-1 px-3 rounded bg-custom-peach border-2 border-darkest-green"
                       @click="toggleHidden(task.id)"
                     >
                       {{ hiddenTaskIds.includes(task.id) ? 'Show on sheet' : 'Hide from sheet' }}
@@ -484,7 +484,7 @@ const openPrintSheet = () => {
               <div class="flex items-center gap-3">
                 <button
                   type="button"
-                  class="text-darkest-green dark:text-white font-medium py-2 px-4 rounded bg-primary/30 border border-forest-border"
+                  class="text-darkest-green dark:text-white font-medium py-2 px-4 rounded bg-custom-green/30 border-2 border-forest-border"
                   @click="goBackToReview"
                 >
                   Back
@@ -506,3 +506,14 @@ const openPrintSheet = () => {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+/* The app sets `-webkit-text-fill-color: #e8e8e8 !important` on `.dark`. That
+   property is inherited and paints the glyphs, so it beats `color` outright —
+   any light panel in dark mode renders near-invisible grey text unless it opts
+   back out. `currentColor` hands painting back to whatever `color` says. */
+.on-light,
+.on-light * {
+  -webkit-text-fill-color: currentColor;
+}
+</style>
