@@ -19,7 +19,10 @@ const videoSections = [
   {
     id: 'steward',
     line: 'We are its steward.',
-        subline: 'In a mission to restore biodiversity.',
+        sublines: [
+          'In a mission to restore biodiversity.',
+          'Garden Steward helps communities organize around their land.',
+        ],
     overlay: 'rgba(10, 20, 15, 0.5)',
     dark: true,
     src: null,
@@ -122,7 +125,7 @@ function isActive(index) {
       <!-- Text content -->
       <div class="section-text" :class="{ 'text-dark': !sec.dark, 'text-light': sec.dark }">
         <p class="section-line">{{ sec.line }}</p>
-        <p v-if="sec.subline" class="section-subline">{{ sec.subline }}</p>
+                <p v-for="(sl, si) in sec.sublines || (sec.subline ? [sec.subline] : [])" :key="si" class="section-subline" :class="{ 'section-subline-first': si === 0 }">{{ sl }}</p>
       </div>
 
       <!-- Scroll hint (only on first section) -->
@@ -253,9 +256,15 @@ function isActive(index) {
 .section-subline {
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   line-height: 1.5;
-  margin: 1rem 0 0;
+  margin: 0.5rem 0 0;
   font-weight: 400;
   opacity: 0.85;
+}
+
+.section-subline-first {
+  margin-top: 1rem;
+  opacity: 1;
+  font-style: italic;
 }
 
 .text-dark .section-line,
