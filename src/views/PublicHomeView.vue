@@ -19,10 +19,7 @@ const videoSections = [
   {
     id: 'steward',
     line: 'We are its steward.',
-        sublines: [
-          'In a mission to restore biodiversity.',
-          'Garden Steward helps communities organize around their land.',
-        ],
+        subline: 'In a mission to restore biodiversity, Garden Steward helps communities organize around their land.',
     overlay: 'rgba(10, 20, 15, 0.5)',
     dark: true,
     src: null,
