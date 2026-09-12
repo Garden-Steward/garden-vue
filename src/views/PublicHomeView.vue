@@ -92,7 +92,7 @@ onUnmounted(() => {
 
 // ── Helpers ─────────────────────────────────────────
 function bgStyle(index) {
-  const sec = videoSections[index];
+  const sec = videoSections.value[index];
   if (sec.src) {
     return {}; // video handles background
   }
@@ -100,7 +100,7 @@ function bgStyle(index) {
 }
 
 function overlayStyle(index) {
-  return { backgroundColor: videoSections[index].overlay };
+  return { backgroundColor: videoSections.value[index].overlay };
 }
 
 function isActive(index) {
