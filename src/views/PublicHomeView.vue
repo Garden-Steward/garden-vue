@@ -58,23 +58,41 @@ const fallbackGradients = [
 ];
 
 // ── Scroll reveal ───────────────────────────────────
-// Each section fades in as it enters the viewport.
 const activeSection = ref(0);
 const sectionsRef = ref([]);
+const videoRefs = ref([]);
 
 function setSectionRefs(el, index) {
   if (el) sectionsRef.value[index] = el;
 }
 
+function setVideoRef(el, index) {
+  if (el) videoRefs.value[index] = el;
+}
+
 let observer = null;
 
 onMounted(() => {
+  // Staggered video start: section 0 plays immediately, others cascade
+  const playVideo = (index, delay) => {
+    setTimeout(() => {
+      const vid = videoRefs.value[index];
+      if (vid && vid.paused) vid.play().catch(() => {});
+    }, delay);
+  };
+
+  // Cascade: 0ms, 800ms, 1600ms
+  videoRefs.value.forEach((_, i) => playVideo(i, i * 800));
+
   observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
+        const idx = Number(entry.target.dataset.section);
         if (entry.isIntersecting) {
-          const idx = Number(entry.target.dataset.section);
           activeSection.value = idx;
+          // Ensure video plays when scrolled into view
+          const vid = videoRefs.value[idx];
+          if (vid && vid.paused) vid.play().catch(() => {});
         }
       });
     },
@@ -123,14 +141,14 @@ function isActive(index) {
     >
       <!-- Background video (when src is set) -->
       <video
-        v-if="sec.src"
-        class="section-video"
-        :src="sec.src"
-        autoplay
-        muted
-        loop
-        playsinline
-      ></video>
+              v-if="sec.src"
+              :ref="(el) => setVideoRef(el, i)"
+              class="section-video"
+              :src="sec.src"
+              muted
+              loop
+              playsinline
+            ></video>
 
       <!-- Color overlay -->
       <div class="section-overlay" :style="overlayStyle(i)"></div>
