@@ -154,9 +154,8 @@ function isActive(index) {
       v-for="(sec, i) in videoSections"
       :key="sec.id"
       :ref="(el) => setSectionRefs(el, i)"
-      :data-section="i"
-      :data-section="i"
-      class="video-section"
+            :data-section="i"
+            class="video-section"
       :class="{ 'section-active': isActive(i) }"
       :style="bgStyle(i)"
     >
