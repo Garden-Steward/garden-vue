@@ -148,9 +148,22 @@ function isActive(index) {
     </section>
 
     <!-- ── Content below the video sections ───────────── -->
-    <div class="content-below">
+        <div class="content-below">
 
-      <!-- About -->
+          <!-- Projects callout -->
+          <div class="projects-band">
+            <h2 class="projects-heading">Projects</h2>
+            <div class="projects-flow">
+              <span class="project-verb">Find one</span>
+              <span class="project-dot">•</span>
+              <span class="project-verb">Join one</span>
+              <span class="project-dot">•</span>
+              <span class="project-verb">Pitch your own</span>
+            </div>
+            <p class="projects-invite">An open call — everyone's invited to get involved.</p>
+          </div>
+
+          <!-- About -->
       <div class="content-section">
         <h2 class="section-heading">Community-grown tools for urban agriculture</h2>
         <p class="body-text">
@@ -325,6 +338,68 @@ function isActive(index) {
 
 :global(.dark) .content-below {
   background: #2d3e26;
+}
+
+/* ── Projects callout band ─────────────────────────── */
+.projects-band {
+  background: #2d3e26;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+}
+
+:global(.dark) .projects-band {
+  background: #1a2a1a;
+}
+
+.projects-heading {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 400;
+  color: #c8dbbf;
+  margin: 0 0 1rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.projects-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.project-verb {
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.4rem 0;
+}
+
+.project-dot {
+  color: #8aa37c;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.projects-invite {
+  font-size: 0.95rem;
+  color: #a0b8a0;
+  margin: 0;
+  font-style: italic;
+}
+
+@media (max-width: 480px) {
+  .projects-flow {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .project-dot {
+    display: none;
+  }
 }
 
 /* ── About section ─────────────────────────────────── */
