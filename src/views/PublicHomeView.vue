@@ -42,8 +42,8 @@ const videoSections = ref([
   },
   {
     id: 'action',
-    line: 'Start your project.',
-    subline: 'Open-source tools for volunteer events, watering schedules, and harvest coordination.',
+        line: 'Join a Project / Start a Project',
+        subline: 'All hands are needed in transition times.',
     overlay: 'rgba(60, 40, 20, 0.4)',
     dark: false,
     src: picks[2],
@@ -165,7 +165,7 @@ function isActive(index) {
 
           <!-- About -->
       <div class="content-section">
-        <h2 class="section-heading">Community-grown tools for urban agriculture</h2>
+        <h2 class="section-heading">Open-source tools for running projects and garden events, instructing, managing watering, and so much more.</h2>
         <p class="body-text">
           Garden Steward is a community-driven, open-source project developing SMS-first software
           for managing volunteer events, watering schedules, and harvest coordination. Since 2022,
@@ -226,8 +226,6 @@ function isActive(index) {
 .home-wrapper {
   background: #1a2a1a;
   scroll-snap-type: y mandatory;
-  overflow-y: scroll;
-  height: 100vh;
 }
 
 /* ── Full-viewport video sections ─────────────────── */
