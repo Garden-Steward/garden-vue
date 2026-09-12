@@ -61,6 +61,7 @@ const fallbackGradients = [
 const activeSection = ref(0);
 const sectionsRef = ref([]);
 const videoRefs = ref([]);
+const snapContainerRef = ref(null);
 
 function setSectionRefs(el, index) {
   if (el) sectionsRef.value[index] = el;
@@ -70,12 +71,11 @@ function setVideoRef(el, index) {
   if (el) videoRefs.value[index] = el;
 }
 
+const LAST_VIDEO_INDEX = 2; // "Join a Project" is the last snap section
+
 let observer = null;
 
 onMounted(() => {
-  // Scroll-snap for video sections — scoped to homepage
-  document.documentElement.style.scrollSnapType = 'y mandatory';
-
   // Staggered video start: section 0 plays immediately, others cascade
   const playVideo = (index, delay) => {
     setTimeout(() => {
@@ -87,6 +87,8 @@ onMounted(() => {
   // Cascade: 0ms, 800ms, 1600ms
   videoRefs.value.forEach((_, i) => playVideo(i, i * 800));
 
+  const container = snapContainerRef.value;
+
   observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -96,10 +98,20 @@ onMounted(() => {
           // Ensure video plays when scrolled into view
           const vid = videoRefs.value[idx];
           if (vid && vid.paused) vid.play().catch(() => {});
+
+          // Release scroll-snap when past 50% of the last video section
+          if (container && idx === LAST_VIDEO_INDEX && entry.intersectionRatio < 0.5) {
+            container.style.scrollSnapType = 'none';
+          }
+        }
+
+        // Re-enable snap when scrolling back up into earlier sections
+        if (container && idx < LAST_VIDEO_INDEX && entry.isIntersecting) {
+          container.style.scrollSnapType = 'y mandatory';
         }
       });
     },
-    { threshold: 0.5 }
+    { threshold: [0, 0.5] }
   );
 
   sectionsRef.value.forEach((el) => {
@@ -109,7 +121,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (observer) observer.disconnect();
-  document.documentElement.style.scrollSnapType = '';
 });
 
 // ── Helpers ─────────────────────────────────────────
@@ -133,11 +144,12 @@ function isActive(index) {
 <template>
   <div class="home-wrapper">
 
-    <!-- ── Scroll-through video sections ──────────────── -->
-    <section
-      v-for="(sec, i) in videoSections"
-      :key="sec.id"
-      :ref="(el) => setSectionRefs(el, i)"
+      <!-- ── Snap container for video sections ──────────── -->
+      <div class="video-snap-container" ref="snapContainerRef">
+        <section
+          v-for="(sec, i) in videoSections"
+          :key="sec.id"
+          :ref="(el) => setSectionRefs(el, i)"
       :data-section="i"
       class="video-section"
       :class="{ 'section-active': isActive(i) }"
@@ -168,8 +180,9 @@ function isActive(index) {
         <span class="scroll-chevron">⌄</span>
       </div>
     </section>
+          </div>
 
-    <!-- ── Content below the video sections ───────────── -->
+        <!-- ── Content below the video sections ───────────── -->
         <div class="content-below">
 
           <!-- Projects callout -->
@@ -247,6 +260,14 @@ function isActive(index) {
 /* ── Reset ────────────────────────────────────────── */
 .home-wrapper {
   background: #1a2a1a;
+}
+
+/* ── Video snap container ──────────────────────────── */
+.video-snap-container {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: 100vh;
+  height: 100svh;
 }
 
 /* ── Full-viewport video sections ─────────────────── */
