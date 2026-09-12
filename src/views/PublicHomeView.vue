@@ -1,9 +1,8 @@
 <script setup>
-import { ref, onMounted, onUnmounted, reactive } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import NewsletterSignup from '@/components/NewsletterSignup.vue';
 
 // ── Video pool ──────────────────────────────────────
-// Videos randomly assigned to each section on page load.
 const videoPool = [
   'https://storage.googleapis.com/steward-public/videos/homepage/leaf-herb-prep-dehydrate.mp4',
   'https://storage.googleapis.com/steward-public/videos/homepage/hole-water.mp4',
@@ -11,7 +10,7 @@ const videoPool = [
   'https://storage.googleapis.com/steward-public/videos/homepage/shovel-woodchips.mp4',
 ];
 
-function shuffle(arr: any[]) {
+function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -20,15 +19,18 @@ function shuffle(arr: any[]) {
   return a;
 }
 
+// Eager: shuffle once at module load so src is set BEFORE template renders
+const picks = shuffle(videoPool);
+
 // ── Video sections ──────────────────────────────────
-const videoSections = reactive([
+const videoSections = ref([
   {
     id: 'welcome',
     line: 'When we see the whole world as a garden',
     subline: null,
     overlay: 'rgba(20, 40, 20, 0.35)',
     dark: false,
-    src: null,
+    src: picks[0],
   },
   {
     id: 'steward',
@@ -36,7 +38,7 @@ const videoSections = reactive([
     subline: 'In a mission to restore biodiversity, Garden Steward helps communities organize around their land.',
     overlay: 'rgba(10, 20, 15, 0.5)',
     dark: true,
-    src: null,
+    src: picks[1],
   },
   {
     id: 'action',
@@ -44,17 +46,9 @@ const videoSections = reactive([
     subline: 'Open-source tools for volunteer events, watering schedules, and harvest coordination.',
     overlay: 'rgba(60, 40, 20, 0.4)',
     dark: false,
-    src: null,
+    src: picks[2],
   },
 ]);
-
-// Assign random videos on mount
-onMounted(() => {
-  const shuffled = shuffle(videoPool);
-  videoSections.forEach((sec, i) => {
-    sec.src = shuffled[i % shuffled.length] || null;
-  });
-});
 
 // Fallback gradient when no video source is set
 const fallbackGradients = [
@@ -267,7 +261,7 @@ function isActive(index) {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: clamp(2.25rem, 6vw, 4rem);
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 2.2;
   letter-spacing: -0.01em;
   margin: 0;
 }
