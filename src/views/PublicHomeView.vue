@@ -364,7 +364,7 @@ function isActive(index) {
 }
 
 :global(.dark) .content-below {
-  background: #2d3e26;
+  background: #121a12;
 }
 
 /* ── Projects callout band ─────────────────────────── */
@@ -541,7 +541,7 @@ function isActive(index) {
 }
 
 :global(.dark) .newsletter-section {
-  background: #263a22;
+  background: #1a2212;
 }
 
 .newsletter-inner {
