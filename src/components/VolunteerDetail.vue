@@ -174,9 +174,9 @@ const hasTemplate = computed(() => !!(props.welcomeEmailSubject || props.welcome
       class="tr-class"
       @click="toggleExpand"
     >
-      <td class="td-class text-[#f5f5f5]">{{ displayName }} <span v-if="isManager" class="manager-badge">Manager</span><span v-if="isAuthenticated" class="auth-badge">Authenticated</span></td>
-      <td class="td-class text-[#f5f5f5]">{{ prettyDay }}</td>
-      <td class="td-class text-[#f5f5f5]">{{ interestTags }}</td>
+      <td class="td-class">{{ displayName }} <span v-if="isManager" class="manager-badge">Manager</span><span v-if="isAuthenticated" class="auth-badge">Authenticated</span></td>
+      <td class="td-class">{{ prettyDay }}</td>
+      <td class="td-class">{{ interestTags }}</td>
 </tr>
 
     <div 
@@ -372,7 +372,7 @@ const hasTemplate = computed(() => !!(props.welcomeEmailSubject || props.welcome
 
 <style scoped>
   .td-class {
-    @apply px-4 py-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 first:rounded-t-lg last:rounded-b-lg sm:first:rounded-t-none sm:last:rounded-b-none sm:first:rounded-tl-lg sm:first:rounded-bl-lg sm:last:rounded-tr-lg sm:last:rounded-br-lg cursor-pointer border-b hover:bg-[rgba(26,26,26,0.8)] transition-colors
+    @apply px-4 py-3 bg-[#f3ece0] text-[#344a34] border-[#e2dccb] first:rounded-t-lg last:rounded-b-lg sm:first:rounded-t-none sm:last:rounded-b-none sm:first:rounded-tl-lg sm:first:rounded-bl-lg sm:last:rounded-tr-lg sm:last:rounded-br-lg cursor-pointer border-b hover:bg-[#ece1cc] transition-colors
   }
   .tr-class {
     @apply flex flex-col mb-4 sm:table-row
@@ -390,6 +390,16 @@ const hasTemplate = computed(() => !!(props.welcomeEmailSubject || props.welcome
 </style>
 
 <style>
+/* ── Volunteer table row — dark mode (light default lives in the scoped block above) ── */
+html.dark .td-class {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  color: #f5f5f5 !important;
+  border-color: rgba(61, 77, 54, 0.5) !important;
+}
+html.dark .td-class:hover {
+  background-color: rgba(26, 26, 26, 0.8) !important;
+}
+
 /* ── Welcome Email Modal — light mode ── */
 .we-modal-panel { background-color: #ffffff; color: #344a34; border: 1px solid #d4e0cc; }
 .we-modal-header { background-color: #376451; border-bottom: 1px solid #2d5240; }

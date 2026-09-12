@@ -170,7 +170,7 @@ const goBack = () => {
         <div class="task-detail-body">
           <!-- Badges -->
           <div class="task-detail-badges">
-            <span v-if="attrs.status" class="badge badge-status">{{ formatStatus(attrs.status) }}</span>
+            <span v-if="attrs.task_status" class="badge badge-status">{{ formatStatus(attrs.task_status) }}</span>
             <span v-if="attrs.type" class="badge badge-type">{{ attrs.type }}</span>
           </div>
 

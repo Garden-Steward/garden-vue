@@ -17,7 +17,10 @@ export const useWeekSchedulerStore = defineStore({
               .catch(error => this.weekscheduler = { error })
       },
       async update(id, data) {
-        return fetchWrapper.put(`${baseUrl}/${id}?populate=*`,{data: data})
+        // v5 core update keys on documentId; the UI passes a numeric id, so
+        // resolve the documentId from cached state (fall back to id).
+        const documentId = findCachedSched(this.weekscheduler, id)?.documentId ?? id;
+        return fetchWrapper.put(`${baseUrl}/${documentId}?populate=*`,{data: data})
             .then(res => {
                 // v5 returns a flat entry (fields + id directly on res.data).
                 const sched = res.data;
@@ -42,7 +45,9 @@ export const useWeekSchedulerStore = defineStore({
             .catch(this.handleError);
       },
       async delete(id) {
-        return fetchWrapper.delete(`${baseUrl}/${id}`)
+        // v5 core delete keys on documentId.
+        const documentId = findCachedSched(this.weekscheduler, id)?.documentId ?? id;
+        return fetchWrapper.delete(`${baseUrl}/${documentId}`)
             .then(res => {
                 // Find and remove the scheduler entry from state
                 for (const day in this.weekscheduler) {
@@ -61,6 +66,18 @@ export const useWeekSchedulerStore = defineStore({
     }
 
 });
+
+// Locate a cached scheduler entry by numeric id across all day buckets.
+const findCachedSched = (weekscheduler, id) => {
+    if (!weekscheduler || typeof weekscheduler !== 'object') return null;
+    for (const day in weekscheduler) {
+        const entries = weekscheduler[day];
+        if (!Array.isArray(entries)) continue;
+        const match = entries.find(ws => ws.id == id || ws.documentId == id);
+        if (match) return match;
+    }
+    return null;
+};
 
 const groupedSchedules = (scheduleArr) => {
     const grouped = {};

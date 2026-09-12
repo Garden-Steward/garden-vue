@@ -79,7 +79,7 @@ const activeTasks = computed(() => {
 
   return gardenTasks.value
     .filter(task => {
-      const status = task.status;
+      const status = task.task_status;
       return status && !['FINISHED', 'ABANDONED', 'SKIPPED'].includes(status.toUpperCase());
     })
     .sort((a, b) => {
@@ -300,8 +300,8 @@ const getTaskThumbnail = (task) => {
             <div class="task-content">
               <!-- Badges -->
               <div class="task-badges">
-                <span :class="getStatusBadgeClasses(task.status)" class="task-badge">
-                  {{ formatStatus(task.status) }}
+                <span :class="getStatusBadgeClasses(task.task_status)" class="task-badge">
+                  {{ formatStatus(task.task_status) }}
                 </span>
                 <span v-if="task.type" :class="getTypeBadgeClasses(task.type)" class="task-badge">
                   {{ task.type }}

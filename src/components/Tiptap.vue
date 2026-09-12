@@ -124,12 +124,13 @@ export default {
 </script>
 
 <style lang="scss">
+/* ── Light mode (default, homepage palette) ── */
 .tiptap {
-  border: 1px solid #3d4d36;
+  border: 1px solid #d6cfb8;
   border-radius: 4px;
   padding: 1rem;
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #f5f5f5;
+  background-color: #ffffff;
+  color: #344a34;
   min-height: 200px;
 
   &:focus-within {
@@ -137,49 +138,29 @@ export default {
     box-shadow: 0 0 0 2px rgba(138, 163, 124, 0.2);
   }
 
-  p {
-    color: #f5f5f5;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    color: #f5f5f5;
-  }
-
-  strong {
-    color: #f5f5f5;
-  }
-
-  em {
-    color: #f5f5f5;
+  p, h1, h2, h3, h4, h5, h6, strong, em, ul, ol, li {
+    color: #344a34;
   }
 
   code {
-    background-color: rgba(26, 26, 26, 0.8);
-    color: #f5f5f5;
+    background-color: rgba(138, 163, 124, 0.14);
+    color: #344a34;
     padding: 2px 4px;
     border-radius: 3px;
   }
 
   pre {
-    background-color: rgba(26, 26, 26, 0.8);
-    color: #f5f5f5;
+    background-color: rgba(138, 163, 124, 0.14);
+    color: #344a34;
     padding: 1rem;
     border-radius: 4px;
   }
 
   blockquote {
     border-left: 3px solid #8aa37c;
-    color: #d0d0d0;
+    color: #6b7280;
     padding-left: 1rem;
     margin: 1rem 0;
-  }
-
-  ul, ol {
-    color: #f5f5f5;
-  }
-
-  li {
-    color: #f5f5f5;
   }
 
   /* List styles */
@@ -232,58 +213,39 @@ export default {
 
   &.ProseMirror {
     outline: none;
-    color: #f5f5f5;
-    background-color: rgba(26, 26, 26, 0.6);
+    color: #344a34;
+    background-color: #ffffff;
   }
 }
 
-/* Override prose styles for dark mode */
-:deep(.prose) {
-  color: #f5f5f5;
-  
-  p {
-    color: #f5f5f5;
+/* Scoped to .tiptap.prose (the editor's own root) so this never leaks
+   into the unrelated read-only "prose" preview in Project.vue's view modal. */
+.tiptap.prose {
+  color: #344a34;
+
+  p, h1, h2, h3, h4, h5, h6, strong, em, ul, ol, li {
+    color: #344a34;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
-    color: #f5f5f5;
-  }
-  
-  strong {
-    color: #f5f5f5;
-  }
-  
-  em {
-    color: #f5f5f5;
-  }
-  
+
   code {
-    background-color: rgba(26, 26, 26, 0.8);
-    color: #f5f5f5;
+    background-color: rgba(138, 163, 124, 0.14);
+    color: #344a34;
   }
-  
+
   pre {
-    background-color: rgba(26, 26, 26, 0.8);
-    color: #f5f5f5;
+    background-color: rgba(138, 163, 124, 0.14);
+    color: #344a34;
   }
-  
+
   blockquote {
     border-left-color: #8aa37c;
-    color: #d0d0d0;
-  }
-  
-  ul, ol {
-    color: #f5f5f5;
-  }
-  
-  li {
-    color: #f5f5f5;
+    color: #6b7280;
   }
 }
 
 .dark-mode-editor {
-  color: #f5f5f5;
-  
+  color: #344a34;
+
   * {
     color: inherit;
   }
@@ -292,8 +254,8 @@ export default {
 .button-group {
   display: flex;
   flex-wrap: wrap;
-  background-color: rgba(26, 26, 26, 0.8);
-  border: 1px solid #3d4d36;
+  background-color: #edf3e8;
+  border: 1px solid #d4e0cc;
   border-bottom: none;
   border-radius: 4px 4px 0 0;
   padding: 5px;
@@ -301,12 +263,101 @@ export default {
   button {
     background-color: transparent;
     border: none;
-    color: #d0d0d0;
+    color: #6b7280;
     cursor: pointer;
     font-size: 14px;
     margin: 2px;
     padding: 5px 10px;
     border-radius: 3px;
+
+    &:hover {
+      background-color: rgba(138, 163, 124, 0.2);
+      color: #344a34;
+    }
+
+    &.is-active {
+      background-color: rgba(138, 163, 124, 0.35);
+      color: #1f3d22;
+    }
+
+    &:disabled {
+      color: #b5bdb0;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.tiptap {
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  background-color: #ffffff !important;
+}
+
+.editor-content,
+.ProseMirror {
+  background-color: #ffffff !important;
+}
+
+.container {
+  background-color: transparent;
+}
+
+.container .tiptap {
+  background-color: #ffffff !important;
+}
+
+/* ── Dark mode overrides ── */
+html.dark .tiptap {
+  border-color: #3d4d36;
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
+
+  p, h1, h2, h3, h4, h5, h6, strong, em, ul, ol, li {
+    color: #f5f5f5;
+  }
+
+  code, pre {
+    background-color: rgba(26, 26, 26, 0.8);
+    color: #f5f5f5;
+  }
+
+  blockquote {
+    color: #d0d0d0;
+  }
+
+  &.ProseMirror {
+    color: #f5f5f5;
+    background-color: rgba(26, 26, 26, 0.6);
+  }
+}
+
+html.dark .tiptap.prose {
+  color: #f5f5f5;
+
+  p, h1, h2, h3, h4, h5, h6, strong, em, ul, ol, li {
+    color: #f5f5f5;
+  }
+
+  code, pre {
+    background-color: rgba(26, 26, 26, 0.8);
+    color: #f5f5f5;
+  }
+
+  blockquote {
+    color: #d0d0d0;
+  }
+}
+
+html.dark .dark-mode-editor {
+  color: #f5f5f5;
+}
+
+html.dark .button-group {
+  background-color: rgba(26, 26, 26, 0.8);
+  border-color: #3d4d36;
+
+  button {
+    color: #d0d0d0;
 
     &:hover {
       background-color: rgba(138, 163, 124, 0.2);
@@ -320,29 +371,20 @@ export default {
 
     &:disabled {
       color: #666;
-      cursor: not-allowed;
     }
   }
 }
 
-.tiptap {
-  border-top: none;
-  border-radius: 0 0 4px 4px;
+html.dark .tiptap {
   background-color: rgba(26, 26, 26, 0.6) !important;
 }
 
-/* Ensure editor content wrapper has dark background */
-:deep(.editor-content),
-:deep(.ProseMirror) {
+html.dark .editor-content,
+html.dark .ProseMirror {
   background-color: rgba(26, 26, 26, 0.6) !important;
 }
 
-/* Ensure the container div also has dark background */
-.container {
-  background-color: transparent;
-}
-
-.container .tiptap {
+html.dark .container .tiptap {
   background-color: rgba(26, 26, 26, 0.6) !important;
 }
 </style>

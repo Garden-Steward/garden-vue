@@ -304,6 +304,24 @@ export const useProjectsStore = defineStore({
                 .then(response => response?.data ?? response)
                 .catch(this.handleError);
         },
+        // Move a project through the review workflow (APPROVED / REJECTED / ...).
+        // Managers of the project's garden only; patches the cached copy in place.
+        async review(id, review_status) {
+            return fetchWrapper.put(`${baseUrl}/${id}/review`, { data: { review_status } })
+                .then(response => {
+                    const updated = response?.data ?? response;
+                    const next = updated?.review_status ?? review_status;
+                    for (const list of [this.projects, this.communityProjects, this.userProjects]) {
+                        if (Array.isArray(list)) {
+                            const found = list.find(p => p && p.id === id);
+                            if (found) found.review_status = next;
+                        }
+                    }
+                    if (this.project?.id === id) this.project.review_status = next;
+                    return updated;
+                })
+                .catch(this.handleError);
+        },
         async uploadImage(formData) {
             return fetchWrapper.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData)
                 .then(res => {

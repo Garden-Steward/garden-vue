@@ -652,13 +652,13 @@ const onRemoveInterest = async (interestId) => {
                                                       <div class="mb-6 p-4 rounded-lg border border-[#3d4d36]/40 bg-[rgba(26,26,26,0.35)]">
                                                         <!-- Collapsed: single line -->
                                                         <div v-if="!expandedManagers" class="flex items-center gap-2 flex-wrap">
-                                                          <span class="text-sm text-[#c8c8c8]">Managers ({{ (garden.managers || []).length }}):</span>
+                                                          <span class="text-sm gm-text-muted">Managers ({{ (garden.managers || []).length }}):</span>
                                                           <span v-if="garden.managers?.length"
                                                             v-for="manager in garden.managers"
                                                             :key="manager.id || manager"
                                                             class="inline-flex items-center rounded-full bg-[#8aa37c]/40 text-[#f5f5f5] px-3 py-1 text-sm"
                                                           >{{ manager.firstName || getVolunteerName(manager.id || manager) }}</span>
-                                                          <span v-else class="text-[#a0a0a0] text-sm">None</span>
+                                                          <span v-else class="gm-text-muted text-sm">None</span>
                                                           <button
                                                             v-if="editor"
                                                             type="button"
@@ -670,14 +670,14 @@ const onRemoveInterest = async (interestId) => {
                                                         <!-- Expanded: full edit / add -->
                                                         <div v-else>
                                                           <div class="flex items-center gap-3 mb-3">
-                                                            <span class="text-sm text-[#c8c8c8]">Managers ({{ (garden.managers || []).length }}):</span>
+                                                            <span class="text-sm gm-text-muted">Managers ({{ (garden.managers || []).length }}):</span>
                                                             <button
                                                               type="button"
                                                               class="text-sm text-blue-400 hover:text-blue-300 underline"
                                                               @click="expandedManagers = false"
                                                             >collapse</button>
                                                           </div>
-                                                          <p class="text-sm text-[#c8c8c8] mb-3">
+                                                          <p class="text-sm gm-text-muted mb-3">
                                                             Managers can edit garden settings, manage volunteers, and create events and campaigns.
                                                           </p>
 
@@ -700,7 +700,7 @@ const onRemoveInterest = async (interestId) => {
                                                               </button>
                                                             </span>
                                                           </div>
-                                                          <p v-else class="text-[#a0a0a0] text-sm mb-3">No managers assigned yet.</p>
+                                                          <p v-else class="gm-text-muted text-sm mb-3">No managers assigned yet.</p>
 
                                                           <!-- Add Manager (editor only) -->
                                                           <div v-if="editor" class="flex flex-col sm:flex-row sm:items-start gap-2">
@@ -739,13 +739,13 @@ const onRemoveInterest = async (interestId) => {
                                       <div class="mt-4 pt-4 border-t border-[#3d4d36]/30">
                                         <!-- Collapsed: single line -->
                                         <div v-if="!expandedInterests" class="flex items-center gap-2 flex-wrap">
-                                          <span class="text-sm text-[#c8c8c8]">Interests ({{ displayInterests.length }}):</span>
+                                          <span class="text-sm gm-text-muted">Interests ({{ displayInterests.length }}):</span>
                                           <span v-if="displayInterests.length"
                                             v-for="interest in displayInterests"
                                             :key="interest.id"
                                             class="inline-flex items-center rounded-full bg-[#3d4d36]/60 text-[#f5f5f5] px-3 py-1 text-sm"
                                           >{{ interest.tag }}</span>
-                                          <span v-else class="text-[#a0a0a0] text-sm">None</span>
+                                          <span v-else class="gm-text-muted text-sm">None</span>
                                           <button
                                             v-if="editor"
                                             type="button"
@@ -757,7 +757,7 @@ const onRemoveInterest = async (interestId) => {
                                         <!-- Expanded: full edit / add -->
                                         <div v-else>
                                           <div class="flex items-center gap-3 mb-3">
-                                            <span class="text-sm text-[#c8c8c8]">Interests ({{ displayInterests.length }}):</span>
+                                            <span class="text-sm gm-text-muted">Interests ({{ displayInterests.length }}):</span>
                                             <button
                                               type="button"
                                               class="text-sm text-blue-400 hover:text-blue-300 underline"
@@ -795,7 +795,7 @@ const onRemoveInterest = async (interestId) => {
                                               </button>
                                             </span>
                                           </div>
-                                          <p v-else class="text-[#a0a0a0] text-sm mb-3">No interests yet.</p>
+                                          <p v-else class="gm-text-muted text-sm mb-3">No interests yet.</p>
 
                                           <!-- Add dropdown (editor, expanded) -->
                                           <div v-if="editor" class="flex flex-col sm:flex-row sm:items-start gap-2">
@@ -814,7 +814,7 @@ const onRemoveInterest = async (interestId) => {
                                             </div>
                                           </div>
 
-                                          <p class="text-xs text-[#9a9a9a] mt-2">
+                                          <p class="text-xs gm-text-muted mt-2">
                                             These interests appear when volunteers choose what they care about and when you create volunteer days or SMS campaigns.
                                           </p>
                                         </div>
