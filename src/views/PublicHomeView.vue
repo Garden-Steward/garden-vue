@@ -225,6 +225,9 @@ function isActive(index) {
 /* ── Reset ────────────────────────────────────────── */
 .home-wrapper {
   background: #1a2a1a;
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: 100vh;
 }
 
 /* ── Full-viewport video sections ─────────────────── */
@@ -232,11 +235,13 @@ function isActive(index) {
   position: relative;
   width: 100%;
   height: 100vh;
-  height: 100svh; /* mobile-safe */
+  height: 100svh;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .section-video {
@@ -246,6 +251,11 @@ function isActive(index) {
   height: 100%;
   object-fit: cover;
   z-index: 0;
+  transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.section-active .section-video {
+  transform: scale(1.08);
 }
 
 .section-overlay {
@@ -334,6 +344,7 @@ function isActive(index) {
 /* ── Content below videos ─────────────────────────── */
 .content-below {
   background: #f7f1e3;
+  scroll-snap-align: none;
 }
 
 :global(.dark) .content-below {
