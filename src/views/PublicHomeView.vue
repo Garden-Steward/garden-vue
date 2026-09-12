@@ -11,10 +11,9 @@ const videoSections = [
     id: 'welcome',
     line: 'See the world as a garden.',
     subline: null,
-    overlay: 'rgba(20, 40, 20, 0.35)',
-    dark: false,
-    // TODO: upload video → replace this placeholder
-    src: null,
+        overlay: 'rgba(20, 40, 20, 0.35)',
+        dark: false,
+        src: '/videos/section-video.mp4',
   },
   {
     id: 'steward',
