@@ -160,6 +160,24 @@ export const useEventStore = defineStore({
             const qs = parts.length ? `?${parts.join('&')}` : '';
             return `${import.meta.env.VITE_API_URL}/api/gardens/${slug}/day-sheet.html${qs}`;
         },
+        // One garden's every-volunteer-day checklist. Distinct from
+        // saveStandingTasks below, which writes the legacy shared list.
+        async fetchGardenStandingTasks(slug) {
+            return fetchWrapper.get(`${import.meta.env.VITE_API_URL}/api/gardens/${slug}/standing-tasks`)
+                .then(res => res?.data ?? { standing: [], meta: {} })
+                .catch(this.handleError);
+        },
+        async saveGardenStandingTasks(slug, items) {
+            return fetchWrapper.put(`${import.meta.env.VITE_API_URL}/api/gardens/${slug}/standing-tasks`,
+                                    { data: { standing_tasks: items } })
+                .then(res => {
+                    const standing = Array.isArray(res?.data?.standing) ? res.data.standing : [];
+                    // Keep an open print wizard in step with the edit.
+                    this.daySheet = { ...this.daySheet, standing };
+                    return res.data;
+                })
+                .catch(this.handleError);
+        },
         async saveStandingTasks(items) {
             return fetchWrapper.put(`${import.meta.env.VITE_API_URL}/api/day-sheet-standing-tasks/list`,
                                     { data: { standing_tasks: items } })
