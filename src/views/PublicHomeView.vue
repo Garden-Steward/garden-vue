@@ -73,6 +73,9 @@ function setVideoRef(el, index) {
 let observer = null;
 
 onMounted(() => {
+  // Scroll-snap for video sections — scoped to homepage
+  document.documentElement.style.scrollSnapType = 'y mandatory';
+
   // Staggered video start: section 0 plays immediately, others cascade
   const playVideo = (index, delay) => {
     setTimeout(() => {
@@ -106,6 +109,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (observer) observer.disconnect();
+  document.documentElement.style.scrollSnapType = '';
 });
 
 // ── Helpers ─────────────────────────────────────────
@@ -243,7 +247,6 @@ function isActive(index) {
 /* ── Reset ────────────────────────────────────────── */
 .home-wrapper {
   background: #1a2a1a;
-  scroll-snap-type: y mandatory;
 }
 
 /* ── Full-viewport video sections ─────────────────── */
