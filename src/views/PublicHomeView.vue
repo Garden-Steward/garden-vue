@@ -244,9 +244,10 @@ function isActive(index) {
 .section-text {
   position: relative;
   z-index: 2;
-  text-align: center;
-  padding: 0 1.5rem;
+  text-align: right;
+  padding: 0 2rem;
   max-width: 720px;
+  margin-left: auto;
   opacity: 0.6;
   transform: translateY(20px);
   transition: opacity 0.8s ease, transform 0.8s ease;
@@ -258,10 +259,10 @@ function isActive(index) {
 }
 
 .section-line {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(2.25rem, 6vw, 4rem);
-  font-weight: 700;
-  line-height: 2.2;
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  font-weight: 400;
+  line-height: 1.3;
   letter-spacing: -0.01em;
   margin: 0;
 }
