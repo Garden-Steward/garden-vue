@@ -34,7 +34,7 @@ const videoSections = ref([
   },
   {
     id: 'steward',
-    line: 'We are its steward.',
+    line: 'We remember we are its steward.',
     subline: 'In a mission to restore biodiversity, Garden Steward helps communities organize around their land.',
     overlay: 'rgba(10, 20, 15, 0.5)',
     dark: true,
