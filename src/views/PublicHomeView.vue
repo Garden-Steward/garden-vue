@@ -1,24 +1,39 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, reactive } from 'vue';
 import NewsletterSignup from '@/components/NewsletterSignup.vue';
 
+// ── Video pool ──────────────────────────────────────
+// Videos randomly assigned to each section on page load.
+const videoPool = [
+  'https://storage.googleapis.com/steward-public/videos/homepage/leaf-herb-prep-dehydrate.mp4',
+  'https://storage.googleapis.com/steward-public/videos/homepage/hole-water.mp4',
+  'https://storage.googleapis.com/steward-public/videos/homepage/pick-elderberries.mp4',
+  'https://storage.googleapis.com/steward-public/videos/homepage/shovel-woodchips.mp4',
+];
+
+function shuffle(arr: any[]) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // ── Video sections ──────────────────────────────────
-// Each section is a full-viewport video background.
-// Replace `src` with your own uploaded video URLs when ready.
-// Supported formats: .mp4, .webm
-const videoSections = [
+const videoSections = reactive([
   {
     id: 'welcome',
     line: 'When we see the whole world as a garden',
     subline: null,
-        overlay: 'rgba(20, 40, 20, 0.35)',
-        dark: false,
-        src: '/videos/section-video.mp4',
+    overlay: 'rgba(20, 40, 20, 0.35)',
+    dark: false,
+    src: null,
   },
   {
     id: 'steward',
     line: 'We are its steward.',
-        subline: 'In a mission to restore biodiversity, Garden Steward helps communities organize around their land.',
+    subline: 'In a mission to restore biodiversity, Garden Steward helps communities organize around their land.',
     overlay: 'rgba(10, 20, 15, 0.5)',
     dark: true,
     src: null,
@@ -31,7 +46,15 @@ const videoSections = [
     dark: false,
     src: null,
   },
-];
+]);
+
+// Assign random videos on mount
+onMounted(() => {
+  const shuffled = shuffle(videoPool);
+  videoSections.forEach((sec, i) => {
+    sec.src = shuffled[i % shuffled.length] || null;
+  });
+});
 
 // Fallback gradient when no video source is set
 const fallbackGradients = [
