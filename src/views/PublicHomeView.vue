@@ -9,7 +9,7 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue';
 const videoSections = [
   {
     id: 'welcome',
-    line: 'The whole world is a garden.',
+    line: 'When we see the whole world as a garden',
     subline: null,
         overlay: 'rgba(20, 40, 20, 0.35)',
         dark: false,
