@@ -21,7 +21,7 @@ const fetchRecentTasks = async () => {
     isLoading.value = true;
     // Fetch garden tasks with volunteers populated
     const response = await fetchWrapper.get(
-      `${import.meta.env.VITE_API_URL}/api/garden-tasks?filters[garden][id][$eq]=${props.gardenId}&filters[status][$in][0]=FINISHED&filters[status][$in][1]=STARTED&filters[status][$in][2]=PENDING&populate=volunteers&populate=recurring_task&sort[0]=updatedAt:desc&pagination[limit]=20`
+      `${import.meta.env.VITE_API_URL}/api/garden-tasks?filters[garden][id][$eq]=${props.gardenId}&filters[task_status][$in][0]=FINISHED&filters[task_status][$in][1]=STARTED&filters[task_status][$in][2]=PENDING&populate=volunteers&populate=recurring_task&sort[0]=updatedAt:desc&pagination[limit]=20`
     );
     
     // Handle Strapi response format
@@ -43,11 +43,11 @@ const fetchRecentTasks = async () => {
 // Get the most relevant activity timestamp for a task
 const getActivityTimestamp = (task) => {
   // Prefer completed_at for finished tasks
-  if (task.status === 'FINISHED' && task.completed_at) {
+  if (task.task_status === 'FINISHED' && task.completed_at) {
     return task.completed_at;
   }
   // Use started_at for started tasks
-  if ((task.status === 'STARTED' || task.status === 'PENDING') && task.started_at) {
+  if ((task.task_status === 'STARTED' || task.task_status === 'PENDING') && task.started_at) {
     return task.started_at;
   }
   // Fall back to completed_at if available
@@ -87,7 +87,7 @@ const volunteerActivities = computed(() => {
           lastActive: activityTimestamp,
           taskTitle: task.title,
           taskType: task.type,
-          status: task.status,
+          status: task.task_status,
           recurringTaskTitle: task.recurring_task?.title
         });
       }

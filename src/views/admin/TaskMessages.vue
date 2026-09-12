@@ -171,8 +171,8 @@ const getMessageBorderColor = (type) => {
             <div class="flex items-center gap-2">
               <h2 class="text-xl font-semibold text-gray-900 dark:text-[#f5f5f5]">{{ group.taskTitle }}</h2>
               <span v-if="group.taskId !== 'no-task'" 
-                    :class="[getStatusColor(group.messages[0]?.garden_task?.status), 'px-2 py-1 rounded-full text-xs border border-black/10 dark:border-white/10']">
-                {{ group.messages[0]?.garden_task?.status || 'UNKNOWN' }}
+                    :class="[getStatusColor(group.messages[0]?.garden_task?.task_status), 'px-2 py-1 rounded-full text-xs border border-black/10 dark:border-white/10']">
+                {{ group.messages[0]?.garden_task?.task_status || 'UNKNOWN' }}
               </span>
               <span class="text-sm text-gray-500 dark:text-[#c5d4b8]">
                 ({{ group.messages.length }} message{{ group.messages.length === 1 ? '' : 's' }})

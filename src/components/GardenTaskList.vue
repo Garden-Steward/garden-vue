@@ -56,7 +56,7 @@ const regularTasks = computed(() => {
   if (!Array.isArray(gardenTasks.value)) return [];
   return gardenTasks.value.filter(task => {
     if (!task || !task.id) return false;
-    const status = task.status;
+    const status = task.task_status;
     return status !== 'ABANDONED' && status !== 'SKIPPED';
   });
 });
@@ -817,8 +817,8 @@ const openRecurringEditModal = (taskId) => {
             <div class="p-4 space-y-3">
             <!-- Badges -->
             <div class="flex flex-wrap gap-2">
-              <span :class="getStatusBadgeClasses(task.status)" class="px-3 py-1 rounded-full text-xs font-semibold">
-                {{ formatTaskStatus(task.status) }}
+              <span :class="getStatusBadgeClasses(task.task_status)" class="px-3 py-1 rounded-full text-xs font-semibold">
+                {{ formatTaskStatus(task.task_status) }}
               </span>
               <span v-if="task.type" :class="getTypeBadgeClasses(task.type)" class="px-3 py-1 rounded-full text-xs font-semibold">
                 {{ task.type }}

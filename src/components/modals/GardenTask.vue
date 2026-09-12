@@ -30,7 +30,7 @@ const props = defineProps({
   interests: Array,
   interest: String,
   task: Object,
-  status: String,
+  task_status: String,
   overview: String,
   type: String,
   primary_image: Object,
@@ -113,7 +113,7 @@ const form = ref({
   type: props.type || '',
   overview: props.overview || '',
   max_volunteers: props.max_volunteers || null,
-  status: (props.status && getTaskStatusOption(props.status).value) || DEFAULT_TASK_STATUS,
+  task_status: (props.task_status && getTaskStatusOption(props.task_status).value) || DEFAULT_TASK_STATUS,
   primary_image: props.primary_image || null,
   recurring_task: props.recurring_task || null,
   is_group_task: false,
@@ -273,9 +273,9 @@ watch(() => props.volunteers, (newVal) => {
   form.value.volunteers = newVal;
 });
 
-watch(() => props.status, (newVal) => {
+watch(() => props.task_status, (newVal) => {
   if (props.isRecurringTemplate) return;
-  form.value.status = (newVal && getTaskStatusOption(newVal).value) || DEFAULT_TASK_STATUS;
+  form.value.task_status = (newVal && getTaskStatusOption(newVal).value) || DEFAULT_TASK_STATUS;
 });
 
 watch(() => props.primary_image, (newVal) => {
@@ -342,7 +342,7 @@ const typeBadgeClasses = computed(() => {
 // Status pill color classes for the editor's status dropdown
 const statusPillClass = computed(
   () => {
-    const option = getTaskStatusOption(form.value.status);
+    const option = getTaskStatusOption(form.value.task_status);
     const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
     return isDarkMode && option.darkPillClass
       ? `${option.pillClass} ${option.darkPillClass}`
@@ -374,7 +374,7 @@ function resetFormAfterSuccessfulCreate() {
     type: '',
     overview: '',
     max_volunteers: null,
-    status: DEFAULT_TASK_STATUS,
+    task_status: DEFAULT_TASK_STATUS,
     primary_image: null,
     recurring_task: null,
     is_group_task: false,
@@ -450,7 +450,7 @@ const submit = async () => {
         }
       }
     } else {
-      form.value.status = 'INITIALIZED';
+      form.value.task_status = 'INITIALIZED';
       // is_group_task is a UI-only toggle (shows/hides group settings), not a schema field.
       const taskPayload = { ...form.value };
       delete taskPayload.is_group_task;
@@ -543,12 +543,12 @@ defineExpose({ openModal });
           <div class="flex justify-between items-center">
             <span 
               :class="{
-                'bg-purple-100 text-purple-800': form.status === 'INITIALIZED',
-                'bg-gray-100 text-gray-800': form.status !== 'INITIALIZED'
+                'bg-purple-100 text-purple-800': form.task_status === 'INITIALIZED',
+                'bg-gray-100 text-gray-800': form.task_status !== 'INITIALIZED'
               }"
               class="px-3 py-1 rounded-full text-sm font-medium"
             >
-              {{ form.status === 'INITIALIZED' ? 'Ready' : form.status }}
+              {{ form.task_status === 'INITIALIZED' ? 'Ready' : form.task_status }}
             </span>
             <span 
               class="px-3 py-1 rounded-full text-sm font-medium"
@@ -964,7 +964,7 @@ defineExpose({ openModal });
                 Status:
               </label>
               <div class="gt-status-pill" :class="statusPillClass">
-                <select v-model="form.status" class="gt-status-select">
+                <select v-model="form.task_status" class="gt-status-select">
                   <option
                     v-for="opt in taskStatusOptions"
                     :key="opt.value"
@@ -1090,7 +1090,7 @@ defineExpose({ openModal });
               <div class="flex items-center justify-between w-full">
                 <div class="flex-1 min-w-0">
                   <button
-                    v-if="props.id && props.status === 'INITIALIZED'"
+                    v-if="props.id && props.task_status === 'INITIALIZED'"
                     type="button"
                     class="text-red-400 hover:text-red-300 underline text-sm focus:outline-none"
                     @click="handleDelete"

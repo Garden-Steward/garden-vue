@@ -298,7 +298,7 @@ const rsvp = async (event) => {
                             {{ getRecurringTaskTypeDisplayLabel(task.type) }}
                         </span>
                     </div>
-                    <span class="task-card__status">{{ getTaskStatusOption(task.status).label }}</span>
+                    <span class="task-card__status">{{ getTaskStatusOption(task.task_status).label }}</span>
                     <span v-if="taskGarden(task).title" class="task-card__garden">{{ taskGarden(task).title }}</span>
                 </a>
             </div>
