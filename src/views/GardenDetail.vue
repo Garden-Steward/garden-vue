@@ -314,7 +314,16 @@ const toggleEventSort = (field) => {
 // All events (past + upcoming) for single table, sorted
 const allEventsSorted = computed(() => {
   if (!volunteerDays.value?.days || !Array.isArray(volunteerDays.value.days)) return [];
-  const list = volunteerDays.value.days.map(normalizeEvent).filter(day => day.startDatetime);
+  // Deduplicate by id (API sometimes returns the same event twice)
+  const seen = new Set();
+  const list = volunteerDays.value.days
+    .map(normalizeEvent)
+    .filter(day => day.startDatetime && day.id)
+    .filter(day => {
+      if (seen.has(day.id)) return false;
+      seen.add(day.id);
+      return true;
+    });
   const field = eventSortField.value;
   const order = eventSortOrder.value === 'asc' ? 1 : -1;
   const now = Date.now();
