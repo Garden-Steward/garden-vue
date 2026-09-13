@@ -61,7 +61,7 @@ export const useGardenTaskStore = defineStore({
                 });
         },
         async getGardenTasks(gardenId) {
-            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=instruction&filters[garden][id][$eq]=${gardenId}&filters[task_status][$nei]=finished`)
+            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=instruction&filters[garden][id][$eq]=${gardenId}&filters[status][$nei]=finished`)
                 .then(response => {
                     const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeGardenTask);
                     this.gardenTasks = tasks;
@@ -221,7 +221,7 @@ export const useGardenTaskStore = defineStore({
                 .catch(this.handleError);
         },
         async getTasksByGardenSlug(slug) {
-            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=garden&populate[4]=instruction&filters[garden][slug][$eq]=${slug}&filters[task_status][$nei]=finished`)
+            return fetchWrapper.get(`${baseUrl}?populate[0]=volunteers&populate[1]=recurring_task&populate[2]=primary_image&populate[3]=garden&populate[4]=instruction&filters[garden][slug][$eq]=${slug}&filters[status][$nei]=finished`)
                 .then(response => {
                     const tasks = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeGardenTask);
                     this.gardenTasks = tasks;
