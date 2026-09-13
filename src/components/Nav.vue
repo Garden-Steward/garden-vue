@@ -329,6 +329,9 @@ const handleEscape = (e) => {
  */
 .gs-navbar.navbar.bg-custom-light {
     color: #376451;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 html.dark .gs-navbar.navbar.bg-custom-light {
     background-color: #f7f1e3 !important;
