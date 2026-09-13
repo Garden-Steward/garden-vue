@@ -332,6 +332,8 @@ const handleEscape = (e) => {
     position: sticky;
     top: 0;
     z-index: 100;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
 }
 html.dark .gs-navbar.navbar.bg-custom-light {
     background-color: #f7f1e3 !important;
@@ -439,6 +441,8 @@ html.dark .gs-navbar.navbar.bg-custom-light {
 .mobile-menu .nav-item.nav-link {
     color: #fff !important;
 }
+
+/* Compact profile in navbar */
 .profile-container {
     position: absolute;
     right: 8px;
@@ -447,6 +451,15 @@ html.dark .gs-navbar.navbar.bg-custom-light {
     display: flex;
     align-items: center;
     z-index: 1500;
+}
+
+.profile-container :deep(.h-10) {
+    height: 2rem !important;
+    width: 2rem !important;
+}
+
+.profile-container :deep(.text-white) {
+    font-size: 0.7rem;
 }
 .nav-right-section {
     position: absolute;
