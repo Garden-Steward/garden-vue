@@ -1,0 +1,5 @@
+{
+  "projectId": "fbce1f4a-46cd-4f6f-a8f6-86c0153a2e36",
+  "scope": "brand-kit",
+  "notes": "garden-vue is the app repo, not a design-system component package (no library build, no Storybook). Per user request, this sync uploads only Tailwind design tokens (colors/fonts) and brand images from public/, not a bundled component library."
+}
