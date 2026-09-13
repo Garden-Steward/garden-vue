@@ -11,20 +11,53 @@ a {
 .disabled:after {
     width: 100%;
     height: 100%;
-    position: absolute; 
+    position: absolute;
 }
 body {
     background-color: #8aa37c;
 }
 
-/* Dark canvas: match panel green (#2d3e26) — avoid clashing with a second full-page green (#1f2d1a). */
+/* Dark canvas: match panel green (#2d3e26) */
 html.dark body {
     background-color: #2d3e26;
 }
+
+/* ── VueDatePicker dark mode (global) ────────────── */
+html.dark .dp__theme_light {
+  --dp-background-color: #1e2820;
+  --dp-text-color: #f0f0f0;
+  --dp-hover-color: rgba(138, 163, 124, 0.2);
+  --dp-hover-text-color: #fff;
+  --dp-hover-icon-color: #fff;
+  --dp-primary-color: #8aa37c;
+  --dp-primary-text-color: #fff;
+  --dp-secondary-color: #3d4d36;
+  --dp-border-color: #3d4d36;
+  --dp-menu-border-color: #3d4d36;
+  --dp-border-color-hover: #8aa37c;
+  --dp-border-color-focus: #8aa37c;
+  --dp-disabled-color: #555;
+  --dp-scroll-bar-background: #2d3e26;
+  --dp-scroll-bar-color: #555;
+  --dp-success-color: #8aa37c;
+  --dp-success-color-disabled: #3d6b4f;
+  --dp-icon-color: #a0c0a0;
+  --dp-danger-color: #e08080;
+  --dp-marker-color: #e08080;
+  --dp-tooltip-color: #2d3e26;
+  --dp-highlight-color: rgba(138, 163, 124, 0.15);
+  --dp-range-between-dates-background-color: rgba(138, 163, 124, 0.2);
+  --dp-range-between-dates-text-color: #fff;
+  --dp-range-start-end-background-color: #8aa37c;
+  --dp-range-start-end-text-color: #fff;
+  --dp-range-start-end-hover-background-color: #6c8a6a;
+  --dp-range-start-end-hover-text-color: #fff;
+}
+
 .w300 {
     width: 300px;
     margin: 15px;
-  }
+}
 ul li {
     margin-left: 30px;
     padding-left: 10px;
@@ -37,4 +70,3 @@ ol li {
     padding-left: 10px;
     list-style-type: decimal;
 }
-  
