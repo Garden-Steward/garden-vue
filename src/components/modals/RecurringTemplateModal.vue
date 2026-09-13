@@ -402,12 +402,12 @@ const showCard = computed(() => !!cardTitle.value);
 <template>
   <div
     v-if="showCard"
-    class="border-r-4 border rounded p-3 bg-[rgba(26,26,26,0.6)] border-[#3d4d36]/50 hover:bg-[rgba(26,26,26,0.8)] cursor-pointer transition-colors"
+    class="border-r-4 border rounded p-3 bg-gray-100 dark:bg-[rgba(26,26,26,0.6)] border-gray-300 dark:border-[#3d4d36]/50 hover:bg-gray-200 dark:hover:bg-[rgba(26,26,26,0.8)] cursor-pointer transition-colors"
     @click="openModal"
   >
     <div class="flex items-start justify-between">
       <div class="flex-1">
-        <span class="text-md font-semibold text-[#f5f5f5]">{{ cardTitle }}</span>
+        <span class="text-md font-semibold text-gray-900 dark:text-[#f5f5f5]">{{ cardTitle }}</span>
         <br />
         <span class="text-sm text-[#d0d0d0]">{{ recurrenceDescription }}</span>
       </div>
@@ -438,10 +438,17 @@ const showCard = computed(() => !!cardTitle.value);
       @click.self="closeUp"
     >
       <div
-        class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl bg-[#2d3e26] text-[#f5f5f5] grid grid-cols-1 gap-3 p-4"
+        class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl bg-white dark:bg-[#2d3e26] text-gray-900 dark:text-[#f5f5f5] grid grid-cols-1 gap-3 p-4"
         @click.stop
       >
-        <h2 class="text-xl font-bold mb-2">{{ topic }}</h2>
+        <div class="flex items-center justify-between mb-2">
+                  <h2 class="text-xl font-bold">{{ topic }}</h2>
+                  <div class="flex items-center gap-2">
+                    <Switch v-model="form.is_active" :disabled="!editor">
+                      <span class="text-sm font-medium mr-2">{{ form.is_active ? 'Active' : 'Inactive' }}</span>
+                    </Switch>
+                  </div>
+                </div>
 
         <div
           v-if="modalErrors.length > 0"
@@ -557,28 +564,23 @@ const showCard = computed(() => !!cardTitle.value);
               v-model="form.blurb"
               :disabled="!editor"
               rows="2"
-              class="w-full p-2 bg-[rgba(26,26,26,0.6)] border border-[#3d4d36] rounded text-[#f5f5f5] disabled:opacity-60 disabled:cursor-not-allowed"
+              class="w-full p-2 bg-gray-50 dark:bg-[rgba(26,26,26,0.6)] border border-gray-300 dark:border-[#3d4d36] rounded text-gray-900 dark:text-[#f5f5f5] disabled:opacity-60 disabled:cursor-not-allowed"
               placeholder="Default description for generated events"
             />
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm font-medium mb-1">Max Future Events</label>
-            <DropDown
-              v-model="form.max_future_instances"
-              :options="maxInstancesOptions"
-              size="md"
-              :disabled="!editor"
-            />
-          </div>
-          <div class="flex items-center pt-6">
-            <Switch v-model="form.is_active" :disabled="!editor">
-              <span class="text-sm font-medium mr-2">{{ form.is_active ? 'Active' : 'Inactive' }}</span>
-            </Switch>
-          </div>
-        </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-1">Max Future Events</label>
+                    <DropDown
+                      v-model="form.max_future_instances"
+                      :options="maxInstancesOptions"
+                      size="md"
+                      :disabled="!editor"
+                    />
+                  </div>
+                </div>
 
         <div v-if="isEditing && showPreview" class="border border-[#3d4d36] rounded-lg p-3 mt-2">
           <div class="flex justify-between items-center mb-2">
@@ -597,7 +599,7 @@ const showCard = computed(() => !!cardTitle.value);
             <div
               v-for="(item, idx) in templateStore.previewItems"
               :key="idx"
-              class="flex items-center gap-3 p-2 bg-[rgba(26,26,26,0.4)] rounded"
+              class="flex items-center gap-3 p-2 bg-gray-100 dark:bg-[rgba(26,26,26,0.4)] rounded"
             >
               <span class="text-custom-green font-mono text-sm">{{ idx + 1 }}.</span>
               <div class="flex-1">
