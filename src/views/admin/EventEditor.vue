@@ -274,14 +274,15 @@ const saveEvent = async (isAutoSave = false) => {
     // (e.g. "Invalid key id"). Build an explicit payload instead.
     const src = event.value || {};
     const eventData = {
-      title: src.title,
-      blurb: src.blurb,
-      endText: src.endText,
-      startDatetime: src.startDatetime,
-      content: src.content,
-      accessibility: src.accessibility,
-      smsLink: src.smsLink,
-    };
+          title: src.title,
+          blurb: src.blurb,
+          endText: src.endText,
+          startDatetime: src.startDatetime,
+          content: src.content,
+          accessibility: src.accessibility,
+          smsLink: src.smsLink,
+          partiful_link: src.partiful_link,
+        };
 
     // hero_image → { id } | null
     const heroImageId = src.hero_image?.id || src.hero_image?.data?.id;
@@ -336,9 +337,21 @@ const confirmCancelEvent = async () => {
     console.error('Error canceling event:', error);
     alertStore.error('Failed to cancel event. Please try again.');
   } finally {
-    isCanceling.value = false;
-  }
-};
+      isCanceling.value = false;
+    }
+  };
+
+  const uncancelEvent = async () => {
+    if (!event.value?.id) return;
+    try {
+      await eventStore.update(event.value.id, { canceled: false });
+      if (event.value) event.value.canceled = false;
+      alertStore.success('Event restored. SMS reminders and listings will resume.');
+    } catch (error) {
+      console.error('Error uncanceling event:', error);
+      alertStore.error('Failed to restore event.');
+    }
+  };
 
 // Auto-save function for image uploads
 const autoSaveEvent = async () => {
@@ -487,8 +500,18 @@ onBeforeUnmount(() => {
                 />
               </div>
             </div>
-            
-            <div class="flex items-center mb-2 relative">
+
+                        <div class="mb-3">
+                          <label for="partifulLink" class="block mb-2 text-[#f5f5f5]">Partiful Link:</label>
+                          <TextInput
+                            v-model="event.partiful_link"
+                            size="md"
+                            placeholder="https://partiful.com/e/..."
+                            class="w-full md:w-1/2"
+                          />
+                        </div>
+
+                        <div class="flex items-center mb-2 relative">
               <label for="blurb" class="mr-2 text-[#f5f5f5]">Blurb</label>
               <div class="group relative">
                 <span class="tooltip-icon cursor-pointer">ⓘ</span>
@@ -605,15 +628,21 @@ onBeforeUnmount(() => {
                   Public Event Page
                 </button>
 
-                <!-- Cancel Event -->
-                <p v-if="event.canceled" class="text-sm text-red-400 mt-4">
-                  This event has been canceled.
-                </p>
-                <a
-                  v-else
-                  href="#"
-                  class="block text-center text-sm text-red-400 hover:text-red-300 hover:underline mt-4"
-                  @click.prevent="openCancelConfirm"
+                <!-- Cancel / Uncancel Event -->
+                                <div v-if="event.canceled" class="mt-4 text-center">
+                                  <p class="text-sm text-red-400 mb-2">This event has been canceled.</p>
+                                  <button
+                                    class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white font-semibold rounded"
+                                    @click="uncancelEvent"
+                                  >
+                                    Restore Event (Uncancel)
+                                  </button>
+                                </div>
+                                <a
+                                  v-else
+                                  href="#"
+                                  class="block text-center text-sm text-red-400 hover:text-red-300 hover:underline mt-4"
+                                  @click.prevent="openCancelConfirm"
                 >
                   Cancel Event
                 </a>
