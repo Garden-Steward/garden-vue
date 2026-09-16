@@ -118,7 +118,7 @@ export const useProjectsStore = defineStore({
         },
         async getAllProjects() {
             this.communityProjects = { loading: true };
-            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=garden&populate[2]=created_by&populate[3]=interested&sort=createdAt:desc&pagination[pageSize]=100`)
+            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=garden&populate[2]=created_by&populate[3]=interested&populate[4]=related_events&sort=createdAt:desc&pagination[pageSize]=100`)
                 .then(response => {
                     const raw = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
                     const projects = raw.map(normalizeProject);

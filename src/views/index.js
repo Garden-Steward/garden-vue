@@ -21,6 +21,7 @@ export { default as PrivacyView } from './PrivacyView.vue';
 export { default as ProjectPublic } from './ProjectPublic.vue';
 export { default as ProjectManage } from './ProjectManage.vue';
 export { default as ProjectsView } from './ProjectsView.vue';
+export { default as ProjectsPublicView } from './ProjectsPublicView.vue';
 export { default as EventTemplatesView } from './EventTemplatesView.vue';
 export { default as GardenTasksPublic } from './GardenTasksPublic.vue';
 export { default as TaskDetailPublic } from './TaskDetailPublic.vue';

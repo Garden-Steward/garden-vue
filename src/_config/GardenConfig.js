@@ -355,3 +355,87 @@ export function getCampaignTypeLabel(type) {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
 }
+
+/**
+ * Project status vocabulary
+ *
+ * Where a project is in its life, as shown on the public projects list:
+ *   Planning — through stage 1, not yet building
+ *   Building — active install work
+ *   Tending  — built, in ongoing maintenance
+ *
+ * These are distinct from `review_status` (the moderation workflow).
+ * The backend does not carry a `status` field on the project record yet —
+ * `resolveProjectStatus()` below derives one in the meantime.
+ */
+export const projectStatusOptions = [
+  { value: 'Planning', label: 'Planning' },
+  { value: 'Building', label: 'Building' },
+  { value: 'Tending',  label: 'Tending'  }
+];
+
+/**
+ * Badges that sit on top of a project photo.
+ *
+ * Deliberately a fixed light palette with no `dark:` variants — the pill is
+ * over a photo, so it should not flip with the page theme. Kept separate from
+ * `projectCategoryBadges` (which is sized and themed for on-page use).
+ */
+export const projectBadgeOverlayBaseClasses =
+  'inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-bold leading-tight tracking-[0.02em] shadow-[0_1px_3px_rgba(0,0,0,0.25)]';
+
+// Explicit values rather than the `custom-peach` / `primary` theme tokens:
+// Bootstrap's own `.bg-primary` ships in this app and wins the cascade.
+const projectStatusOverlayColors = {
+  planning: 'bg-[#F9E2D1] text-[#7c3a12]',
+  building: 'bg-[#F5C430] text-[#3d2c00]',
+  tending:  'bg-[#8aa37c] text-[#14281a]'
+};
+
+const projectCategoryOverlayColors = {
+  infrastructure: 'bg-orange-200 text-orange-900',
+  art:            'bg-orange-400 text-white',
+  event:          'bg-amber-300 text-amber-950',
+  education:      'bg-teal-500 text-white',
+  planting:       'bg-green-400 text-green-950',
+  community:      'bg-sky-500 text-white',
+  default:        'bg-stone-200 text-stone-800'
+};
+
+/** Resolve a project status string → overlay pill classes. */
+export function getProjectStatusOverlayClasses(status) {
+  const key = String(status || '').trim().toLowerCase();
+  const colors = projectStatusOverlayColors[key] || projectCategoryOverlayColors.default;
+  return `${projectBadgeOverlayBaseClasses} ${colors}`;
+}
+
+/** Resolve a project category string → overlay pill classes. */
+export function getProjectCategoryOverlayClasses(category) {
+  const key = String(category || '').trim().toLowerCase();
+  const colors = projectCategoryOverlayColors[key] || projectCategoryOverlayColors.default;
+  return `${projectBadgeOverlayBaseClasses} ${colors}`;
+}
+
+/**
+ * Best available status for a project.
+ *
+ * Prefers a real `status` field once the backend has one. Until then it falls
+ * back to a rough read of the moderation state and the project's own dates, so
+ * the list is not entirely unbadged. Replace the fallback — not the caller —
+ * when `status` lands on the project content type.
+ */
+export function resolveProjectStatus(project) {
+  if (!project) return null;
+
+  const declared = String(project.status || '').trim().toLowerCase();
+  const match = projectStatusOptions.find(o => o.value.toLowerCase() === declared);
+  if (match) return match.value;
+
+  // Fallback while the field does not exist.
+  if (project.review_status && project.review_status !== 'APPROVED') return 'Planning';
+  const end = project.date_end ? new Date(project.date_end).getTime() : null;
+  if (end && end < Date.now()) return 'Tending';
+  const start = project.date_start ? new Date(project.date_start).getTime() : null;
+  if (start && start > Date.now()) return 'Planning';
+  return 'Building';
+}
