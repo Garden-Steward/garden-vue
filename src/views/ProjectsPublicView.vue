@@ -239,7 +239,7 @@ onUnmounted(() => {
   min-height: 100vh;
 }
 
-:global(.dark) .plist {
+html.dark .plist {
   background: #121a12;
 }
 
@@ -252,7 +252,7 @@ onUnmounted(() => {
   padding-top: 10px;
 }
 
-:global(.dark) .plist-bar {
+html.dark .plist-bar {
   background: #121a12;
   border-bottom-color: #3d4d36;
 }
@@ -310,7 +310,12 @@ onUnmounted(() => {
   color: #064e3b;
 }
 
-:global(.dark) .chip--ghost {
+html.dark .chip--place {
+  background: #8aa37c;
+  color: #14281a;
+}
+
+html.dark .chip--ghost {
   color: #8aa37c;
 }
 
@@ -329,15 +334,15 @@ onUnmounted(() => {
   border-color: #064e3b;
 }
 
-:global(.dark) .chip--status {
+html.dark .chip--status {
   color: #c8dbbf;
   border-color: #3d4d36;
 }
 
-:global(.dark) .chip--status.is-selected {
-  background: #064e3b;
-  border-color: #064e3b;
-  color: #fff;
+html.dark .chip--status.is-selected {
+  background: #8aa37c;
+  border-color: #8aa37c;
+  color: #14281a;
 }
 
 /* ── Cards ─────────────────────────────────────────── */
@@ -354,7 +359,7 @@ onUnmounted(() => {
   color: #4b5563;
 }
 
-:global(.dark) .plist-state {
+html.dark .plist-state {
   color: #cfd8c8;
 }
 
@@ -366,9 +371,14 @@ onUnmounted(() => {
   box-shadow: 0 1px 2px rgba(45, 62, 38, 0.06);
 }
 
-:global(.dark) .pcard {
+html.dark .pcard {
   background: #1f2d1a;
   border-color: #3d4d36;
+}
+
+/* The cream placeholder is the brightest block on the page until a photo loads. */
+html.dark .pcard-photo {
+  background-color: #2a3826;
 }
 
 .pcard-photo {
@@ -402,7 +412,7 @@ onUnmounted(() => {
   margin: 0 0 5px;
 }
 
-:global(.dark) .pcard-name {
+html.dark .pcard-name {
   color: #c8dbbf;
 }
 
@@ -413,7 +423,7 @@ onUnmounted(() => {
   margin: 0 0 8px;
 }
 
-:global(.dark) .pcard-line {
+html.dark .pcard-line {
   color: #cfd8c8;
 }
 
@@ -461,8 +471,82 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-:global(.dark) .pcard-count {
+html.dark .pcard-meta {
+  color: #8aa37c;
+}
+
+/*
+ * Emerald reads as a button on cream but disappears into a dark card, so the
+ * dark theme promotes sage to the primary action and inverts the "joined"
+ * state to an outline.
+ */
+html.dark .pcard-btn {
+  background: #8aa37c;
+  color: #14281a;
+  border-color: #8aa37c;
+}
+
+html.dark .pcard-btn.is-in {
+  background: transparent;
+  color: #c8dbbf;
+  border-color: #8aa37c;
+}
+
+html.dark .pcard-count {
   color: #cfd8c8;
+}
+
+/* ── Wider screens ─────────────────────────────────── */
+/*
+ * Mobile-first design: one column of cards stretches into letterboxes on a
+ * wide viewport, so past 700px the list becomes a grid with the photo scaling
+ * to its column and the action rows aligned along the bottom of each row.
+ */
+@media (min-width: 700px) {
+  .chip-row {
+    max-width: 1080px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .plist-cards {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 24px 8px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .plist-state {
+    grid-column: 1 / -1;
+  }
+
+  .pcard {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pcard-photo {
+    height: auto;
+    aspect-ratio: 16 / 10;
+  }
+
+  .pcard-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .pcard-actions {
+    margin-top: auto;
+  }
+}
+
+@media (min-width: 1000px) {
+  .plist-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 /* ── Start in your city ────────────────────────────── */
@@ -517,5 +601,13 @@ onUnmounted(() => {
   background: #9a330a;
   color: #fff;
   text-decoration: none;
+}
+
+@media (min-width: 700px) {
+  .pcity {
+    max-width: 1080px;
+    margin: 20px auto 56px;
+    padding: 30px 24px;
+  }
 }
 </style>
