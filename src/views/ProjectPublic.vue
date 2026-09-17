@@ -435,8 +435,8 @@ const getEventImage = (event) => {
 }
 
 .dark .garden-header-back-link {
-  color: #d0d0d0;
-}
+  color: #f5f5f5;
+  }
 
 .dark .garden-header-back-link:hover {
   color: #8aa37c;
@@ -510,7 +510,7 @@ const getEventImage = (event) => {
 }
 
 .dark .project-date-text {
-  color: #d0d0d0;
+  color: #c0c0c0;
 }
 
 .project-blurb {
@@ -523,8 +523,8 @@ const getEventImage = (event) => {
 }
 
 .dark .project-blurb {
-  color: #d0d0d0;
-}
+  color: #f5f5f5;
+  }
 
 /* Sections */
 .project-section {
@@ -735,8 +735,8 @@ const getEventImage = (event) => {
 }
 
 .dark .garden-link-text {
-  color: #d0d0d0;
-}
+  color: #f5f5f5;
+  }
 
 .garden-link {
   color: #8aa37c;
@@ -932,8 +932,8 @@ const getEventImage = (event) => {
 }
 
 .dark .loading-state {
-  color: #d0d0d0;
-}
+  color: #f5f5f5;
+  }
 
 /* Error State */
 .error-state {
