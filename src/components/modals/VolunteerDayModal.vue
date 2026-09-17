@@ -16,6 +16,7 @@ const props = defineProps({
   publishedAt: String,
   content: String,
   id: Number,
+  documentId: String,
   garden: Number,
   garden_tasks: Array,
   disabled: Boolean,
@@ -81,7 +82,7 @@ async function saveDay() {
   copy.value = false;
   form.value.garden = props.garden;
   if (form.value.id) {
-    await eventStore.update(props.id, form.value);
+    await eventStore.update(props.documentId ?? props.id, form.value);
     alertStore.success('Volunteer Day updated');
   } else {
     await eventStore.register(form.value);
@@ -93,7 +94,7 @@ async function saveDay() {
 const testDay = async() => {
   console.log('saveDay');
   // await volunteerDaysStore.testSms(form.value.id);
-  eventStore.testSms(form.value.id).then((smsTest)=>{
+  eventStore.testSms(props.documentId ?? form.value.id).then((smsTest)=>{
         if (smsTest.copy) {
           copy.value = smsTest.copy;
           numVolunteers.value = smsTest.numVolunteers;
@@ -104,7 +105,7 @@ const testDay = async() => {
 }
 const sendSms = async() => {
   console.log('sending sms')
-  eventStore.sendSms(form.value.id).then((smsResp)=>{
+  eventStore.sendSms(props.documentId ?? form.value.id).then((smsResp)=>{
       console.log('smsResp: ', smsResp);
       alertStore.success('SMS sent to ' + smsResp.length + ' people');
       isVisible.value = false;
