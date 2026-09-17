@@ -275,7 +275,7 @@ export const useEventStore = defineStore({
                 .then(res => {
                     this.volunteerDay = res.data;
                     // Update the event in state if it matches
-                    if (this.event.id === id) {
+                    if (this.event?.id === id || this.event?.documentId === documentId) {
                         this.event = res.data;
                     }
                 })
