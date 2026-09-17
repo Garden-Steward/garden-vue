@@ -492,7 +492,7 @@ function isActive(index) {
   scroll-snap-align: none;
 }
 
-:global(.dark) .content-below {
+html.dark .content-below {
   background: #121a12;
 }
 
@@ -503,7 +503,7 @@ function isActive(index) {
   text-align: center;
 }
 
-:global(.dark) .projects-band {
+html.dark .projects-band {
   background: #1a2a1a;
 }
 
@@ -546,7 +546,7 @@ function isActive(index) {
   padding: 26px 18px 34px;
 }
 
-:global(.dark) .featured {
+html.dark .featured {
   background: #121a12;
 }
 
@@ -566,7 +566,7 @@ function isActive(index) {
   margin: 0;
 }
 
-:global(.dark) .featured-title {
+html.dark .featured-title {
   color: #c8dbbf;
 }
 
@@ -577,7 +577,7 @@ function isActive(index) {
   white-space: nowrap;
 }
 
-:global(.dark) .featured-place {
+html.dark .featured-place {
   color: #8aa37c;
 }
 
@@ -588,7 +588,7 @@ function isActive(index) {
   color: #4b5563;
 }
 
-:global(.dark) .featured-sub {
+html.dark .featured-sub {
   color: #cfd8c8;
 }
 
@@ -618,7 +618,7 @@ function isActive(index) {
   text-decoration: none;
 }
 
-:global(.dark) .pcard {
+html.dark .pcard {
   background: #1f2d1a;
   border-color: #3d4d36;
 }
@@ -643,7 +643,7 @@ function isActive(index) {
   margin: 0 0 5px;
 }
 
-:global(.dark) .pcard-name {
+html.dark .pcard-name {
   color: #c8dbbf;
 }
 
@@ -654,8 +654,24 @@ function isActive(index) {
   margin: 0;
 }
 
-:global(.dark) .pcard-line {
+html.dark .pcard-line {
   color: #cfd8c8;
+}
+
+/* The cream placeholder is the brightest block on the page until a photo loads. */
+html.dark .pcard-photo {
+  background-color: #2a3826;
+}
+
+/* Emerald reads as a button on cream but disappears into the dark page. */
+html.dark .featured-cta {
+  background: #8aa37c;
+  color: #14281a;
+}
+
+html.dark .featured-cta:hover {
+  background: #9db892;
+  color: #14281a;
 }
 
 .featured-cta {
@@ -688,7 +704,7 @@ function isActive(index) {
   color: #4b5563;
 }
 
-:global(.dark) .featured-elsewhere {
+html.dark .featured-elsewhere {
   color: #cfd8c8;
 }
 
@@ -698,7 +714,7 @@ function isActive(index) {
   text-decoration: underline;
 }
 
-:global(.dark) .featured-elsewhere-link {
+html.dark .featured-elsewhere-link {
   color: #8aa37c;
 }
 
@@ -719,7 +735,7 @@ function isActive(index) {
   line-height: 1.25;
 }
 
-:global(.dark) .section-heading {
+html.dark .section-heading {
   color: #c8dbbf;
 }
 
@@ -731,7 +747,7 @@ function isActive(index) {
   text-align: left;
 }
 
-:global(.dark) .body-text {
+html.dark .body-text {
   color: #e8e8e8 !important;
   -webkit-text-fill-color: #e8e8e8 !important;
 }
@@ -790,13 +806,13 @@ function isActive(index) {
   text-decoration: none;
 }
 
-:global(.dark) .btn-home-secondary {
+html.dark .btn-home-secondary {
   color: #c8dbbf;
   -webkit-text-fill-color: #c8dbbf;
   border-color: #8aa37c;
 }
 
-:global(.dark) .btn-home-secondary:hover {
+html.dark .btn-home-secondary:hover {
   color: #fff;
   -webkit-text-fill-color: #fff;
 }
@@ -813,7 +829,7 @@ function isActive(index) {
   padding: 3rem 1.5rem;
 }
 
-:global(.dark) .newsletter-section {
+html.dark .newsletter-section {
   background: #1a2212;
 }
 
@@ -864,6 +880,64 @@ function isActive(index) {
   min-height: 44px;
   box-sizing: border-box;
   justify-content: center;
+}
+
+/* ── Wider screens ─────────────────────────────────── */
+/*
+ * The design is mobile-first. On a wider viewport a single column stretches
+ * each card into a letterbox, so the band keeps its full-bleed background but
+ * constrains its content and lays the three cards out in a row.
+ */
+@media (min-width: 700px) {
+  .featured {
+    padding: 40px 24px 48px;
+  }
+
+  .featured-head,
+  .featured-sub,
+  .featured-cards,
+  .featured-state,
+  .featured-elsewhere {
+    max-width: 1080px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .featured-title {
+    font-size: 26px;
+  }
+
+  .featured-sub {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .featured-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  /* Photo scales with the column instead of holding a fixed mobile height. */
+  .pcard {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pcard-photo {
+    height: auto;
+    aspect-ratio: 16 / 10;
+  }
+
+  .pcard-body {
+    flex: 1;
+  }
+
+  .featured-cta {
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 
 /* ── Reduced motion ────────────────────────────────── */
