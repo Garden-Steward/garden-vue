@@ -538,7 +538,7 @@ const getEventImage = (event) => {
 }
 
 .dark .project-section {
-  background-color: rgba(26, 26, 26, 0.6);
+  background-color: rgba(0, 0, 0, 0.5);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
@@ -566,7 +566,7 @@ const getEventImage = (event) => {
 }
 
 .dark .section-content {
-  color: #d0d0d0;
+  color: #ffffff;
 }
 
 /* Markdown content styling */
