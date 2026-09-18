@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import { useWeekSchedulerStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import UserProfileDisplay from "./UserProfileDisplay.vue";
+import { relationKey } from '@/helpers';
 
 const showAddUserDropdown = ref(false);
 const searchQuery = ref('');
@@ -36,14 +37,14 @@ const toggleAddUserDropdown = (day,id) => {
   focusSchedule = id;
   showAddUserDropdown.value = !showAddUserDropdown.value;
 }
-const deleteUser = (userId, schedId) => {
-  let addData = {"backup_volunteers": {"disconnect": [userId]}};
+const deleteUser = (volunteer, schedId) => {
+  let addData = {"backup_volunteers": {"disconnect": [relationKey(volunteer)]}};
 
   weekSchedulerStore.update(schedId, addData);
 
 }
 const addUserToSchedule = (volunteer, schedId) => {
-  let addData = {"backup_volunteers": {"connect": [volunteer.id]}};
+  let addData = {"backup_volunteers": {"connect": [relationKey(volunteer)]}};
 
   weekSchedulerStore.update(schedId, addData);
 
@@ -76,7 +77,7 @@ const filterUsers = () => {
                   <div class="flex flex-wrap md:w-3/4 md:pl-2">
                     <div v-for='volunteer of sched.backup_volunteers || []' :key='volunteer?.id' class="flex items-center mr-1">
                       <UserProfileDisplay v-if="volunteer?.id" :volunteer="volunteer" />
-                      <button v-if="editMode === day" @click="deleteUser(volunteer.id, sched.id)" class="ml-1 text-red-500">
+                      <button v-if="editMode === day" @click="deleteUser(volunteer, sched.id)" class="ml-1 text-red-500">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                           <path fill-rule="evenodd" d="M2 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4zm3 6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V10z" clip-rule="evenodd"/>
                         </svg>

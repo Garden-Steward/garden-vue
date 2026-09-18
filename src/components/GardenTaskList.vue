@@ -8,6 +8,7 @@ import {
   getRecurringTaskTypeBadgeClasses,
   getRecurringTaskTypeDisplayLabel
 } from '@/_config/GardenConfig';
+import { relationKey } from '@/helpers';
 
 const props = defineProps({
   garden: {
@@ -197,19 +198,19 @@ const addUserToSchedule = (volunteer) => {
   const sched = getSchedulerForTaskAndDay(selectedTask.value, selectedDay.value);
   if (!sched?.id) return;
   
-  const addData = { "backup_volunteers": { "connect": [volunteer.id] } };
+  const addData = { "backup_volunteers": { "connect": [relationKey(volunteer)] } };
   weekSchedulerStore.update(sched.id, addData);
   showAddUserDropdown.value = false;
   searchQuery.value = '';
 };
 
 // Remove volunteer from schedule
-const deleteUser = (userId) => {
+const deleteUser = (volunteer) => {
   if (!selectedTask.value || !selectedDay.value) return;
   const sched = getSchedulerForTaskAndDay(selectedTask.value, selectedDay.value);
   if (!sched?.id) return;
   
-  const addData = { "backup_volunteers": { "disconnect": [userId] } };
+  const addData = { "backup_volunteers": { "disconnect": [relationKey(volunteer)] } };
   weekSchedulerStore.update(sched.id, addData);
 };
 
@@ -659,7 +660,7 @@ const openRecurringEditModal = (taskId) => {
                     <span class="text-sm font-medium text-[#f5f5f5]">{{ volunteer.firstName }} {{ volunteer.lastName }}</span>
                     <button
                       v-if="editor"
-                      @click="deleteUser(volunteer.id)"
+                      @click="deleteUser(volunteer)"
                       class="ml-2 text-red-400 hover:text-red-300"
                       title="Remove volunteer"
                     >
