@@ -12,3 +12,15 @@ export function stripReadOnly(data) {
     for (const key of READ_ONLY_KEYS) delete out[key];
     return out;
 }
+
+/**
+ * Strapi v5 relation writes (`connect` / `disconnect`) key on documentId — the
+ * numeric id is not accepted, so passing it drops the write on the floor (the
+ * relation is left untouched, or the request 400s with `Invalid relations`).
+ * v5 entries carry both keys; fall back to `id` for anything that doesn't.
+ */
+export function relationKey(entity) {
+    if (entity === null || entity === undefined) return entity;
+    if (typeof entity !== 'object') return entity;
+    return entity.documentId ?? entity.id;
+}

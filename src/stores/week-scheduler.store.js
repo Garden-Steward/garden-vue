@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers';
+import { useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/schedulers`;
 
@@ -10,6 +11,14 @@ export const useWeekSchedulerStore = defineStore({
         weekscheduler: {}
     }),
     actions: {
+      // Every write below routes failures here; without it the rejection was
+      // swallowed and a failed save looked like a no-op in the UI.
+      handleError(err) {
+        const alertStore = useAlertStore();
+        const message = err?.message || err || 'Schedule update failed';
+        alertStore.error(message);
+        console.error('Week Scheduler Error: ', err);
+      },
       async find(garden) {
           this.weekscheduler = { loading: true };
           fetchWrapper.get(`${baseUrl}?populate=*&filters[garden]=${garden}`)
@@ -24,9 +33,13 @@ export const useWeekSchedulerStore = defineStore({
             .then(res => {
                 // v5 returns a flat entry (fields + id directly on res.data).
                 const sched = res.data;
-                const day = sched.day;
-                const idx = this.weekscheduler[day].findIndex(ws=> ws.id == sched.id);
-                this.weekscheduler[day][idx] = sched;
+                const day = sched?.day;
+                const entries = day ? this.weekscheduler[day] : null;
+                if (!Array.isArray(entries)) return sched;
+                const idx = entries.findIndex(ws => ws.id == sched.id);
+                if (idx === -1) entries.push(sched);
+                else entries[idx] = sched;
+                return sched;
             })
             .catch(this.handleError);
       },
