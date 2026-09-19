@@ -359,45 +359,67 @@ export function getCampaignTypeLabel(type) {
 /**
  * Project review (moderation) vocabulary
  *
- * A pitched project starts at CREATED and is moved along by the managers of
- * the garden it was pitched to. Only APPROVED (and COMPLETED, which an
- * approved project graduates into) is public: see `isProjectPubliclyVisible`.
+ * These are the exact strings the backend enum accepts — a save with anything
+ * else comes back as a 400 ValidationError naming this field. Older rows still
+ * carry a previous SCREAMING_CASE vocabulary (and some carry null), which is
+ * what `normalizeReviewStatus` exists to translate: the backend validates the
+ * whole merged entity on update, so a stale value fails a save that never went
+ * near this field. Writing a normalized value heals the row.
  */
 export const projectReviewOptions = [
-  { value: 'CREATED',   label: 'Pending review' },
-  { value: 'APPROVED',  label: 'Approved' },
-  { value: 'REJECTED',  label: 'Denied' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'ARCHIVED',  label: 'Archived' }
+  { value: 'Pending Review',    label: 'Pending review' },
+  { value: 'Approved',          label: 'Approved' },
+  { value: 'Changes Requested', label: 'Changes requested' }
 ];
 
-/** Human label for a review_status value ('APPROVED' → 'Approved'). */
-export function projectReviewLabel(status) {
-  const key = String(status || '').trim().toUpperCase();
-  return projectReviewOptions.find(o => o.value === key)?.label || key || '';
+export const projectReviewValues = projectReviewOptions.map(o => o.value);
+
+/**
+ * The retired vocabulary → the current one. COMPLETED was an approved project
+ * that finished, so it stays approved and its lifecycle moves to `status`.
+ * ARCHIVED has no counterpart: it becomes pending, which keeps it off the
+ * public site and puts the decision back in front of a manager.
+ */
+const legacyReviewStatuses = {
+  CREATED:   'Pending Review',
+  APPROVED:  'Approved',
+  REJECTED:  'Changes Requested',
+  COMPLETED: 'Approved',
+  ARCHIVED:  'Pending Review'
+};
+
+/** Any stored review_status → a value the backend enum accepts. */
+export function normalizeReviewStatus(status) {
+  const raw = String(status ?? '').trim();
+  if (!raw) return 'Pending Review';
+  const exact = projectReviewValues.find(v => v.toLowerCase() === raw.toLowerCase());
+  if (exact) return exact;
+  return legacyReviewStatuses[raw.toUpperCase()] || 'Pending Review';
 }
 
-/** Review states a signed-out visitor is allowed to see. */
-export const publicProjectReviewStatuses = ['APPROVED', 'COMPLETED'];
+/** Human label for a review_status value, legacy values included. */
+export function projectReviewLabel(status) {
+  const value = normalizeReviewStatus(status);
+  return projectReviewOptions.find(o => o.value === value)?.label || value;
+}
 
 /**
  * May a signed-out visitor see this project? Approval is the gate: a pitch
  * that has not been reviewed yet only exists inside the manage area.
  */
 export function isProjectPubliclyVisible(project) {
-  const status = String(project?.review_status || '').trim().toUpperCase();
-  return publicProjectReviewStatuses.includes(status);
+  return normalizeReviewStatus(project?.review_status) === 'Approved';
 }
 
 /**
  * May this viewer see the project in a listing? Signed-in stewards also see
- * pitches awaiting review (that is how a pitch gathers interest); denied and
- * archived projects stay out of both lists.
+ * pitches awaiting review (that is how a pitch gathers interest); one sent
+ * back for changes stays out of both lists.
  */
 export function isProjectVisibleTo(project, user) {
-  if (!user?.id) return isProjectPubliclyVisible(project);
-  const status = String(project?.review_status || '').trim().toUpperCase();
-  return !['REJECTED', 'ARCHIVED'].includes(status);
+  const status = normalizeReviewStatus(project?.review_status);
+  if (!user?.id) return status === 'Approved';
+  return status !== 'Changes Requested';
 }
 
 /**
@@ -408,9 +430,10 @@ export function isProjectVisibleTo(project, user) {
  *   Building — active install work
  *   Tending  — built, in ongoing maintenance
  *
- * These are distinct from `review_status` (the moderation workflow).
- * The backend does not carry a `status` field on the project record yet —
- * `resolveProjectStatus()` below derives one in the meantime.
+ * These are distinct from `review_status` (the moderation workflow). The
+ * backend stores `status` as a string and rejects null, so an editor must
+ * always send one; `resolveProjectStatus()` below supplies a sensible default
+ * for rows that never had it set.
  */
 export const projectStatusOptions = [
   { value: 'Planning', label: 'Planning' },
@@ -463,10 +486,10 @@ export function getProjectCategoryOverlayClasses(category) {
 /**
  * Best available status for a project.
  *
- * Prefers a real `status` field once the backend has one. Until then it falls
- * back to a rough read of the moderation state and the project's own dates, so
- * the list is not entirely unbadged. Replace the fallback — not the caller —
- * when `status` lands on the project content type.
+ * Prefers the stored `status`, falling back to a rough read of the moderation
+ * state and the project's own dates for rows that predate the field. The
+ * editors seed their status control from this, so saving a legacy row writes a
+ * real string over its null — which the backend requires.
  */
 export function resolveProjectStatus(project) {
   if (!project) return null;
@@ -475,8 +498,8 @@ export function resolveProjectStatus(project) {
   const match = projectStatusOptions.find(o => o.value.toLowerCase() === declared);
   if (match) return match.value;
 
-  // Fallback while the field does not exist.
-  if (project.review_status && project.review_status !== 'APPROVED') return 'Planning';
+  // Fallback for rows saved before `status` was filled in.
+  if (!isProjectPubliclyVisible(project)) return 'Planning';
   const end = project.date_end ? new Date(project.date_end).getTime() : null;
   if (end && end < Date.now()) return 'Tending';
   const start = project.date_start ? new Date(project.date_start).getTime() : null;

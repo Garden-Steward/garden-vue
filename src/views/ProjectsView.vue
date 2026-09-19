@@ -3,7 +3,11 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore } from '@/stores';
-import { getProjectCategoryBadgeClasses, projectReviewLabel } from '@/_config/GardenConfig';
+import {
+    getProjectCategoryBadgeClasses,
+    projectReviewLabel,
+    normalizeReviewStatus
+} from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
 
 const router = useRouter();
@@ -55,8 +59,11 @@ const openProject = (project, event) => {
     router.push(projectLink(project));
 };
 
-const reviewStatus = (project) => String(project.review_status || 'CREATED').toUpperCase();
-const showReviewBadge = (project) => reviewStatus(project) !== 'APPROVED';
+const reviewStatus = (project) => normalizeReviewStatus(project.review_status);
+const showReviewBadge = (project) => reviewStatus(project) !== 'Approved';
+// 'Pending Review' -> 'cproj-card__flag--pending-review'
+const reviewFlagClass = (project) =>
+    `cproj-card__flag--${reviewStatus(project).toLowerCase().replace(/\s+/g, '-')}`;
 
 const secondaryBadge = (project) => {
     if (interestedCount(project) >= 50) return 'Popular';
@@ -148,7 +155,7 @@ const toggleInterest = async (project) => {
               <span
                 v-if="showReviewBadge(p)"
                 class="cproj-card__flag cproj-card__flag--review"
-                :class="`cproj-card__flag--${reviewStatus(p).toLowerCase()}`"
+                :class="reviewFlagClass(p)"
               >{{ projectReviewLabel(reviewStatus(p)) }}</span>
             </div>
           </div>
@@ -378,10 +385,8 @@ const toggleInterest = async (project) => {
     -webkit-text-fill-color: currentColor;
 }
 
-.cproj-card__flag--created { background-color: #fbe6a2; color: #6b4e00; }
-.cproj-card__flag--rejected { background-color: #f6cfcf; color: #7a1f1f; }
-.cproj-card__flag--completed { background-color: #cfe0ea; color: #1f3a4d; }
-.cproj-card__flag--archived { background-color: #ddd8c8; color: #4a4a3f; }
+.cproj-card__flag--pending-review { background-color: #fbe6a2; color: #6b4e00; }
+.cproj-card__flag--changes-requested { background-color: #f6cfcf; color: #7a1f1f; }
 
 .cproj-card__body {
     display: flex;

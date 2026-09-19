@@ -7,7 +7,9 @@ import { useProjectsStore, useGardensStore, useAuthStore, useAlertStore } from '
 import {
   getProjectCategoryBadgeClasses,
   projectReviewOptions,
-  projectReviewLabel
+  projectReviewLabel,
+  normalizeReviewStatus,
+  resolveProjectStatus
 } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
 import ProjectForm from '@/components/form/ProjectForm.vue';
@@ -29,6 +31,7 @@ const form = ref({
   title: '',
   short_description: '',
   category: 'Community',
+  status: 'Planning',
   garden: '',
   featured_gallery: [],
   location: null
@@ -99,9 +102,9 @@ const canManage = computed(() =>
 );
 
 // ── Display helpers ──
-const reviewStatus = computed(() => project.value?.review_status || 'CREATED');
+const reviewStatus = computed(() => normalizeReviewStatus(project.value?.review_status));
 const reviewLabel = computed(() => projectReviewLabel(reviewStatus.value));
-const isApproved = computed(() => reviewStatus.value === 'APPROVED');
+const isApproved = computed(() => reviewStatus.value === 'Approved');
 
 const pitchedBy = computed(() => {
   const cb = project.value?.created_by;
@@ -153,6 +156,11 @@ const publicUrl = computed(() => {
   return `/gardens/${slug}/p/${project.value.slug}`;
 });
 
+// 'Pending Review' -> 'pd-status--pending-review'
+const reviewStatusClass = computed(() =>
+  `pd-status--${reviewStatus.value.toLowerCase().replace(/\s+/g, '-')}`
+);
+
 const isInterested = computed(() =>
   interested.value.some(u => (u.id || u) === user.value?.id)
 );
@@ -165,6 +173,9 @@ const buildForm = (p) => {
     title: attrs.title || '',
     short_description: attrs.short_description || '',
     category: attrs.category || 'Community',
+    // Seeded from the derived stage so saving a legacy row writes a real
+    // string over its null, which the backend requires.
+    status: attrs.status || resolveProjectStatus(attrs) || 'Planning',
     garden: gardenId || '',
     featured_gallery: Array.isArray(attrs.featured_gallery) ? [...attrs.featured_gallery] : [],
     // The schema stores flat latitude/longitude; the LocationPicker uses a
@@ -194,6 +205,7 @@ const save = async () => {
       title: form.value.title.trim(),
       short_description: form.value.short_description?.trim() || '',
       category: form.value.category,
+      status: form.value.status || 'Planning',
       garden: form.value.garden || null,
       featured_gallery: gallery,
       hero_image: gallery[0] || null,
@@ -221,7 +233,7 @@ const setReviewStatus = async (status) => {
   try {
     await projectsStore.review(project.value.id, status);
     alertStore.success(
-      status === 'APPROVED'
+      status === 'Approved'
         ? 'Project approved — it is now visible to the public.'
         : `Project marked ${projectReviewLabel(status).toLowerCase()}.`
     );
@@ -291,7 +303,7 @@ const promote = async (person) => {
             <span v-if="project.category" :class="getProjectCategoryBadgeClasses(project.category)">
               {{ project.category }}
             </span>
-            <span class="pd-status" :class="`pd-status--${reviewStatus.toLowerCase()}`">{{ reviewLabel }}</span>
+            <span class="pd-status" :class="reviewStatusClass">{{ reviewLabel }}</span>
           </div>
         </div>
 
@@ -391,7 +403,7 @@ const promote = async (person) => {
             <section v-else class="pd-card">
               <h2 class="pd-card__title">Review status</h2>
               <p class="pd-hint">
-                <span class="pd-status" :class="`pd-status--${reviewStatus.toLowerCase()}`">{{ reviewLabel }}</span>
+                <span class="pd-status" :class="reviewStatusClass">{{ reviewLabel }}</span>
               </p>
               <p class="pd-hint">
                 Managers of {{ gardenName || 'the garden this project is pitched to' }} approve projects
@@ -504,11 +516,9 @@ const promote = async (person) => {
   -webkit-text-fill-color: currentColor;
 }
 
-.pd-status--created { background-color: #fbe6a2; color: #6b4e00; }
+.pd-status--pending-review { background-color: #fbe6a2; color: #6b4e00; }
 .pd-status--approved { background-color: #cfeacd; color: #1f3d22; }
-.pd-status--rejected { background-color: #f6cfcf; color: #7a1f1f; }
-.pd-status--completed { background-color: #cfe0ea; color: #1f3a4d; }
-.pd-status--archived { background-color: #ddd8c8; color: #4a4a3f; }
+.pd-status--changes-requested { background-color: #f6cfcf; color: #7a1f1f; }
 
 /* ── Head ── */
 .pd-head {

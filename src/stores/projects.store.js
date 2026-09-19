@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchWrapper, stripReadOnly } from '@/helpers';
 import { useAlertStore, useAuthStore } from '@/stores';
+import { normalizeReviewStatus, resolveProjectStatus } from '@/_config/GardenConfig';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/projects`;
 
@@ -17,6 +18,25 @@ function normalizeProject(p) {
     if (!Array.isArray(p.managers)) p.managers = [];
     if (!Array.isArray(p.interested)) p.interested = [];
     return p;
+}
+
+
+/**
+ * The backend validates the whole merged entity on write, so a row still
+ * holding a retired review_status (or a null status) fails a save that never
+ * touched those fields. Send values the schema accepts and the row heals.
+ */
+function coerceWorkflowFields(data, current) {
+    if ('review_status' in data || current?.review_status !== undefined) {
+        data.review_status = normalizeReviewStatus(data.review_status ?? current?.review_status);
+    }
+    const status = data.status ?? current?.status;
+    const resolved = typeof status === 'string' && status.trim()
+        ? status.trim()
+        : resolveProjectStatus({ ...current, ...data });
+    if (resolved) data.status = resolved;
+    else delete data.status;
+    return data;
 }
 
 /** Reduce a relation field (array of ids or objects) to a clean array of numeric ids. */
@@ -50,6 +70,16 @@ export const useProjectsStore = defineStore({
         communityProjects: {}
     }),
     actions: {
+        /** The cached copy of a project, from whichever list holds it. */
+        findCached(id) {
+            for (const list of [this.projects, this.communityProjects, this.userProjects]) {
+                if (Array.isArray(list)) {
+                    const found = list.find(p => p && p.id === id);
+                    if (found) return found;
+                }
+            }
+            return this.project?.id === id ? this.project : null;
+        },
         handleError(err) {
             const alertStore = useAlertStore();
             // Extract error message from various possible error formats
@@ -150,6 +180,7 @@ export const useProjectsStore = defineStore({
         },
         async update(id, data) {
             data = stripReadOnly(data);
+            coerceWorkflowFields(data, this.findCached(id));
             // Handle hero_image
             if (data.hero_image?.id) {
                 data.hero_image = {
@@ -210,6 +241,7 @@ export const useProjectsStore = defineStore({
         },
         async register(data) {
             data = stripReadOnly(data);
+            coerceWorkflowFields(data, null);
             // Handle hero_image
             if (data.hero_image?.id) {
                 data.hero_image = {
@@ -346,9 +378,10 @@ export const useProjectsStore = defineStore({
                 .then(response => response?.data ?? response)
                 .catch(this.handleError);
         },
-        // Move a project through the review workflow (APPROVED / REJECTED / ...).
+        // Move a project through the review workflow (Approved / Changes Requested / ...).
         // Managers of the project's garden only; patches the cached copy in place.
         async review(id, review_status) {
+            review_status = normalizeReviewStatus(review_status);
             return fetchWrapper.put(`${baseUrl}/${id}/review`, { data: { review_status } })
                 .then(response => {
                     const updated = response?.data ?? response;
