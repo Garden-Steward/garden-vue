@@ -70,15 +70,16 @@ const submit = async () => {
   try {
     const gallery = form.value.featured_gallery;
     const payload = {
-      title: form.value.title.trim(),
-      short_description: form.value.short_description?.trim() || '',
-      category: form.value.category,
-      garden: form.value.garden || null,
-      created_by: user.value?.id ?? null,
-      featured_gallery: gallery,
-      hero_image: gallery[0] || null,
-      location: form.value.location || null
-    };
+          title: form.value.title.trim(),
+          short_description: form.value.short_description?.trim() || '',
+          category: form.value.category,
+          garden: form.value.garden || null,
+          created_by: user.value?.id ?? null,
+          featured_gallery: gallery,
+          hero_image: gallery[0] || null,
+          location: form.value.location || null,
+          submitter_email: submitterEmail.value || null
+        };
     const created = await projectsStore.register(payload);
     alertStore.success('Your project pitch was submitted!');
     emit('created', created);
