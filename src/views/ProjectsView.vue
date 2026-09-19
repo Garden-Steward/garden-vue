@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore } from '@/stores';
-import { getProjectCategoryBadgeClasses } from '@/_config/GardenConfig';
+import { getProjectCategoryBadgeClasses, projectReviewLabel } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
 
 const projectsStore = useProjectsStore();
@@ -41,6 +41,13 @@ const getImageUrl = (image) => {
     if (!url) return '';
     return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
 };
+
+// Cards link through to the project's own page (full description, the people
+// interested, and the review controls for managers).
+const projectLink = (project) => `/manage/project/${project.id}`;
+
+const reviewStatus = (project) => String(project.review_status || 'CREATED').toUpperCase();
+const showReviewBadge = (project) => reviewStatus(project) !== 'APPROVED';
 
 const secondaryBadge = (project) => {
     if (interestedCount(project) >= 50) return 'Popular';
@@ -115,6 +122,9 @@ const toggleInterest = async (project) => {
       <!-- Grid -->
       <div class="cproj-grid">
         <article v-for="p in projects" :key="p.id" class="cproj-card">
+          <!-- Stretched hit area: the whole card opens the project, except the
+               interest button, which sits above it. -->
+          <RouterLink :to="projectLink(p)" class="cproj-card__hit" :aria-label="p.title" />
           <div
             class="cproj-card__media"
             :class="{ 'cproj-card__media--empty': !getImageUrl(p.hero_image) }"
@@ -123,6 +133,11 @@ const toggleInterest = async (project) => {
             <div class="cproj-card__flags">
               <span v-if="p.category" :class="getProjectCategoryBadgeClasses(p.category)">{{ p.category }}</span>
               <span v-if="secondaryBadge(p)" class="cproj-card__flag">{{ secondaryBadge(p) }}</span>
+              <span
+                v-if="showReviewBadge(p)"
+                class="cproj-card__flag cproj-card__flag--review"
+                :class="`cproj-card__flag--${reviewStatus(p).toLowerCase()}`"
+              >{{ projectReviewLabel(reviewStatus(p)) }}</span>
             </div>
           </div>
           <div class="cproj-card__body">
@@ -281,6 +296,7 @@ const toggleInterest = async (project) => {
 }
 
 .cproj-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     background-color: #ffffff;
@@ -290,9 +306,32 @@ const toggleInterest = async (project) => {
     transition: all 0.2s ease;
 }
 
-.cproj-card:hover {
+/*
+ * Hovering anywhere on the card highlights it and reads as clickable — unless
+ * the pointer is over the interest button, which is its own action.
+ */
+.cproj-card:hover:not(:has(.cproj-card__btn:hover)) {
     border-color: #8aa37c;
     box-shadow: 0 6px 18px rgba(138, 163, 124, 0.22);
+    transform: translateY(-2px);
+}
+
+.cproj-card:hover:not(:has(.cproj-card__btn:hover)) .cproj-card__title {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+.cproj-card__hit {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+}
+
+.cproj-card__hit:focus-visible {
+    outline: 2px solid #86b153;
+    outline-offset: 2px;
 }
 
 .cproj-card__media {
@@ -324,6 +363,11 @@ const toggleInterest = async (project) => {
     color: #4a5a45;
     -webkit-text-fill-color: currentColor;
 }
+
+.cproj-card__flag--created { background-color: #fbe6a2; color: #6b4e00; }
+.cproj-card__flag--rejected { background-color: #f6cfcf; color: #7a1f1f; }
+.cproj-card__flag--completed { background-color: #cfe0ea; color: #1f3a4d; }
+.cproj-card__flag--archived { background-color: #ddd8c8; color: #4a4a3f; }
 
 .cproj-card__body {
     display: flex;
@@ -405,6 +449,8 @@ const toggleInterest = async (project) => {
 }
 
 .cproj-card__btn {
+    position: relative;
+    z-index: 2;
     margin-top: auto;
     width: 100%;
     background-color: #cfeacd;

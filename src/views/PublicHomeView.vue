@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
+import { isProjectPubliclyVisible } from '@/_config/GardenConfig';
 import { useProjectsStore } from '@/stores';
 import NewsletterSignup from '@/components/NewsletterSignup.vue';
 
@@ -60,7 +61,8 @@ projectsStore.getAllProjects();
 const featuredProjects = computed(() => {
   const list = Array.isArray(communityProjects.value) ? communityProjects.value : [];
   return list
-    .filter(p => !['REJECTED', 'ARCHIVED'].includes(p.review_status))
+    // The landing page is the public face of the site: approved work only.
+    .filter(isProjectPubliclyVisible)
     .slice(0, 3);
 });
 

@@ -357,6 +357,50 @@ export function getCampaignTypeLabel(type) {
 }
 
 /**
+ * Project review (moderation) vocabulary
+ *
+ * A pitched project starts at CREATED and is moved along by the managers of
+ * the garden it was pitched to. Only APPROVED (and COMPLETED, which an
+ * approved project graduates into) is public: see `isProjectPubliclyVisible`.
+ */
+export const projectReviewOptions = [
+  { value: 'CREATED',   label: 'Pending review' },
+  { value: 'APPROVED',  label: 'Approved' },
+  { value: 'REJECTED',  label: 'Denied' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'ARCHIVED',  label: 'Archived' }
+];
+
+/** Human label for a review_status value ('APPROVED' → 'Approved'). */
+export function projectReviewLabel(status) {
+  const key = String(status || '').trim().toUpperCase();
+  return projectReviewOptions.find(o => o.value === key)?.label || key || '';
+}
+
+/** Review states a signed-out visitor is allowed to see. */
+export const publicProjectReviewStatuses = ['APPROVED', 'COMPLETED'];
+
+/**
+ * May a signed-out visitor see this project? Approval is the gate: a pitch
+ * that has not been reviewed yet only exists inside the manage area.
+ */
+export function isProjectPubliclyVisible(project) {
+  const status = String(project?.review_status || '').trim().toUpperCase();
+  return publicProjectReviewStatuses.includes(status);
+}
+
+/**
+ * May this viewer see the project in a listing? Signed-in stewards also see
+ * pitches awaiting review (that is how a pitch gathers interest); denied and
+ * archived projects stay out of both lists.
+ */
+export function isProjectVisibleTo(project, user) {
+  if (!user?.id) return isProjectPubliclyVisible(project);
+  const status = String(project?.review_status || '').trim().toUpperCase();
+  return !['REJECTED', 'ARCHIVED'].includes(status);
+}
+
+/**
  * Project status vocabulary
  *
  * Where a project is in its life, as shown on the public projects list:

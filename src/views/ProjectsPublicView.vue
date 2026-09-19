@@ -6,6 +6,7 @@ import { useProjectsStore, useAuthStore } from '@/stores';
 import {
   projectStatusOptions,
   resolveProjectStatus,
+  isProjectVisibleTo,
   getProjectStatusOverlayClasses,
   getProjectCategoryOverlayClasses
 } from '@/_config/GardenConfig';
@@ -34,7 +35,9 @@ const relationIds = (rel) => {
 
 const listedProjects = computed(() => {
   const list = Array.isArray(communityProjects.value) ? communityProjects.value : [];
-  return list.filter(p => !['REJECTED', 'ARCHIVED'].includes(p.review_status));
+  // Signed-out visitors see approved projects only; signed-in stewards also
+  // see pitches still awaiting review, so a pitch can gather support.
+  return list.filter(p => isProjectVisibleTo(p, user.value));
 });
 
 const visibleProjects = computed(() => {
