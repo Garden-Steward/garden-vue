@@ -15,6 +15,34 @@ projectsStore.getAllProjects();
 const search = ref('');
 const sortBy = ref('interested'); // 'interested' | 'recent'
 const togglingId = ref(null);
+const approvingId = ref(null);
+
+const pendingProjects = computed(() =>
+  allProjects.value.filter(p => p.status === 'CREATED')
+);
+
+const isProjectAdmin = computed(() => {
+  const role = user.value?.role;
+  return role?.type === 'admin' || role?.name === 'Admin' || role?.type === 'manager';
+});
+
+const approveProject = async (id) => {
+  approvingId.value = id;
+  try {
+    await projectsStore.update(id, { status: 'APPROVED' });
+    await projectsStore.getAllProjects();
+  } catch { /* store surfaces error */ }
+  finally { approvingId.value = null; }
+};
+
+const rejectProject = async (id) => {
+  approvingId.value = id;
+  try {
+    await projectsStore.update(id, { status: 'REJECTED' });
+    await projectsStore.getAllProjects();
+  } catch { /* store surfaces error */ }
+  finally { approvingId.value = null; }
+};
 
 const relationIds = (rel) => {
     const arr = rel?.data || rel || [];
@@ -112,7 +140,29 @@ const toggleInterest = async (project) => {
 
       <p v-if="communityProjects.loading" class="cproj__state">Loading projects…</p>
 
-      <!-- Grid -->
+            <!-- Pending Projects (admin only) -->
+            <section v-if="isProjectAdmin && pendingProjects.length" class="cproj-pending">
+              <h2 class="cproj-pending__title">📋 Pending Review ({{ pendingProjects.length }})</h2>
+              <div class="cproj-pending__list">
+                <div v-for="p in pendingProjects" :key="p.id" class="cproj-pending__item">
+                  <div class="cproj-pending__info">
+                    <strong>{{ p.title }}</strong>
+                    <span class="cproj-pending__meta">{{ pitchedBy(p) }} · {{ p.submitter_email || 'no email' }}</span>
+                    <span class="cproj-pending__desc">{{ (p.short_description || '').slice(0, 120) }}</span>
+                  </div>
+                  <div class="cproj-pending__actions">
+                    <button @click="approveProject(p.id)" :disabled="approvingId === p.id" class="cproj-pending__approve">
+                      {{ approvingId === p.id ? '…' : 'Approve' }}
+                    </button>
+                    <button @click="rejectProject(p.id)" :disabled="approvingId === p.id" class="cproj-pending__reject">
+                      {{ approvingId === p.id ? '…' : 'Reject' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Grid -->
       <div class="cproj-grid">
         <article v-for="p in projects" :key="p.id" class="cproj-card">
           <div
@@ -430,6 +480,104 @@ const toggleInterest = async (project) => {
 .cproj-card__btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* ── Pending review section ── */
+.cproj-pending {
+  margin-bottom: 2rem;
+  background: #fffbe6;
+  border: 1px solid #e2d684;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.cproj-pending__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #735c0a;
+  margin: 0 0 1rem;
+}
+
+.cproj-pending__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cproj-pending__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #fff;
+  border: 1px solid #e8dc9e;
+  border-radius: 8px;
+}
+
+.cproj-pending__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.cproj-pending__info strong {
+  color: #344a34;
+}
+
+.cproj-pending__meta {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.cproj-pending__desc {
+  font-size: 0.85rem;
+  color: #9ca3a5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cproj-pending__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.cproj-pending__approve,
+.cproj-pending__reject {
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.cproj-pending__approve {
+  background: #86b153;
+  color: #14250f;
+}
+
+.cproj-pending__approve:hover:not(:disabled) {
+  background: #97c264;
+}
+
+.cproj-pending__reject {
+  background: #f87171;
+  color: #fff;
+}
+
+.cproj-pending__reject:hover:not(:disabled) {
+  background: #ef4444;
+}
+
+.cproj-pending__approve:disabled,
+.cproj-pending__reject:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ── Have an idea card ── */
