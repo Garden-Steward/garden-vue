@@ -71,12 +71,8 @@ const projects = computed(() => {
 const toggleInterest = async (project) => {
     if (togglingId.value) return;
     togglingId.value = project.id;
-    const ids = relationIds(project.interested);
-    const next = ids.includes(user.value?.id)
-        ? ids.filter(id => id !== user.value?.id)
-        : [...ids, user.value?.id];
     try {
-        await projectsStore.update(project.id, { interested: next });
+        await projectsStore.toggleInterest(project.id);
         await projectsStore.getAllProjects();
     } catch (e) {
         // store surfaces its own error alert

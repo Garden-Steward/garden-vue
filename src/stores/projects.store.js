@@ -293,10 +293,15 @@ export const useProjectsStore = defineStore({
                 .then(response => response?.data ?? response)
                 .catch(this.handleError);
         },
+        // Dedicated endpoint rather than a core PUT: any logged-in user may toggle
+        // their own interest, and it skips full-entity validation (a core update
+        // fails on legacy rows with a NULL review_status).
         async toggleInterest(id) {
             return fetchWrapper.post(`${baseUrl}/${id}/interest`, {})
-                .then(response => response)
-                .catch(this.handleError);
+                .catch(error => {
+                    this.handleError(error);
+                    throw error;
+                });
         },
         async updateManagers(id, managers) {
             const managerIds = (managers || []).map(m => (typeof m === 'object' ? m.id : m));
