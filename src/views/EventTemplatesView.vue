@@ -95,7 +95,7 @@ function onRecurringTemplateDeleted() {
 <template>
   <div class="min-h-screen w-full max-w-none overflow-x-hidden bg-[#344a34] md:-mx-4 md:w-[calc(100%+2rem)]">
     <!-- Garden title header (same as GardenDetail; sidebar hamburger teleports here) -->
-    <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
+    <div class="bg-gradient-to-r from-forest-hero to-forest-hero-end text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">

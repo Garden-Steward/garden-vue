@@ -161,38 +161,6 @@
   flex-shrink: 0;
 }
 
-/* ── Dark mode ─────────────────────────────────────── */
-:global(.dark) .hero-title {
-  color: #c8dbbf;
-  -webkit-text-fill-color: #c8dbbf;
-}
-
-:global(.dark) .hero-eyebrow {
-  color: #a5c499;
-  -webkit-text-fill-color: #a5c499;
-}
-
-:global(.dark) .hero-tagline {
-  color: #a0a8a0;
-  -webkit-text-fill-color: #a0a8a0;
-}
-
-:global(.dark) .body-text {
-  color: #e8e8e8 !important;
-  -webkit-text-fill-color: #e8e8e8 !important;
-}
-
-:global(.dark) .btn-about-secondary {
-  color: #c8dbbf;
-  -webkit-text-fill-color: #c8dbbf;
-  border-color: #8aa37c;
-}
-
-:global(.dark) .btn-about-secondary:hover {
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-}
-
 /* ── Mobile ────────────────────────────────────────── */
 @media (max-width: 480px) {
   .cta-row {
@@ -203,5 +171,47 @@
   .btn-about {
     justify-content: center;
   }
+}
+</style>
+
+<!--
+  `:global()` with a trailing descendant selector does not survive scoped-style
+  compilation: ":global(.dark) .foo" becomes the bare rule ".dark { ... }",
+  which lands on <html class="dark"> and leaks inheritable declarations such as
+  color and -webkit-text-fill-color into every page. Dark-mode overrides live
+  here instead, in a plain (non-scoped) <style> block with a literal
+  "html.dark ..." selector — the same pattern ProjectsList.vue uses.
+-->
+<style>
+/* ── Dark mode ─────────────────────────────────────── */
+html.dark .hero-title {
+  color: #c8dbbf;
+  -webkit-text-fill-color: #c8dbbf;
+}
+
+html.dark .hero-eyebrow {
+  color: #a5c499;
+  -webkit-text-fill-color: #a5c499;
+}
+
+html.dark .hero-tagline {
+  color: #a0a8a0;
+  -webkit-text-fill-color: #a0a8a0;
+}
+
+html.dark .body-text {
+  color: #e8e8e8 !important;
+  -webkit-text-fill-color: #e8e8e8 !important;
+}
+
+html.dark .btn-about-secondary {
+  color: #c8dbbf;
+  -webkit-text-fill-color: #c8dbbf;
+  border-color: #8aa37c;
+}
+
+html.dark .btn-about-secondary:hover {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
 }
 </style>

@@ -753,19 +753,30 @@ watch(activeTab, () => {
     background: #555;
   }
 }
+</style>
 
-:global(.dark) .hero-image-grid::-webkit-scrollbar-track {
+<!--
+  `:global()` with a trailing descendant selector does not survive scoped-style
+  compilation: ":global(.dark) .foo" becomes the bare rule ".dark { ... }",
+  which lands on <html class="dark"> and leaks inheritable declarations such as
+  color and -webkit-text-fill-color into every page. Dark-mode overrides live
+  here instead, in a plain (non-scoped) <style> block with a literal
+  "html.dark ..." selector — the same pattern ProjectsList.vue uses.
+-->
+<style>
+html.dark .hero-image-grid::-webkit-scrollbar-track {
   background: rgba(26, 26, 26, 0.5);
 }
 
-:global(.dark) .hero-image-grid::-webkit-scrollbar-thumb {
+html.dark .hero-image-grid::-webkit-scrollbar-thumb {
   background: #5a6b52;
 }
 
-:global(.dark) .hero-image-grid::-webkit-scrollbar-thumb:hover {
+html.dark .hero-image-grid::-webkit-scrollbar-thumb:hover {
   background: #8aa37c;
 }
 </style>
+
 
 <!-- Force Take Photo styling in dark mode (parent modals may use color/bg !important). -->
 <style>

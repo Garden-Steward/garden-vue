@@ -48,10 +48,6 @@
   box-shadow: 0 6px 24px rgba(138, 163, 124, 0.2);
 }
 
-:global(.dark) .newsletter-section {
-  background: transparent;
-}
-
 .newsletter-icon {
   font-size: 2rem;
   margin-bottom: 0.75rem;
@@ -106,26 +102,44 @@
   -webkit-text-fill-color: currentColor;
 }
 
-/* Dark mode: cream card + dark green type (do not inherit page-level light `color` / fill from wrappers) */
-:global(.dark) .newsletter-card {
-  color: #1a3d2e !important;
-  -webkit-text-fill-color: #1a3d2e !important;
-}
-:global(.dark) .newsletter-heading {
-  color: #1a3d2e !important;
-  -webkit-text-fill-color: #1a3d2e !important;
-}
-:global(.dark) .newsletter-sub {
-  color: #3d5c3d !important;
-  -webkit-text-fill-color: #3d5c3d !important;
-}
-:global(.dark) .newsletter-fine {
-  color: #4a6b48 !important;
-  -webkit-text-fill-color: #4a6b48 !important;
-}
-
 @media (max-width: 480px) {
   .newsletter-card { padding: 2rem 1.25rem; }
   .subscribe-btn { display: block; }
 }
 </style>
+
+<!--
+  `:global()` with a trailing descendant selector does not survive scoped-style
+  compilation: ":global(.dark) .foo" becomes the bare rule ".dark { ... }",
+  which lands on <html class="dark"> and leaks inheritable declarations such as
+  color and -webkit-text-fill-color into every page. Dark-mode overrides live
+  here instead, in a plain (non-scoped) <style> block with a literal
+  "html.dark ..." selector — the same pattern ProjectsList.vue uses.
+-->
+<style>
+html.dark .newsletter-section {
+  background: transparent;
+}
+
+/* Dark mode: cream card + dark green type (do not inherit page-level light `color` / fill from wrappers) */
+html.dark .newsletter-card {
+  color: #1a3d2e !important;
+  -webkit-text-fill-color: #1a3d2e !important;
+}
+
+html.dark .newsletter-heading {
+  color: #1a3d2e !important;
+  -webkit-text-fill-color: #1a3d2e !important;
+}
+
+html.dark .newsletter-sub {
+  color: #3d5c3d !important;
+  -webkit-text-fill-color: #3d5c3d !important;
+}
+
+html.dark .newsletter-fine {
+  color: #4a6b48 !important;
+  -webkit-text-fill-color: #4a6b48 !important;
+}
+</style>
+

@@ -1135,20 +1135,6 @@ defineExpose({ openModal });
   --tw-ring-color: rgba(138, 163, 124, 0.5);
 }
 
-:global(.dark) .gt-create-trigger {
-  background-color: #c2410c;
-  border-color: #c2410c;
-}
-:global(.dark) .gt-create-trigger:hover,
-:global(.dark) .gt-create-trigger:focus {
-  background-color: #9a3209;
-  border-color: #9a3209;
-}
-:global(.dark) .gt-create-trigger:active {
-  background-color: #7a2807;
-  border-color: #7a2807;
-}
-
 /* ── Light mode (default) ──────────────────────────── */
 .garden-task-modal-content {
   background-color: #f7f1e3;
@@ -1357,42 +1343,6 @@ defineExpose({ openModal });
   border-color: #d1d5db;
 }
 
-:global(.dark) .gt-status-pending {
-  background-color: rgba(234, 179, 8, 0.18);
-  color: #fef08a;
-  border-color: rgba(234, 179, 8, 0.4);
-}
-:global(.dark) .gt-status-skipped {
-  background-color: rgba(148, 163, 184, 0.18);
-  color: #e5e7eb;
-  border-color: rgba(148, 163, 184, 0.4);
-}
-
-:global(.dark) .gt-status-initialized {
-  background-color: rgba(168, 85, 247, 0.18);
-  color: #e9d5ff;
-  border-color: rgba(168, 85, 247, 0.4);
-}
-:global(.dark) .gt-status-started {
-  background-color: rgba(59, 130, 246, 0.18);
-  color: #bfdbfe;
-  border-color: rgba(59, 130, 246, 0.4);
-}
-:global(.dark) .gt-status-finished {
-  background-color: rgba(34, 197, 94, 0.18);
-  color: #bbf7d0;
-  border-color: rgba(34, 197, 94, 0.4);
-}
-:global(.dark) .gt-status-issue {
-  background-color: rgba(239, 68, 68, 0.18);
-  color: #fecaca;
-  border-color: rgba(239, 68, 68, 0.4);
-}
-:global(.dark) .gt-status-select option {
-  color: #f5f5f5;
-  background: #2d3e26;
-}
-
 /* Footer separator */
 .gt-footer {
   border-color: #e2dccb;
@@ -1409,119 +1359,6 @@ defineExpose({ openModal });
 }
 .gt-submit-btn:active {
   background-color: #376451;
-}
-
-/* ── Dark mode overrides ───────────────────────────── */
-:global(.dark) .garden-task-modal-content {
-  background-color: #2d3e26;
-  color: #f5f5f5;
-  border-color: #3d4d36;
-}
-
-:global(.dark) .gt-text {
-  color: #f5f5f5;
-}
-
-:global(.dark) .gt-accent {
-  color: #8aa37c;
-}
-
-:global(.dark) .gt-close-btn {
-  color: #d0d0d0;
-}
-:global(.dark) .gt-close-btn:hover {
-  color: #f5f5f5;
-}
-
-:global(.dark) .garden-task-modal-content .gt-input {
-  background-color: rgba(26, 26, 26, 0.6) !important;
-  color: #f5f5f5 !important;
-  border-color: #3d4d36 !important;
-}
-
-:global(.dark) .garden-task-modal-content .gt-input::placeholder {
-  color: #9ca3af;
-}
-
-:global(.dark) .garden-task-modal-content .gt-input:focus {
-  background-color: rgba(40, 50, 35, 0.9) !important;
-  border-color: #8aa37c !important;
-}
-
-:global(.dark) .garden-task-modal-content .gt-input:-webkit-autofill,
-:global(.dark) .garden-task-modal-content .gt-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #f5f5f5;
-  -webkit-box-shadow: 0 0 0 1000px rgba(40, 50, 35, 0.95) inset;
-}
-
-:global(.dark) .gt-subsection {
-  background-color: rgba(26, 26, 26, 0.6);
-  border-color: #3d4d36;
-}
-
-:global(.dark) .gt-template-chip {
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #8aa37c;
-  border-color: #3d4d36;
-}
-:global(.dark) .gt-template-chip:hover {
-  background-color: rgba(26, 26, 26, 0.8);
-}
-
-:global(.dark) .gt-footer {
-  border-color: #3d4d36;
-}
-
-:global(.dark) .gt-submit-btn {
-  background-color: #c2410c;
-  color: #ffffff;
-}
-:global(.dark) .gt-submit-btn:hover,
-:global(.dark) .gt-submit-btn:focus {
-  background-color: #9a3209;
-}
-:global(.dark) .gt-submit-btn:active {
-  background-color: #7a2807;
-}
-
-/* ── Dark overrides for multi-step UI ──────────────── */
-:global(.dark) .gt-step-active {
-  background-color: #8aa37c;
-  color: #ffffff;
-}
-:global(.dark) .gt-step-inactive {
-  background-color: #f0ebe0;
-  color: #111111;
-}
-:global(.dark) .gt-step-bar-active {
-  background-color: #8aa37c;
-}
-:global(.dark) .gt-step-bar-inactive {
-  background-color: #c9c3b5;
-}
-
-:global(.dark) .gt-type-btn {
-  background-color: rgba(26, 26, 26, 0.6);
-  border-color: #3d4d36;
-  color: #f5f5f5;
-}
-:global(.dark) .gt-type-btn:hover {
-  border-color: #8aa37c;
-  background-color: rgba(138, 163, 124, 0.18);
-}
-:global(.dark) .gt-type-btn-active {
-  border-color: #8aa37c;
-  background-color: rgba(138, 163, 124, 0.28);
-  color: #f5f5f5;
-}
-
-:global(.dark) .gt-back-btn {
-  color: #d0d0d0;
-  border-color: #3d4d36;
-}
-:global(.dark) .gt-back-btn:hover {
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #f5f5f5;
 }
 
 /* ── Type badge color helpers (used in card preview) ── */
@@ -1556,6 +1393,197 @@ defineExpose({ openModal });
   color: #6B21A8;
 }
 </style>
+
+<!--
+  `:global()` with a trailing descendant selector does not survive scoped-style
+  compilation: ":global(.dark) .foo" becomes the bare rule ".dark { ... }",
+  which lands on <html class="dark"> and leaks inheritable declarations such as
+  color and -webkit-text-fill-color into every page. Dark-mode overrides live
+  here instead, in a plain (non-scoped) <style> block with a literal
+  "html.dark ..." selector — the same pattern ProjectsList.vue uses.
+-->
+<style>
+html.dark .gt-create-trigger {
+  background-color: #c2410c;
+  border-color: #c2410c;
+}
+
+html.dark .gt-create-trigger:hover,
+html.dark .gt-create-trigger:focus {
+  background-color: #9a3209;
+  border-color: #9a3209;
+}
+
+html.dark .gt-create-trigger:active {
+  background-color: #7a2807;
+  border-color: #7a2807;
+}
+
+html.dark .gt-status-pending {
+  background-color: rgba(234, 179, 8, 0.18);
+  color: #fef08a;
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+html.dark .gt-status-skipped {
+  background-color: rgba(148, 163, 184, 0.18);
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+html.dark .gt-status-initialized {
+  background-color: rgba(168, 85, 247, 0.18);
+  color: #e9d5ff;
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+html.dark .gt-status-started {
+  background-color: rgba(59, 130, 246, 0.18);
+  color: #bfdbfe;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+html.dark .gt-status-finished {
+  background-color: rgba(34, 197, 94, 0.18);
+  color: #bbf7d0;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+html.dark .gt-status-issue {
+  background-color: rgba(239, 68, 68, 0.18);
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+html.dark .gt-status-select option {
+  color: #f5f5f5;
+  background: #2d3e26;
+}
+
+/* ── Dark mode overrides ───────────────────────────── */
+html.dark .garden-task-modal-content {
+  background-color: #2d3e26;
+  color: #f5f5f5;
+  border-color: #3d4d36;
+}
+
+html.dark .gt-text {
+  color: #f5f5f5;
+}
+
+html.dark .gt-accent {
+  color: #8aa37c;
+}
+
+html.dark .gt-close-btn {
+  color: #d0d0d0;
+}
+
+html.dark .gt-close-btn:hover {
+  color: #f5f5f5;
+}
+
+html.dark .garden-task-modal-content .gt-input {
+  background-color: rgba(26, 26, 26, 0.6) !important;
+  color: #f5f5f5 !important;
+  border-color: #3d4d36 !important;
+}
+
+html.dark .garden-task-modal-content .gt-input::placeholder {
+  color: #9ca3af;
+}
+
+html.dark .garden-task-modal-content .gt-input:focus {
+  background-color: rgba(40, 50, 35, 0.9) !important;
+  border-color: #8aa37c !important;
+}
+
+html.dark .garden-task-modal-content .gt-input:-webkit-autofill,
+html.dark .garden-task-modal-content .gt-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f5f5f5;
+  -webkit-box-shadow: 0 0 0 1000px rgba(40, 50, 35, 0.95) inset;
+}
+
+html.dark .gt-subsection {
+  background-color: rgba(26, 26, 26, 0.6);
+  border-color: #3d4d36;
+}
+
+html.dark .gt-template-chip {
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #8aa37c;
+  border-color: #3d4d36;
+}
+
+html.dark .gt-template-chip:hover {
+  background-color: rgba(26, 26, 26, 0.8);
+}
+
+html.dark .gt-footer {
+  border-color: #3d4d36;
+}
+
+html.dark .gt-submit-btn {
+  background-color: #c2410c;
+  color: #ffffff;
+}
+
+html.dark .gt-submit-btn:hover,
+html.dark .gt-submit-btn:focus {
+  background-color: #9a3209;
+}
+
+html.dark .gt-submit-btn:active {
+  background-color: #7a2807;
+}
+
+/* ── Dark overrides for multi-step UI ──────────────── */
+html.dark .gt-step-active {
+  background-color: #8aa37c;
+  color: #ffffff;
+}
+
+html.dark .gt-step-inactive {
+  background-color: #f0ebe0;
+  color: #111111;
+}
+
+html.dark .gt-step-bar-active {
+  background-color: #8aa37c;
+}
+
+html.dark .gt-step-bar-inactive {
+  background-color: #c9c3b5;
+}
+
+html.dark .gt-type-btn {
+  background-color: rgba(26, 26, 26, 0.6);
+  border-color: #3d4d36;
+  color: #f5f5f5;
+}
+
+html.dark .gt-type-btn:hover {
+  border-color: #8aa37c;
+  background-color: rgba(138, 163, 124, 0.18);
+}
+
+html.dark .gt-type-btn-active {
+  border-color: #8aa37c;
+  background-color: rgba(138, 163, 124, 0.28);
+  color: #f5f5f5;
+}
+
+html.dark .gt-back-btn {
+  color: #d0d0d0;
+  border-color: #3d4d36;
+}
+
+html.dark .gt-back-btn:hover {
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
+}
+</style>
+
 
 <style>
 /* Hard-enforce dark palette for teleported GardenTask modal surfaces/controls. */

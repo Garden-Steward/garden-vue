@@ -192,35 +192,47 @@ gardensStore.getAll(user.value.id);
   box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
   text-decoration: none;
 }
+</style>
 
+<!--
+  `:global()` with a trailing descendant selector does not survive scoped-style
+  compilation: ":global(.dark) .foo" becomes the bare rule ".dark { ... }",
+  which lands on <html class="dark"> and leaks inheritable declarations such as
+  color and -webkit-text-fill-color into every page. Dark-mode overrides live
+  here instead, in a plain (non-scoped) <style> block with a literal
+  "html.dark ..." selector — the same pattern ProjectsList.vue uses.
+-->
+<style>
 /* ── Dark mode overrides ───────────────────────────── */
-:global(.dark) .manage-home-card {
+html.dark .manage-home-card {
   background-color: #344a34;
   border-color: #3d4d36;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-:global(.dark) .manage-title {
+html.dark .manage-title {
   color: #c8dbbf;
 }
 
-:global(.dark) .manage-tagline {
+html.dark .manage-tagline {
   color: #a0a8a0;
 }
 
-:global(.dark) .body-text,
-:global(.dark) .profile-line {
+html.dark .body-text,
+html.dark .profile-line {
   color: #d0d0d0;
 }
 
-:global(.dark) .profile-section {
+html.dark .profile-section {
   border-top-color: #3d4d36;
 }
 
-:global(.dark) .profile-link {
+html.dark .profile-link {
   color: #c8dbbf;
 }
-:global(.dark) .profile-link:hover {
+
+html.dark .profile-link:hover {
   color: #8aa37c;
 }
 </style>
+
