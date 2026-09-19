@@ -34,11 +34,6 @@
   background-color: var(--footer-sage);
 }
 
-/* Explicit repeat so html.dark page styles never strip the footer band */
-:global(html.dark) .footer-container {
-  background-color: #8da382;
-}
-
 .contribute-link {
   display: inline-flex;
   align-items: center;
@@ -63,3 +58,19 @@
   color: inherit;
 }
 </style>
+
+<!--
+  `:global()` with a trailing descendant selector does not survive scoped-style
+  compilation: ":global(.dark) .foo" becomes the bare rule ".dark { ... }",
+  which lands on <html class="dark"> and leaks inheritable declarations such as
+  color and -webkit-text-fill-color into every page. Dark-mode overrides live
+  here instead, in a plain (non-scoped) <style> block with a literal
+  "html.dark ..." selector — the same pattern ProjectsList.vue uses.
+-->
+<style>
+/* Explicit repeat so html.dark page styles never strip the footer band */
+html.dark .footer-container {
+  background-color: #8da382;
+}
+</style>
+

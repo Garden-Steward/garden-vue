@@ -517,7 +517,7 @@ const onRemoveInterest = async (interestId) => {
 <template>
   <div class="gm-page min-h-screen w-full max-w-none overflow-x-hidden md:-mx-4 md:w-[calc(100%+2rem)]">
     <!-- Garden Title Header -->
-    <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
+    <div class="bg-gradient-to-r from-forest-hero to-forest-hero-end text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
@@ -1197,78 +1197,96 @@ export default {
   .gm-thumb-placeholder {
     background-color: rgba(138, 163, 124, 0.2);
   }
-
-  /* ── Dark mode overrides ─────────────────────────── */
-  :global(.dark) .gm-page {
-    background-color: #344a34;
-    color: #f5f5f5;
-  }
-
-  :global(.dark) .gm-panel {
-    background-color: #2d3e26;
-    color: #f5f5f5;
-    border-color: #3d4d36;
-  }
-
-  :global(.dark) .gm-heading,
-  :global(.dark) .gm-text {
-    color: #f5f5f5;
-  }
-
-  :global(.dark) .gm-text-muted {
-    color: #d0d0d0;
-  }
-
-  :global(.dark) .gm-border-b-strong {
-    border-bottom-color: rgba(61, 77, 54, 0.5);
-  }
-
-  :global(.dark) .gm-secondary-btn {
-    background-color: rgba(26, 26, 26, 0.6);
-    color: #f5f5f5;
-    border-color: rgba(61, 77, 54, 0.5);
-  }
-  :global(.dark) .gm-secondary-btn:hover {
-    background-color: rgba(26, 26, 26, 0.8);
-    border-color: #3d4d36;
-  }
-
-  :global(.dark) .gm-primary-btn {
-    background-color: #c2410c;
-    border-color: #c2410c;
-  }
-  :global(.dark) .gm-primary-btn:hover,
-  :global(.dark) .gm-primary-btn:focus {
-    background-color: #9a3209;
-    border-color: #9a3209;
-  }
-  :global(.dark) .gm-primary-btn:active {
-    background-color: #7a2807;
-    border-color: #7a2807;
-  }
-
-  :global(.dark) .gm-event-row {
-    border-color: rgba(61, 77, 54, 0.3);
-  }
-  :global(.dark) .gm-event-row-upcoming {
-    background-color: rgba(26, 26, 26, 0.4);
-    color: #f5f5f5;
-  }
-  :global(.dark) .gm-event-row-upcoming:hover {
-    background-color: rgba(26, 26, 26, 0.6);
-  }
-  :global(.dark) .gm-event-row-past {
-    background-color: rgba(60, 60, 60, 0.5);
-    color: #b0b0b0;
-  }
-  :global(.dark) .gm-event-row-past:hover {
-    background-color: rgba(60, 60, 60, 0.65);
-  }
-
-  :global(.dark) .gm-thumb-placeholder {
-    background-color: rgba(61, 77, 54, 0.3);
-  }
 </style>
+
+<!--
+  `:global()` with a trailing descendant selector does not survive scoped-style
+  compilation: ":global(.dark) .foo" becomes the bare rule ".dark { ... }",
+  which lands on <html class="dark"> and leaks inheritable declarations such as
+  color and -webkit-text-fill-color into every page. Dark-mode overrides live
+  here instead, in a plain (non-scoped) <style> block with a literal
+  "html.dark ..." selector — the same pattern ProjectsList.vue uses.
+-->
+<style>
+/* ── Dark mode overrides ─────────────────────────── */
+html.dark .gm-page {
+  background-color: #344a34;
+  color: #f5f5f5;
+}
+
+html.dark .gm-panel {
+  background-color: #2d3e26;
+  color: #f5f5f5;
+  border-color: #3d4d36;
+}
+
+html.dark .gm-heading,
+html.dark .gm-text {
+  color: #f5f5f5;
+}
+
+html.dark .gm-text-muted {
+  color: #d0d0d0;
+}
+
+html.dark .gm-border-b-strong {
+  border-bottom-color: rgba(61, 77, 54, 0.5);
+}
+
+html.dark .gm-secondary-btn {
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #f5f5f5;
+  border-color: rgba(61, 77, 54, 0.5);
+}
+
+html.dark .gm-secondary-btn:hover {
+  background-color: rgba(26, 26, 26, 0.8);
+  border-color: #3d4d36;
+}
+
+html.dark .gm-primary-btn {
+  background-color: #c2410c;
+  border-color: #c2410c;
+}
+
+html.dark .gm-primary-btn:hover,
+html.dark .gm-primary-btn:focus {
+  background-color: #9a3209;
+  border-color: #9a3209;
+}
+
+html.dark .gm-primary-btn:active {
+  background-color: #7a2807;
+  border-color: #7a2807;
+}
+
+html.dark .gm-event-row {
+  border-color: rgba(61, 77, 54, 0.3);
+}
+
+html.dark .gm-event-row-upcoming {
+  background-color: rgba(26, 26, 26, 0.4);
+  color: #f5f5f5;
+}
+
+html.dark .gm-event-row-upcoming:hover {
+  background-color: rgba(26, 26, 26, 0.6);
+}
+
+html.dark .gm-event-row-past {
+  background-color: rgba(60, 60, 60, 0.5);
+  color: #b0b0b0;
+}
+
+html.dark .gm-event-row-past:hover {
+  background-color: rgba(60, 60, 60, 0.65);
+}
+
+html.dark .gm-thumb-placeholder {
+  background-color: rgba(61, 77, 54, 0.3);
+}
+</style>
+
 
 <!--
   Light-mode overrides for child components that hardcode dark hex colors

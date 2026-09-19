@@ -327,37 +327,48 @@ const showExisting = (id) => {
   -webkit-text-fill-color: #1a2617;
   caret-color: #1a2617;
 }
+</style>
 
+<!--
+  `:global()` with a trailing descendant selector does not survive scoped-style
+  compilation: ":global(.dark) .foo" becomes the bare rule ".dark { ... }",
+  which lands on <html class="dark"> and leaks inheritable declarations such as
+  color and -webkit-text-fill-color into every page. Dark-mode overrides live
+  here instead, in a plain (non-scoped) <style> block with a literal
+  "html.dark ..." selector — the same pattern ProjectsList.vue uses.
+-->
+<style>
 /* ── Dark mode overrides ───────────────────────────── */
-:global(.dark) .vd-input {
+html.dark .vd-input {
   background-color: #2d3e26;
   color: #f5f5f5;
   border-color: #3d4d36;
   caret-color: #f5f5f5;
 }
 
-:global(.dark) .vd-input::placeholder {
+html.dark .vd-input::placeholder {
   color: #a8b89e;
 }
 
-:global(.dark) .vd-input:hover:not(:disabled),
-:global(.dark) .vd-input:focus,
-:global(.dark) .vd-input:active {
+html.dark .vd-input:hover:not(:disabled),
+html.dark .vd-input:focus,
+html.dark .vd-input:active {
   background-color: #2d3e26;
 }
 
-:global(.dark) .vd-input:focus {
+html.dark .vd-input:focus {
   border-color: #8aa37c;
 }
 
-:global(.dark) .vd-input:-webkit-autofill,
-:global(.dark) .vd-input:-webkit-autofill:hover,
-:global(.dark) .vd-input:-webkit-autofill:focus {
+html.dark .vd-input:-webkit-autofill,
+html.dark .vd-input:-webkit-autofill:hover,
+html.dark .vd-input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px #2d3e26 inset;
   -webkit-text-fill-color: #f5f5f5;
   caret-color: #f5f5f5;
 }
 </style>
+
 
 <style>
 /* Teleported modal: enforce dark palette when html.dark (labels + shell can lose to global inherit). */

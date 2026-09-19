@@ -376,7 +376,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="bg-[#344a34] mx-auto min-h-screen">
     <!-- Event Title Header -->
-    <div class="bg-gradient-to-r from-darker-green to-custom-green text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative">
+    <div class="bg-gradient-to-r from-forest-hero to-forest-hero-end text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
