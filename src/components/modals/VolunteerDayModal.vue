@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useEventStore, useAlertStore } from '@/stores';
+import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import { format } from 'date-fns';
 import { defineProps, defineEmits } from 'vue';
 
@@ -57,6 +58,8 @@ const copy = ref(false);
 // const volunteers = ref(false);
 const error = ref(false);
 const numVolunteers = ref(0);
+const testing = ref(false);
+const sending = ref(false);
 const form = ref({
   id: props.id,
   interest: props.interest,
@@ -92,25 +95,40 @@ async function saveDay() {
   window.scrollTo(0,0);
 }
 const testDay = async() => {
-  console.log('saveDay');
-  // await volunteerDaysStore.testSms(form.value.id);
-  eventStore.testSms(props.documentId ?? form.value.id).then((smsTest)=>{
-        if (smsTest.copy) {
-          copy.value = smsTest.copy;
-          numVolunteers.value = smsTest.numVolunteers;
-        } else {
-          error.value = smsTest.error;
-        }
-      });
+  if (testing.value) return;
+  testing.value = true;
+  error.value = false;
+  try {
+    const smsTest = await eventStore.testSms(props.documentId ?? form.value.id);
+    if (smsTest?.copy) {
+      copy.value = smsTest.copy;
+      numVolunteers.value = smsTest.numVolunteers;
+    } else {
+      // The store swallows request failures, so smsTest can be undefined.
+      error.value = smsTest?.error ?? 'Could not build the SMS preview. Please try again.';
+    }
+  } finally {
+    testing.value = false;
+  }
 }
+// Sending texts every volunteer one at a time takes a while, so the button has
+// to say so — otherwise it looks dead and invites a second click.
 const sendSms = async() => {
-  console.log('sending sms')
-  eventStore.sendSms(props.documentId ?? form.value.id).then((smsResp)=>{
-      console.log('smsResp: ', smsResp);
-      alertStore.success('SMS sent to ' + smsResp.length + ' people');
-      isVisible.value = false;
-      window.scrollTo(0,0);
-  });
+  if (sending.value) return;
+  sending.value = true;
+  error.value = false;
+  try {
+    const smsResp = await eventStore.sendSms(props.documentId ?? form.value.id);
+    if (!Array.isArray(smsResp)) {
+      error.value = 'The SMS may not have been sent. Please check before sending again.';
+      return;
+    }
+    alertStore.success('SMS sent to ' + smsResp.length + ' people');
+    isVisible.value = false;
+    window.scrollTo(0,0);
+  } finally {
+    sending.value = false;
+  }
 }
 
 const closeUp = () => {isVisible.value = false;}
@@ -235,7 +253,7 @@ const showExisting = (id) => {
               ease-in-out
               ml-1" @click="saveDay()">Save changes</span>
 
-              <span class="px-6
+              <button type="button" :disabled="testing" class="px-6
               py-2.5
               bg-slate-600
               text-white
@@ -249,8 +267,11 @@ const showExisting = (id) => {
               duration-150
               active:bg-slate-800 active:shadow-lg
               cursor-pointer
+              disabled:opacity-60 disabled:cursor-not-allowed
               ease-in-out
-              ml-1" @click="testDay()">Test SMS</span>
+              ml-1" @click="testDay()">
+                <LoadingSpinner v-if="testing" size="sm" class="mr-2 align-middle" />{{ testing ? 'Loading preview…' : 'Test SMS' }}
+              </button>
           </div>
 
           <article v-if="copy" class="text-[#1a2617] dark:text-[#e8eee4]">
@@ -259,7 +280,9 @@ const showExisting = (id) => {
             <div class="mb-3 text-sm">{{ copy }}</div>
             <div class="mb-3 font-bold">This will be sent to {{ numVolunteers }} people </div>
             <div>
-              <button type="button" class="px-6 py-2.5 bg-slate-200 text-slate-900 font-medium text-xs leading-tight uppercase rounded shadow-md hover:bg-slate-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-400 active:bg-slate-400 transition cursor-pointer duration-150 ease-in-out dark:bg-slate-600 dark:text-white dark:hover:bg-slate-500 dark:focus:ring-slate-500" @click="sendSms()">Send Upcoming SMS NOW, knowing auto-send is setup</button>
+              <button type="button" class="px-6 py-2.5 bg-slate-200 text-slate-900 font-medium text-xs leading-tight uppercase rounded shadow-md hover:bg-slate-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-400 active:bg-slate-400 transition cursor-pointer duration-150 ease-in-out dark:bg-slate-600 dark:text-white dark:hover:bg-slate-500 dark:focus:ring-slate-500 disabled:opacity-60 disabled:cursor-not-allowed" :disabled="sending" @click="sendSms()">
+                <LoadingSpinner v-if="sending" size="sm" class="mr-2 align-middle" />{{ sending ? `Sending to ${numVolunteers} people — this can take a minute…` : 'Send Upcoming SMS NOW, knowing auto-send is setup' }}
+              </button>
             </div>
           </article>
           <div v-if="error" class="text-red-700 dark:text-red-400 text-sm">Error loading volunteer days: {{error}}</div>
