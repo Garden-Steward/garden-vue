@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore } from '@/stores';
 import { getProjectCategoryBadgeClasses } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
+import ExpressInterest from '@/components/modals/ExpressInterest.vue';
 
 const projectsStore = useProjectsStore();
 const authStore = useAuthStore();
@@ -16,6 +17,8 @@ const search = ref('');
 const sortBy = ref('interested'); // 'interested' | 'recent'
 const togglingId = ref(null);
 const approvingId = ref(null);
+const showInterestModal = ref(false);
+const interestProject = ref({ id: null, title: '' });
 
 const pendingProjects = computed(() =>
   allProjects.value.filter(p => p.status === 'CREATED')
@@ -108,6 +111,17 @@ const toggleInterest = async (project) => {
         togglingId.value = null;
     }
 };
+
+const handleInterest = (project) => {
+  if (isInterested(project)) {
+    toggleInterest(project);
+  } else if (user.value) {
+    toggleInterest(project);
+  } else {
+    interestProject.value = { id: project.id, title: project.title };
+    showInterestModal.value = true;
+  }
+};
 </script>
 
 <template>
@@ -195,7 +209,7 @@ const toggleInterest = async (project) => {
               class="cproj-card__btn"
               :class="{ 'is-active': isInterested(p) }"
               :disabled="togglingId === p.id"
-              @click="toggleInterest(p)"
+              @click="handleInterest(p)"
             >
               {{ isInterested(p) ? 'Interested ✓' : "I'm interested" }}
             </button>
@@ -216,6 +230,12 @@ const toggleInterest = async (project) => {
       </p>
     </div>
   </ManageLayout>
+
+  <ExpressInterest
+    v-model="showInterestModal"
+    :project-id="interestProject.id"
+    :project-title="interestProject.title"
+  />
 </template>
 
 <style scoped>
