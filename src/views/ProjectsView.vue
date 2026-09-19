@@ -21,7 +21,10 @@ const showInterestModal = ref(false);
 const interestProject = ref({ id: null, title: '' });
 
 const pendingProjects = computed(() =>
-  allProjects.value.filter(p => p.status === 'CREATED')
+  allProjects.value.filter(p => {
+    const rs = String(p.review_status || '').toUpperCase();
+    return rs === 'CREATED';
+  })
 );
 
 const isProjectAdmin = computed(() => {
@@ -32,7 +35,7 @@ const isProjectAdmin = computed(() => {
 const approveProject = async (id) => {
   approvingId.value = id;
   try {
-    await projectsStore.update(id, { status: 'APPROVED' });
+    await projectsStore.review(id, 'APPROVED');
     await projectsStore.getAllProjects();
   } catch { /* store surfaces error */ }
   finally { approvingId.value = null; }
@@ -41,7 +44,7 @@ const approveProject = async (id) => {
 const rejectProject = async (id) => {
   approvingId.value = id;
   try {
-    await projectsStore.update(id, { status: 'REJECTED' });
+    await projectsStore.review(id, 'REJECTED');
     await projectsStore.getAllProjects();
   } catch { /* store surfaces error */ }
   finally { approvingId.value = null; }
