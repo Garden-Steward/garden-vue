@@ -236,9 +236,9 @@ const toggleInterest = async () => {
   if (togglingInterest.value) return;
   togglingInterest.value = true;
   try {
+    // Patched in place by the store; re-fetching would blank the page.
     await projectsStore.toggleInterest(project.value.id);
-    const refreshed = await projectsStore.findById(projectId);
-    if (refreshed) buildForm(refreshed);
+    interested.value = Array.isArray(project.value.interested) ? [...project.value.interested] : [];
   } catch (e) {
     // store surfaces its own error alert
   } finally {

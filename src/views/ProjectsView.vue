@@ -1,10 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore } from '@/stores';
 import { getProjectCategoryBadgeClasses, projectReviewLabel } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
 
+const router = useRouter();
 const projectsStore = useProjectsStore();
 const authStore = useAuthStore();
 const { communityProjects } = storeToRefs(projectsStore);
@@ -42,9 +44,16 @@ const getImageUrl = (image) => {
     return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
 };
 
-// Cards link through to the project's own page (full description, the people
-// interested, and the review controls for managers).
+// Cards open the project's own page (full description, the people interested,
+// and the review controls for managers). The title is a real link so it can be
+// middle-clicked and read as a link; clicking anywhere else on the card follows
+// it, except over the controls that own their click (the interest button).
 const projectLink = (project) => `/manage/project/${project.id}`;
+
+const openProject = (project, event) => {
+    if (event.target.closest('a, button')) return;
+    router.push(projectLink(project));
+};
 
 const reviewStatus = (project) => String(project.review_status || 'CREATED').toUpperCase();
 const showReviewBadge = (project) => reviewStatus(project) !== 'APPROVED';
@@ -79,8 +88,9 @@ const toggleInterest = async (project) => {
     if (togglingId.value) return;
     togglingId.value = project.id;
     try {
+        // The store patches the cached project in place — refetching the list
+        // here would blank the grid and flash the page.
         await projectsStore.toggleInterest(project.id);
-        await projectsStore.getAllProjects();
     } catch (e) {
         // store surfaces its own error alert
     } finally {
@@ -121,10 +131,12 @@ const toggleInterest = async (project) => {
 
       <!-- Grid -->
       <div class="cproj-grid">
-        <article v-for="p in projects" :key="p.id" class="cproj-card">
-          <!-- Stretched hit area: the whole card opens the project, except the
-               interest button, which sits above it. -->
-          <RouterLink :to="projectLink(p)" class="cproj-card__hit" :aria-label="p.title" />
+        <article
+          v-for="p in projects"
+          :key="p.id"
+          class="cproj-card"
+          @click="openProject(p, $event)"
+        >
           <div
             class="cproj-card__media"
             :class="{ 'cproj-card__media--empty': !getImageUrl(p.hero_image) }"
@@ -142,7 +154,9 @@ const toggleInterest = async (project) => {
           </div>
           <div class="cproj-card__body">
             <div class="cproj-card__titlerow">
-              <h3 class="cproj-card__title">{{ p.title }}</h3>
+              <h3 class="cproj-card__title">
+                <RouterLink :to="projectLink(p)">{{ p.title }}</RouterLink>
+              </h3>
               <span class="cproj-card__count" title="People interested">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z" />
@@ -297,6 +311,7 @@ const toggleInterest = async (project) => {
 
 .cproj-card {
     position: relative;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
     background-color: #ffffff;
@@ -316,22 +331,21 @@ const toggleInterest = async (project) => {
     transform: translateY(-2px);
 }
 
-.cproj-card:hover:not(:has(.cproj-card__btn:hover)) .cproj-card__title {
+.cproj-card:hover:not(:has(.cproj-card__btn:hover)) .cproj-card__title a {
     text-decoration: underline;
     text-decoration-thickness: 2px;
     text-underline-offset: 3px;
 }
 
-.cproj-card__hit {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    border-radius: inherit;
+.cproj-card__title a {
+    color: inherit;
+    text-decoration: none;
 }
 
-.cproj-card__hit:focus-visible {
+.cproj-card__title a:focus-visible {
     outline: 2px solid #86b153;
     outline-offset: 2px;
+    border-radius: 4px;
 }
 
 .cproj-card__media {
@@ -450,7 +464,6 @@ const toggleInterest = async (project) => {
 
 .cproj-card__btn {
     position: relative;
-    z-index: 2;
     margin-top: auto;
     width: 100%;
     background-color: #cfeacd;

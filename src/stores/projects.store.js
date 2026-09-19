@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper, stripReadOnly } from '@/helpers';
-import { useAlertStore } from '@/stores';
+import { useAlertStore, useAuthStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/projects`;
 
@@ -296,12 +296,49 @@ export const useProjectsStore = defineStore({
         // Dedicated endpoint rather than a core PUT: any logged-in user may toggle
         // their own interest, and it skips full-entity validation (a core update
         // fails on legacy rows with a NULL review_status).
+        //
+        // The cached copies are patched in place from the result. Callers must
+        // not follow this with a list refetch: getAllProjects() blanks the state
+        // to { loading: true } first, which unmounts the whole grid and makes the
+        // page flash on every click.
         async toggleInterest(id) {
             return fetchWrapper.post(`${baseUrl}/${id}/interest`, {})
+                .then(response => {
+                    const updated = response?.data ?? response;
+                    this.patchInterest(id, updated);
+                    return updated;
+                })
                 .catch(error => {
                     this.handleError(error);
                     throw error;
                 });
+        },
+        /**
+         * Sync every cached copy of a project with the interest relation the
+         * server just returned. When the response does not carry one, fall back
+         * to toggling the signed-in user in and out of the cached array.
+         */
+        patchInterest(id, updated) {
+            const authStore = useAuthStore();
+            const userId = authStore.user?.id;
+            const fromServer = Array.isArray(updated?.interested) ? updated.interested : null;
+
+            const nextFor = (project) => {
+                if (fromServer) return fromServer;
+                if (userId == null) return project.interested;
+                const current = Array.isArray(project.interested) ? project.interested : [];
+                const has = current.some(u => (u?.id ?? u) === userId);
+                return has
+                    ? current.filter(u => (u?.id ?? u) !== userId)
+                    : [...current, authStore.user];
+            };
+
+            for (const list of [this.projects, this.communityProjects, this.userProjects]) {
+                if (!Array.isArray(list)) continue;
+                const found = list.find(p => p && p.id === id);
+                if (found) found.interested = nextFor(found);
+            }
+            if (this.project?.id === id) this.project.interested = nextFor(this.project);
         },
         async updateManagers(id, managers) {
             const managerIds = (managers || []).map(m => (typeof m === 'object' ? m.id : m));

@@ -121,9 +121,10 @@ async function toggleInterest(project) {
   joined.value = { ...joined.value, [project.id]: !wasIn };
 
   try {
+    // The store patches the cached project in place; refetching the list would
+    // blank it to a loading state and flash the page.
     await projectsStore.toggleInterest(project.id);
-    await projectsStore.getAllProjects();
-    // The refreshed record is now authoritative.
+    // The patched record is now authoritative.
     const rest = { ...joined.value };
     delete rest[project.id];
     joined.value = rest;
