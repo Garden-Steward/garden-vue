@@ -114,13 +114,11 @@ async function toggleInterest(project) {
   if (togglingId.value) return;
   togglingId.value = project.id;
 
-  const ids = relationIds(project.interested);
-  const wasIn = ids.includes(user.value.id);
-  const next = wasIn ? ids.filter(id => id !== user.value.id) : [...ids, user.value.id];
+  const wasIn = relationIds(project.interested).includes(user.value.id);
   joined.value = { ...joined.value, [project.id]: !wasIn };
 
   try {
-    await projectsStore.update(project.id, { interested: next });
+    await projectsStore.toggleInterest(project.id);
     await projectsStore.getAllProjects();
     // The refreshed record is now authoritative.
     const rest = { ...joined.value };
