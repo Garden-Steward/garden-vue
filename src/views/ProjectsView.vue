@@ -60,10 +60,9 @@ const openProject = (project, event) => {
 };
 
 const reviewStatus = (project) => normalizeReviewStatus(project.review_status);
-const showReviewBadge = (project) => reviewStatus(project) !== 'Approved';
-// 'Pending Review' -> 'cproj-card__flag--pending-review'
-const reviewFlagClass = (project) =>
-    `cproj-card__flag--${reviewStatus(project).toLowerCase().replace(/\s+/g, '-')}`;
+const showReviewBadge = (project) => reviewStatus(project) !== 'APPROVED';
+// 'CREATED' -> 'cproj-card__flag--created'
+const reviewFlagClass = (project) => `cproj-card__flag--${reviewStatus(project).toLowerCase()}`;
 
 const secondaryBadge = (project) => {
     if (interestedCount(project) >= 50) return 'Popular';
@@ -385,8 +384,10 @@ const toggleInterest = async (project) => {
     -webkit-text-fill-color: currentColor;
 }
 
-.cproj-card__flag--pending-review { background-color: #fbe6a2; color: #6b4e00; }
-.cproj-card__flag--changes-requested { background-color: #f6cfcf; color: #7a1f1f; }
+.cproj-card__flag--created { background-color: #fbe6a2; color: #6b4e00; }
+.cproj-card__flag--rejected { background-color: #f6cfcf; color: #7a1f1f; }
+.cproj-card__flag--completed { background-color: #cfe0ea; color: #1f3a4d; }
+.cproj-card__flag--archived { background-color: #ddd8c8; color: #4a4a3f; }
 
 .cproj-card__body {
     display: flex;

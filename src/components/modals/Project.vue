@@ -641,7 +641,7 @@ const setReviewStatus = async (status) => {
   try {
     await projectsStore.review(props.id, status);
     alertStore.success(
-      status === 'Approved'
+      status === 'APPROVED'
         ? 'Project approved — it is now visible to the public.'
         : `Project marked ${projectReviewLabel(status).toLowerCase()}.`
     );
@@ -721,11 +721,12 @@ onUnmounted(() => {
             <div class="flex items-center gap-2 min-w-0">
               <h3 class="text-lg font-semibold text-[#f5f5f5] truncate">{{ form.title || 'Untitled Project' }}</h3>
               <span
-                v-if="editor && currentReview !== 'Approved'"
+                v-if="editor && currentReview !== 'APPROVED'"
                 class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
                 :class="{
-                  'bg-yellow-500/20 text-yellow-300': currentReview === 'Pending Review',
-                  'bg-red-500/20 text-red-300': currentReview === 'Changes Requested'
+                  'bg-yellow-500/20 text-yellow-300': currentReview === 'CREATED',
+                  'bg-red-500/20 text-red-300': currentReview === 'REJECTED',
+                  'bg-[rgba(138,163,124,0.3)] text-[#8aa37c]': currentReview === 'COMPLETED' || currentReview === 'ARCHIVED'
                 }"
               >
                 {{ reviewLabel }}
@@ -737,25 +738,25 @@ onUnmounted(() => {
 
           <!-- Review actions (garden managers, pending / denied projects) -->
           <div
-            v-if="editor && currentReview !== 'Approved'"
+            v-if="editor && currentReview !== 'APPROVED'"
             class="flex items-center gap-2 mt-3"
           >
             <button
               type="button"
               :disabled="reviewing"
-              @click.stop="setReviewStatus('Approved')"
+              @click.stop="setReviewStatus('APPROVED')"
               class="px-3 py-1 text-xs font-medium bg-custom-green text-white rounded shadow-sm hover:bg-darker-green focus:outline-none focus:ring-0 transition disabled:opacity-50"
             >
               Approve
             </button>
             <button
-              v-if="currentReview === 'Pending Review'"
+              v-if="currentReview === 'CREATED'"
               type="button"
               :disabled="reviewing"
-              @click.stop="setReviewStatus('Changes Requested')"
+              @click.stop="setReviewStatus('REJECTED')"
               class="px-3 py-1 text-xs font-medium bg-transparent border border-red-400/60 text-red-300 rounded hover:bg-red-500/10 focus:outline-none focus:ring-0 transition disabled:opacity-50"
             >
-              Request changes
+              Deny
             </button>
           </div>
           <!-- Related Events Tags -->

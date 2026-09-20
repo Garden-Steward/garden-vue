@@ -102,7 +102,7 @@ const canManage = computed(() =>
 // ── Display helpers ──
 const reviewStatus = computed(() => normalizeReviewStatus(project.value?.review_status));
 const reviewLabel = computed(() => projectReviewLabel(reviewStatus.value));
-const isApproved = computed(() => reviewStatus.value === 'Approved');
+const isApproved = computed(() => reviewStatus.value === 'APPROVED');
 
 const pitchedBy = computed(() => {
   const cb = project.value?.created_by;
@@ -154,10 +154,8 @@ const publicUrl = computed(() => {
   return `/gardens/${slug}/p/${project.value.slug}`;
 });
 
-// 'Pending Review' -> 'pd-status--pending-review'
-const reviewStatusClass = computed(() =>
-  `pd-status--${reviewStatus.value.toLowerCase().replace(/\s+/g, '-')}`
-);
+// 'CREATED' -> 'pd-status--created'
+const reviewStatusClass = computed(() => `pd-status--${reviewStatus.value.toLowerCase()}`);
 
 const isInterested = computed(() =>
   interested.value.some(u => (u.id || u) === user.value?.id)
@@ -227,7 +225,7 @@ const setReviewStatus = async (status) => {
   try {
     await projectsStore.review(project.value.id, status);
     alertStore.success(
-      status === 'Approved'
+      status === 'APPROVED'
         ? 'Project approved — it is now visible to the public.'
         : `Project marked ${projectReviewLabel(status).toLowerCase()}.`
     );
@@ -510,9 +508,11 @@ const promote = async (person) => {
   -webkit-text-fill-color: currentColor;
 }
 
-.pd-status--pending-review { background-color: #fbe6a2; color: #6b4e00; }
+.pd-status--created { background-color: #fbe6a2; color: #6b4e00; }
 .pd-status--approved { background-color: #cfeacd; color: #1f3d22; }
-.pd-status--changes-requested { background-color: #f6cfcf; color: #7a1f1f; }
+.pd-status--rejected { background-color: #f6cfcf; color: #7a1f1f; }
+.pd-status--completed { background-color: #cfe0ea; color: #1f3a4d; }
+.pd-status--archived { background-color: #ddd8c8; color: #4a4a3f; }
 
 /* ── Head ── */
 .pd-head {

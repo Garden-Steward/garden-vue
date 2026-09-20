@@ -359,67 +359,67 @@ export function getCampaignTypeLabel(type) {
 /**
  * Project review (moderation) vocabulary
  *
- * These are the exact strings the backend enum accepts — a save with anything
- * else comes back as a 400 ValidationError naming this field. Older rows still
- * carry a previous SCREAMING_CASE vocabulary (and some carry null), which is
- * what `normalizeReviewStatus` exists to translate: the backend validates the
- * whole merged entity on update, so a stale value fails a save that never went
- * near this field. Writing a normalized value heals the row.
+ * These are the values the API enforces — see REVIEW_STATUSES in the backend's
+ * project controller. There is deliberately no `status` field to go with them:
+ * Strapi v5 reserves `status` for its own draft/publish selector, so sending
+ * one is rejected outright ("Invalid key status") and the review workflow was
+ * merged into this single field.
+ *
+ * A short-lived deployment used a different vocabulary (Pending Review /
+ * Approved / Changes Requested), so rows written in that window can still hold
+ * those strings — `normalizeReviewStatus` maps them back.
  */
 export const projectReviewOptions = [
-  { value: 'Pending Review',    label: 'Pending review' },
-  { value: 'Approved',          label: 'Approved' },
-  { value: 'Changes Requested', label: 'Changes requested' }
+  { value: 'CREATED',   label: 'Pending review' },
+  { value: 'APPROVED',  label: 'Approved' },
+  { value: 'REJECTED',  label: 'Denied' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'ARCHIVED',  label: 'Archived' }
 ];
 
 export const projectReviewValues = projectReviewOptions.map(o => o.value);
 
-/**
- * The retired vocabulary → the current one. COMPLETED was an approved project
- * that finished, so it stays approved and its lifecycle moves to `status`.
- * ARCHIVED has no counterpart: it becomes pending, which keeps it off the
- * public site and puts the decision back in front of a manager.
- */
-const legacyReviewStatuses = {
-  CREATED:   'Pending Review',
-  APPROVED:  'Approved',
-  REJECTED:  'Changes Requested',
-  COMPLETED: 'Approved',
-  ARCHIVED:  'Pending Review'
+/** The interim vocabulary → the enum the API accepts. */
+const interimReviewStatuses = {
+  'PENDING REVIEW':    'CREATED',
+  'APPROVED':          'APPROVED',
+  'CHANGES REQUESTED': 'REJECTED'
 };
 
 /** Any stored review_status → a value the backend enum accepts. */
 export function normalizeReviewStatus(status) {
-  const raw = String(status ?? '').trim();
-  if (!raw) return 'Pending Review';
-  const exact = projectReviewValues.find(v => v.toLowerCase() === raw.toLowerCase());
-  if (exact) return exact;
-  return legacyReviewStatuses[raw.toUpperCase()] || 'Pending Review';
+  const raw = String(status ?? '').trim().toUpperCase();
+  if (!raw) return 'CREATED';
+  if (projectReviewValues.includes(raw)) return raw;
+  return interimReviewStatuses[raw] || 'CREATED';
 }
 
-/** Human label for a review_status value, legacy values included. */
+/** Human label for a review_status value, interim values included. */
 export function projectReviewLabel(status) {
   const value = normalizeReviewStatus(status);
   return projectReviewOptions.find(o => o.value === value)?.label || value;
 }
 
 /**
- * May a signed-out visitor see this project? Approval is the gate: a pitch
- * that has not been reviewed yet only exists inside the manage area.
+ * Review states a signed-out visitor may see. Mirrors PUBLIC_STATUSES in the
+ * backend controller, which filters anonymous reads to the same two.
  */
+export const publicProjectReviewStatuses = ['APPROVED', 'COMPLETED'];
+
+/** May a signed-out visitor see this project? */
 export function isProjectPubliclyVisible(project) {
-  return normalizeReviewStatus(project?.review_status) === 'Approved';
+  return publicProjectReviewStatuses.includes(normalizeReviewStatus(project?.review_status));
 }
 
 /**
  * May this viewer see the project in a listing? Signed-in stewards also see
- * pitches awaiting review (that is how a pitch gathers interest); one sent
- * back for changes stays out of both lists.
+ * pitches awaiting review (that is how a pitch gathers interest); denied and
+ * archived projects stay out of both lists.
  */
 export function isProjectVisibleTo(project, user) {
   const status = normalizeReviewStatus(project?.review_status);
-  if (!user?.id) return status === 'Approved';
-  return status !== 'Changes Requested';
+  if (!user?.id) return publicProjectReviewStatuses.includes(status);
+  return !['REJECTED', 'ARCHIVED'].includes(status);
 }
 
 /**
