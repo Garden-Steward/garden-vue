@@ -4,7 +4,13 @@
  * spreading a loaded entity (which is now flat in v5), those keys leak in.
  * Strip them before sending.
  */
-const READ_ONLY_KEYS = ['id', 'documentId', 'createdAt', 'updatedAt', 'publishedAt', 'locale'];
+const READ_ONLY_KEYS = [
+    'id', 'documentId', 'createdAt', 'updatedAt', 'publishedAt', 'locale',
+    // `status` is rejected the same way: the project schema validates it but
+    // does not accept it in a write body ("Invalid key status"). Read it, show
+    // it, never send it.
+    'status'
+];
 
 export function stripReadOnly(data) {
     if (!data || typeof data !== 'object' || Array.isArray(data)) return data;

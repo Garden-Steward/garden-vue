@@ -3,7 +3,6 @@ import { computed, ref } from 'vue';
 import { useProjectsStore, useAlertStore } from '@/stores';
 import {
   projectCategoryOptions,
-  projectStatusOptions,
   getProjectCategoryBadgeClasses
 } from '@/_config/GardenConfig';
 import DropDown from '@/components/form/DropDown.vue';
@@ -186,17 +185,6 @@ defineExpose({ isUploading });
             >×</button>
           </div>
         </div>
-      </div>
-
-      <!-- Stage: the backend stores this as a string and rejects null. -->
-      <div>
-        <label class="pf-label">Stage</label>
-        <DropDown
-          :model-value="modelValue.status"
-          :options="projectStatusOptions"
-          placeholder="Select a stage"
-          @update:model-value="patch({ status: $event })"
-        />
       </div>
 
       <!-- Garden association -->

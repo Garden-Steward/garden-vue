@@ -8,8 +8,7 @@ import {
   getProjectCategoryBadgeClasses,
   projectReviewOptions,
   projectReviewLabel,
-  normalizeReviewStatus,
-  resolveProjectStatus
+  normalizeReviewStatus
 } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
 import ProjectForm from '@/components/form/ProjectForm.vue';
@@ -31,7 +30,6 @@ const form = ref({
   title: '',
   short_description: '',
   category: 'Community',
-  status: 'Planning',
   garden: '',
   featured_gallery: [],
   location: null
@@ -173,9 +171,6 @@ const buildForm = (p) => {
     title: attrs.title || '',
     short_description: attrs.short_description || '',
     category: attrs.category || 'Community',
-    // Seeded from the derived stage so saving a legacy row writes a real
-    // string over its null, which the backend requires.
-    status: attrs.status || resolveProjectStatus(attrs) || 'Planning',
     garden: gardenId || '',
     featured_gallery: Array.isArray(attrs.featured_gallery) ? [...attrs.featured_gallery] : [],
     // The schema stores flat latitude/longitude; the LocationPicker uses a
@@ -205,7 +200,6 @@ const save = async () => {
       title: form.value.title.trim(),
       short_description: form.value.short_description?.trim() || '',
       category: form.value.category,
-      status: form.value.status || 'Planning',
       garden: form.value.garden || null,
       featured_gallery: gallery,
       hero_image: gallery[0] || null,

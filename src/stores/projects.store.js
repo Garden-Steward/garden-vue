@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchWrapper, stripReadOnly } from '@/helpers';
 import { useAlertStore, useAuthStore } from '@/stores';
-import { normalizeReviewStatus, resolveProjectStatus } from '@/_config/GardenConfig';
+import { normalizeReviewStatus } from '@/_config/GardenConfig';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/projects`;
 
@@ -23,19 +23,16 @@ function normalizeProject(p) {
 
 /**
  * The backend validates the whole merged entity on write, so a row still
- * holding a retired review_status (or a null status) fails a save that never
- * touched those fields. Send values the schema accepts and the row heals.
+ * holding a retired review_status fails a save that never touched the field.
+ * Send a value the enum accepts and the row heals.
+ *
+ * `status` gets no such treatment — the API refuses it in a write body
+ * (stripReadOnly drops it), so a bad stored one can only be fixed server-side.
  */
 function coerceWorkflowFields(data, current) {
     if ('review_status' in data || current?.review_status !== undefined) {
         data.review_status = normalizeReviewStatus(data.review_status ?? current?.review_status);
     }
-    const status = data.status ?? current?.status;
-    const resolved = typeof status === 'string' && status.trim()
-        ? status.trim()
-        : resolveProjectStatus({ ...current, ...data });
-    if (resolved) data.status = resolved;
-    else delete data.status;
     return data;
 }
 

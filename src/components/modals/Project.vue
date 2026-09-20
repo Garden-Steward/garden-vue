@@ -9,10 +9,8 @@ import FormToggle from '@/components/Toggle.vue';
 import HeroImageCard from '@/components/form/HeroImageCard.vue';
 import {
   projectReviewOptions,
-  projectStatusOptions,
   projectReviewLabel,
-  normalizeReviewStatus,
-  resolveProjectStatus
+  normalizeReviewStatus
 } from '@/_config/GardenConfig';
 import MediaSelector from '@/components/form/MediaSelector.vue';
 
@@ -103,7 +101,6 @@ function goBack() {
 }
 
 const reviewStatusOptions = projectReviewOptions;
-const statusOptions = projectStatusOptions;
 
 const categoryOptions = [
   { value: 'Infrastructure', label: 'Infrastructure' },
@@ -130,11 +127,10 @@ const form = ref({
   impact_metrics: props.impact_metrics ? [...props.impact_metrics] : [],
   related_events: props.related_events ? (Array.isArray(props.related_events) ? props.related_events : props.related_events.data || []) : [],
   garden: props.garden || null,
-  // Seeded with values the backend enum accepts: it validates the whole entity
-  // on save, so a row still holding a retired review_status or a null status
-  // would otherwise reject an edit that never touched these fields.
-  review_status: normalizeReviewStatus(props.review_status),
-  status: props.status || resolveProjectStatus(props) || 'Planning'
+  // Normalized because the backend validates the whole entity on save, so a
+  // row still holding a retired review_status would otherwise reject an edit
+  // that never touched the field.
+  review_status: normalizeReviewStatus(props.review_status)
 });
 
 // Show date fields if dates are already set
@@ -194,7 +190,6 @@ watch(() => props.volunteer_count, (newVal) => { form.value.volunteer_count = ne
 watch(() => props.hours_contributed, (newVal) => { form.value.hours_contributed = newVal || null; });
 watch(() => props.featured, (newVal) => { form.value.featured = newVal || false; });
 watch(() => props.review_status, (newVal) => { form.value.review_status = normalizeReviewStatus(newVal); });
-watch(() => props.status, (newVal) => { form.value.status = newVal || resolveProjectStatus(props) || 'Planning'; });
 watch(() => props.hero_image, (newVal) => {
   if (newVal) {
     form.value.hero_image = newVal;
@@ -583,8 +578,7 @@ const submit = async () => {
         impact_metrics: [],
         related_events: [],
         garden: props.garden,
-        review_status: normalizeReviewStatus(null),
-        status: 'Planning'
+        review_status: normalizeReviewStatus(null)
       };
       showDateFields.value = false;
       originalFormData.value = deepCloneForm(form.value);
@@ -1027,16 +1021,12 @@ onUnmounted(() => {
         </div>
 
         <!--
-          Stage and review state. The backend stores both and rejects a null
-          status, so they are edited here rather than left to drift.
+          Review state. `status` (the build stage) is deliberately absent: the
+          API validates it but refuses it in a write body, so there is nothing
+          an editor here could save.
         -->
-        <div class="grid grid-cols-2 gap-4">
+        <div v-if="editor" class="grid grid-cols-2 gap-4">
           <div>
-            <label class="proj-modal-text block text-sm font-medium mb-1">Stage</label>
-            <DropDown v-model="form.status" :options="statusOptions" />
-            <p class="proj-modal-text-muted text-xs mt-1">Where the work has got to.</p>
-          </div>
-          <div v-if="editor">
             <label class="proj-modal-text block text-sm font-medium mb-1">Review status</label>
             <DropDown v-model="form.review_status" :options="reviewStatusOptions" />
             <p class="proj-modal-text-muted text-xs mt-1">
