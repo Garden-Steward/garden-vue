@@ -8,6 +8,7 @@ import markdownItAttrs from 'markdown-it-attrs';
 import { useEventStore, useAuthStore  } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
+import EventProjectCard from '@/components/EventProjectCard.vue';
 import { PrintDaySheetModal } from '@/components/modals';
 const md = new MarkdownIt().use(markdownItAttrs);
 
@@ -40,6 +41,10 @@ const isEventPast = computed(() => {
 });
 
 const isEventCanceled = computed(() => event.value?.canceled === true);
+
+const linkedProjects = computed(() =>
+  Array.isArray(event.value?.projects) ? event.value.projects : []
+);
 
 // Check if user is a manager of the event's garden
 const isManager = computed(() => {
@@ -172,6 +177,20 @@ const handleKeyPress = (event) => {
             <div v-html="renderedContent"></div>
         </div>
         
+        <!-- Linked project(s) -->
+        <section v-if="linkedProjects.length" class="mt-8 mb-6">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-600 dark:text-[#c9d966] mb-3">
+            {{ linkedProjects.length > 1 ? 'Part of these projects' : 'Part of this project' }}
+          </h2>
+          <div class="space-y-3">
+            <EventProjectCard
+              v-for="project in linkedProjects"
+              :key="project.documentId || project.id"
+              :project="project"
+            />
+          </div>
+        </section>
+
         <!-- Featured Gallery -->
         <Gallery 
           :gallery="event?.featured_gallery"

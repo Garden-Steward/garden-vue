@@ -9,7 +9,7 @@ const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
 // (populate[0]) with nested object keys, and silently drops a bare
 // `populate=field` when other array keys are present — so use the object form
 // throughout, with nested populate for garden.managers.
-const eventPopulate = 'populate[recurring_template]=true&populate[confirmed]=true&populate[hero_image]=true&populate[featured_gallery]=true&populate[garden][populate][managers]=true';
+const eventPopulate = 'populate[recurring_template]=true&populate[confirmed]=true&populate[hero_image]=true&populate[featured_gallery]=true&populate[garden][populate][managers]=true&populate[projects][populate][hero_image]=true&populate[projects][populate][garden]=true';
 
 export const useEventStore = defineStore({
     id: 'event',

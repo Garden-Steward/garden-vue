@@ -30,7 +30,8 @@ const pitchGardens = computed(() =>
 );
 
 const onPitchCreated = (created) => {
-  if (created?.id) window.location = `/manage/project/${created.id}`;
+  const key = created?.documentId || created?.id;
+  if (key) window.location = `/manage/project/${key}`;
 };
 
 const navIconPaths = {

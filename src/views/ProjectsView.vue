@@ -84,7 +84,7 @@ const getImageUrl = (image) => {
 
 // The title is a real link; clicking the card follows it, except over
 // controls that own their click.
-const projectLink = (project) => `/manage/project/${project.id}`;
+const projectLink = (project) => `/manage/project/${project.documentId || project.id}`;
 
 const openProject = (project, event) => {
     if (event.target.closest('a, button')) return;

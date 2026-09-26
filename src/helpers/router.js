@@ -153,7 +153,7 @@ export const router = createRouter({
             meta: { requiresAuth: true }
         },
         {
-            path: '/manage/project/:id',
+            path: '/manage/project/:documentId',
             component: ProjectManage,
             name: 'manage-project',
             meta: { requiresAuth: true }

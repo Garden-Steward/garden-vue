@@ -374,7 +374,7 @@ const rsvp = async (event) => {
                 v-for="project in userProjectsList"
                 :key="project.id"
                 class="project-card project-card--clickable"
-                @click="viewProjectClick(project.id)"
+                @click="viewProjectClick(project.documentId || project.id)"
             >
                 <div class="project-card__head">
                     <span class="project-card__title">{{ project.title }}</span>
@@ -403,7 +403,7 @@ const rsvp = async (event) => {
                         <a
                             v-if="canManageProject(project)"
                             class="dash-link"
-                            :href="`/manage/project/${project.id}`"
+                            :href="`/manage/project/${project.documentId || project.id}`"
                             @click.stop
                         >Edit</a>
                     </span>

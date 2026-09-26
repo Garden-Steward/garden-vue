@@ -42,14 +42,7 @@ function relationToIds(value) {
  * numeric id). `store` is the store instance (`this`).
  */
 function resolveProjectDocId(store, id) {
-    for (const list of [store.projects, store.communityProjects, store.userProjects]) {
-        if (Array.isArray(list)) {
-            const found = list.find((p) => p && p.id === id);
-            if (found?.documentId) return found.documentId;
-        }
-    }
-    if (store.project?.id === id && store.project?.documentId) return store.project.documentId;
-    return id;
+    return store.findCached(id)?.documentId || id;
 }
 
 export const useProjectsStore = defineStore({
@@ -62,14 +55,16 @@ export const useProjectsStore = defineStore({
     }),
     actions: {
         /** The cached copy of a project, from whichever list holds it. */
+        // Accepts either a numeric id or a documentId.
         findCached(id) {
+            const matches = (p) => p && (p.id === id || p.documentId === id);
             for (const list of [this.projects, this.communityProjects, this.userProjects]) {
                 if (Array.isArray(list)) {
-                    const found = list.find(p => p && p.id === id);
+                    const found = list.find(matches);
                     if (found) return found;
                 }
             }
-            return this.project?.id === id ? this.project : null;
+            return matches(this.project) ? this.project : null;
         },
         handleError(err) {
             const alertStore = useAlertStore();
@@ -117,11 +112,20 @@ export const useProjectsStore = defineStore({
                     this.handleError(error);
                 });
         },
+        // Numeric ids aren't stable in v5: publishing (every core PUT) replaces
+        // the published row, so the id changes on each save. Prefer
+        // findByDocumentId; this remains only to redirect legacy numeric links.
         async findById(id) {
+            return this.findOneBy('id', id);
+        },
+        async findByDocumentId(documentId) {
+            return this.findOneBy('documentId', documentId);
+        },
+        async findOneBy(field, value) {
             this.project = { loading: true };
-            // v5 core findOne keys on documentId; the route gives a numeric id,
-            // so resolve via a filter on the collection (permitted) and take [0].
-            return fetchWrapper.get(`${baseUrl}?filters[id][$eq]=${id}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=created_by&populate[4]=managers&populate[5]=impact_metrics&populate[6]=interested`)
+            // Filter the collection (permitted for all roles) rather than hit
+            // core findOne, and take [0].
+            return fetchWrapper.get(`${baseUrl}?filters[${field}][$eq]=${encodeURIComponent(value)}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=created_by&populate[4]=managers&populate[5]=impact_metrics&populate[6]=interested`)
                 .then(response => {
                     const arr = Array.isArray(response?.data) ? response.data : [];
                     const project = arr.length ? arr[0] : null;
@@ -150,6 +154,17 @@ export const useProjectsStore = defineStore({
                     this.communityProjects = { error };
                     this.handleError(error);
                 });
+        },
+        // Projects an event can be linked to: pending (CREATED) and active
+        // (APPROVED), newest first. Returned rather than stored so opening the
+        // event manager doesn't clobber the community list.
+        async getLinkableProjects() {
+            return fetchWrapper.get(`${baseUrl}?filters[review_status][$in][0]=CREATED&filters[review_status][$in][1]=APPROVED&populate[0]=hero_image&populate[1]=garden&sort=createdAt:desc&pagination[pageSize]=100`)
+                .then(response => {
+                    const raw = Array.isArray(response?.data) ? response.data : [];
+                    return raw.map(normalizeProject);
+                })
+                .catch(this.handleError);
         },
         async getSlug(slug) {
             this.project = { loading: true };
