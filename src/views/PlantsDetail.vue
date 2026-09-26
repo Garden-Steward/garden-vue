@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { usePlantsStore } from '@/stores';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import ManageLayout from '@/components/ManageLayout.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -85,6 +86,7 @@ const getPotency = (potency) => {
 </script>
 
 <template>
+  <ManageLayout>
   <div class="plant-detail">
     <!-- Loading -->
     <div v-if="plantLoading" class="plant-detail__loader">
@@ -249,6 +251,7 @@ const getPotency = (potency) => {
       </div>
     </template>
   </div>
+  </ManageLayout>
 
   <!-- ── Lightbox overlay ── -->
   <Teleport to="body">

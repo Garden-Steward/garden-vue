@@ -761,7 +761,7 @@ const openRecurringEditModal = (taskId) => {
         >
           <!-- Mobile compact header: thumbnail + title + category. Tap to expand. -->
           <div class="flex md:hidden items-center gap-3 p-3">
-            <div class="w-16 h-16 rounded-lg overflow-hidden bg-[#1f2d1a] shrink-0">
+            <div class="w-16 h-16 rounded-lg overflow-hidden bg-[#fde6d4] dark:bg-[#1f2d1a] shrink-0">
               <img
                 v-if="getTaskImage(task)"
                 :src="getTaskImage(task)"
@@ -769,7 +769,7 @@ const openRecurringEditModal = (taskId) => {
                 class="w-full h-full object-cover"
               />
               <div v-else class="w-full h-full flex items-center justify-center">
-                <svg class="w-7 h-7 text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-7 h-7 text-[#e0a987] dark:text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -800,7 +800,7 @@ const openRecurringEditModal = (taskId) => {
           <!-- Detail body: always visible on desktop; on mobile only when expanded -->
           <div :class="{ 'hidden md:block': !expandedRegularTasks[task.id] }">
             <!-- Task image -->
-            <div class="m-4 rounded-xl aspect-[4/3] overflow-hidden bg-[#1f2d1a]">
+            <div class="m-4 rounded-xl aspect-[4/3] overflow-hidden bg-[#fde6d4] dark:bg-[#1f2d1a]">
               <img
                 v-if="getTaskImage(task)"
                 :src="getTaskImage(task)"
@@ -808,7 +808,7 @@ const openRecurringEditModal = (taskId) => {
                 class="w-full h-full object-cover"
               />
               <div v-else class="w-full h-full flex items-center justify-center">
-                <svg class="w-12 h-12 text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-12 h-12 text-[#e0a987] dark:text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>

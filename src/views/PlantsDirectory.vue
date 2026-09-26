@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
 import { usePlantsStore } from '@/stores';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import ManageLayout from '@/components/ManageLayout.vue';
 
 const plantsStore = usePlantsStore();
 const route = useRoute();
@@ -147,6 +148,7 @@ const getTypeColor = (type) => {
 </script>
 
 <template>
+  <ManageLayout>
   <div class="plants-page">
     <!-- Header -->
     <header class="plants-header">
@@ -294,6 +296,7 @@ const getTypeColor = (type) => {
       <button class="dash-btn dash-btn--ghost" @click="clearSearch">Clear search</button>
     </div>
   </div>
+  </ManageLayout>
 </template>
 
 <style scoped>
