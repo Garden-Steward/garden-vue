@@ -3,7 +3,7 @@ import { ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore, useAlertStore } from '@/stores';
 import ProjectForm from '@/components/form/ProjectForm.vue';
-import HCaptcha from '@/components/HCaptcha.vue';
+import TurnstileCaptcha from '@/components/TurnstileCaptcha.vue';
 
 const props = defineProps({
   // v-model: controls visibility
@@ -41,7 +41,8 @@ const projectForm = ref(null);
 const captchaToken = ref(null);
 const captchaRef = ref(null);
 const submitterEmail = ref('');
-const siteKey = import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
+// Falls back to Cloudflare's always-pass test key for local dev.
+const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
 const close = () => {
   emit('update:modelValue', false);
@@ -133,9 +134,9 @@ const submit = async () => {
                         <input v-model="submitterEmail" type="email" placeholder="you@example.com" class="pf-input" />
                       </div>
 
-                      <!-- hCaptcha -->
+                      <!-- Turnstile captcha -->
                       <div class="mb-4">
-                        <HCaptcha ref="captchaRef" :site-key="siteKey" @verified="onCaptchaVerified" @error="captchaToken = null" @expired="captchaToken = null" />
+                        <TurnstileCaptcha ref="captchaRef" :site-key="siteKey" @verified="onCaptchaVerified" @error="captchaToken = null" @expired="captchaToken = null" />
                       </div>
 
                       <!-- Footer -->
