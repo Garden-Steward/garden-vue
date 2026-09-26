@@ -31,7 +31,7 @@ const imageUrl = computed(() => {
 const link = computed(() => {
   const p = props.project;
   if (!p) return null;
-  if (props.manage) return p.id ? `/manage/project/${p.id}` : null;
+  if (props.manage) return (p.documentId || p.id) ? `/manage/project/${p.documentId || p.id}` : null;
   if (isPending.value) return null;
   const gardenSlug = p.garden?.slug;
   return gardenSlug && p.slug ? `/gardens/${gardenSlug}/p/${p.slug}` : null;

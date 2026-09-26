@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import MarkdownIt from 'markdown-it';
 import { useProjectsStore, useGardensStore, useAuthStore, useAlertStore } from '@/stores';
@@ -14,7 +14,12 @@ import ManageLayout from '@/components/ManageLayout.vue';
 import ProjectForm from '@/components/form/ProjectForm.vue';
 
 const route = useRoute();
-const projectId = Number(route.params.id) || route.params.id;
+const router = useRouter();
+// documentId is the stable key in v5 — the numeric id changes on every
+// publish (i.e. every save). All-digit params are legacy numeric links.
+const routeKey = String(route.params.documentId || '');
+const isLegacyNumericLink = /^\d+$/.test(routeKey);
+const documentId = ref(isLegacyNumericLink ? null : routeKey);
 
 const projectsStore = useProjectsStore();
 const gardensStore = useGardensStore();
@@ -179,8 +184,18 @@ const buildForm = (p) => {
 };
 
 // ManageLayout already loads gardens; reused here for the reviewer check.
-projectsStore.findById(projectId)
-  .then(p => { if (p) buildForm(p); })
+const load = isLegacyNumericLink
+  ? projectsStore.findById(Number(routeKey))
+  : projectsStore.findByDocumentId(routeKey);
+load
+  .then(p => {
+    if (!p) return;
+    if (p.documentId && p.documentId !== routeKey) {
+      documentId.value = p.documentId;
+      router.replace({ name: 'manage-project', params: { documentId: p.documentId } });
+    }
+    buildForm(p);
+  })
   .catch(() => { /* store sets project.error */ });
 
 const save = async () => {
@@ -201,8 +216,8 @@ const save = async () => {
       latitude: form.value.location?.latitude ?? null,
       longitude: form.value.location?.longitude ?? null
     };
-    await projectsStore.update(projectId, payload);
-    const refreshed = await projectsStore.findById(projectId);
+    await projectsStore.update(documentId.value, payload);
+    const refreshed = await projectsStore.findByDocumentId(documentId.value);
     if (refreshed) buildForm(refreshed);
     isEditing.value = false;
     alertStore.success('Project saved.');
@@ -252,7 +267,7 @@ const promote = async (person) => {
   const nextManagers = [...managers.value, person];
   const nextInterested = interested.value.filter(u => u.id !== person.id);
   try {
-    await projectsStore.update(projectId, {
+    await projectsStore.update(documentId.value, {
       managers: nextManagers.map(u => u.id),
       interested: nextInterested.map(u => u.id)
     });

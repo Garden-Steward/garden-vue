@@ -10,7 +10,7 @@ import LocationPicker from '@/components/LocationPicker.vue';
 
 /*
  * Shared project field set used by both the "Pitch a Project" modal and the
- * dedicated /manage/project/:id editor page. The parent owns the form object
+ * dedicated /manage/project/:documentId editor page. The parent owns the form object
  * (passed as modelValue); this component never mutates it directly — it emits
  * update:modelValue with a merged copy. It assumes a dark panel background;
  * both hosts provide one.
