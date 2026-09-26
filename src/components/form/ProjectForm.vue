@@ -12,8 +12,8 @@ import LocationPicker from '@/components/LocationPicker.vue';
  * Shared project field set used by both the "Pitch a Project" modal and the
  * dedicated /manage/project/:id editor page. The parent owns the form object
  * (passed as modelValue); this component never mutates it directly — it emits
- * update:modelValue with a merged copy. It assumes a dark panel background;
- * both hosts provide one.
+ * update:modelValue with a merged copy. It follows the site theme: light
+ * fields by default, dark ones under html.dark (same palette as the modals).
  */
 const props = defineProps({
   modelValue: {
@@ -140,7 +140,7 @@ defineExpose({ isUploading });
               getProjectCategoryBadgeClasses(opt.value),
               'transition-transform',
               modelValue.category === opt.value
-                ? 'ring-2 ring-white/90 scale-105'
+                ? 'ring-2 ring-[#1a2617]/70 dark:ring-white/90 scale-105'
                 : 'opacity-80 hover:opacity-100'
             ]"
             @click="patch({ category: opt.value })"
@@ -162,11 +162,11 @@ defineExpose({ isUploading });
           @drop.prevent="onDrop"
         >
           <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="onFileChange" />
-          <svg class="w-7 h-7 mx-auto mb-2 text-[#d0d7cc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="pf-dropzone__icon w-7 h-7 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.66-.9l.82-1.2A2 2 0 0110.07 4h3.86a2 2 0 011.66.9l.82 1.2a2 2 0 001.66.9H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <p class="text-sm text-[#d0d7cc]">
+          <p class="pf-dropzone__text text-sm">
             {{ isUploading ? 'Uploading…' : 'Drag & drop photos or click to upload' }}
           </p>
         </div>
@@ -175,7 +175,7 @@ defineExpose({ isUploading });
           <div
             v-for="photo in gallery"
             :key="photo.id"
-            class="relative w-16 h-16 rounded-md overflow-hidden border border-white/10"
+            class="relative w-16 h-16 rounded-md overflow-hidden border border-[#a8c49a] dark:border-white/10"
           >
             <img :src="previewSrc(photo)" alt="" class="w-full h-full object-cover" />
             <button
@@ -188,7 +188,7 @@ defineExpose({ isUploading });
       </div>
 
       <!-- Garden association -->
-      <div>
+      <div class="pf-select">
         <label class="pf-label">Association (Optional)</label>
         <DropDown
           :model-value="modelValue.garden"
@@ -209,50 +209,121 @@ defineExpose({ isUploading });
   </div>
 </template>
 
-<style scoped>
+<!--
+  Plain (non-scoped) styles: the pf-* classes are also used by host forms
+  (PitchProject's email field), and dark overrides need a literal html.dark
+  selector — `:global(.dark) .foo` does not survive this project's scoped-style
+  compilation. Everything is namespaced pf- so nothing leaks.
+-->
+<style>
 .pf-label {
   display: block;
   font-weight: 700;
   font-size: 0.95rem;
   margin-bottom: 0.4rem;
-  color: #f4f1e4;
+  color: #1a2617;
 }
 
-.pf-input {
+.pf-input,
+.pf-select select {
   width: 100%;
   padding: 0.7rem 0.9rem;
   border-radius: 0.6rem;
-  background-color: transparent;
-  border: 1px solid rgba(244, 241, 228, 0.35);
-  color: #f4f1e4;
+  background-color: #ffffff;
+  border: 1px solid #a8c49a;
+  color: #1a2617;
+  caret-color: #1a2617;
+  -webkit-text-fill-color: currentColor;
   outline: none;
   transition: border-color 0.2s ease;
 }
 
 .pf-input::placeholder {
-  color: rgba(244, 241, 228, 0.5);
+  color: #6b7d6e;
 }
 
-.pf-input:focus {
-  border-color: #a7c080;
+.pf-input:focus,
+.pf-select select:focus {
+  border-color: #8aa37c;
+  box-shadow: 0 0 0 3px rgba(138, 163, 124, 0.35);
 }
 
 .pf-input--error {
-  border-color: #f87171;
+  border-color: #dc2626;
   border-width: 2px;
 }
 
+.pf-select .dropdown-container {
+  margin-bottom: 0;
+}
+
+.pf-select .dropdown-container > .dropdown-wrapper > div {
+  color: #4a5c42;
+}
+
 .pf-dropzone {
-  border: 1px dashed rgba(244, 241, 228, 0.45);
+  border: 1px dashed #8aa37c;
   border-radius: 0.6rem;
   padding: 1.75rem 1rem;
   text-align: center;
   cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.5);
   transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.pf-dropzone__icon,
+.pf-dropzone__text {
+  color: #4a5c42;
 }
 
 .pf-dropzone:hover,
 .pf-dropzone--active {
+  background-color: rgba(138, 163, 124, 0.15);
+  border-color: #5a6f50;
+}
+
+html.dark .pf-label {
+  color: #f4f1e4;
+}
+
+html.dark .pf-input,
+html.dark .pf-select select {
+  background-color: rgba(26, 26, 26, 0.35) !important;
+  border-color: rgba(244, 241, 228, 0.35) !important;
+  color: #f4f1e4 !important;
+  caret-color: #f4f1e4;
+}
+
+html.dark .pf-input::placeholder {
+  color: rgba(244, 241, 228, 0.5);
+}
+
+html.dark .pf-input:focus,
+html.dark .pf-select select:focus {
+  border-color: #a7c080 !important;
+  box-shadow: 0 0 0 3px rgba(167, 192, 128, 0.25);
+}
+
+html.dark .pf-input--error {
+  border-color: #f87171 !important;
+}
+
+html.dark .pf-select .dropdown-container > .dropdown-wrapper > div {
+  color: #f4f1e4;
+}
+
+html.dark .pf-dropzone {
+  border-color: rgba(244, 241, 228, 0.45);
+  background-color: transparent;
+}
+
+html.dark .pf-dropzone__icon,
+html.dark .pf-dropzone__text {
+  color: #d0d7cc;
+}
+
+html.dark .pf-dropzone:hover,
+html.dark .pf-dropzone--active {
   background-color: rgba(167, 192, 128, 0.12);
   border-color: #a7c080;
 }

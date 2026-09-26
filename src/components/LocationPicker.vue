@@ -128,7 +128,13 @@ onBeforeUnmount(() => {
 .location-picker__hint {
   margin-top: 0.5rem;
   font-size: 0.875rem;
-  color: #d0d7cc;
+  color: #4a5c42;
   text-align: center;
+}
+</style>
+
+<style>
+html.dark .location-picker__hint {
+  color: #d0d7cc;
 }
 </style>

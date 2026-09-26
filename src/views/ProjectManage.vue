@@ -617,9 +617,9 @@ const promote = async (person) => {
 }
 
 .pd-card--edit {
-  background-color: #3c4a2c;
-  border-color: #56663b;
-  color: #f4f1e4;
+  background-color: #d2e4c8;
+  border-color: #a8c49a;
+  color: #1a2617;
 }
 
 .pd-card__head {
@@ -637,7 +637,7 @@ const promote = async (person) => {
 }
 
 .pd-card--edit .pd-card__title {
-  color: #f4f1e4;
+  color: #1a2617;
   margin-bottom: 0;
 }
 
@@ -820,8 +820,8 @@ const promote = async (person) => {
 
 .pd-toggle {
   background-color: transparent;
-  border: 1px solid #a7c080;
-  color: #d7e8c8;
+  border: 1px solid #5a6f50;
+  color: #2f4a2a;
   font-size: 0.85rem;
   font-weight: 600;
   border-radius: 0.4rem;
@@ -837,7 +837,7 @@ const promote = async (person) => {
 .pd-cancel {
   background: none;
   border: none;
-  color: #f4f1e4;
+  color: #2f4a2a;
   text-decoration: underline;
   cursor: pointer;
   font-size: 0.95rem;
@@ -900,6 +900,20 @@ html.dark .pd-card {
 html.dark .pd-card--edit {
   background-color: #3c4a2c;
   border-color: #56663b;
+  color: #f4f1e4;
+}
+
+html.dark .pd-toggle {
+  border-color: #a7c080;
+  color: #d7e8c8;
+}
+
+html.dark .pd-toggle:hover {
+  color: #1f2a14;
+}
+
+html.dark .pd-cancel {
+  color: #f4f1e4;
 }
 
 html.dark .pd-card__title {
