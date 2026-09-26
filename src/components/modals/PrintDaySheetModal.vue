@@ -25,8 +25,9 @@ const extras = ref([]);              // one-off lines for today
 const extraDraft = ref('');
 const loading = ref(false);
 
-// Manager-only "Edit list" mode — persistent and global, gated on isManager.
-// Never confuse this with the ephemeral skip/hide controls above.
+// Manager-only "Edit list" mode — persistent, gated on isManager. Writes the
+// checklist of THIS sheet's garden only, never the shared list other gardens
+// inherit. Never confuse this with the ephemeral skip/hide controls above.
 const editMode = ref(false);
 const draftList = ref([]);           // working copy of the standing list while editing
 const saveError = ref('');           // inline client-side validation message
@@ -88,7 +89,12 @@ const toggleHidden = (id) => {
   }
 };
 
-// -- Edit-list mode (persistent, global, manager-only) ----------------------
+// -- Edit-list mode (persistent, per-garden, manager-only) -----------------
+
+// The event anchor has no slug prop, so fall back to the garden the sheet
+// payload names. No garden means nothing to own the list — editing is hidden.
+const sheetGardenSlug = computed(() => props.gardenSlug || daySheet.value?.event?.garden?.slug || null);
+const inheritsSharedList = computed(() => daySheet.value?.meta?.standingSource !== 'garden');
 
 const enterEditMode = () => {
   // Never mutate daySheet.standing in place — copy into a working draft.
@@ -143,7 +149,10 @@ const buildDraftPayload = () => draftList.value.map(r => ({
 const doSaveStandingTasks = async (payload) => {
   saving.value = true;
   try {
-    await eventStore.saveStandingTasks(payload);
+    await eventStore.saveGardenStandingTasks(sheetGardenSlug.value, payload);
+    // The print endpoint re-reads the list server-side; mirror that here so the
+    // banner stops calling it shared.
+    daySheet.value = { ...daySheet.value, meta: { ...daySheet.value.meta, standingSource: 'garden' } };
     // Content-derived keys shift under a rename, so any ephemeral skips no
     // longer necessarily refer to the same rows — clear them.
     skippedKeys.value = [];
@@ -169,7 +178,7 @@ const attemptSaveStandingTasks = () => {
   }
   const payload = buildDraftPayload();
   if (payload.length === 0) {
-    // AC47 — clearing the list falls back to the five built-in defaults;
+    // AC47 — an empty garden list falls back to the shared list;
     // require explicit confirmation before the request goes out.
     pendingEmptyConfirm.value = true;
     return;
@@ -262,7 +271,7 @@ const openPrintSheet = () => {
                 <div class="flex items-center justify-between mb-2">
                   <h3 class="text-lg font-semibold text-darkest-green dark:text-white">Every workday</h3>
                   <button
-                    v-if="isManager && !editMode"
+                    v-if="isManager && sheetGardenSlug && !editMode"
                     type="button"
                     class="text-darkest-green dark:text-white text-xs font-semibold py-1 px-3 rounded border-2 border-forest-border bg-custom-green/30"
                     @click="enterEditMode"
@@ -274,7 +283,8 @@ const openPrintSheet = () => {
                 <p v-if="skipsClearedNote" class="text-xs italic mb-2">Skips cleared — review the list again</p>
 
                 <div v-if="editMode" class="on-light mb-3 rounded p-3 bg-custom-peach text-darkest-green font-medium text-sm">
-                  You're editing the shared standing list — changes apply to every garden and every future sheet
+                  You're editing this garden's own checklist — it changes every future sheet for this garden, and no other garden.
+                  <span v-if="inheritsSharedList">Saving gives this garden its own copy of the shared list.</span>
                 </div>
 
                 <ul v-if="!editMode" class="space-y-2">
@@ -298,7 +308,7 @@ const openPrintSheet = () => {
                   </li>
                 </ul>
 
-                <!-- Edit-list mode: persistent, global changes to the standing list. -->
+                <!-- Edit-list mode: persistent changes to this garden's standing list. -->
                 <div v-if="editMode" class="mt-4 border-t border-forest-border pt-4 space-y-2">
                   <div
                     v-for="(row, index) in draftList"
@@ -368,7 +378,7 @@ const openPrintSheet = () => {
                   <p v-if="saveError" class="text-xs text-darkest-green dark:text-custom-peach">{{ saveError }}</p>
 
                   <div v-if="pendingEmptyConfirm" class="on-light rounded p-3 bg-custom-peach text-darkest-green text-sm space-y-2">
-                    <p>This clears the list — sheets will fall back to the five built-in defaults.</p>
+                    <p>This clears the garden's own list — its sheets will fall back to the shared list.</p>
                     <div class="flex gap-2">
                       <button
                         type="button"
