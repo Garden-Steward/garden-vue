@@ -25,6 +25,7 @@ jobs:
     - name: Build project
       env:
         VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        VITE_HCAPTCHA_SITE_KEY: ${{ secrets.VITE_HCAPTCHA_SITE_KEY }}
       run: npm run build
 
     - name: Authenticate to Google Cloud

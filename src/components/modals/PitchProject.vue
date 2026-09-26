@@ -77,7 +77,9 @@ const submit = async () => {
           created_by: user.value?.id ?? null,
           featured_gallery: gallery,
           hero_image: gallery[0] || null,
-          location: form.value.location || null,
+          // Map the picker's { latitude, longitude } to the schema's flat fields.
+          latitude: form.value.location?.latitude ?? null,
+          longitude: form.value.location?.longitude ?? null,
           submitter_email: submitterEmail.value || null
         };
     const created = await projectsStore.register(payload);
