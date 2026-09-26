@@ -3,6 +3,7 @@ import { computed, watch, ref, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useEventStore } from '@/stores';
 import Project from '@/components/modals/Project.vue';
+import { normalizeReviewStatus, projectReviewOptions } from '@/_config/GardenConfig';
 
 const props = defineProps({
   garden: {
@@ -22,6 +23,8 @@ const { volunteerDays } = storeToRefs(eventStore);
 
 // Filter and sort state
 const selectedCategory = ref('all');
+// 'active' = everything except archived; archived stays reachable so it can be restored.
+const selectedStatus = ref('active');
 const selectedEvent = ref('all');
 const sortOrder = ref('desc'); // 'asc' or 'desc'
 
@@ -74,6 +77,17 @@ const availableEvents = computed(() => {
 // Filter and sort projects
 const projectsList = computed(() => {
   let filtered = [...allProjects.value];
+
+  // Filter by review status
+  if (selectedStatus.value === 'active') {
+    filtered = filtered.filter(project =>
+      normalizeReviewStatus(project.review_status) !== 'ARCHIVED'
+    );
+  } else if (selectedStatus.value !== 'all') {
+    filtered = filtered.filter(project =>
+      normalizeReviewStatus(project.review_status) === selectedStatus.value
+    );
+  }
 
   // Filter by category
   if (selectedCategory.value !== 'all') {
@@ -166,6 +180,21 @@ onUnmounted(() => {
   <div>
     <!-- Header with Filters -->
     <div v-if="allProjects.length > 0" class="pl-toolbar flex flex-wrap gap-3 items-center mb-4">
+      <!-- Status Filter -->
+      <div class="flex items-center gap-2">
+        <label class="pl-label text-sm font-medium">Status:</label>
+        <select
+          v-model="selectedStatus"
+          class="pl-select px-3 py-1.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-custom-green"
+        >
+          <option value="active">Active (not archived)</option>
+          <option v-for="option in projectReviewOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+          <option value="all">All Statuses</option>
+        </select>
+      </div>
+
       <!-- Category Filter -->
       <div class="flex items-center gap-2">
         <label class="pl-label text-sm font-medium">Category:</label>
