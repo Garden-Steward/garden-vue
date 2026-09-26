@@ -151,6 +151,17 @@ export const useProjectsStore = defineStore({
                     this.handleError(error);
                 });
         },
+        // Projects an event can be linked to: pending (CREATED) and active
+        // (APPROVED), newest first. Returned rather than stored so opening the
+        // event manager doesn't clobber the community list.
+        async getLinkableProjects() {
+            return fetchWrapper.get(`${baseUrl}?filters[review_status][$in][0]=CREATED&filters[review_status][$in][1]=APPROVED&populate[0]=hero_image&populate[1]=garden&sort=createdAt:desc&pagination[pageSize]=100`)
+                .then(response => {
+                    const raw = Array.isArray(response?.data) ? response.data : [];
+                    return raw.map(normalizeProject);
+                })
+                .catch(this.handleError);
+        },
         async getSlug(slug) {
             this.project = { loading: true };
             return fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=garden.organization&populate[4]=related_events&populate[5]=related_events.hero_image&populate[6]=impact_metrics`)

@@ -2,7 +2,8 @@
 import { storeToRefs } from 'pinia';
 import { ref, watch, computed, nextTick, onBeforeUnmount } from 'vue';
 import { useRoute } from "vue-router";
-import { useEventStore, useAlertStore } from '@/stores';
+import { useEventStore, useAlertStore, useProjectsStore } from '@/stores';
+import { relationKey } from '@/helpers';
 import Tiptap from '@/components/Tiptap.vue'
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue'
 import VueDatePicker from '@vuepic/vue-datepicker';
@@ -14,9 +15,11 @@ import HeroImageCard from '@/components/form/HeroImageCard.vue';
 import ImageGalleryUpload from '@/components/form/ImageGalleryUpload.vue';
 import DropDown from '@/components/form/DropDown.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import EventProjectCard from '@/components/EventProjectCard.vue';
 
 const eventStore = useEventStore();
 const alertStore = useAlertStore();
+const projectsStore = useProjectsStore();
 const route = useRoute()
 
 const { event } = storeToRefs(eventStore);
@@ -47,6 +50,46 @@ const startEditingTitle = async () => {
 };
 
 eventStore.findById(route.params.id);
+
+// --- Linked projects ---
+// Pending + active projects, newest first (sorted server-side).
+const linkableProjects = ref([]);
+const projectsLoading = ref(true);
+const selectedProjectId = ref('');
+
+projectsStore.getLinkableProjects()
+  .then((list) => { linkableProjects.value = list || []; })
+  .catch(() => { linkableProjects.value = []; })
+  .finally(() => { projectsLoading.value = false; });
+
+const linkedProjects = computed(() =>
+  Array.isArray(event.value?.projects) ? event.value.projects : []
+);
+
+const projectOptions = computed(() => {
+  const linked = new Set(linkedProjects.value.map(relationKey));
+  return linkableProjects.value.filter((p) => !linked.has(relationKey(p)));
+});
+
+const projectOptionLabel = (p) => {
+  const parts = [p.title];
+  if (p.garden?.title) parts.push(p.garden.title);
+  const label = parts.join(' — ');
+  return p.review_status === 'CREATED' ? `${label} (pending)` : label;
+};
+
+const addProject = () => {
+  const project = linkableProjects.value.find((p) => String(p.id) === String(selectedProjectId.value));
+  selectedProjectId.value = '';
+  if (!project || !event.value) return;
+  event.value.projects = [...linkedProjects.value, project];
+};
+
+const removeProject = (project) => {
+  if (!event.value) return;
+  const key = relationKey(project);
+  event.value.projects = linkedProjects.value.filter((p) => relationKey(p) !== key);
+};
 
 const prettyDay = computed(() => {
   return format(new Date(event.value.startDatetime), 'PPP');
@@ -291,6 +334,12 @@ const saveEvent = async (isAutoSave = false) => {
     // featured_gallery → [{ id }]
     eventData.featured_gallery = getGalleryIds(src.featured_gallery).map((id) => ({ id }));
 
+    // projects → { set: [documentId] }. Skipped when the load didn't include
+    // the relation, so an older backend can't wipe the links.
+    if (Array.isArray(src.projects)) {
+      eventData.projects = { set: src.projects.map(relationKey) };
+    }
+
     await eventStore.update(route.params.id, eventData)
     
     if (isAutoSave) {
@@ -510,6 +559,45 @@ onBeforeUnmount(() => {
                             class="w-full md:w-1/2"
                           />
                         </div>
+
+            <!-- Linked project(s) -->
+            <div class="mb-4">
+              <label for="eventProject" class="text-[#f5f5f5]">Project</label>
+              <p class="text-sm text-[#d0d0d0] mb-2">
+                Link this day to the project it moves forward. It shows on the public event page.
+              </p>
+
+              <div v-if="linkedProjects.length" class="space-y-3 mb-3">
+                <EventProjectCard
+                  v-for="project in linkedProjects"
+                  :key="project.documentId || project.id"
+                  :project="project"
+                  manage
+                  @remove="removeProject"
+                />
+              </div>
+
+              <select
+                id="eventProject"
+                v-model="selectedProjectId"
+                class="project-select"
+                :disabled="projectsLoading || !projectOptions.length"
+                @change="addProject"
+              >
+                <option value="" disabled>
+                  {{
+                    projectsLoading
+                      ? 'Loading projects…'
+                      : projectOptions.length
+                        ? (linkedProjects.length ? 'Link another project…' : 'Choose a project…')
+                        : 'No other pending or active projects'
+                  }}
+                </option>
+                <option v-for="p in projectOptions" :key="p.id" :value="p.id">
+                  {{ projectOptionLabel(p) }}
+                </option>
+              </select>
+            </div>
 
                         <div class="flex items-center mb-2 relative">
               <label for="blurb" class="mr-2 text-[#f5f5f5]">Blurb</label>
