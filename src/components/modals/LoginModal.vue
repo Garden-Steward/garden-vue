@@ -89,6 +89,7 @@ const submitPhone = async () => {
 
 const resend = async () => {
     if (resendRemaining.value > 0 || isSubmitting.value) return;
+    isSubmitting.value = true;
     try {
         await auth.requestSmsCode(phoneDigits.value);
         info.value = 'New code sent.';
@@ -96,6 +97,8 @@ const resend = async () => {
         startCountdown();
     } catch (err) {
         error.value = sendErrorMessage(err);
+    } finally {
+        isSubmitting.value = false;
     }
 };
 
@@ -229,6 +232,7 @@ onBeforeUnmount(() => {
                                 autocomplete="one-time-code"
                                 maxlength="6"
                                 pattern="\d{6}"
+                                aria-label="Login code"
                                 :value="code"
                                 @input="onCodeInput"
                                 class="login-modal-input"
@@ -250,14 +254,18 @@ onBeforeUnmount(() => {
                     </div>
 
                     <form v-else @submit.prevent="submitEmail">
+                        <label for="login-modal-email" class="login-modal-label">Email</label>
                         <input
+                            id="login-modal-email"
                             ref="emailInput"
                             type="email"
                             autocomplete="username"
                             v-model="email"
                             class="login-modal-input"
                         />
+                        <label for="login-modal-password" class="login-modal-label">Password</label>
                         <input
+                            id="login-modal-password"
                             type="password"
                             autocomplete="current-password"
                             v-model="password"
@@ -275,6 +283,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .login-modal-wrapper {
+    position: fixed;
+    inset: 0;
     z-index: 10001;
 }
 
