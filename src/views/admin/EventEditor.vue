@@ -66,6 +66,12 @@ const linkedProjects = computed(() =>
   Array.isArray(event.value?.projects) ? event.value.projects : []
 );
 
+// The backend only knows the event↔project relation once it returns
+// `projects` on load. Judge that from the event AS LOADED — picking a project
+// creates the array locally, which must not be mistaken for backend support
+// (an older backend 400s on `projects` in the populate and the payload).
+const projectsSupported = computed(() => Array.isArray(originalEventData.value?.projects));
+
 const projectOptions = computed(() => {
   const linked = new Set(linkedProjects.value.map(relationKey));
   return linkableProjects.value.filter((p) => !linked.has(relationKey(p)));
@@ -336,7 +342,7 @@ const saveEvent = async (isAutoSave = false) => {
 
     // projects → { set: [documentId] }. Skipped when the load didn't include
     // the relation, so an older backend can't wipe the links.
-    if (Array.isArray(src.projects)) {
+    if (projectsSupported.value && Array.isArray(src.projects)) {
       eventData.projects = { set: src.projects.map(relationKey) };
     }
 
@@ -561,7 +567,7 @@ onBeforeUnmount(() => {
                         </div>
 
             <!-- Linked project(s) -->
-            <div class="mb-4">
+            <div v-if="projectsSupported" class="mb-4">
               <label for="eventProject" class="text-[#1a2617] dark:text-[#f5f5f5]">Project</label>
               <p class="text-sm text-[#6b7280] dark:text-[#d0d0d0] mb-2">
                 Link this day to the project it moves forward. It shows on the public event page.
