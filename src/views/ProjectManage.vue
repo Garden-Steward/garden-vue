@@ -74,8 +74,7 @@ const pitchGardens = computed(() => {
 });
 
 // ── Permissions ──
-// A garden's managers are the reviewers for projects pitched at that garden;
-// the backend enforces the same rule on PUT /projects/:id/review.
+// Matches what the backend enforces on PUT /projects/:id/review.
 const projectGarden = computed(() => {
   const g = project.value?.garden;
   const gardenId = (g && typeof g === 'object') ? g.id : g;
@@ -93,8 +92,7 @@ const isCreator = computed(() => {
   const id = (cb && typeof cb === 'object') ? cb.id : cb;
   return !!id && id === user.value?.id;
 });
-// Who may see the people behind a project and edit it: its own managers, the
-// steward who pitched it, the managers of its garden, and admins.
+// Its managers, whoever pitched it, its garden's managers, and admins.
 const canManage = computed(() =>
   !!user.value && (authStore.isAdmin || isProjectManager.value || isCreator.value || canReview.value)
 );
@@ -154,7 +152,6 @@ const publicUrl = computed(() => {
   return `/gardens/${slug}/p/${project.value.slug}`;
 });
 
-// 'CREATED' -> 'pd-status--created'
 const reviewStatusClass = computed(() => `pd-status--${reviewStatus.value.toLowerCase()}`);
 
 const isInterested = computed(() =>
@@ -181,8 +178,7 @@ const buildForm = (p) => {
   interested.value = Array.isArray(attrs.interested) ? [...attrs.interested] : [];
 };
 
-// ManageLayout already loads gardens (for the pitch modal); this page reuses
-// them for the association dropdown and the reviewer check.
+// ManageLayout already loads gardens; reused here for the reviewer check.
 projectsStore.findById(projectId)
   .then(p => { if (p) buildForm(p); })
   .catch(() => { /* store sets project.error */ });
@@ -217,8 +213,7 @@ const save = async () => {
   }
 };
 
-// Move the project through the review workflow. Only an APPROVED project is
-// visible to signed-out visitors, so this is the gate to the public site.
+// APPROVED is what makes a project public.
 const setReviewStatus = async (status) => {
   if (reviewing.value || status === reviewStatus.value) return;
   reviewing.value = true;
@@ -240,7 +235,7 @@ const toggleInterest = async () => {
   if (togglingInterest.value) return;
   togglingInterest.value = true;
   try {
-    // Patched in place by the store; re-fetching would blank the page.
+    // Patched by the store; re-fetching would blank the page.
     await projectsStore.toggleInterest(project.value.id);
     interested.value = Array.isArray(project.value.interested) ? [...project.value.interested] : [];
   } catch (e) {
@@ -250,8 +245,7 @@ const toggleInterest = async () => {
   }
 };
 
-// Promote an interested person to a manager: add to managers, drop from
-// interested, and persist immediately (independent of the form's Save).
+// Persists immediately, independent of the form's Save.
 const promote = async (person) => {
   if (promotingId.value) return;
   promotingId.value = person.id;

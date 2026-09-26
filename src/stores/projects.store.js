@@ -21,14 +21,8 @@ function normalizeProject(p) {
 }
 
 
-/**
- * The backend validates the whole merged entity on write, so a row still
- * holding a retired review_status fails a save that never touched the field.
- * Send a value the enum accepts and the row heals.
- *
- * `status` gets no such treatment — the API refuses it in a write body
- * (stripReadOnly drops it), so a bad stored one can only be fixed server-side.
- */
+// The API validates the whole merged entity, so a row holding a retired
+// review_status fails a save that never touched it. Send a valid one.
 function coerceWorkflowFields(data, current) {
     if ('review_status' in data || current?.review_status !== undefined) {
         data.review_status = normalizeReviewStatus(data.review_status ?? current?.review_status);
@@ -323,13 +317,10 @@ export const useProjectsStore = defineStore({
                 .catch(this.handleError);
         },
         // Dedicated endpoint rather than a core PUT: any logged-in user may toggle
-        // their own interest, and it skips full-entity validation (a core update
-        // fails on legacy rows with a NULL review_status).
+        // their own interest, and it skips full-entity validation.
         //
-        // The cached copies are patched in place from the result. Callers must
-        // not follow this with a list refetch: getAllProjects() blanks the state
-        // to { loading: true } first, which unmounts the whole grid and makes the
-        // page flash on every click.
+        // Patches the cache in place. Do not follow with a list refetch —
+        // getAllProjects() blanks the state first and the grid flashes.
         async toggleInterest(id) {
             return fetchWrapper.post(`${baseUrl}/${id}/interest`, {})
                 .then(response => {
@@ -342,11 +333,7 @@ export const useProjectsStore = defineStore({
                     throw error;
                 });
         },
-        /**
-         * Sync every cached copy of a project with the interest relation the
-         * server just returned. When the response does not carry one, fall back
-         * to toggling the signed-in user in and out of the cached array.
-         */
+        /** Sync cached copies with the server's interest relation, or toggle locally. */
         patchInterest(id, updated) {
             const authStore = useAuthStore();
             const userId = authStore.user?.id;
@@ -375,8 +362,7 @@ export const useProjectsStore = defineStore({
                 .then(response => response?.data ?? response)
                 .catch(this.handleError);
         },
-        // Move a project through the review workflow (Approved / Changes Requested / ...).
-        // Managers of the project's garden only; patches the cached copy in place.
+        // Garden managers only; patches the cached copy in place.
         async review(id, review_status) {
             review_status = normalizeReviewStatus(review_status);
             return fetchWrapper.put(`${baseUrl}/${id}/review`, { data: { review_status } })

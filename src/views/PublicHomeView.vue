@@ -61,7 +61,6 @@ projectsStore.getAllProjects();
 const featuredProjects = computed(() => {
   const list = Array.isArray(communityProjects.value) ? communityProjects.value : [];
   return list
-    // The landing page is the public face of the site: approved work only.
     .filter(isProjectPubliclyVisible)
     .slice(0, 3);
 });

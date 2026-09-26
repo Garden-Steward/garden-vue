@@ -356,19 +356,7 @@ export function getCampaignTypeLabel(type) {
     .join(' ');
 }
 
-/**
- * Project review (moderation) vocabulary
- *
- * These are the values the API enforces — see REVIEW_STATUSES in the backend's
- * project controller. There is deliberately no `status` field to go with them:
- * Strapi v5 reserves `status` for its own draft/publish selector, so sending
- * one is rejected outright ("Invalid key status") and the review workflow was
- * merged into this single field.
- *
- * A short-lived deployment used a different vocabulary (Pending Review /
- * Approved / Changes Requested), so rows written in that window can still hold
- * those strings — `normalizeReviewStatus` maps them back.
- */
+/** Mirrors REVIEW_STATUSES in the backend's project controller. */
 export const projectReviewOptions = [
   { value: 'CREATED',   label: 'Pending review' },
   { value: 'APPROVED',  label: 'Approved' },
@@ -379,14 +367,14 @@ export const projectReviewOptions = [
 
 export const projectReviewValues = projectReviewOptions.map(o => o.value);
 
-/** The interim vocabulary → the enum the API accepts. */
+// An earlier deployment used these; some rows still hold them.
 const interimReviewStatuses = {
   'PENDING REVIEW':    'CREATED',
   'APPROVED':          'APPROVED',
   'CHANGES REQUESTED': 'REJECTED'
 };
 
-/** Any stored review_status → a value the backend enum accepts. */
+/** Any stored review_status → a value the API accepts. */
 export function normalizeReviewStatus(status) {
   const raw = String(status ?? '').trim().toUpperCase();
   if (!raw) return 'CREATED';
@@ -394,28 +382,19 @@ export function normalizeReviewStatus(status) {
   return interimReviewStatuses[raw] || 'CREATED';
 }
 
-/** Human label for a review_status value, interim values included. */
 export function projectReviewLabel(status) {
   const value = normalizeReviewStatus(status);
   return projectReviewOptions.find(o => o.value === value)?.label || value;
 }
 
-/**
- * Review states a signed-out visitor may see. Mirrors PUBLIC_STATUSES in the
- * backend controller, which filters anonymous reads to the same two.
- */
+/** Mirrors PUBLIC_STATUSES in the backend controller. */
 export const publicProjectReviewStatuses = ['APPROVED', 'COMPLETED'];
 
-/** May a signed-out visitor see this project? */
 export function isProjectPubliclyVisible(project) {
   return publicProjectReviewStatuses.includes(normalizeReviewStatus(project?.review_status));
 }
 
-/**
- * May this viewer see the project in a listing? Signed-in stewards also see
- * pitches awaiting review (that is how a pitch gathers interest); denied and
- * archived projects stay out of both lists.
- */
+/** Signed-in stewards also see pitches awaiting review, so one can gather interest. */
 export function isProjectVisibleTo(project, user) {
   const status = normalizeReviewStatus(project?.review_status);
   if (!user?.id) return publicProjectReviewStatuses.includes(status);
@@ -430,10 +409,8 @@ export function isProjectVisibleTo(project, user) {
  *   Building — active install work
  *   Tending  — built, in ongoing maintenance
  *
- * These are distinct from `review_status` (the moderation workflow). The
- * backend stores `status` as a string and rejects null, so an editor must
- * always send one; `resolveProjectStatus()` below supplies a sensible default
- * for rows that never had it set.
+ * Distinct from `review_status` (the moderation workflow). Display only —
+ * `status` is not writable through the API, so nothing here is ever sent.
  */
 export const projectStatusOptions = [
   { value: 'Planning', label: 'Planning' },
@@ -483,14 +460,7 @@ export function getProjectCategoryOverlayClasses(category) {
   return `${projectBadgeOverlayBaseClasses} ${colors}`;
 }
 
-/**
- * Best available status for a project.
- *
- * Prefers the stored `status`, falling back to a rough read of the moderation
- * state and the project's own dates for rows that predate the field. The
- * editors seed their status control from this, so saving a legacy row writes a
- * real string over its null — which the backend requires.
- */
+/** Stored `status` if there is one, else a guess from review state and dates. */
 export function resolveProjectStatus(project) {
   if (!project) return null;
 

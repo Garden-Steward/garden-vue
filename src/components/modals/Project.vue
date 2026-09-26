@@ -65,8 +65,8 @@ const validationErrors = ref({
   slug: false
 });
 
-// A failed save is not a missing field: keep the server's complaint separate so
-// the form never tells someone to fill in fields that are already filled in.
+// Kept separate from validationErrors so a failed save never reports
+// missing fields that are already filled in.
 const serverError = ref('');
 
 function clearValidationError(field) {
@@ -127,9 +127,7 @@ const form = ref({
   impact_metrics: props.impact_metrics ? [...props.impact_metrics] : [],
   related_events: props.related_events ? (Array.isArray(props.related_events) ? props.related_events : props.related_events.data || []) : [],
   garden: props.garden || null,
-  // Normalized because the backend validates the whole entity on save, so a
-  // row still holding a retired review_status would otherwise reject an edit
-  // that never touched the field.
+  // Normalized: a retired value would fail the save on the way through.
   review_status: normalizeReviewStatus(props.review_status)
 });
 
@@ -473,8 +471,7 @@ const submit = async () => {
   error.value = false;
   serverError.value = '';
 
-  // A slug is derived from the title, so it is only ever missing when the title
-  // is too — repair it here rather than blocking on a field with no input.
+  // Derived from the title, and has no input of its own — repair, don't block.
   if (!form.value.slug && form.value.title) {
     form.value.slug = generateSlug(form.value.title);
   }
@@ -630,8 +627,7 @@ const toggleShow = () => {
 // ── Review workflow (manager-only, shown on the card in the manage view) ──
 const reviewing = ref(false);
 
-// Legacy rows still carry the retired vocabulary, so read every review_status
-// through the normalizer rather than comparing against raw strings.
+// Legacy rows carry the retired vocabulary; never compare raw strings.
 const currentReview = computed(() => normalizeReviewStatus(props.review_status));
 const reviewLabel = computed(() => projectReviewLabel(props.review_status));
 
@@ -1021,11 +1017,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!--
-          Review state. `status` (the build stage) is deliberately absent: the
-          API validates it but refuses it in a write body, so there is nothing
-          an editor here could save.
-        -->
+        <!-- No build-stage field: `status` is not writable through the API. -->
         <div v-if="editor" class="grid grid-cols-2 gap-4">
           <div>
             <label class="proj-modal-text block text-sm font-medium mb-1">Review status</label>
@@ -1572,10 +1564,7 @@ block using literal "html.dark ..." selectors — the
   same pattern GardenDetail.vue uses for its gm-* dark overrides.
 -->
 <style>
-/*
- * A field the save is waiting on. Border plus a tinted background plus the
- * message underneath, so it does not rely on colour alone.
- */
+/* Invalid field. Paired with a message, so it is not colour alone. */
 .proj-field-invalid,
 .proj-modal-input.proj-field-invalid {
   border-color: #dc2626 !important;

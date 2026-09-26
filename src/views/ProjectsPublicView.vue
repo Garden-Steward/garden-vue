@@ -35,8 +35,6 @@ const relationIds = (rel) => {
 
 const listedProjects = computed(() => {
   const list = Array.isArray(communityProjects.value) ? communityProjects.value : [];
-  // Signed-out visitors see approved projects only; signed-in stewards also
-  // see pitches still awaiting review, so a pitch can gather support.
   return list.filter(p => isProjectVisibleTo(p, user.value));
 });
 
@@ -121,10 +119,8 @@ async function toggleInterest(project) {
   joined.value = { ...joined.value, [project.id]: !wasIn };
 
   try {
-    // The store patches the cached project in place; refetching the list would
-    // blank it to a loading state and flash the page.
+    // The store patches the cache; refetching here would flash the list.
     await projectsStore.toggleInterest(project.id);
-    // The patched record is now authoritative.
     const rest = { ...joined.value };
     delete rest[project.id];
     joined.value = rest;

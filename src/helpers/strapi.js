@@ -6,9 +6,7 @@
  */
 const READ_ONLY_KEYS = [
     'id', 'documentId', 'createdAt', 'updatedAt', 'publishedAt', 'locale',
-    // `status` is rejected the same way: the project schema validates it but
-    // does not accept it in a write body ("Invalid key status"). Read it, show
-    // it, never send it.
+    // Strapi v5 reserves `status` for draft/publish; sending it is an error.
     'status'
 ];
 

@@ -82,10 +82,8 @@ const getImageUrl = (image) => {
     return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
 };
 
-// Cards open the project's own page (full description, the people interested,
-// and the review controls for managers). The title is a real link so it can be
-// middle-clicked and read as a link; clicking anywhere else on the card follows
-// it, except over the controls that own their click (the interest button).
+// The title is a real link; clicking the card follows it, except over
+// controls that own their click.
 const projectLink = (project) => `/manage/project/${project.id}`;
 
 const openProject = (project, event) => {
@@ -95,7 +93,6 @@ const openProject = (project, event) => {
 
 const reviewStatus = (project) => normalizeReviewStatus(project.review_status);
 const showReviewBadge = (project) => reviewStatus(project) !== 'APPROVED';
-// 'CREATED' -> 'cproj-card__flag--created'
 const reviewFlagClass = (project) => `cproj-card__flag--${reviewStatus(project).toLowerCase()}`;
 
 const secondaryBadge = (project) => {
@@ -128,8 +125,7 @@ const toggleInterest = async (project) => {
     if (togglingId.value) return;
     togglingId.value = project.id;
     try {
-        // The store patches the cached project in place — refetching the list
-        // here would blank the grid and flash the page.
+        // The store patches the cache; refetching here would flash the grid.
         await projectsStore.toggleInterest(project.id);
     } catch (e) {
         // store surfaces its own error alert
@@ -400,10 +396,7 @@ const handleInterest = (project) => {
     transition: all 0.2s ease;
 }
 
-/*
- * Hovering anywhere on the card highlights it and reads as clickable — unless
- * the pointer is over the interest button, which is its own action.
- */
+/* Highlight the card on hover, except over the interest button. */
 .cproj-card:hover:not(:has(.cproj-card__btn:hover)) {
     border-color: #8aa37c;
     box-shadow: 0 6px 18px rgba(138, 163, 124, 0.22);

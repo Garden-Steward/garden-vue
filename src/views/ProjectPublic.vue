@@ -21,8 +21,7 @@ const { project } = storeToRefs(projectsStore);
 const { garden } = storeToRefs(gardensStore);
 const { user } = storeToRefs(authStore);
 
-// A pitch is only public once a garden manager has approved it; signed-in
-// stewards can still follow a link to one that is pending review.
+// Signed-in stewards can still follow a link to a pending pitch.
 const viewerMaySee = computed(() => isProjectVisibleTo(project.value, user.value));
 
 // Dark mode state - initialize from system preference
@@ -238,7 +237,6 @@ const getEventImage = (event) => {
         </div>
       </div>
 
-      <!-- Pending pitches are not part of the public site -->
       <div v-if="project?.id && !viewerMaySee" class="error-state">
         <p>This project hasn't been approved for the public site yet.</p>
       </div>
