@@ -101,11 +101,13 @@ defineExpose({ isUploading });
 </script>
 
 <template>
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-    <!-- Left column: form fields -->
-    <div class="space-y-5">
+  <!-- Wide containers: fields on the left, the map spanning their full height
+       on the right. Narrow (tablet/phone): one column, with a short full-width
+       map right after Category instead of a tall sliver. -->
+  <div class="pf">
+    <div class="pf-grid">
       <!-- Title -->
-      <div>
+      <div class="pf-field">
         <label class="pf-label">Project Title</label>
         <input
           :value="modelValue.title"
@@ -117,7 +119,7 @@ defineExpose({ isUploading });
       </div>
 
       <!-- Description -->
-      <div>
+      <div class="pf-field">
         <label class="pf-label">Description</label>
         <textarea
           :value="modelValue.short_description"
@@ -129,7 +131,7 @@ defineExpose({ isUploading });
       </div>
 
       <!-- Category -->
-      <div>
+      <div class="pf-field">
         <label class="pf-label">Category</label>
         <div class="flex flex-wrap gap-2">
           <button
@@ -150,8 +152,19 @@ defineExpose({ isUploading });
         </div>
       </div>
 
+      <!-- Location -->
+      <div class="pf-map">
+        <label class="pf-label">Location</label>
+        <div class="pf-map__picker">
+          <LocationPicker
+            :model-value="modelValue.location"
+            @update:model-value="patch({ location: $event })"
+          />
+        </div>
+      </div>
+
       <!-- Photos -->
-      <div>
+      <div class="pf-field">
         <label class="pf-label">Upload Photos</label>
         <div
           class="pf-dropzone"
@@ -188,7 +201,7 @@ defineExpose({ isUploading });
       </div>
 
       <!-- Garden association -->
-      <div class="pf-select">
+      <div class="pf-field pf-select">
         <label class="pf-label">Association (Optional)</label>
         <DropDown
           :model-value="modelValue.garden"
@@ -197,14 +210,6 @@ defineExpose({ isUploading });
           @update:model-value="patch({ garden: $event })"
         />
       </div>
-    </div>
-
-    <!-- Right column: location map -->
-    <div class="min-h-[320px]">
-      <LocationPicker
-        :model-value="modelValue.location"
-        @update:model-value="patch({ location: $event })"
-      />
     </div>
   </div>
 </template>
@@ -216,6 +221,45 @@ defineExpose({ isUploading });
   compilation. Everything is namespaced pf- so nothing leaks.
 -->
 <style>
+.pf {
+  container: pf / inline-size;
+}
+
+.pf-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.pf-map__picker {
+  height: clamp(240px, 62cqw, 360px);
+}
+
+@container pf (min-width: 680px) {
+  .pf-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 2rem;
+  }
+
+  .pf-field {
+    grid-column: 1;
+  }
+
+  /* Spans all five field rows so the map is as tall as the form. */
+  .pf-map {
+    grid-column: 2;
+    grid-row: 1 / span 5;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pf-map__picker {
+    flex: 1;
+    height: auto;
+    min-height: 320px;
+  }
+}
+
 .pf-label {
   display: block;
   font-weight: 700;

@@ -6,6 +6,7 @@ import { useProjectsStore, useAuthStore } from '@/stores';
 import {
     getProjectCategoryBadgeClasses,
     projectReviewLabel,
+    projectReviewOptions,
     normalizeReviewStatus
 } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
@@ -21,6 +22,12 @@ projectsStore.getAllProjects();
 
 const search = ref('');
 const sortBy = ref('interested'); // 'interested' | 'recent'
+// 'ACTIVE' = every status except ARCHIVED; otherwise one review status.
+const statusFilter = ref('ACTIVE');
+const statusFilterOptions = [
+    { value: 'ACTIVE', label: 'All active' },
+    ...projectReviewOptions
+];
 const togglingId = ref(null);
 const approvingId = ref(null);
 const showInterestModal = ref(false);
@@ -35,7 +42,7 @@ const pendingProjects = computed(() =>
 
 const isProjectAdmin = computed(() => {
   const role = user.value?.role;
-  return role?.type === 'admin' || role?.name === 'Admin' || role?.type === 'manager';
+  return authStore.isAdmin || role?.type === 'manager';
 });
 
 const approveProject = async (id) => {
@@ -107,7 +114,10 @@ const allProjects = computed(() =>
 );
 
 const projects = computed(() => {
-    let list = allProjects.value;
+    let list = allProjects.value.filter(p => {
+        const rs = reviewStatus(p);
+        return statusFilter.value === 'ACTIVE' ? rs !== 'ARCHIVED' : rs === statusFilter.value;
+    });
     const q = search.value.trim().toLowerCase();
     if (q) {
         list = list.filter(p =>
@@ -165,6 +175,12 @@ const handleInterest = (project) => {
           </svg>
           <input v-model="search" type="text" placeholder="Search projects..." />
         </div>
+        <label class="cproj-filter">
+          <span class="cproj-sort__label">STATUS:</span>
+          <select v-model="statusFilter" class="cproj-filter__select">
+            <option v-for="o in statusFilterOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+          </select>
+        </label>
         <div class="cproj-sort">
           <span class="cproj-sort__label">SORT BY:</span>
           <div class="cproj-sort__toggle">
@@ -260,7 +276,7 @@ const handleInterest = (project) => {
       </div>
 
       <p v-if="!projects.length && !communityProjects.loading" class="cproj__state">
-        No projects match your search.
+        No projects match your search{{ statusFilter === 'ACTIVE' ? '' : ' and status filter' }}.
       </p>
     </div>
   </ManageLayout>
@@ -375,6 +391,35 @@ const handleInterest = (project) => {
 .cproj-sort__toggle button.is-active {
     background-color: #d7e8c8;
     color: #2f5233;
+}
+
+/* ── Status filter ── */
+.cproj-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.cproj-filter__select {
+    appearance: none;
+    border: none;
+    border-radius: 999px;
+    background-color: rgba(108, 138, 106, 0.15);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a5a45' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 0.9rem;
+    padding: 0.5rem 2.1rem 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2f5233;
+    cursor: pointer;
+}
+
+.cproj-filter__select:focus-visible {
+    outline: 2px solid #86b153;
+    outline-offset: 2px;
 }
 
 /* ── Grid + cards ── */
@@ -745,6 +790,16 @@ html.dark .cproj-search input {
 
 html.dark .cproj-sort__label {
     color: #a0a8a0;
+}
+
+html.dark .cproj-filter__select {
+    background-color: rgba(255, 255, 255, 0.06);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c2cbbb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    color: #e6f0db;
+}
+
+html.dark .cproj-filter__select option {
+    background-color: #344a34;
 }
 
 html.dark .cproj-sort__toggle {
