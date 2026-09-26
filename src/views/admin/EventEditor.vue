@@ -423,7 +423,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="bg-[#344a34] mx-auto min-h-screen">
+  <div class="event-editor bg-[#f7f1e3] dark:bg-[#344a34] mx-auto min-h-screen">
     <!-- Event Title Header -->
     <div class="bg-gradient-to-r from-forest-hero to-forest-hero-end text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
@@ -495,10 +495,10 @@ onBeforeUnmount(() => {
             <!-- Title: Display as h1 with edit link, or show input when editing -->
             <div class="mb-4">
               <div v-if="!isEditingTitle" class="flex items-center gap-3">
-                <h1 class="text-3xl font-bold font-roboto mb-0 text-[#f5f5f5]">{{ event?.title || 'Untitled Event' }}</h1>
+                <h1 class="text-3xl font-bold font-roboto mb-0 text-[#376451] dark:text-[#1a2617] dark:text-[#f5f5f5]">{{ event?.title || 'Untitled Event' }}</h1>
                 <button
                   @click="startEditingTitle"
-                  class="text-custom-green hover:text-darker-green underline text-sm"
+                  class="text-[#5a6f50] hover:text-[#376451] dark:text-custom-green dark:hover:text-darker-green underline text-sm"
                 >
                   Edit
                 </button>
@@ -516,14 +516,14 @@ onBeforeUnmount(() => {
                 </div>
                 <button
                   @click="isEditingTitle = false"
-                  class="text-[#d0d0d0] hover:text-[#f5f5f5] text-sm"
+                  class="text-[#6b7280] hover:text-[#1a2617] dark:text-[#6b7280] dark:text-[#d0d0d0] dark:hover:text-[#f5f5f5] text-sm"
                 >
                   Done
                 </button>
               </div>
               <!-- Template indicator -->
               <div v-if="templateInfo" class="mt-2">
-                <span class="text-sm text-[#d0d0d0]">Template: </span>
+                <span class="text-sm text-[#6b7280] dark:text-[#d0d0d0]">Template: </span>
                 <span class="inline-block px-2 py-1 text-sm font-medium text-white bg-darker-green rounded">
                   {{ templateInfo.name }}
                 </span>
@@ -533,14 +533,14 @@ onBeforeUnmount(() => {
             <!-- Two-column layout for date/time and ending time -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label class="block mb-2 text-[#f5f5f5]">Start Date & Time:</label>
+                <label class="block mb-2 text-[#1a2617] dark:text-[#f5f5f5]">Start Date & Time:</label>
                 <VueDatePicker v-model="event.startDatetime" class="mb-2" week-start="0"></VueDatePicker>
-                <p class="text-sm text-[#d0d0d0]">{{ prettyDay }}</p>
-                <p class="text-sm text-[#d0d0d0]">{{ new Date(event.startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</p>
+                <p class="text-sm text-[#6b7280] dark:text-[#d0d0d0]">{{ prettyDay }}</p>
+                <p class="text-sm text-[#6b7280] dark:text-[#d0d0d0]">{{ new Date(event.startDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</p>
               </div>
               
               <div>
-                <label for="endText" class="block mb-2 text-[#f5f5f5]">Ending Time:</label>
+                <label for="endText" class="block mb-2 text-[#1a2617] dark:text-[#f5f5f5]">Ending Time:</label>
                 <TextInput
                   v-model="event.endText" 
                   size="md"
@@ -551,7 +551,7 @@ onBeforeUnmount(() => {
             </div>
 
                         <div class="mb-3">
-                          <label for="partifulLink" class="block mb-2 text-[#f5f5f5]">Partiful Link:</label>
+                          <label for="partifulLink" class="block mb-2 text-[#1a2617] dark:text-[#f5f5f5]">Partiful Link:</label>
                           <TextInput
                             v-model="event.partiful_link"
                             size="md"
@@ -562,8 +562,8 @@ onBeforeUnmount(() => {
 
             <!-- Linked project(s) -->
             <div class="mb-4">
-              <label for="eventProject" class="text-[#f5f5f5]">Project</label>
-              <p class="text-sm text-[#d0d0d0] mb-2">
+              <label for="eventProject" class="text-[#1a2617] dark:text-[#f5f5f5]">Project</label>
+              <p class="text-sm text-[#6b7280] dark:text-[#d0d0d0] mb-2">
                 Link this day to the project it moves forward. It shows on the public event page.
               </p>
 
@@ -600,7 +600,7 @@ onBeforeUnmount(() => {
             </div>
 
                         <div class="flex items-center mb-2 relative">
-              <label for="blurb" class="mr-2 text-[#f5f5f5]">Blurb</label>
+              <label for="blurb" class="mr-2 text-[#1a2617] dark:text-[#f5f5f5]">Blurb</label>
               <div class="group relative">
                 <span class="tooltip-icon cursor-pointer">ⓘ</span>
                 <div class="tooltip-text">
@@ -612,7 +612,7 @@ onBeforeUnmount(() => {
               <div class="ml-auto flex items-center">
                 
                 <Switch v-model="event.smsLink" >
-                  <span class="text-sm font-medium text-[#f5f5f5] mr-2">SMS sends with link</span>
+                  <span class="text-sm font-medium text-[#1a2617] dark:text-[#f5f5f5] mr-2">SMS sends with link</span>
                 </Switch>
               </div>
             </div>
@@ -621,10 +621,10 @@ onBeforeUnmount(() => {
               id="blurb"
               v-model="event.blurb"
               rows="3"
-              class="w-full p-2 border border-[#3d4d36]/50 rounded bg-[rgba(26,26,26,0.6)] text-[#f5f5f5] mb-4"
+              class="w-full p-2 border rounded mb-4 bg-white border-[#a8c49a] text-[#1a2617] focus:outline-none focus:border-[#8aa37c] dark:bg-[rgba(26,26,26,0.6)] dark:border-[#3d4d36] dark:text-[#f5f5f5]"
             ></textarea>
             
-            <label for="content" class="text-[#f5f5f5]">Content</label>
+            <label for="content" class="text-[#1a2617] dark:text-[#f5f5f5]">Content</label>
             <div class="w-full tiptap-wrapper -mx-6 border-l-4 border-custom-green pl-4">
               <Tiptap 
                 v-model="event.content" 
@@ -648,14 +648,14 @@ onBeforeUnmount(() => {
                 v-else
                 @click="showMediaFields = false"
                 type="button"
-                class="text-custom-green hover:text-darker-green underline font-medium"
+                class="text-[#5a6f50] hover:text-[#376451] dark:text-custom-green dark:hover:text-darker-green underline font-medium"
               >
                 Hide Media
               </button>
             </div>
 
             <!-- Media fields (hidden by default) -->
-            <div v-if="showMediaFields" class="border-2 border-custom-green rounded-lg p-4 mt-4 bg-[rgba(26,26,26,0.4)]">
+            <div v-if="showMediaFields" class="border-2 border-custom-green rounded-lg p-4 mt-4 bg-white/60 dark:bg-[rgba(26,26,26,0.4)]">
               <HeroImageCard
                 v-model="event.hero_image"
                 :gardenId="event?.garden?.id"
@@ -663,10 +663,10 @@ onBeforeUnmount(() => {
 
               <!-- Featured Gallery Section -->
               <div class="mb-4">
-                <label for="featuredGallery" class="block mb-2 font-semibold text-[#f5f5f5]">
+                <label for="featuredGallery" class="block mb-2 font-semibold text-[#1a2617] dark:text-[#f5f5f5]">
                   Featured Gallery
                 </label>
-                <p class="text-sm text-[#d0d0d0] mb-2">
+                <p class="text-sm text-[#6b7280] dark:text-[#d0d0d0] mb-2">
                   Add 3-8 photos from the event. These will appear in the event gallery. Drag to reorder.
                 </p>
                 <ImageGalleryUpload 
@@ -687,18 +687,18 @@ onBeforeUnmount(() => {
                 <button 
                   @click="saveEvent" 
                   :disabled="!hasChanges"
-                  class="w-full bg-custom-green hover:bg-darker-green text-white font-bold py-2 px-4 rounded-md mb-4 transition-all disabled:bg-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-600"
+                  class="w-full bg-custom-green hover:bg-darker-green text-white font-bold py-2 px-4 rounded-md mb-4 transition-all disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-600 dark:disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300 dark:disabled:hover:bg-gray-600"
                 >
                   Save Event
                 </button>
                 
-                <h2 class="text-xl font-bold mb-3 text-[#f5f5f5]">
+                <h2 class="text-xl font-bold mb-3 text-[#1a2617] dark:text-[#f5f5f5]">
                   Volunteers RSVP'd 
-                  <span class="text-lg font-normal text-white/80">({{ event.confirmed?.length || 0 }})</span>
+                  <span class="text-lg font-normal text-[#6b7280] dark:text-white/80">({{ event.confirmed?.length || 0 }})</span>
                 </h2>
                 
                 <div>
-                  <div v-if="!event.confirmed?.length" class="text-[#d0d0d0]">
+                  <div v-if="!event.confirmed?.length" class="text-[#6b7280] dark:text-[#d0d0d0]">
                     No one has RSVP'd to this event yet
                   </div>
                   <ul v-else class="space-y-3">
@@ -718,7 +718,7 @@ onBeforeUnmount(() => {
 
                 <!-- Cancel / Uncancel Event -->
                                 <div v-if="event.canceled" class="mt-4 text-center">
-                                  <p class="text-sm text-red-400 mb-2">This event has been canceled.</p>
+                                  <p class="text-sm text-red-700 dark:text-red-400 mb-2">This event has been canceled.</p>
                                   <button
                                     class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white font-semibold rounded"
                                     @click="uncancelEvent"
@@ -729,7 +729,7 @@ onBeforeUnmount(() => {
                                 <a
                                   v-else
                                   href="#"
-                                  class="block text-center text-sm text-red-400 hover:text-red-300 hover:underline mt-4"
+                                  class="block text-center text-sm text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:underline mt-4"
                                   @click.prevent="openCancelConfirm"
                 >
                   Cancel Event
@@ -748,12 +748,12 @@ onBeforeUnmount(() => {
       class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/70"
       @click.self="closeCancelConfirm"
     >
-      <div class="w-full max-w-md rounded-lg shadow-xl bg-[#2d3e26] text-[#f5f5f5] p-4 border border-[#3d4d36]" @click.stop>
+      <div class="w-full max-w-md rounded-lg shadow-xl bg-white text-[#1a2617] border-[#e2dccb] dark:bg-[#2d3e26] dark:text-[#f5f5f5] dark:border-[#3d4d36] p-4 border" @click.stop>
         <p class="text-sm mb-4">
           Are you sure you want to cancel this event? It will stop sending SMS reminders and will no longer appear in upcoming events. This cannot be undone here.
         </p>
         <div class="flex justify-end gap-2">
-          <button class="px-3 py-2 text-sm text-[#f5f5f5] hover:underline" @click="closeCancelConfirm">
+          <button class="px-3 py-2 text-sm text-[#1a2617] dark:text-[#f5f5f5] hover:underline" @click="closeCancelConfirm">
             Keep Event
           </button>
           <button
@@ -771,8 +771,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .stew {
-  background-color: #2d3e26;
-  border: 1px solid #3d4d36;
+  background-color: #ffffff;
+  border: 1px solid #e2dccb;
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1rem;
@@ -783,155 +783,25 @@ label {
   margin-bottom: 5px;
   margin-right: 10px;
   display: block;
-  color: #f5f5f5;
-}
-input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #3d4d36;
-  border-radius: 4px;
-  font-size: 1.2em;
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #f5f5f5;
+  color: #1a2617;
 }
 
-.save-button {
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1.1em;
-  margin-top: 15px;
-}
-
-.save-button:hover {
-  background-color: #45a049;
-}
-
-/* Dark mode styles for VueDatePicker */
-:deep(.dp__input_wrap) {
-  background-color: rgba(26, 26, 26, 0.6) !important;
-  border-color: #3d4d36 !important;
-}
-
+/* VueDatePicker: light by default; the global html.dark .dp__theme_light
+   vars in base.css handle dark mode. */
 :deep(.dp__input) {
-  background-color: rgba(26, 26, 26, 0.6) !important;
-  color: #f5f5f5 !important;
-  border-color: #3d4d36 !important;
-}
-
-:deep(.dp__input::placeholder) {
-  color: #d0d0d0 !important;
-}
-
-:deep(.dp__input_icon) {
-  color: #d0d0d0 !important;
-}
-
-:deep(.dp__clear_icon) {
-  color: #d0d0d0 !important;
-}
-
-:deep(.dp__menu) {
-  background-color: rgba(26, 26, 26, 0.95) !important;
-  border-color: #3d4d36 !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
-}
-
-:deep(.dp__calendar_header_item) {
-  color: #f5f5f5 !important;
-}
-
-:deep(.dp__calendar_header_item:hover) {
-  background-color: rgba(138, 163, 124, 0.2) !important;
-}
-
-:deep(.dp__cell_inner) {
-  color: #f5f5f5 !important;
-}
-
-:deep(.dp__cell_inner:hover) {
-  background-color: rgba(138, 163, 124, 0.2) !important;
-}
-
-:deep(.dp__active_date) {
-  background-color: #8aa37c !important;
-  color: #fff !important;
-}
-
-:deep(.dp__range_start),
-:deep(.dp__range_end) {
-  background-color: #8aa37c !important;
-  color: #fff !important;
-}
-
-:deep(.dp__range_between) {
-  background-color: rgba(138, 163, 124, 0.3) !important;
-}
-
-:deep(.dp__today) {
-  border-color: #8aa37c !important;
-}
-
-:deep(.dp__month_year_wrap) {
-  color: #f5f5f5 !important;
-}
-
-:deep(.dp__arrow_top),
-:deep(.dp__arrow_bottom) {
-  border-color: #f5f5f5 transparent transparent transparent !important;
-}
-
-:deep(.dp__inner_nav) {
-  color: #f5f5f5 !important;
-}
-
-:deep(.dp__inner_nav:hover) {
-  background-color: rgba(138, 163, 124, 0.2) !important;
-}
-
-:deep(.dp__time_display) {
-  color: #f5f5f5 !important;
-}
-
-:deep(.dp__time_input) {
-  background-color: rgba(26, 26, 26, 0.8) !important;
-  color: #f5f5f5 !important;
-  border-color: #3d4d36 !important;
-}
-
-:deep(.dp__time_input:focus) {
-  border-color: #8aa37c !important;
-}
-
-/* Dark mode styling for TextInput in Ending Time field */
-.ending-time-input :deep(input) {
-  background-color: rgba(26, 26, 26, 0.6) !important;
-  color: #f5f5f5 !important;
-  border-color: #3d4d36 !important;
-}
-
-.ending-time-input :deep(input::placeholder) {
-  color: #d0d0d0 !important;
-}
-
-.ending-time-input :deep(input:focus) {
-  border-color: #8aa37c !important;
-  outline: none !important;
+  border-color: #a8c49a;
+  color: #1a2617;
 }
 
 select {
   width: 100%;
   padding: 10px;
   margin-bottom: 15px;
-  border: 1px solid #3d4d36;
+  border: 1px solid #a8c49a;
   border-radius: 4px;
   font-size: 1.2em;
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #f5f5f5;
+  background-color: #ffffff;
+  color: #1a2617;
 }
 
 .tooltip-icon {
@@ -941,8 +811,8 @@ select {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background-color: rgba(26, 26, 26, 0.6);
-  color: #d0d0d0;
+  background-color: #e2dccb;
+  color: #4a5c42;
   font-size: 12px;
 }
 
@@ -1009,5 +879,37 @@ select {
   width: 100% !important;
   max-width: 100% !important;
   margin: 0 !important;
+}
+</style>
+
+<!--
+  Dark overrides need a literal html.dark selector — `:global(.dark) .foo`
+  does not survive this project's scoped-style compilation. Namespaced under
+  .event-editor so nothing leaks.
+-->
+<style>
+html.dark .event-editor .stew {
+  background-color: #2d3e26;
+  border-color: #3d4d36;
+}
+
+html.dark .event-editor label {
+  color: #f5f5f5;
+}
+
+html.dark .event-editor .dp__input {
+  border-color: #3d4d36;
+  color: #f5f5f5;
+}
+
+html.dark .event-editor select {
+  background-color: rgba(26, 26, 26, 0.6);
+  border-color: #3d4d36;
+  color: #f5f5f5;
+}
+
+html.dark .event-editor .tooltip-icon {
+  background-color: rgba(26, 26, 26, 0.6);
+  color: #d0d0d0;
 }
 </style>
