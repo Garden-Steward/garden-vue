@@ -52,15 +52,61 @@ const recurringTasks = computed(() => {
   return tasks.filter(Boolean);
 });
 
-// Regular garden tasks (filtered)
+// Regular garden tasks (filtered), in the manager's drag-and-drop order.
+// Tasks never placed keep their API order after the numbered ones — the day
+// sheet sorts the same way.
 const regularTasks = computed(() => {
   if (!Array.isArray(gardenTasks.value)) return [];
-  return gardenTasks.value.filter(task => {
-    if (!task || !task.id) return false;
-    const status = task.task_status;
-    return status !== 'ABANDONED' && status !== 'SKIPPED';
-  });
+  const position = (task) => (Number.isInteger(task.sort_order) ? task.sort_order : Infinity);
+  return gardenTasks.value
+    .filter(task => {
+      if (!task || !task.id) return false;
+      const status = task.task_status;
+      return status !== 'ABANDONED' && status !== 'SKIPPED';
+    })
+    .sort((a, b) => (position(a) === position(b) ? 0 : position(a) < position(b) ? -1 : 1));
 });
+
+// Drag-and-drop ordering (editor only). Ids, not indexes, so a type filter
+// can't make the drop land on the wrong task.
+const draggedTaskId = ref(null);
+const dragOverTaskId = ref(null);
+
+const handleTaskDragStart = (e, taskId) => {
+  draggedTaskId.value = taskId;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('application/garden-task', String(taskId));
+};
+
+const handleTaskDragOver = (e, taskId) => {
+  if (draggedTaskId.value === null) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  dragOverTaskId.value = taskId === draggedTaskId.value ? null : taskId;
+};
+
+const handleTaskDragEnd = () => {
+  draggedTaskId.value = null;
+  dragOverTaskId.value = null;
+};
+
+// Dropping on a card takes that card's place: dragging down lands after it,
+// dragging up lands before it. The whole board is renumbered, so filtered-out
+// tasks keep their relative spots.
+const handleTaskDrop = (e, targetId) => {
+  const draggedId = draggedTaskId.value;
+  handleTaskDragEnd();
+  if (draggedId === null || draggedId === targetId) return;
+  e.preventDefault();
+
+  const ids = regularTasks.value.map(t => t.id);
+  const from = ids.indexOf(draggedId);
+  const to = ids.indexOf(targetId);
+  if (from === -1 || to === -1) return;
+  ids.splice(from, 1);
+  ids.splice(to, 0, draggedId);
+  gardenTaskStore.reorder(props.garden.id, ids);
+};
 
 const taskTypeFilter = ref('');
 
@@ -753,23 +799,42 @@ const openRecurringEditModal = (taskId) => {
           :key="task.id"
           role="button"
           tabindex="0"
-          class="bg-[rgba(26,26,26,0.6)] rounded-xl border border-[#3d4d36]/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-custom-green focus:ring-offset-2 focus:ring-offset-[#2d3e26]"
-          :class="{ 'hover:border-[#8aa37c]/50': editor }"
+          class="relative bg-[rgba(26,26,26,0.6)] rounded-xl border border-[#3d4d36]/50 overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-custom-green focus:ring-offset-2 focus:ring-offset-[#2d3e26]"
+          :class="{
+            'hover:border-[#8aa37c]/50': editor,
+            'opacity-40': draggedTaskId === task.id,
+            'ring-2 ring-[#8aa37c] ring-offset-2 ring-offset-[#2d3e26]': dragOverTaskId === task.id
+          }"
+          :draggable="editor"
+          :title="editor ? 'Drag to reorder' : undefined"
           @click="handleRegularTaskCardClick(task.id)"
           @keydown.enter="handleRegularTaskCardClick(task.id)"
           @keydown.space.prevent="handleRegularTaskCardClick(task.id)"
+          @dragstart="editor && handleTaskDragStart($event, task.id)"
+          @dragover="editor && handleTaskDragOver($event, task.id)"
+          @drop="editor && handleTaskDrop($event, task.id)"
+          @dragend="handleTaskDragEnd"
         >
+          <!-- Order number (set by drag-and-drop; printed on the day sheet) -->
+          <span
+            v-if="Number.isInteger(task.sort_order)"
+            class="absolute top-2 left-2 z-10 min-w-[2rem] h-8 px-2 flex items-center justify-center rounded-full bg-custom-green text-white text-sm font-bold shadow-md pointer-events-none"
+            :aria-label="`Order ${task.sort_order}`"
+          >
+            {{ task.sort_order }}
+          </span>
           <!-- Mobile compact header: thumbnail + title + category. Tap to expand. -->
           <div class="flex md:hidden items-center gap-3 p-3">
-            <div class="w-16 h-16 rounded-lg overflow-hidden bg-[#fde6d4] dark:bg-[#1f2d1a] shrink-0">
+            <div class="w-16 h-16 rounded-lg overflow-hidden bg-[#1f2d1a] shrink-0">
               <img
                 v-if="getTaskImage(task)"
                 :src="getTaskImage(task)"
                 :alt="task.title || 'Task'"
                 class="w-full h-full object-cover"
+                draggable="false"
               />
               <div v-else class="w-full h-full flex items-center justify-center">
-                <svg class="w-7 h-7 text-[#e0a987] dark:text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-7 h-7 text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -800,15 +865,16 @@ const openRecurringEditModal = (taskId) => {
           <!-- Detail body: always visible on desktop; on mobile only when expanded -->
           <div :class="{ 'hidden md:block': !expandedRegularTasks[task.id] }">
             <!-- Task image -->
-            <div class="m-4 rounded-xl aspect-[4/3] overflow-hidden bg-[#fde6d4] dark:bg-[#1f2d1a]">
+            <div class="m-4 rounded-xl aspect-[4/3] overflow-hidden bg-[#1f2d1a]">
               <img
                 v-if="getTaskImage(task)"
                 :src="getTaskImage(task)"
                 :alt="task.title || 'Task'"
                 class="w-full h-full object-cover"
+                draggable="false"
               />
               <div v-else class="w-full h-full flex items-center justify-center">
-                <svg class="w-12 h-12 text-[#e0a987] dark:text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-12 h-12 text-[#3d4d36]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>

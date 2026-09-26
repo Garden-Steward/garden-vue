@@ -427,7 +427,9 @@ const openPrintSheet = () => {
                     class="flex items-start justify-between gap-3 rounded border border-forest-border p-2"
                   >
                     <div :class="{ 'line-through opacity-60': hiddenTaskIds.includes(task.id) }">
-                      <div class="font-medium">{{ task.title }}</div>
+                      <div class="font-medium">
+                        <span v-if="Number.isInteger(task.sort_order)">{{ task.sort_order }}. </span>{{ task.title }}
+                      </div>
                       <div class="text-sm">
                         {{ task.priority }} priority
                         <span v-if="task.type"> · {{ task.type }}</span>

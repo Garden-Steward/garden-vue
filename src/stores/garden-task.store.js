@@ -104,6 +104,30 @@ export const useGardenTaskStore = defineStore({
                 })
                 .catch(this.handleError);
         },
+        /**
+         * Persist a drag-and-drop order. `orderedIds` is every task on the board,
+         * top to bottom; each gets sort_order = position (1-based). Applied to
+         * the cached list first so the board doesn't jump, then only the tasks
+         * whose number actually changed are written. Any failure refetches so
+         * the board never shows an order the server doesn't have.
+         */
+        async reorder(gardenId, orderedIds) {
+            const tasks = Array.isArray(this.gardenTasks) ? this.gardenTasks : [];
+            const positions = new Map(orderedIds.map((id, i) => [id, i + 1]));
+            const changed = tasks.filter(t => positions.has(t.id) && t.sort_order !== positions.get(t.id));
+            if (changed.length === 0) return;
+
+            this.gardenTasks = tasks.map(t => positions.has(t.id) ? { ...t, sort_order: positions.get(t.id) } : t);
+
+            try {
+                await Promise.all(changed.map(t =>
+                    fetchWrapper.put(`${baseUrl}/${t.documentId ?? t.id}`, { data: { sort_order: positions.get(t.id) } })
+                ));
+            } catch (error) {
+                this.handleError(error);
+                await this.getGardenTasks(gardenId);
+            }
+        },
         async register(data) {
             data = stripReadOnly(data);
             if (data.primary_image?.id) {
