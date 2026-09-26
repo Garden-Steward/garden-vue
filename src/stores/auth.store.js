@@ -13,7 +13,8 @@ export const useAuthStore = defineStore({
         auth: {
             accessToken: localStorage.getItem(localStorageTokenKey),
         },
-        returnUrl: null
+        returnUrl: null,
+        loginModalOpen: false
     }),
     getters: {
         isLoggedIn: (state) => !!state.user,
@@ -38,21 +39,20 @@ export const useAuthStore = defineStore({
             
             router.push(this.returnUrl || '/manage');
         },
-        async login(username, password) {
-            const {jwt, user} = await fetchWrapper.post(`${baseUrl}/api/auth/local?populate=role`, { identifier: username, password });
-
-            console.log("login: ", user)
-
-            // update pinia state
+        setSession(jwt, user) {
             this.user = user;
             this.auth.status = 'logged_in';
             this.auth.accessToken = jwt;
-            // store user details and jwt in local storage to keep user logged in between page refreshes
             localStorage.setItem('user', JSON.stringify(user));
             localStorage.setItem(localStorageTokenKey, jwt);
-
-            // redirect to previous url or default to manage page
-            router.push(this.returnUrl || '/manage');
+        },
+        async login(username, password, { redirect = true } = {}) {
+            const { jwt, user } = await fetchWrapper.post(`${baseUrl}/api/auth/local?populate=role`, { identifier: username, password });
+            this.setSession(jwt, user);
+            if (redirect) {
+                router.push(this.returnUrl || '/manage');
+            }
+            return user;
         },
         async forgot(email) {
             console.log("reset pw: ", email)
@@ -85,6 +85,32 @@ export const useAuthStore = defineStore({
             this.auth.status = 'logged_out',
             localStorage.removeItem('user');
             router.push('/login');
+        },
+        async requestSmsCode(phone) {
+            const phoneNumber = String(phone ?? '').replace(/\D/g, '');
+            return fetchWrapper.post(`${baseUrl}/api/auth/sms-login/request`, { phoneNumber });
+        },
+        async verifySmsCode(phone, code) {
+            const phoneNumber = String(phone ?? '').replace(/\D/g, '');
+            const { jwt, user } = await fetchWrapper.post(`${baseUrl}/api/auth/sms-login/verify`, { phoneNumber, code: String(code ?? '').trim() });
+            this.setSession(jwt, user);
+            return user;
+        },
+        openLoginModal(returnUrl) {
+            this.returnUrl = returnUrl || null;
+            this.loginModalOpen = true;
+        },
+        closeLoginModal() {
+            this.loginModalOpen = false;
+            this.returnUrl = null;
+        },
+        finishModalLogin() {
+            const target = this.returnUrl;
+            this.loginModalOpen = false;
+            this.returnUrl = null;
+            if (target) {
+                router.push(target);
+            }
         }
     }
 });
