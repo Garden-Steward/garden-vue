@@ -112,7 +112,7 @@ const submit = async () => {
         >
           <button
             type="button"
-            class="absolute top-3 right-3 text-[#d0d7cc] hover:text-white focus:outline-none"
+            class="absolute top-3 right-3 text-[#4a5c42] hover:text-[#1a2617] dark:text-[#d0d7cc] dark:hover:text-white focus:outline-none"
             @click="close"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,9 +152,9 @@ const submit = async () => {
 
 <style scoped>
 .pitch-panel {
-  background-color: #3c4a2c;
-  color: #f4f1e4;
-  border: 1px solid #56663b;
+  background-color: #d2e4c8;
+  color: #1a2617;
+  border: 1px solid #5a6f50;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
 }
 
@@ -162,21 +162,21 @@ const submit = async () => {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   font-weight: 800;
-  color: #f4f1e4;
+  color: #1a2617;
   line-height: 1.1;
 }
 
 .pitch-cancel {
   background: none;
   border: none;
-  color: #f4f1e4;
+  color: #2f4a2a;
   text-decoration: underline;
   cursor: pointer;
   font-size: 1rem;
 }
 
 .pitch-cancel:hover {
-  color: #ffffff;
+  color: #1a2617;
 }
 
 .pitch-submit {
@@ -198,5 +198,22 @@ const submit = async () => {
 .pitch-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+</style>
+
+<style>
+html.dark .pitch-panel {
+  background-color: #3c4a2c;
+  color: #f4f1e4;
+  border-color: #56663b;
+}
+
+html.dark .pitch-title,
+html.dark .pitch-cancel {
+  color: #f4f1e4;
+}
+
+html.dark .pitch-cancel:hover {
+  color: #ffffff;
 }
 </style>
