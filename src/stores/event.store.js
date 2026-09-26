@@ -9,7 +9,10 @@ const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
 // (populate[0]) with nested object keys, and silently drops a bare
 // `populate=field` when other array keys are present — so use the object form
 // throughout, with nested populate for garden.managers.
-const eventPopulate = 'populate[recurring_template]=true&populate[confirmed]=true&populate[hero_image]=true&populate[featured_gallery]=true&populate[garden][populate][managers]=true&populate[projects][populate][hero_image]=true&populate[projects][populate][garden]=true';
+const eventPopulate = 'populate[recurring_template]=true&populate[confirmed]=true&populate[hero_image]=true&populate[featured_gallery]=true&populate[garden][populate][managers]=true';
+// Only requested when the loaded event carried `projects` (i.e. the backend
+// has the relation) — an older backend 400s on the unknown populate key.
+const projectsPopulate = '&populate[projects][populate][hero_image]=true&populate[projects][populate][garden]=true';
 
 export const useEventStore = defineStore({
     id: 'event',
@@ -261,7 +264,8 @@ export const useEventStore = defineStore({
                 ? this.event.documentId
                 : id;
 
-            return fetchWrapper.put(`${baseUrl}/${documentId}?${eventPopulate}`, { data: data })
+            const populate = Array.isArray(this.event?.projects) ? eventPopulate + projectsPopulate : eventPopulate;
+            return fetchWrapper.put(`${baseUrl}/${documentId}?${populate}`, { data: data })
                 .then(res => {
                     this.volunteerDay = res.data;
                     // Update the event in state if it matches
