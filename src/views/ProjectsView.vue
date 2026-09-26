@@ -1,11 +1,17 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore } from '@/stores';
-import { getProjectCategoryBadgeClasses } from '@/_config/GardenConfig';
+import {
+    getProjectCategoryBadgeClasses,
+    projectReviewLabel,
+    normalizeReviewStatus
+} from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
 import ExpressInterest from '@/components/modals/ExpressInterest.vue';
 
+const router = useRouter();
 const projectsStore = useProjectsStore();
 const authStore = useAuthStore();
 const { communityProjects } = storeToRefs(projectsStore);
@@ -76,6 +82,19 @@ const getImageUrl = (image) => {
     return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
 };
 
+// The title is a real link; clicking the card follows it, except over
+// controls that own their click.
+const projectLink = (project) => `/manage/project/${project.id}`;
+
+const openProject = (project, event) => {
+    if (event.target.closest('a, button')) return;
+    router.push(projectLink(project));
+};
+
+const reviewStatus = (project) => normalizeReviewStatus(project.review_status);
+const showReviewBadge = (project) => reviewStatus(project) !== 'APPROVED';
+const reviewFlagClass = (project) => `cproj-card__flag--${reviewStatus(project).toLowerCase()}`;
+
 const secondaryBadge = (project) => {
     if (interestedCount(project) >= 50) return 'Popular';
     const created = project.createdAt;
@@ -106,8 +125,8 @@ const toggleInterest = async (project) => {
     if (togglingId.value) return;
     togglingId.value = project.id;
     try {
+        // The store patches the cache; refetching here would flash the grid.
         await projectsStore.toggleInterest(project.id);
-        await projectsStore.getAllProjects();
     } catch (e) {
         // store surfaces its own error alert
     } finally {
@@ -181,7 +200,12 @@ const handleInterest = (project) => {
 
             <!-- Grid -->
       <div class="cproj-grid">
-        <article v-for="p in projects" :key="p.id" class="cproj-card">
+        <article
+          v-for="p in projects"
+          :key="p.id"
+          class="cproj-card"
+          @click="openProject(p, $event)"
+        >
           <div
             class="cproj-card__media"
             :class="{ 'cproj-card__media--empty': !getImageUrl(p.hero_image) }"
@@ -190,11 +214,18 @@ const handleInterest = (project) => {
             <div class="cproj-card__flags">
               <span v-if="p.category" :class="getProjectCategoryBadgeClasses(p.category)">{{ p.category }}</span>
               <span v-if="secondaryBadge(p)" class="cproj-card__flag">{{ secondaryBadge(p) }}</span>
+              <span
+                v-if="showReviewBadge(p)"
+                class="cproj-card__flag cproj-card__flag--review"
+                :class="reviewFlagClass(p)"
+              >{{ projectReviewLabel(reviewStatus(p)) }}</span>
             </div>
           </div>
           <div class="cproj-card__body">
             <div class="cproj-card__titlerow">
-              <h3 class="cproj-card__title">{{ p.title }}</h3>
+              <h3 class="cproj-card__title">
+                <RouterLink :to="projectLink(p)">{{ p.title }}</RouterLink>
+              </h3>
               <span class="cproj-card__count" title="People interested">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 10-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z" />
@@ -354,6 +385,8 @@ const handleInterest = (project) => {
 }
 
 .cproj-card {
+    position: relative;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
     background-color: #ffffff;
@@ -363,9 +396,28 @@ const handleInterest = (project) => {
     transition: all 0.2s ease;
 }
 
-.cproj-card:hover {
+/* Highlight the card on hover, except over the interest button. */
+.cproj-card:hover:not(:has(.cproj-card__btn:hover)) {
     border-color: #8aa37c;
     box-shadow: 0 6px 18px rgba(138, 163, 124, 0.22);
+    transform: translateY(-2px);
+}
+
+.cproj-card:hover:not(:has(.cproj-card__btn:hover)) .cproj-card__title a {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+.cproj-card__title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.cproj-card__title a:focus-visible {
+    outline: 2px solid #86b153;
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 .cproj-card__media {
@@ -397,6 +449,11 @@ const handleInterest = (project) => {
     color: #4a5a45;
     -webkit-text-fill-color: currentColor;
 }
+
+.cproj-card__flag--created { background-color: #fbe6a2; color: #6b4e00; }
+.cproj-card__flag--rejected { background-color: #f6cfcf; color: #7a1f1f; }
+.cproj-card__flag--completed { background-color: #cfe0ea; color: #1f3a4d; }
+.cproj-card__flag--archived { background-color: #ddd8c8; color: #4a4a3f; }
 
 .cproj-card__body {
     display: flex;
@@ -478,6 +535,7 @@ const handleInterest = (project) => {
 }
 
 .cproj-card__btn {
+    position: relative;
     margin-top: auto;
     width: 100%;
     background-color: #cfeacd;

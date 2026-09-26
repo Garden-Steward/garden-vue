@@ -4,7 +4,11 @@
  * spreading a loaded entity (which is now flat in v5), those keys leak in.
  * Strip them before sending.
  */
-const READ_ONLY_KEYS = ['id', 'documentId', 'createdAt', 'updatedAt', 'publishedAt', 'locale'];
+const READ_ONLY_KEYS = [
+    'id', 'documentId', 'createdAt', 'updatedAt', 'publishedAt', 'locale',
+    // Strapi v5 reserves `status` for draft/publish; sending it is an error.
+    'status'
+];
 
 export function stripReadOnly(data) {
     if (!data || typeof data !== 'object' || Array.isArray(data)) return data;
