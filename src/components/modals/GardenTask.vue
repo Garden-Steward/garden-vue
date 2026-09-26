@@ -108,19 +108,12 @@ function validateForm() {
   return titleValid && typeValid && overviewValid;
 }
 
-// Editing a task that has no status leaves the dropdown on "Select a Status"
-// instead of silently showing (and saving) the default.
-function initialTaskStatus(status) {
-  if (status) return getTaskStatusOption(status).value;
-  return props.id ? '' : DEFAULT_TASK_STATUS;
-}
-
 const form = ref({
   title: props.title || '',
   type: props.type || '',
   overview: props.overview || '',
   max_volunteers: props.max_volunteers || null,
-  task_status: initialTaskStatus(props.task_status),
+  task_status: (props.task_status && getTaskStatusOption(props.task_status).value) || DEFAULT_TASK_STATUS,
   primary_image: props.primary_image || null,
   recurring_task: props.recurring_task || null,
   is_group_task: false,
@@ -282,7 +275,7 @@ watch(() => props.volunteers, (newVal) => {
 
 watch(() => props.task_status, (newVal) => {
   if (props.isRecurringTemplate) return;
-  form.value.task_status = initialTaskStatus(newVal);
+  form.value.task_status = (newVal && getTaskStatusOption(newVal).value) || DEFAULT_TASK_STATUS;
 });
 
 watch(() => props.primary_image, (newVal) => {
@@ -349,7 +342,6 @@ const typeBadgeClasses = computed(() => {
 // Status pill color classes for the editor's status dropdown
 const statusPillClass = computed(
   () => {
-    if (!form.value.task_status) return 'gt-status-skipped';
     const option = getTaskStatusOption(form.value.task_status);
     const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
     return isDarkMode && option.darkPillClass
@@ -451,7 +443,9 @@ const submit = async () => {
         // is_group_task is a UI-only toggle (shows/hides group settings), not a schema field.
         const taskPayload = { ...form.value };
         delete taskPayload.is_group_task;
-        if (!taskPayload.task_status) taskPayload.task_status = null;
+        // Order is owned by drag-and-drop on the task board; the form can hold a
+        // stale copy from an earlier save's response, so never write it back.
+        delete taskPayload.sort_order;
         const updatedTask = await gardenTaskStore.update(props.id, taskPayload);
         message = 'Garden Task updated';
         if (updatedTask) {
@@ -974,7 +968,6 @@ defineExpose({ openModal });
               </label>
               <div class="gt-status-pill" :class="statusPillClass">
                 <select v-model="form.task_status" class="gt-status-select">
-                  <option value="" disabled>Select a Status</option>
                   <option
                     v-for="opt in taskStatusOptions"
                     :key="opt.value"
