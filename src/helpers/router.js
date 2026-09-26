@@ -185,7 +185,7 @@ export const router = createRouter({
     ]
 });
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
     const publicPages = [
         '/login', 
         '/oauth/google/callback', 
@@ -216,7 +216,12 @@ router.beforeEach(async (to) => {
     const auth = useAuthStore();
     
     if (authRequired && !auth.user) {
-        auth.returnUrl = to.fullPath;
-        return '/login';
+        auth.openLoginModal(to.fullPath);
+        // First load / deep link (START_LOCATION has no matched records): render the public home behind the modal.
+        if (from.matched.length === 0) {
+            return '/';
+        }
+        // In-app navigation: stay on the current page with the modal on top.
+        return false;
     }
 });

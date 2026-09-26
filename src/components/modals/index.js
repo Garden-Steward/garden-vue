@@ -5,3 +5,4 @@ export { default as VolunteerDayTasks } from './VolunteerDayTasks.vue';
 export { default as GardenTask } from './GardenTask.vue';
 export { default as PitchProject } from './PitchProject.vue';
 export { default as PrintDaySheetModal } from './PrintDaySheetModal.vue';
+export { default as LoginModal } from './LoginModal.vue';

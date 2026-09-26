@@ -21,7 +21,7 @@ const fetchRecentTasks = async () => {
     isLoading.value = true;
     // Fetch garden tasks with volunteers populated
     const response = await fetchWrapper.get(
-      `${import.meta.env.VITE_API_URL}/api/garden-tasks?filters[garden][id][$eq]=${props.gardenId}&filters[status][$in][0]=FINISHED&filters[status][$in][1]=STARTED&filters[status][$in][2]=PENDING&populate=volunteers&populate=recurring_task&sort[0]=updatedAt:desc&pagination[limit]=20`
+      `${import.meta.env.VITE_API_URL}/api/garden-tasks?filters[garden][id][$eq]=${props.gardenId}&filters[task_status][$in][0]=FINISHED&filters[task_status][$in][1]=STARTED&filters[task_status][$in][2]=PENDING&populate=volunteers&populate=recurring_task&sort[0]=updatedAt:desc&pagination[limit]=20`
     );
     
     // Handle Strapi response format
