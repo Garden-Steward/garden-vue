@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore, useAlertStore } from '@/stores';
 import ProjectForm from '@/components/form/ProjectForm.vue';
+import HCaptcha from '@/components/HCaptcha.vue';
 
 const props = defineProps({
   // v-model: controls visibility
@@ -37,6 +38,10 @@ const form = ref(blankForm());
 const errors = ref({ title: false });
 const isSubmitting = ref(false);
 const projectForm = ref(null);
+const captchaToken = ref(null);
+const captchaRef = ref(null);
+const submitterEmail = ref('');
+const siteKey = import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
 
 const close = () => {
   emit('update:modelValue', false);
@@ -57,31 +62,40 @@ const submit = async () => {
   const valid = !!form.value.title.trim();
   errors.value = { title: !valid };
   if (!valid) return;
+  if (!captchaToken.value) {
+    alertStore.error('Please complete the captcha verification.');
+    return;
+  }
   isSubmitting.value = true;
   try {
     const gallery = form.value.featured_gallery;
     const payload = {
-      title: form.value.title.trim(),
-      short_description: form.value.short_description?.trim() || '',
-      category: form.value.category,
-      garden: form.value.garden || null,
-      created_by: user.value?.id ?? null,
-      featured_gallery: gallery,
-      hero_image: gallery[0] || null,
-      location: form.value.location || null
-    };
+          title: form.value.title.trim(),
+          short_description: form.value.short_description?.trim() || '',
+          category: form.value.category,
+          garden: form.value.garden || null,
+          created_by: user.value?.id ?? null,
+          featured_gallery: gallery,
+          hero_image: gallery[0] || null,
+          location: form.value.location || null,
+          submitter_email: submitterEmail.value || null
+        };
     const created = await projectsStore.register(payload);
     alertStore.success('Your project pitch was submitted!');
     emit('created', created);
     close();
   } catch (err) {
-    // store.register surfaces its own alert when it routes through handleError;
-    // guard here in case the relation fields trip a validation error.
-    alertStore.error('Could not submit your pitch. Please try again.');
-  } finally {
-    isSubmitting.value = false;
+      alertStore.error('Could not submit your pitch. Please try again.');
+      captchaRef.value?.reset();
+      captchaToken.value = null;
+    } finally {
+      isSubmitting.value = false;
+    }
+  };
+
+  function onCaptchaVerified(token) {
+    captchaToken.value = token;
   }
-};
 </script>
 
 <template>
@@ -109,9 +123,20 @@ const submit = async () => {
           <h2 class="pitch-title mb-6">Pitch a Project</h2>
 
           <form @submit.prevent="submit">
-            <ProjectForm ref="projectForm" v-model="form" :gardens="gardens" :errors="errors" />
+                      <ProjectForm ref="projectForm" v-model="form" :gardens="gardens" :errors="errors" />
 
-            <!-- Footer -->
+                      <!-- Email for verification -->
+                      <div class="mb-4 mt-6">
+                        <label class="pf-label">Your email (for project verification)</label>
+                        <input v-model="submitterEmail" type="email" placeholder="you@example.com" class="pf-input" />
+                      </div>
+
+                      <!-- hCaptcha -->
+                      <div class="mb-4">
+                        <HCaptcha ref="captchaRef" :site-key="siteKey" @verified="onCaptchaVerified" @error="captchaToken = null" @expired="captchaToken = null" />
+                      </div>
+
+                      <!-- Footer -->
             <div class="flex items-center justify-between mt-8">
               <button type="button" class="pitch-cancel" @click="close">Cancel</button>
               <button type="submit" class="pitch-submit" :disabled="isSubmitting || projectForm?.isUploading">
