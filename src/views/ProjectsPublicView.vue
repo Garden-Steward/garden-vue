@@ -6,6 +6,7 @@ import { useProjectsStore, useAuthStore } from '@/stores';
 import {
   projectStatusOptions,
   resolveProjectStatus,
+  isProjectVisibleTo,
   getProjectStatusOverlayClasses,
   getProjectCategoryOverlayClasses
 } from '@/_config/GardenConfig';
@@ -34,7 +35,7 @@ const relationIds = (rel) => {
 
 const listedProjects = computed(() => {
   const list = Array.isArray(communityProjects.value) ? communityProjects.value : [];
-  return list.filter(p => !['REJECTED', 'ARCHIVED'].includes(p.review_status));
+  return list.filter(p => isProjectVisibleTo(p, user.value));
 });
 
 const visibleProjects = computed(() => {
@@ -118,9 +119,8 @@ async function toggleInterest(project) {
   joined.value = { ...joined.value, [project.id]: !wasIn };
 
   try {
+    // The store patches the cache; refetching here would flash the list.
     await projectsStore.toggleInterest(project.id);
-    await projectsStore.getAllProjects();
-    // The refreshed record is now authoritative.
     const rest = { ...joined.value };
     delete rest[project.id];
     joined.value = rest;

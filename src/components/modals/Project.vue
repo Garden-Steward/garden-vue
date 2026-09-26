@@ -7,6 +7,11 @@ import DropDown from '@/components/form/DropDown.vue';
 import Tiptap from '@/components/Tiptap.vue';
 import FormToggle from '@/components/Toggle.vue';
 import HeroImageCard from '@/components/form/HeroImageCard.vue';
+import {
+  projectReviewOptions,
+  projectReviewLabel,
+  normalizeReviewStatus
+} from '@/_config/GardenConfig';
 import MediaSelector from '@/components/form/MediaSelector.vue';
 
 const props = defineProps({
@@ -28,6 +33,7 @@ const props = defineProps({
   garden: Number,
   gardenSlug: String,
   review_status: String,
+  status: String,
   editor: {
     type: Boolean,
     default: false
@@ -55,8 +61,13 @@ const totalSteps = 5;
 
 const validationErrors = ref({
   title: false,
-  short_description: false
+  short_description: false,
+  slug: false
 });
+
+// Kept separate from validationErrors so a failed save never reports
+// missing fields that are already filled in.
+const serverError = ref('');
 
 function clearValidationError(field) {
   if (validationErrors.value[field]) {
@@ -89,6 +100,8 @@ function goBack() {
   if (currentStep.value > 1) currentStep.value -= 1;
 }
 
+const reviewStatusOptions = projectReviewOptions;
+
 const categoryOptions = [
   { value: 'Infrastructure', label: 'Infrastructure' },
   { value: 'Art', label: 'Art' },
@@ -113,7 +126,9 @@ const form = ref({
   featured: props.featured || false,
   impact_metrics: props.impact_metrics ? [...props.impact_metrics] : [],
   related_events: props.related_events ? (Array.isArray(props.related_events) ? props.related_events : props.related_events.data || []) : [],
-  garden: props.garden || null
+  garden: props.garden || null,
+  // Normalized: a retired value would fail the save on the way through.
+  review_status: normalizeReviewStatus(props.review_status)
 });
 
 // Show date fields if dates are already set
@@ -136,7 +151,7 @@ watch(show, async (isShowing) => {
     // Reset multi-step state when opening for creation
     if (!props.id) {
       currentStep.value = 1;
-      validationErrors.value = { title: false, short_description: false };
+      validationErrors.value = { title: false, short_description: false, slug: false };
     }
     // Wait for next tick to ensure all reactive updates are complete
     await nextTick();
@@ -151,7 +166,7 @@ watch(show, async (isShowing) => {
     }
   } else {
     // Reset validation errors when closing
-    validationErrors.value = { title: false, short_description: false };
+    validationErrors.value = { title: false, short_description: false, slug: false };
   }
 });
 
@@ -172,6 +187,7 @@ watch(() => props.category, (newVal) => { form.value.category = newVal || 'Commu
 watch(() => props.volunteer_count, (newVal) => { form.value.volunteer_count = newVal || null; });
 watch(() => props.hours_contributed, (newVal) => { form.value.hours_contributed = newVal || null; });
 watch(() => props.featured, (newVal) => { form.value.featured = newVal || false; });
+watch(() => props.review_status, (newVal) => { form.value.review_status = normalizeReviewStatus(newVal); });
 watch(() => props.hero_image, (newVal) => {
   if (newVal) {
     form.value.hero_image = newVal;
@@ -453,12 +469,26 @@ const submit = async () => {
   
   isSubmitting.value = true;
   error.value = false;
-  
-  if (!form.value.title || !form.value.slug || !form.value.short_description) {
+  serverError.value = '';
+
+  // Derived from the title, and has no input of its own — repair, don't block.
+  if (!form.value.slug && form.value.title) {
+    form.value.slug = generateSlug(form.value.title);
+  }
+
+  const missing = {
+    title: !String(form.value.title || '').trim(),
+    short_description: !String(form.value.short_description || '').trim(),
+    slug: !String(form.value.slug || '').trim()
+  };
+  validationErrors.value = missing;
+
+  if (missing.title || missing.short_description || missing.slug) {
     error.value = true;
-    alertStore.error('Please fill in all required fields');
-    alertStore.error('Please fill in all required fields');
+    alertStore.error('Please fill in the highlighted fields');
     isSubmitting.value = false;
+    await nextTick();
+    document.querySelector('.proj-field-invalid')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
 
@@ -544,7 +574,8 @@ const submit = async () => {
         featured: false,
         impact_metrics: [],
         related_events: [],
-        garden: props.garden
+        garden: props.garden,
+        review_status: normalizeReviewStatus(null)
       };
       showDateFields.value = false;
       originalFormData.value = deepCloneForm(form.value);
@@ -553,7 +584,6 @@ const submit = async () => {
     
     show.value = false;
   } catch (err) {
-    error.value = true;
     console.error('Error submitting project:', err);
     
     // Extract error message from various possible error formats
@@ -573,6 +603,7 @@ const submit = async () => {
     }
     
     const action = props.id ? 'update' : 'create';
+    serverError.value = errorMessage;
     alertStore.error(`We were not able to ${action} this Project: ${errorMessage}`);
   } finally {
     isSubmitting.value = false;
@@ -596,23 +627,20 @@ const toggleShow = () => {
 // ── Review workflow (manager-only, shown on the card in the manage view) ──
 const reviewing = ref(false);
 
-const reviewLabel = computed(() => {
-  const map = {
-    CREATED: 'Pending review',
-    APPROVED: 'Approved',
-    REJECTED: 'Denied',
-    COMPLETED: 'Completed',
-    ARCHIVED: 'Archived'
-  };
-  return map[props.review_status] || props.review_status || '';
-});
+// Legacy rows carry the retired vocabulary; never compare raw strings.
+const currentReview = computed(() => normalizeReviewStatus(props.review_status));
+const reviewLabel = computed(() => projectReviewLabel(props.review_status));
 
 const setReviewStatus = async (status) => {
   if (reviewing.value || !props.id) return;
   reviewing.value = true;
   try {
     await projectsStore.review(props.id, status);
-    alertStore.success(status === 'APPROVED' ? 'Project approved.' : `Project ${reviewLabel.value.toLowerCase()}.`);
+    alertStore.success(
+      status === 'APPROVED'
+        ? 'Project approved — it is now visible to the public.'
+        : `Project marked ${projectReviewLabel(status).toLowerCase()}.`
+    );
   } catch (err) {
     alertStore.error('Could not update the project status. Please try again.');
   } finally {
@@ -689,12 +717,12 @@ onUnmounted(() => {
             <div class="flex items-center gap-2 min-w-0">
               <h3 class="text-lg font-semibold text-[#f5f5f5] truncate">{{ form.title || 'Untitled Project' }}</h3>
               <span
-                v-if="editor && review_status && review_status !== 'APPROVED'"
+                v-if="editor && currentReview !== 'APPROVED'"
                 class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
                 :class="{
-                  'bg-yellow-500/20 text-yellow-300': review_status === 'CREATED',
-                  'bg-red-500/20 text-red-300': review_status === 'REJECTED',
-                  'bg-[rgba(138,163,124,0.3)] text-[#8aa37c]': review_status === 'COMPLETED' || review_status === 'ARCHIVED'
+                  'bg-yellow-500/20 text-yellow-300': currentReview === 'CREATED',
+                  'bg-red-500/20 text-red-300': currentReview === 'REJECTED',
+                  'bg-[rgba(138,163,124,0.3)] text-[#8aa37c]': currentReview === 'COMPLETED' || currentReview === 'ARCHIVED'
                 }"
               >
                 {{ reviewLabel }}
@@ -706,7 +734,7 @@ onUnmounted(() => {
 
           <!-- Review actions (garden managers, pending / denied projects) -->
           <div
-            v-if="editor && (review_status === 'CREATED' || review_status === 'REJECTED')"
+            v-if="editor && currentReview !== 'APPROVED'"
             class="flex items-center gap-2 mt-3"
           >
             <button
@@ -718,7 +746,7 @@ onUnmounted(() => {
               Approve
             </button>
             <button
-              v-if="review_status === 'CREATED'"
+              v-if="currentReview === 'CREATED'"
               type="button"
               :disabled="reviewing"
               @click.stop="setReviewStatus('REJECTED')"
@@ -819,7 +847,7 @@ onUnmounted(() => {
                     placeholder="e.g. Spring Mural Restoration"
                     :class="[
                       'proj-modal-input w-full px-4 py-3 text-base rounded-md border focus:outline-none focus:border-custom-green',
-                      validationErrors.title ? 'border-2 !border-red-500' : ''
+                      validationErrors.title ? 'proj-field-invalid' : ''
                     ]"
                     @input="clearValidationError('title')"
                     @keydown.enter.prevent="goNext"
@@ -857,7 +885,7 @@ onUnmounted(() => {
                     placeholder="A short summary that will appear on cards and in lists..."
                     :class="[
                       'proj-modal-input w-full px-4 py-3 text-base rounded-md border focus:outline-none focus:border-custom-green',
-                      validationErrors.short_description ? 'border-2 !border-red-500' : ''
+                      validationErrors.short_description ? 'proj-field-invalid' : ''
                     ]"
                     @input="clearValidationError('short_description')"
                     autofocus
@@ -961,7 +989,13 @@ onUnmounted(() => {
         <div class="grid grid-cols-3 gap-4">
           <div class="col-span-2">
             <label class="proj-modal-text block text-sm font-medium mb-1">Title *</label>
-            <TextInput v-model="form.title" placeholder="Project title" />
+            <TextInput
+              v-model="form.title"
+              placeholder="Project title"
+              :input-class="validationErrors.title ? 'proj-field-invalid' : ''"
+              @update:model-value="clearValidationError('title')"
+            />
+            <p v-if="validationErrors.title" class="proj-field-error">A title is required.</p>
             <!-- Slug display right below title with Featured toggle -->
             <div class="flex items-center justify-between" style="margin-top: -6px;">
               <div class="flex items-center" style="gap: 2px;">
@@ -980,6 +1014,17 @@ onUnmounted(() => {
           <div>
             <label class="proj-modal-text block text-sm font-medium mb-1">Category</label>
             <DropDown v-model="form.category" :options="categoryOptions" />
+          </div>
+        </div>
+
+        <!-- No build-stage field: `status` is not writable through the API. -->
+        <div v-if="editor" class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="proj-modal-text block text-sm font-medium mb-1">Review status</label>
+            <DropDown v-model="form.review_status" :options="reviewStatusOptions" />
+            <p class="proj-modal-text-muted text-xs mt-1">
+              Only an approved project is visible to the public.
+            </p>
           </div>
         </div>
 
@@ -1018,10 +1063,15 @@ onUnmounted(() => {
             v-model="form.short_description"
             maxlength="350"
             rows="3"
-            class="proj-modal-input w-full px-3 py-2 border rounded-md focus:border-custom-green focus:outline-none"
+            :class="[
+              'proj-modal-input w-full px-3 py-2 border rounded-md focus:border-custom-green focus:outline-none',
+              validationErrors.short_description ? 'proj-field-invalid' : ''
+            ]"
             placeholder="Brief description of the project"
             required
+            @input="clearValidationError('short_description')"
           ></textarea>
+          <p v-if="validationErrors.short_description" class="proj-field-error">A short description is required.</p>
           <p class="proj-modal-text-muted text-xs mt-1">{{ form.short_description?.length || 0 }}/350</p>
         </div>
 
@@ -1225,7 +1275,10 @@ onUnmounted(() => {
                 </div>
 
                 <div v-if="error" class="text-red-400 text-sm">
-                  Please fill in all required fields
+                  Please fill in the highlighted fields above.
+                </div>
+                <div v-else-if="serverError" class="text-red-400 text-sm">
+                  This project could not be saved: {{ serverError }}
                 </div>
 
                 <div class="flex gap-2">
@@ -1505,10 +1558,33 @@ input[type="date"] {
   after the :global() token, e.g. ":global(.dark) .proj-modal" compiles to
   the bare, incorrect rule ".dark { ... }", silently no-op-ing every dark
   override above). Dark-mode overrides live here instead, in a plain
-  (non-scoped) <style> block using literal "html.dark ..." selectors — the
+  (non-scoped) <style> 
+
+block using literal "html.dark ..." selectors — the
   same pattern GardenDetail.vue uses for its gm-* dark overrides.
 -->
 <style>
+/* Invalid field. Paired with a message, so it is not colour alone. */
+.proj-field-invalid,
+.proj-modal-input.proj-field-invalid {
+  border-color: #dc2626 !important;
+  border-width: 2px !important;
+  background-color: rgba(220, 38, 38, 0.06);
+}
+
+.proj-field-invalid:focus,
+.proj-modal-input.proj-field-invalid:focus {
+  border-color: #dc2626 !important;
+  outline: 2px solid rgba(220, 38, 38, 0.35);
+  outline-offset: 1px;
+}
+
+.proj-field-error {
+  color: #dc2626;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
 html.dark .proj-step-inactive {
   background-color: rgba(255, 255, 255, 0.15);
   color: #d0d0d0;

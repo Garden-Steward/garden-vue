@@ -356,6 +356,51 @@ export function getCampaignTypeLabel(type) {
     .join(' ');
 }
 
+/** Mirrors REVIEW_STATUSES in the backend's project controller. */
+export const projectReviewOptions = [
+  { value: 'CREATED',   label: 'Pending review' },
+  { value: 'APPROVED',  label: 'Approved' },
+  { value: 'REJECTED',  label: 'Denied' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'ARCHIVED',  label: 'Archived' }
+];
+
+export const projectReviewValues = projectReviewOptions.map(o => o.value);
+
+// An earlier deployment used these; some rows still hold them.
+const interimReviewStatuses = {
+  'PENDING REVIEW':    'CREATED',
+  'APPROVED':          'APPROVED',
+  'CHANGES REQUESTED': 'REJECTED'
+};
+
+/** Any stored review_status → a value the API accepts. */
+export function normalizeReviewStatus(status) {
+  const raw = String(status ?? '').trim().toUpperCase();
+  if (!raw) return 'CREATED';
+  if (projectReviewValues.includes(raw)) return raw;
+  return interimReviewStatuses[raw] || 'CREATED';
+}
+
+export function projectReviewLabel(status) {
+  const value = normalizeReviewStatus(status);
+  return projectReviewOptions.find(o => o.value === value)?.label || value;
+}
+
+/** Mirrors PUBLIC_STATUSES in the backend controller. */
+export const publicProjectReviewStatuses = ['APPROVED', 'COMPLETED'];
+
+export function isProjectPubliclyVisible(project) {
+  return publicProjectReviewStatuses.includes(normalizeReviewStatus(project?.review_status));
+}
+
+/** Signed-in stewards also see pitches awaiting review, so one can gather interest. */
+export function isProjectVisibleTo(project, user) {
+  const status = normalizeReviewStatus(project?.review_status);
+  if (!user?.id) return publicProjectReviewStatuses.includes(status);
+  return !['REJECTED', 'ARCHIVED'].includes(status);
+}
+
 /**
  * Project status vocabulary
  *
@@ -364,9 +409,8 @@ export function getCampaignTypeLabel(type) {
  *   Building — active install work
  *   Tending  — built, in ongoing maintenance
  *
- * These are distinct from `review_status` (the moderation workflow).
- * The backend does not carry a `status` field on the project record yet —
- * `resolveProjectStatus()` below derives one in the meantime.
+ * Distinct from `review_status` (the moderation workflow). Display only —
+ * `status` is not writable through the API, so nothing here is ever sent.
  */
 export const projectStatusOptions = [
   { value: 'Planning', label: 'Planning' },
@@ -416,14 +460,7 @@ export function getProjectCategoryOverlayClasses(category) {
   return `${projectBadgeOverlayBaseClasses} ${colors}`;
 }
 
-/**
- * Best available status for a project.
- *
- * Prefers a real `status` field once the backend has one. Until then it falls
- * back to a rough read of the moderation state and the project's own dates, so
- * the list is not entirely unbadged. Replace the fallback — not the caller —
- * when `status` lands on the project content type.
- */
+/** Stored `status` if there is one, else a guess from review state and dates. */
 export function resolveProjectStatus(project) {
   if (!project) return null;
 
@@ -431,8 +468,8 @@ export function resolveProjectStatus(project) {
   const match = projectStatusOptions.find(o => o.value.toLowerCase() === declared);
   if (match) return match.value;
 
-  // Fallback while the field does not exist.
-  if (project.review_status && project.review_status !== 'APPROVED') return 'Planning';
+  // Fallback for rows saved before `status` was filled in.
+  if (!isProjectPubliclyVisible(project)) return 'Planning';
   const end = project.date_end ? new Date(project.date_end).getTime() : null;
   if (end && end < Date.now()) return 'Tending';
   const start = project.date_start ? new Date(project.date_start).getTime() : null;

@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper, stripReadOnly } from '@/helpers';
-import { useAlertStore } from '@/stores';
+import { useAlertStore, useAuthStore } from '@/stores';
+import { normalizeReviewStatus } from '@/_config/GardenConfig';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/projects`;
 
@@ -17,6 +18,16 @@ function normalizeProject(p) {
     if (!Array.isArray(p.managers)) p.managers = [];
     if (!Array.isArray(p.interested)) p.interested = [];
     return p;
+}
+
+
+// The API validates the whole merged entity, so a row holding a retired
+// review_status fails a save that never touched it. Send a valid one.
+function coerceWorkflowFields(data, current) {
+    if ('review_status' in data || current?.review_status !== undefined) {
+        data.review_status = normalizeReviewStatus(data.review_status ?? current?.review_status);
+    }
+    return data;
 }
 
 /** Reduce a relation field (array of ids or objects) to a clean array of numeric ids. */
@@ -50,6 +61,16 @@ export const useProjectsStore = defineStore({
         communityProjects: {}
     }),
     actions: {
+        /** The cached copy of a project, from whichever list holds it. */
+        findCached(id) {
+            for (const list of [this.projects, this.communityProjects, this.userProjects]) {
+                if (Array.isArray(list)) {
+                    const found = list.find(p => p && p.id === id);
+                    if (found) return found;
+                }
+            }
+            return this.project?.id === id ? this.project : null;
+        },
         handleError(err) {
             const alertStore = useAlertStore();
             // Extract error message from various possible error formats
@@ -150,6 +171,7 @@ export const useProjectsStore = defineStore({
         },
         async update(id, data) {
             data = stripReadOnly(data);
+            coerceWorkflowFields(data, this.findCached(id));
             // Handle hero_image
             if (data.hero_image?.id) {
                 data.hero_image = {
@@ -210,6 +232,7 @@ export const useProjectsStore = defineStore({
         },
         async register(data) {
             data = stripReadOnly(data);
+            coerceWorkflowFields(data, null);
             // Handle hero_image
             if (data.hero_image?.id) {
                 data.hero_image = {
@@ -294,14 +317,44 @@ export const useProjectsStore = defineStore({
                 .catch(this.handleError);
         },
         // Dedicated endpoint rather than a core PUT: any logged-in user may toggle
-        // their own interest, and it skips full-entity validation (a core update
-        // fails on legacy rows with a NULL review_status).
+        // their own interest, and it skips full-entity validation.
+        //
+        // Patches the cache in place. Do not follow with a list refetch —
+        // getAllProjects() blanks the state first and the grid flashes.
         async toggleInterest(id) {
             return fetchWrapper.post(`${baseUrl}/${id}/interest`, {})
+                .then(response => {
+                    const updated = response?.data ?? response;
+                    this.patchInterest(id, updated);
+                    return updated;
+                })
                 .catch(error => {
                     this.handleError(error);
                     throw error;
                 });
+        },
+        /** Sync cached copies with the server's interest relation, or toggle locally. */
+        patchInterest(id, updated) {
+            const authStore = useAuthStore();
+            const userId = authStore.user?.id;
+            const fromServer = Array.isArray(updated?.interested) ? updated.interested : null;
+
+            const nextFor = (project) => {
+                if (fromServer) return fromServer;
+                if (userId == null) return project.interested;
+                const current = Array.isArray(project.interested) ? project.interested : [];
+                const has = current.some(u => (u?.id ?? u) === userId);
+                return has
+                    ? current.filter(u => (u?.id ?? u) !== userId)
+                    : [...current, authStore.user];
+            };
+
+            for (const list of [this.projects, this.communityProjects, this.userProjects]) {
+                if (!Array.isArray(list)) continue;
+                const found = list.find(p => p && p.id === id);
+                if (found) found.interested = nextFor(found);
+            }
+            if (this.project?.id === id) this.project.interested = nextFor(this.project);
         },
         async updateManagers(id, managers) {
             const managerIds = (managers || []).map(m => (typeof m === 'object' ? m.id : m));
@@ -309,9 +362,9 @@ export const useProjectsStore = defineStore({
                 .then(response => response?.data ?? response)
                 .catch(this.handleError);
         },
-        // Move a project through the review workflow (APPROVED / REJECTED / ...).
-        // Managers of the project's garden only; patches the cached copy in place.
+        // Garden managers only; patches the cached copy in place.
         async review(id, review_status) {
+            review_status = normalizeReviewStatus(review_status);
             return fetchWrapper.put(`${baseUrl}/${id}/review`, { data: { review_status } })
                 .then(response => {
                     const updated = response?.data ?? response;

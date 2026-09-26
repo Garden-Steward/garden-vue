@@ -1,7 +1,8 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
-import { useProjectsStore, useGardensStore } from '@/stores';
+import { useProjectsStore, useGardensStore, useAuthStore } from '@/stores';
+import { isProjectVisibleTo } from '@/_config/GardenConfig';
 import { computed, ref, onMounted } from 'vue';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
@@ -14,8 +15,14 @@ const route = useRoute();
 const projectsStore = useProjectsStore();
 const gardensStore = useGardensStore();
 
+const authStore = useAuthStore();
+
 const { project } = storeToRefs(projectsStore);
 const { garden } = storeToRefs(gardensStore);
+const { user } = storeToRefs(authStore);
+
+// Signed-in stewards can still follow a link to a pending pitch.
+const viewerMaySee = computed(() => isProjectVisibleTo(project.value, user.value));
 
 // Dark mode state - initialize from system preference
 const getSystemPreference = () => {
@@ -230,6 +237,11 @@ const getEventImage = (event) => {
         </div>
       </div>
 
+      <div v-if="project?.id && !viewerMaySee" class="error-state">
+        <p>This project hasn't been approved for the public site yet.</p>
+      </div>
+
+      <template v-else>
       <!-- Hero Image Strip -->
       <div v-if="projectHeroImage && project?.id" class="project-hero-strip">
         <img 
@@ -311,6 +323,8 @@ const getEventImage = (event) => {
           </router-link>
         </p>
       </section>
+
+      </template>
 
       <!-- Loading State -->
       <div v-if="project.loading" class="loading-state">
