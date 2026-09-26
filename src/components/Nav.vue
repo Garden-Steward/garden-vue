@@ -210,7 +210,7 @@ const handleEscape = (e) => {
                     v-show="authStore.user"
                     :class="{ 'mobile-nav-section-active': isManageNavActive }"
                     @click="toggleMobileMenu"
-                >Manage</router-link>
+                >Dashboard</router-link>
                 <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
                 <router-link to="/join" class="nav-item nav-link" @click="toggleMobileMenu">Join</router-link>
                 <router-link to="/about" class="nav-item nav-link" @click="toggleMobileMenu">About</router-link>
@@ -274,7 +274,7 @@ const handleEscape = (e) => {
                         class="nav-item nav-link"
                         v-show="authStore.user"
                         :class="{ 'nav-link--section-active': isManageNavActive }"
-                    >Manage</router-link>
+                    >Dashboard</router-link>
                     <router-link to="/join" class="nav-item nav-link">Join</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
 
