@@ -90,7 +90,7 @@ export const useProjectsStore = defineStore({
             throw err;
         },
         async getProjects(gardenId) {
-            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=impact_metrics&filters[garden][id][$eq]=${gardenId}`)
+            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=impact_metrics&populate[5]=managers&filters[garden][id][$eq]=${gardenId}`)
                 .then(response => {
                     const projects = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeProject);
                     this.projects = projects;
@@ -237,7 +237,7 @@ export const useProjectsStore = defineStore({
 
             // v5 core update keys on documentId; resolve from cached state.
             const documentId = resolveProjectDocId(this, id);
-            return fetchWrapper.put(`${baseUrl}/${documentId}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=impact_metrics`, { data: data })
+            return fetchWrapper.put(`${baseUrl}/${documentId}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=impact_metrics&populate[3]=managers`, { data: data })
                 .then(response => {
                     if (response?.data) {
                         return normalizeProject(response.data);

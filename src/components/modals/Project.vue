@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from "vue";
-import { useProjectsStore, useAlertStore, useEventStore } from '@/stores';
+import { useProjectsStore, useAlertStore, useEventStore, useGardensStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import TextInput from '@/components/form/TextInput.vue';
 import DropDown from '@/components/form/DropDown.vue';
@@ -29,6 +29,7 @@ const props = defineProps({
   featured: Boolean,
   impact_metrics: Array,
   related_events: Array,
+  managers: Array,
   id: Number,
   garden: Number,
   gardenSlug: String,
@@ -44,6 +45,8 @@ const projectsStore = useProjectsStore();
 const alertStore = useAlertStore();
 const eventStore = useEventStore();
 const { volunteerDays } = storeToRefs(eventStore);
+const gardensStore = useGardensStore();
+const { garden: loadedGarden } = storeToRefs(gardensStore);
 
 const show = ref(false);
 const showViewModal = ref(false);
@@ -127,6 +130,7 @@ const form = ref({
   impact_metrics: props.impact_metrics ? [...props.impact_metrics] : [],
   related_events: props.related_events ? (Array.isArray(props.related_events) ? props.related_events : props.related_events.data || []) : [],
   garden: props.garden || null,
+  managers: Array.isArray(props.managers) ? [...props.managers] : [],
   // Normalized: a retired value would fail the save on the way through.
   review_status: normalizeReviewStatus(props.review_status)
 });
@@ -208,6 +212,9 @@ watch(() => props.featured_gallery, (newVal) => {
 watch(() => props.impact_metrics, (newVal) => {
   form.value.impact_metrics = newVal ? [...newVal] : [];
 }, { deep: true });
+watch(() => props.managers, (newVal) => {
+  form.value.managers = Array.isArray(newVal) ? [...newVal] : [];
+});
 watch(() => props.related_events, (newVal) => {
   if (newVal) {
     form.value.related_events = Array.isArray(newVal) ? newVal : (newVal.data || []);
@@ -302,7 +309,13 @@ const normalizeFormData = (formData) => {
   // Normalize numbers - convert null to undefined for comparison
   if (normalized.volunteer_count === null) normalized.volunteer_count = undefined;
   if (normalized.hours_contributed === null) normalized.hours_contributed = undefined;
-  
+
+  // Managers - compare by id, order-insensitive
+  normalized.managers = (normalized.managers || [])
+    .map(m => (typeof m === 'object' ? m?.id : m))
+    .filter(id => id != null)
+    .sort((a, b) => a - b);
+
   return normalized;
 };
 
@@ -461,6 +474,38 @@ const removeImpactMetric = (index) => {
   form.value.impact_metrics.splice(index, 1);
 };
 
+// ── Project managers (editable by garden managers on an existing project) ──
+const personName = (person) => {
+  const full = [person?.firstName, person?.lastName].filter(Boolean).join(' ').trim();
+  return full || person?.username || person?.email || `User ${person?.id}`;
+};
+
+// Anyone attached to this garden — its managers and volunteers — can be made a project manager.
+const managerCandidates = computed(() => {
+  const g = loadedGarden.value;
+  if (!g || g.id !== props.garden) return [];
+  const byId = new Map();
+  for (const person of [...(g.managers || []), ...(g.volunteers || [])]) {
+    if (person?.id != null && !byId.has(person.id)) byId.set(person.id, person);
+  }
+  const current = new Set((form.value.managers || []).map(m => m?.id ?? m));
+  return [...byId.values()]
+    .filter(person => !current.has(person.id))
+    .sort((a, b) => personName(a).localeCompare(personName(b)));
+});
+
+const managerToAdd = ref('');
+
+const addManager = () => {
+  const person = managerCandidates.value.find(p => p.id === Number(managerToAdd.value));
+  if (person) form.value.managers = [...form.value.managers, person];
+  managerToAdd.value = '';
+};
+
+const removeManager = (personId) => {
+  form.value.managers = form.value.managers.filter(m => (m?.id ?? m) !== personId);
+};
+
 const submit = async () => {
   // Prevent double submission
   if (isSubmitting.value) {
@@ -552,8 +597,23 @@ const submit = async () => {
         }));
     }
 
+    // Managers: only written when changed on an existing project; the API
+    // stamps them on create.
+    const managersChanged = props.id && originalFormData.value &&
+      JSON.stringify(normalizeFormData(form.value).managers) !==
+      JSON.stringify(normalizeFormData(originalFormData.value).managers);
+    if (managersChanged) {
+      data.managers = [...form.value.managers];
+    } else {
+      delete data.managers;
+    }
+
     if (props.id) {
       await projectsStore.update(props.id, data);
+      if (managersChanged) {
+        const cached = Array.isArray(projectsStore.projects) && projectsStore.projects.find(p => p.id === props.id);
+        if (cached) cached.managers = [...form.value.managers];
+      }
       alertStore.success('Project updated successfully');
     } else {
       await projectsStore.register(data);
@@ -575,6 +635,7 @@ const submit = async () => {
         impact_metrics: [],
         related_events: [],
         garden: props.garden,
+        managers: [],
         review_status: normalizeReviewStatus(null)
       };
       showDateFields.value = false;
@@ -1026,6 +1087,42 @@ onUnmounted(() => {
               Only an approved project is visible to the public.
             </p>
           </div>
+        </div>
+
+        <!-- Project managers (existing projects only; the API assigns them on create) -->
+        <div v-if="editor && id">
+          <label class="proj-modal-text block text-sm font-medium mb-1">Project managers</label>
+          <div v-if="form.managers.length" class="flex flex-wrap gap-2 mb-2">
+            <span
+              v-for="m in form.managers"
+              :key="m.id ?? m"
+              class="proj-manager-chip inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm"
+            >
+              {{ typeof m === 'object' ? personName(m) : `User ${m}` }}
+              <button
+                type="button"
+                class="proj-manager-remove ml-1 leading-none"
+                :aria-label="`Remove ${typeof m === 'object' ? personName(m) : 'manager'}`"
+                @click="removeManager(m.id ?? m)"
+              >&times;</button>
+            </span>
+          </div>
+          <p v-else class="proj-modal-text-muted text-xs mb-2">No project managers yet.</p>
+          <div v-if="managerCandidates.length" class="flex items-center gap-2">
+            <select
+              v-model="managerToAdd"
+              class="proj-modal-input px-3 py-2 border rounded-md text-sm focus:border-custom-green focus:outline-none"
+              @change="addManager"
+            >
+              <option value="">Add a manager…</option>
+              <option v-for="person in managerCandidates" :key="person.id" :value="person.id">
+                {{ personName(person) }}
+              </option>
+            </select>
+          </div>
+          <p class="proj-modal-text-muted text-xs mt-1">
+            Project managers can edit this project. Changes save with the project.
+          </p>
         </div>
 
         <!-- Date fields - only show if showDateFields is true or if dates exist -->
@@ -1507,6 +1604,17 @@ onUnmounted(() => {
   border-color: #8aa37c;
   outline: none;
 }
+.proj-manager-chip {
+  background-color: rgba(138, 163, 124, 0.18);
+  color: #344a34;
+  border: 1px solid #d6cfb8;
+}
+.proj-manager-remove {
+  color: #6b7280;
+}
+.proj-manager-remove:hover {
+  color: #dc2626;
+}
 .proj-modal-panel {
   background-color: rgba(138, 163, 124, 0.12);
   border-color: #d6cfb8;
@@ -1642,6 +1750,14 @@ html.dark .proj-modal-input {
   border-color: #3d4d36;
 }
 html.dark .proj-modal-input::placeholder {
+  color: #d0d0d0;
+}
+html.dark .proj-manager-chip {
+  background-color: rgba(138, 163, 124, 0.2);
+  color: #f5f5f5;
+  border-color: #3d4d36;
+}
+html.dark .proj-manager-remove {
   color: #d0d0d0;
 }
 html.dark .proj-modal-panel {
