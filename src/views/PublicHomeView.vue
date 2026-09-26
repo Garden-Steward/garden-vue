@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { isProjectPubliclyVisible } from '@/_config/GardenConfig';
-import { useProjectsStore } from '@/stores';
+import { isProjectPubliclyVisible, isProjectVisibleTo } from '@/_config/GardenConfig';
+import { useProjectsStore, useAuthStore } from '@/stores';
 import NewsletterSignup from '@/components/NewsletterSignup.vue';
 
 // ── Video sections ──────────────────────────────────
@@ -55,13 +55,17 @@ const fallbackGradients = [
 // to make someone curious, not to let them compare.
 const projectsStore = useProjectsStore();
 const { communityProjects } = storeToRefs(projectsStore);
+const { user } = storeToRefs(useAuthStore());
 
 projectsStore.getAllProjects();
 
+// Same visibility rule as /projects (signed-in stewards also see pending
+// pitches), with approved projects put first so they lead when there are any.
 const featuredProjects = computed(() => {
   const list = Array.isArray(communityProjects.value) ? communityProjects.value : [];
   return list
-    .filter(isProjectPubliclyVisible)
+    .filter(p => isProjectVisibleTo(p, user.value))
+    .sort((a, b) => Number(isProjectPubliclyVisible(b)) - Number(isProjectPubliclyVisible(a)))
     .slice(0, 3);
 });
 
@@ -105,6 +109,7 @@ function setTextRef(el, index) {
 }
 
 let observer = null;
+let contentObserver = null;
 let rafHandle = null;
 let reduceMotion = false;
 
@@ -158,11 +163,22 @@ onMounted(() => {
   measureHeader();
 
   /**
-   * `proximity`, not `mandatory`. With `mandatory` (plus `scroll-snap-stop:
-   * always`) the scroll position is trapped on the last video and nothing below
-   * it is reachable. The video sections still snap under `proximity`.
+   * `mandatory` so each video locks into place. On its own it would trap the
+   * scroll on the last video, so snapping is released as soon as any of the
+   * content below is on screen, and restored when it leaves.
    */
-  document.documentElement.style.scrollSnapType = 'y proximity';
+  const html = document.documentElement;
+  html.style.scrollSnapType = 'y mandatory';
+  const contentBelow = document.querySelector('.content-below');
+  if (contentBelow) {
+    contentObserver = new IntersectionObserver(
+      ([entry]) => {
+        html.style.scrollSnapType = entry.isIntersecting ? 'none' : 'y mandatory';
+      },
+      { threshold: 0 }
+    );
+    contentObserver.observe(contentBelow);
+  }
 
   // Staggered start so the three clips do not all decode at once.
   videoRefs.value.forEach((video, i) => {
@@ -196,6 +212,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (observer) observer.disconnect();
+  if (contentObserver) contentObserver.disconnect();
   if (rafHandle) cancelAnimationFrame(rafHandle);
   window.removeEventListener('scroll', onScroll);
   window.removeEventListener('resize', onResize);
@@ -490,7 +507,8 @@ function isActive(index) {
 /* ── Content below videos ─────────────────────────── */
 .content-below {
   background: #f7f1e3;
-  scroll-snap-align: none;
+  /* Last snap point, so scrolling past the final video lands here, where snap is released. */
+  scroll-snap-align: start;
 }
 
 html.dark .content-below {
