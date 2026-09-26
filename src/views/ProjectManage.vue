@@ -50,6 +50,9 @@ const interested = ref([]);
 const promotingId = ref(null);
 const reviewing = ref(false);
 const togglingInterest = ref(false);
+// Single-column layout only; the wide layout always shows both lists.
+const managersOpen = ref(false);
+const interestedOpen = ref(false);
 
 const userName = (u) => {
   if (!u) return '';
@@ -79,16 +82,6 @@ const pitchGardens = computed(() => {
 });
 
 // ── Permissions ──
-// Matches what the backend enforces on PUT /projects/:id/review.
-const projectGarden = computed(() => {
-  const g = project.value?.garden;
-  const gardenId = (g && typeof g === 'object') ? g.id : g;
-  if (!gardenId || !Array.isArray(gardens.value)) return null;
-  return gardens.value.find(x => x.id === gardenId) || null;
-});
-const canReview = computed(() =>
-  !!user.value && (authStore.isAdmin || (projectGarden.value ? isGardenManager(projectGarden.value) : false))
-);
 const isProjectManager = computed(() =>
   managers.value.some(m => (m.id || m) === user.value?.id)
 );
@@ -97,10 +90,18 @@ const isCreator = computed(() => {
   const id = (cb && typeof cb === 'object') ? cb.id : cb;
   return !!id && id === user.value?.id;
 });
-// Its managers, whoever pitched it, its garden's managers, and admins.
-const canManage = computed(() =>
-  !!user.value && (authStore.isAdmin || isProjectManager.value || isCreator.value || canReview.value)
+// Project leads: the owner (whoever pitched it), its managers, and admins.
+// Only leads can edit the project, change its status, and see who is
+// interested; everyone else sees the status and the interest count.
+const isLead = computed(() =>
+  !!user.value && (authStore.isAdmin || isProjectManager.value || isCreator.value)
 );
+const owner = computed(() => {
+  const cb = project.value?.created_by;
+  return (cb && typeof cb === 'object') ? cb : null;
+});
+// The owner is shown separately, so drop them from the leads list.
+const leads = computed(() => managers.value.filter(m => m.id !== owner.value?.id));
 
 // ── Display helpers ──
 const reviewStatus = computed(() => normalizeReviewStatus(project.value?.review_status));
@@ -150,6 +151,56 @@ const createdOn = computed(() => {
     : d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 });
 
+const apiUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`);
+
+// ── Garden ──
+const garden = computed(() => {
+  const g = project.value?.garden;
+  return (g && typeof g === 'object') ? g : null;
+});
+const gardenThumb = computed(() => {
+  const img = garden.value?.hero_image;
+  return apiUrl(img?.formats?.thumbnail?.url || img?.formats?.small?.url || img?.url);
+});
+// The populated garden carries no managers; ManageLayout's garden list does.
+const canManageGarden = computed(() => {
+  if (!user.value || !garden.value) return false;
+  if (authStore.isAdmin) return true;
+  const full = Array.isArray(gardens.value) ? gardens.value.find(x => x.id === garden.value.id) : null;
+  return !!full && isGardenManager(full);
+});
+
+// ── Volunteer days linked to this project ──
+const PAST_PREVIEW = 3;
+const showAllPast = ref(false);
+const linkedEvents = computed(() =>
+  (project.value?.related_events || [])
+    .filter(e => e && !e.disabled)
+    .map(e => ({ ...e, start: e.startDatetime ? new Date(e.startDatetime) : null }))
+);
+const upcomingEvents = computed(() => {
+  const now = Date.now();
+  return linkedEvents.value
+    .filter(e => e.start && e.start.getTime() >= now)
+    .sort((a, b) => a.start - b.start);
+});
+const pastEvents = computed(() => {
+  const now = Date.now();
+  return linkedEvents.value
+    .filter(e => !e.start || e.start.getTime() < now)
+    .sort((a, b) => (b.start || 0) - (a.start || 0));
+});
+const visiblePastEvents = computed(() =>
+  showAllPast.value ? pastEvents.value : pastEvents.value.slice(0, PAST_PREVIEW)
+);
+const eventWhen = (e) => (!e.start ? 'Date TBD' : e.start.toLocaleString(undefined, {
+  weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+}));
+const eventThumb = (e) => {
+  const img = e.hero_image;
+  return apiUrl(img?.formats?.thumbnail?.url || img?.url);
+};
+
 const publicUrl = computed(() => {
   const g = project.value?.garden;
   const slug = (g && typeof g === 'object') ? g.slug : null;
@@ -182,6 +233,9 @@ const buildForm = (p) => {
   managers.value = Array.isArray(attrs.managers) ? [...attrs.managers] : [];
   interested.value = Array.isArray(attrs.interested) ? [...attrs.interested] : [];
 };
+
+// Pick up a role changed in Strapi since login, so admins get lead access.
+authStore.refreshRole();
 
 // ManageLayout already loads gardens; reused here for the reviewer check.
 const load = isLegacyNumericLink
@@ -273,7 +327,7 @@ const promote = async (person) => {
     });
     managers.value = nextManagers;
     interested.value = nextInterested;
-    alertStore.success(`${userName(person)} is now a manager.`);
+    alertStore.success(`${userName(person)} is now a project lead.`);
   } catch (err) {
     alertStore.error('Could not promote this person. Please try again.');
   } finally {
@@ -314,7 +368,7 @@ const promote = async (person) => {
             <h1 class="pd-title">{{ project.title }}</h1>
             <p class="pd-meta">
               Pitched by <strong>{{ pitchedBy }}</strong>
-              <span v-if="gardenName"> · <em>@ {{ gardenName }}</em></span>
+              <span v-if="gardenName"> · <em>@ <router-link v-if="garden?.slug" :to="`/gardens/${garden.slug}`" class="pd-meta__link">{{ gardenName }}</router-link><template v-else>{{ gardenName }}</template></em></span>
               <span v-else> · <em>Independent</em></span>
               <span v-if="createdOn"> · {{ createdOn }}</span>
             </p>
@@ -341,17 +395,74 @@ const promote = async (person) => {
           </div>
         </header>
 
+        <!-- Wide containers: main + side columns. Narrower (tablet/phone):
+             .pd-main/.pd-side flatten via display: contents and the cards
+             reorder into one column — About, Review, People, Photos, Edit. -->
         <div class="pd-columns">
           <!-- Main column -->
           <div class="pd-main">
-            <section class="pd-card">
+            <section class="pd-card pd-o-about">
               <h2 class="pd-card__title">About this project</h2>
               <p v-if="project.short_description" class="pd-lede">{{ project.short_description }}</p>
               <div v-if="renderedDescription" class="pd-prose" v-html="renderedDescription"></div>
               <p v-else-if="!project.short_description" class="pd-empty">No description yet.</p>
             </section>
 
-            <section v-if="galleryUrls.length > 1" class="pd-card">
+            <!-- Volunteer days linked from the Event Manager -->
+            <section class="pd-card pd-o-events">
+              <h2 class="pd-card__title">
+                Volunteer days
+                <span v-if="linkedEvents.length" class="pd-collapse__count">{{ linkedEvents.length }}</span>
+              </h2>
+
+              <template v-if="linkedEvents.length">
+                <h3 v-if="upcomingEvents.length" class="pd-subhead">Upcoming</h3>
+                <ul v-if="upcomingEvents.length" class="pd-events">
+                  <li v-for="e in upcomingEvents" :key="e.id" class="pd-event">
+                    <router-link :to="`/d/${e.id}`" class="pd-event__link">
+                      <span class="pd-event__thumb" :style="eventThumb(e) ? { backgroundImage: `url(${eventThumb(e)})` } : null"></span>
+                      <span class="pd-event__body">
+                        <span class="pd-event__title">{{ e.title }}</span>
+                        <span class="pd-event__when">{{ eventWhen(e) }}</span>
+                      </span>
+                      <span v-if="e.canceled" class="pd-event__tag">Canceled</span>
+                    </router-link>
+                    <router-link v-if="canManageGarden" :to="`/manage/events/${e.id}/edit`" class="pd-event__edit">Edit</router-link>
+                  </li>
+                </ul>
+
+                <h3 v-if="pastEvents.length" class="pd-subhead">Past</h3>
+                <ul v-if="pastEvents.length" class="pd-events">
+                  <li v-for="e in visiblePastEvents" :key="e.id" class="pd-event is-past">
+                    <router-link :to="`/d/${e.id}`" class="pd-event__link">
+                      <span class="pd-event__thumb" :style="eventThumb(e) ? { backgroundImage: `url(${eventThumb(e)})` } : null"></span>
+                      <span class="pd-event__body">
+                        <span class="pd-event__title">{{ e.title }}</span>
+                        <span class="pd-event__when">{{ eventWhen(e) }}</span>
+                      </span>
+                      <span v-if="e.canceled" class="pd-event__tag">Canceled</span>
+                    </router-link>
+                    <router-link v-if="canManageGarden" :to="`/manage/events/${e.id}/edit`" class="pd-event__edit">Edit</router-link>
+                  </li>
+                </ul>
+                <button
+                  v-if="pastEvents.length > PAST_PREVIEW"
+                  type="button"
+                  class="pd-more"
+                  @click="showAllPast = !showAllPast"
+                >
+                  {{ showAllPast ? 'Show fewer' : `Show all ${pastEvents.length} past days` }}
+                </button>
+              </template>
+              <template v-else>
+                <p class="pd-empty">No volunteer days linked yet.</p>
+                <p v-if="canManageGarden" class="pd-hint pd-hint--after">
+                  Link this project to a volunteer day from the event's editor.
+                </p>
+              </template>
+            </section>
+
+            <section v-if="galleryUrls.length > 1" class="pd-card pd-o-photos">
               <h2 class="pd-card__title">Photos</h2>
               <div class="pd-gallery">
                 <img v-for="img in galleryUrls" :key="img.id" :src="img.src" alt="" />
@@ -359,7 +470,7 @@ const promote = async (person) => {
             </section>
 
             <!-- Edit -->
-            <section v-if="canManage" class="pd-card pd-card--edit">
+            <section v-if="isLead" class="pd-card pd-card--edit pd-o-edit">
               <div class="pd-card__head">
                 <h2 class="pd-card__title">Edit project</h2>
                 <button type="button" class="pd-toggle" @click="isEditing = !isEditing">
@@ -381,8 +492,30 @@ const promote = async (person) => {
 
           <!-- Side column -->
           <aside class="pd-side">
+            <!-- Garden -->
+            <section class="pd-card pd-o-garden">
+              <h2 class="pd-card__title">Garden</h2>
+              <template v-if="garden">
+                <component
+                  :is="garden.slug ? 'router-link' : 'div'"
+                  :to="garden.slug ? `/gardens/${garden.slug}` : undefined"
+                  class="pd-garden"
+                >
+                  <span class="pd-garden__thumb" :style="gardenThumb ? { backgroundImage: `url(${gardenThumb})` } : null"></span>
+                  <span class="pd-garden__body">
+                    <span class="pd-garden__title">{{ garden.title }}</span>
+                    <span v-if="garden.blurb" class="pd-garden__blurb">{{ garden.blurb }}</span>
+                  </span>
+                </component>
+                <router-link v-if="canManageGarden && garden.slug" :to="`/manage/gardens/${garden.slug}`" class="pd-publiclink">
+                  Manage garden →
+                </router-link>
+              </template>
+              <p v-else class="pd-empty">Independent — not attached to a garden.</p>
+            </section>
+
             <!-- Review workflow -->
-            <section v-if="canReview" class="pd-card">
+            <section v-if="isLead" class="pd-card pd-o-review">
               <h2 class="pd-card__title">Review status</h2>
               <p class="pd-hint">
                 Only an <strong>approved</strong> project is visible to visitors who are not signed in.
@@ -401,33 +534,73 @@ const promote = async (person) => {
                 </button>
               </div>
             </section>
-            <section v-else class="pd-card">
+            <section v-else class="pd-card pd-o-review">
               <h2 class="pd-card__title">Review status</h2>
               <p class="pd-hint">
                 <span class="pd-status" :class="reviewStatusClass">{{ reviewLabel }}</span>
               </p>
               <p class="pd-hint">
-                Managers of {{ gardenName || 'the garden this project is pitched to' }} approve projects
-                for the public site.
+                Project leads set the status. Only approved projects appear on the public site.
               </p>
             </section>
 
-            <!-- People -->
-            <template v-if="canManage">
-              <section class="pd-card">
-                <h2 class="pd-card__title">Managers</h2>
-                <ul v-if="managers.length" class="pd-people">
-                  <li v-for="m in managers" :key="m.id" class="pd-person">
+            <!-- People. Collapsed by default in the single-column layout; the
+                 wide layout always shows the lists and hides the toggle. -->
+            <section class="pd-card pd-collapse pd-o-managers" :class="{ 'is-open': managersOpen }">
+              <h2 class="pd-card__title">
+                <button
+                  type="button"
+                  class="pd-collapse__head"
+                  :aria-expanded="managersOpen"
+                  @click="managersOpen = !managersOpen"
+                >
+                  <span>Project leads <span class="pd-collapse__count">{{ leads.length + (owner ? 1 : 0) }}</span></span>
+                  <span v-if="owner || leads.length" class="pd-stack" aria-hidden="true">
+                    <span v-if="owner" class="pd-avatar">{{ initials(owner) }}</span>
+                    <span v-for="m in leads.slice(0, owner ? 3 : 4)" :key="m.id" class="pd-avatar">{{ initials(m) }}</span>
+                  </span>
+                  <svg class="pd-collapse__chev" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </h2>
+              <div class="pd-collapse__body">
+                <ul v-if="owner || leads.length" class="pd-people">
+                  <li v-if="owner" class="pd-person">
+                    <span class="pd-avatar">{{ initials(owner) }}</span>
+                    <span class="pd-person__name">{{ userName(owner) }}</span>
+                    <span class="pd-person__tag">Owner</span>
+                  </li>
+                  <li v-for="m in leads" :key="m.id" class="pd-person">
                     <span class="pd-avatar">{{ initials(m) }}</span>
                     <span class="pd-person__name">{{ userName(m) }}</span>
-                    <span class="pd-person__tag">Manager</span>
+                    <span class="pd-person__tag">Lead</span>
                   </li>
                 </ul>
-                <p v-else class="pd-empty">No managers yet.</p>
-              </section>
+                <p v-else class="pd-empty">No project leads yet.</p>
+              </div>
+            </section>
 
-              <section class="pd-card">
-                <h2 class="pd-card__title">Interested ({{ interested.length }})</h2>
+            <!-- Leads see who is interested (and can promote them); everyone
+                 else only sees the count. -->
+            <section v-if="isLead" class="pd-card pd-collapse pd-o-interested" :class="{ 'is-open': interestedOpen }">
+              <h2 class="pd-card__title">
+                <button
+                  type="button"
+                  class="pd-collapse__head"
+                  :aria-expanded="interestedOpen"
+                  @click="interestedOpen = !interestedOpen"
+                >
+                  <span>Interested <span class="pd-collapse__count">{{ interested.length }}</span></span>
+                  <span v-if="interested.length" class="pd-stack" aria-hidden="true">
+                    <span v-for="p in interested.slice(0, 4)" :key="p.id" class="pd-avatar">{{ initials(p) }}</span>
+                  </span>
+                  <svg class="pd-collapse__chev" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </h2>
+              <div class="pd-collapse__body">
                 <ul v-if="interested.length" class="pd-people">
                   <li v-for="p in interested" :key="p.id" class="pd-person">
                     <span class="pd-avatar">{{ initials(p) }}</span>
@@ -438,15 +611,15 @@ const promote = async (person) => {
                       :disabled="promotingId === p.id"
                       @click="promote(p)"
                     >
-                      {{ promotingId === p.id ? 'Promoting…' : 'Make manager' }}
+                      {{ promotingId === p.id ? 'Promoting…' : 'Make lead' }}
                     </button>
                   </li>
                 </ul>
                 <p v-else class="pd-empty">No one has expressed interest yet.</p>
-              </section>
-            </template>
-            <section v-else class="pd-card">
-              <h2 class="pd-card__title">Support</h2>
+              </div>
+            </section>
+            <section v-else class="pd-card pd-o-interested">
+              <h2 class="pd-card__title">Interested</h2>
               <p class="pd-hint">
                 <strong>{{ interested.length }}</strong>
                 {{ interested.length === 1 ? 'steward is' : 'stewards are' }} interested in this project.
@@ -602,26 +775,58 @@ const promote = async (person) => {
   font-size: 0.9rem;
 }
 
-/* ── Columns ── */
-.pd-columns {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
-  gap: 1.5rem;
-  align-items: start;
+/* ── Columns ──
+   Sized off the page's own width (container query), not the viewport: the
+   manage sidebar eats ~300px, so a 1000px tablet only leaves ~600px here. */
+.pd {
+  container: pd / inline-size;
 }
 
-@media (max-width: 900px) {
-  .pd-columns {
-    grid-template-columns: 1fr;
-  }
+.pd-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .pd-main,
 .pd-side {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  min-width: 0;
+  display: contents;
+}
+
+.pd-o-about { order: 1; }
+.pd-o-garden { order: 2; }
+.pd-o-events { order: 3; }
+.pd-o-review { order: 4; }
+.pd-o-managers { order: 5; }
+.pd-o-interested { order: 6; }
+.pd-o-photos { order: 7; }
+.pd-o-edit { order: 8; }
+
+@container pd (min-width: 880px) {
+  .pd-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .pd-main,
+  .pd-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+}
+
+@container pd (max-width: 560px) {
+  .pd-hero {
+    height: 180px;
+  }
+
+  .pd-card {
+    padding: 1rem 1rem 1.15rem;
+  }
 }
 
 .pd-card {
@@ -756,6 +961,7 @@ const promote = async (person) => {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  margin: 0;
   padding: 0.5rem 0.6rem;
   border-radius: 0.5rem;
   background-color: rgba(108, 138, 106, 0.08);
@@ -821,6 +1027,120 @@ const promote = async (person) => {
   cursor: not-allowed;
 }
 
+/* ── Collapsible people cards ── */
+.pd-collapse {
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+
+.pd-collapse .pd-card__title {
+  margin: 0;
+}
+
+.pd-collapse__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-text-fill-color: currentColor;
+}
+
+.pd-collapse__head > span:first-child {
+  flex: 1;
+}
+
+.pd-collapse__count {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background-color: #eef3e8;
+  color: #4a5a45;
+  font-size: 0.8rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.pd-stack {
+  display: inline-flex;
+}
+
+.pd-stack .pd-avatar {
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 0.65rem;
+  border: 2px solid #ffffff;
+}
+
+.pd-stack .pd-avatar + .pd-avatar {
+  margin-left: -0.45rem;
+}
+
+.pd-collapse__chev {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.pd-collapse.is-open .pd-collapse__chev {
+  transform: rotate(180deg);
+}
+
+.pd-collapse__body {
+  display: none;
+  margin-top: 0.9rem;
+}
+
+.pd-collapse.is-open .pd-collapse__body {
+  display: block;
+}
+
+/* Full-width in the single column, so lay people out as a grid of chips. */
+.pd-collapse .pd-people {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+@container pd (min-width: 880px) {
+  .pd-collapse {
+    padding-top: 1.25rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .pd-collapse .pd-card__title {
+    margin-bottom: 0.75rem;
+  }
+
+  .pd-collapse__head {
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .pd-stack,
+  .pd-collapse__chev {
+    display: none;
+  }
+
+  .pd-collapse__body,
+  .pd-collapse.is-open .pd-collapse__body {
+    display: block;
+    margin-top: 0;
+  }
+
+  .pd-collapse .pd-people {
+    display: flex;
+  }
+}
+
 /* ── Edit form ── */
 .pd-form {
   margin-top: 1.25rem;
@@ -878,6 +1198,144 @@ const promote = async (person) => {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ── Garden ── */
+.pd-garden {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid #e2dccb;
+  background-color: rgba(108, 138, 106, 0.08);
+  text-decoration: none;
+  color: inherit;
+}
+
+a.pd-garden:hover { border-color: #a8c49a; }
+
+.pd-garden__thumb,
+.pd-event__thumb {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  background-color: #d7e8c8;
+  background-size: cover;
+  background-position: center;
+}
+
+.pd-garden__body,
+.pd-event__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pd-garden__title,
+.pd-event__title {
+  color: #344a34;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pd-garden__blurb {
+  color: #6b7280;
+  font-size: 0.85rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pd-meta__link {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* ── Volunteer days ── */
+.pd-subhead {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.pd-events {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pd-event {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.6rem;
+  border: 1px solid #e2dccb;
+  background-color: rgba(108, 138, 106, 0.08);
+}
+
+.pd-event.is-past { opacity: 0.8; }
+
+.pd-event__link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pd-event__link:hover .pd-event__title { text-decoration: underline; }
+
+.pd-event__when {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.pd-event__tag {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #7f1d1d;
+  background-color: #fde2e2;
+  -webkit-text-fill-color: currentColor;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+
+.pd-event__edit {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #376451;
+  text-decoration: underline;
+}
+
+.pd-more {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #376451;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pd-hint--after { margin: 0.5rem 0 0; }
 </style>
 
 <style>
@@ -953,6 +1411,19 @@ html.dark .pd-review__btn {
   color: #c2cbbb;
 }
 
+html.dark .pd-collapse__count {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #d7e8c8;
+}
+
+html.dark .pd-stack .pd-avatar {
+  border-color: #344a34;
+}
+
+html.dark .pd-collapse__chev {
+  color: #a0a8a0;
+}
+
 html.dark .pd-promote {
   color: #d7e8c8;
   border-color: #a7c080;
@@ -960,5 +1431,32 @@ html.dark .pd-promote {
 
 html.dark .pd-prose a {
   color: #c8dbbf;
+}
+
+html.dark .pd-garden,
+html.dark .pd-event {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: #3d4d36;
+}
+
+html.dark .pd-garden__title,
+html.dark .pd-event__title {
+  color: #e6f0db;
+}
+
+html.dark .pd-garden__blurb,
+html.dark .pd-event__when,
+html.dark .pd-subhead {
+  color: #a0a8a0;
+}
+
+html.dark .pd-event__edit,
+html.dark .pd-more {
+  color: #c8dbbf;
+}
+
+html.dark .pd-garden__thumb,
+html.dark .pd-event__thumb {
+  background-color: #3c4a2c;
 }
 </style>

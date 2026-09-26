@@ -125,7 +125,7 @@ export const useProjectsStore = defineStore({
             this.project = { loading: true };
             // Filter the collection (permitted for all roles) rather than hit
             // core findOne, and take [0].
-            return fetchWrapper.get(`${baseUrl}?filters[${field}][$eq]=${encodeURIComponent(value)}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=created_by&populate[4]=managers&populate[5]=impact_metrics&populate[6]=interested`)
+            return fetchWrapper.get(`${baseUrl}?filters[${field}][$eq]=${encodeURIComponent(value)}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=created_by&populate[4]=managers&populate[5]=impact_metrics&populate[6]=interested&populate[7]=related_events&populate[8]=related_events.hero_image&populate[9]=garden.hero_image`)
                 .then(response => {
                     const arr = Array.isArray(response?.data) ? response.data : [];
                     const project = arr.length ? arr[0] : null;

@@ -18,7 +18,12 @@ export const useAuthStore = defineStore({
     }),
     getters: {
         isLoggedIn: (state) => !!state.user,
-        isAdmin: (state) => state.user?.role?.type === 'administrator',
+        // Users & Permissions "Administrator" role. Match the name too, in case
+        // the role's type slug differs from what Strapi derived at creation.
+        isAdmin: (state) => {
+            const role = state.user?.role;
+            return role?.type === 'administrator' || String(role?.name || '').toLowerCase() === 'administrator';
+        },
     },
     actions: {
         async initGoogle() {
@@ -95,6 +100,24 @@ export const useAuthStore = defineStore({
             const { jwt, user } = await fetchWrapper.post(`${baseUrl}/api/auth/sms-login/verify`, { phoneNumber, code: String(code ?? '').trim() });
             this.setSession(jwt, user);
             return user;
+        },
+        // The stored user is a snapshot from login, so a role changed in Strapi
+        // (e.g. promoted to Administrator) wouldn't show until the next login.
+        // Plain fetch, not fetchWrapper: a 401/403 here shouldn't log anyone out.
+        async refreshRole() {
+            if (!this.user || !this.auth.accessToken) return;
+            try {
+                const res = await fetch(`${baseUrl}/api/users/me?populate=role`, {
+                    headers: { Authorization: `Bearer ${this.auth.accessToken}` }
+                });
+                if (!res.ok) return;
+                const me = await res.json();
+                if (!me?.role) return;
+                this.user = { ...this.user, role: me.role };
+                localStorage.setItem('user', JSON.stringify(this.user));
+            } catch {
+                // keep the stored role
+            }
         },
         openLoginModal(returnUrl) {
             this.returnUrl = returnUrl || null;
