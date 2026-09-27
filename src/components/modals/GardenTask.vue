@@ -50,6 +50,7 @@ const props = defineProps({
   },
   scheduler_type: String,
   week_start_date: String,
+  priority: String,
   instruction: [Object, Array]
 });
 
@@ -57,6 +58,20 @@ const gardenTaskStore = useGardenTaskStore();
 const alertStore = useAlertStore();
 
 const show = ref(false);
+
+// Close on backdrop only when the press also started on the backdrop, so a
+// text selection dragged out of the modal doesn't dismiss it on release.
+const pressStartedOnBackdrop = ref(false);
+const onBackdropMousedown = (e) => {
+  pressStartedOnBackdrop.value = e.target === e.currentTarget;
+};
+const onBackdropClick = (e) => {
+  if (pressStartedOnBackdrop.value && e.target === e.currentTarget) {
+    show.value = false;
+    copy.value = false;
+  }
+  pressStartedOnBackdrop.value = false;
+};
 const copy = ref(false);
 const error = ref(false);
 
@@ -116,6 +131,7 @@ const form = ref({
   task_status: (props.task_status && getTaskStatusOption(props.task_status).value) || DEFAULT_TASK_STATUS,
   primary_image: props.primary_image || null,
   recurring_task: props.recurring_task || null,
+  priority: props.priority || 'Normal',
   is_group_task: false,
   complete_once: false,
 });
@@ -273,6 +289,11 @@ watch(() => props.volunteers, (newVal) => {
   form.value.volunteers = newVal;
 });
 
+watch(() => props.priority, (newVal) => {
+  if (props.isRecurringTemplate) return;
+  form.value.priority = newVal || 'Normal';
+});
+
 watch(() => props.task_status, (newVal) => {
   if (props.isRecurringTemplate) return;
   form.value.task_status = (newVal && getTaskStatusOption(newVal).value) || DEFAULT_TASK_STATUS;
@@ -377,6 +398,7 @@ function resetFormAfterSuccessfulCreate() {
     task_status: DEFAULT_TASK_STATUS,
     primary_image: null,
     recurring_task: null,
+    priority: 'Normal',
     is_group_task: false,
     complete_once: false
   };
@@ -590,11 +612,11 @@ defineExpose({ openModal });
     <!-- Show / hide the modal -->
     <div v-if="show" class="w-xl">
       <!-- The backdrop -->
-      <div class="fixed inset-0 bg-black/60" @click="()=> {show = false;copy= false}"></div>
+      <div class="fixed inset-0 bg-black/60" @mousedown="onBackdropMousedown" @click="onBackdropClick"></div>
 
       <!-- *** START FORM *** -->
       <form @submit.prevent="submit">
-      <div class="fixed inset-0 flex items-center justify-start overflow-x-hidden overflow-y-auto py-6" @click="()=> {show = false;copy= false}">
+      <div class="fixed inset-0 flex items-center justify-start overflow-x-hidden overflow-y-auto py-6" @mousedown="onBackdropMousedown" @click="onBackdropClick">
         <div class="garden-task-modal-content grid grid-cols-1 md:w-1/2 w-[90%] gap-2 p-3 md:p-8 mx-auto max-w-[95vw] max-h-[90vh] overflow-y-auto my-auto relative rounded-lg shadow-xl" @click.stop>
           <!-- Close X button -->
           <button
@@ -1083,6 +1105,16 @@ defineExpose({ openModal });
               <option class="text-lg py-1" value="Weeding">Weeding</option>
               <option class="text-lg py-1" value="Planting">Planting</option>
               <option class="text-lg py-1" value="Harvest">Harvest</option>
+            </select>
+
+            <p class="gt-text p-1 pb-0 text-md mb-0">Priority:</p>
+            <select
+              v-model="form.priority"
+              class="garden-task-input gt-input rounded-md border p-1 ml-1 text-lg focus:outline-none focus:ring-1"
+            >
+              <option class="text-lg py-1" value="High">High</option>
+              <option class="text-lg py-1" value="Normal">Normal</option>
+              <option class="text-lg py-1" value="Low">Low</option>
             </select>
 
             <div class="modal-footer gt-footer flex flex-shrink-0 flex-col gap-3 p-4 border-t rounded-b-md">

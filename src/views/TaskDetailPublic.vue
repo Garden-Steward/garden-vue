@@ -124,7 +124,16 @@ const handleSignUpSuccess = () => {
 };
 
 const goBack = () => {
-  router.back();
+  const from = route.query.from;
+  // Only honor same-origin paths (reject protocol-relative "//host").
+  const safeFrom = typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : null;
+  if (window.history.state?.back) {
+    router.back();
+  } else if (safeFrom) {
+    router.push(safeFrom);
+  } else {
+    router.push(`/gardens/${route.params.slug}/tasks`);
+  }
 };
 </script>
 
