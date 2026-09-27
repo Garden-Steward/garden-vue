@@ -1,6 +1,7 @@
 <script setup>
 import { computed, watch, ref, nextTick } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRoute, useRouter } from 'vue-router';
 import { useGardenTaskStore, useWeekSchedulerStore } from '@/stores';
 import GardenTask from '@/components/modals/GardenTask.vue';
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue';
@@ -21,6 +22,8 @@ const props = defineProps({
   }
 });
 
+const route = useRoute();
+const router = useRouter();
 const gardenTaskStore = useGardenTaskStore();
 const weekSchedulerStore = useWeekSchedulerStore();
 const { gardenTasks, recurringTasks: storeRecurringTasks } = storeToRefs(gardenTaskStore);
@@ -476,7 +479,18 @@ const handleRegularTaskCardClick = (taskId) => {
     toggleRegularTaskExpanded(taskId);
     return;
   }
-  if (props.editor) openEditModal(taskId);
+  openTaskDetail(taskId);
+};
+
+// Open the task detail page; `from` lets its Back button return here even
+// when there's no history entry to pop (e.g. the link was opened in a new tab).
+const openTaskDetail = (taskId) => {
+  if (!props.garden?.slug) return;
+  router.push({
+    name: 'task-detail-public',
+    params: { slug: props.garden.slug, taskId },
+    query: { from: route.fullPath }
+  });
 };
 
 // Open edit modal for a regular task (call exposed openModal on the component)
