@@ -158,8 +158,9 @@ export const useProjectsStore = defineStore({
         // Projects an event can be linked to: pending (CREATED) and active
         // (APPROVED), newest first. Returned rather than stored so opening the
         // event manager doesn't clobber the community list.
-        async getLinkableProjects() {
-            return fetchWrapper.get(`${baseUrl}?filters[review_status][$in][0]=CREATED&filters[review_status][$in][1]=APPROVED&populate[0]=hero_image&populate[1]=garden&sort=createdAt:desc&pagination[pageSize]=100`)
+        async getLinkableProjects(gardenId) {
+            const gardenFilter = gardenId ? `&filters[garden][id][$eq]=${gardenId}` : '';
+            return fetchWrapper.get(`${baseUrl}?filters[review_status][$in][0]=CREATED&filters[review_status][$in][1]=APPROVED${gardenFilter}&populate[0]=hero_image&populate[1]=garden&sort=createdAt:desc&pagination[pageSize]=100`)
                 .then(response => {
                     const raw = Array.isArray(response?.data) ? response.data : [];
                     return raw.map(normalizeProject);
