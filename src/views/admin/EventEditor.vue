@@ -16,6 +16,7 @@ import ImageGalleryUpload from '@/components/form/ImageGalleryUpload.vue';
 import DropDown from '@/components/form/DropDown.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import EventProjectCard from '@/components/EventProjectCard.vue';
+import { PrintDaySheetModal } from '@/components/modals';
 
 const eventStore = useEventStore();
 const alertStore = useAlertStore();
@@ -30,6 +31,7 @@ const isEditingTitle = ref(false);
 const autoSaveTimeout = ref(null);
 const isAutoSaving = ref(false);
 const showMediaFields = ref(false);
+const showPrintDaySheet = ref(false);
 const showCancelConfirm = ref(false);
 const isCanceling = ref(false);
 // Gate the image/gallery auto-save watchers so they don't fire on initial load
@@ -52,15 +54,19 @@ const startEditingTitle = async () => {
 eventStore.findById(route.params.id);
 
 // --- Linked projects ---
-// Pending + active projects, newest first (sorted server-side).
+// Pending + active projects in this event's garden, newest first (sorted server-side).
 const linkableProjects = ref([]);
 const projectsLoading = ref(true);
 const selectedProjectId = ref('');
 
-projectsStore.getLinkableProjects()
-  .then((list) => { linkableProjects.value = list || []; })
-  .catch(() => { linkableProjects.value = []; })
-  .finally(() => { projectsLoading.value = false; });
+watch(() => event.value?.garden?.id, (gardenId) => {
+  if (!gardenId) return;
+  projectsLoading.value = true;
+  projectsStore.getLinkableProjects(gardenId)
+    .then((list) => { linkableProjects.value = list || []; })
+    .catch(() => { linkableProjects.value = []; })
+    .finally(() => { projectsLoading.value = false; });
+}, { immediate: true });
 
 const linkedProjects = computed(() =>
   Array.isArray(event.value?.projects) ? event.value.projects : []
@@ -78,9 +84,7 @@ const projectOptions = computed(() => {
 });
 
 const projectOptionLabel = (p) => {
-  const parts = [p.title];
-  if (p.garden?.title) parts.push(p.garden.title);
-  const label = parts.join(' — ');
+  const label = p.title;
   return p.review_status === 'CREATED' ? `${label} (pending)` : label;
 };
 
@@ -722,6 +726,15 @@ onBeforeUnmount(() => {
                   Public Event Page
                 </button>
 
+                <!-- Print the task day sheet for this event -->
+                <button
+                  type="button"
+                  @click="showPrintDaySheet = true"
+                  class="w-full border-2 border-custom-green text-custom-green hover:bg-custom-green hover:text-white dark:text-[#e8e8e8] font-bold py-2 px-4 rounded mt-3 transition-colors"
+                >
+                  Print day sheet
+                </button>
+
                 <!-- Cancel / Uncancel Event -->
                                 <div v-if="event.canceled" class="mt-4 text-center">
                                   <p class="text-sm text-red-700 dark:text-red-400 mb-2">This event has been canceled.</p>
@@ -772,6 +785,13 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
+
+    <PrintDaySheetModal
+      v-if="event?.id"
+      v-model="showPrintDaySheet"
+      :event-id="event.id"
+      :is-manager="true"
+    />
   </div>
 </template>
 
