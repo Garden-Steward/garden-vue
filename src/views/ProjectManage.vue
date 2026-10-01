@@ -17,6 +17,7 @@ import ManageLayout from '@/components/ManageLayout.vue';
 import StaticPinMap from '@/components/StaticPinMap.vue';
 import ProjectLocationModal from '@/components/modals/ProjectLocationModal.vue';
 import ProjectDecisionBar from '@/components/ProjectDecisionBar.vue';
+import LinkVolunteerDayModal from '@/components/modals/LinkVolunteerDayModal.vue';
 
 /*
  * One project page, two modes. Members see a page built for taking part
@@ -165,6 +166,16 @@ const startEdit = () => {
   showPhotos.value = false;
   editing.value = true;
 };
+
+// ?action=edit (the "Edit project" menu item on the garden's Projects tab)
+// opens the page straight into edit mode. Waits for the project and the
+// viewer's lead status, which can arrive after the role refresh.
+watch([current, isLead], ([p, lead]) => {
+  if (route.query.action !== 'edit' || !p?.id || !lead || editing.value) return;
+  startEdit();
+  const { action, ...query } = route.query;
+  router.replace({ query, hash: route.hash });
+}, { immediate: true });
 
 const cancelEdit = () => {
   if (isDirty.value && !window.confirm('Discard your changes to this project?')) return;
@@ -514,6 +525,13 @@ const eventGoing = (e) => {
   return n ? `${n} going` : '';
 };
 
+// Linking a day needs a garden: the days come from it. Saves right away.
+const canLinkDays = computed(() => isLead.value && !!garden.value?.slug);
+const showLinkDay = ref(false);
+const onDayLinked = ({ related_events }) => {
+  current.value.related_events = related_events;
+};
+
 // Unlinking saves right away, like posting an update would; it isn't held
 // for the page-level Save.
 const unlink = async (e) => {
@@ -607,6 +625,15 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
           >Next pitch →</router-link>
           <router-link v-else :to="queueRoute" class="pp-decided__link">Back to queue</router-link>
         </div>
+
+        <LinkVolunteerDayModal
+          v-if="showLinkDay && garden?.slug"
+          :project="current"
+          :garden-slug="garden.slug"
+          :garden-title="garden.title"
+          @linked="onDayLinked"
+          @close="showLinkDay = false"
+        />
 
         <router-link to="/manage/projects" class="pp__back">← All projects</router-link>
 
@@ -779,13 +806,14 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
             <section class="pp-card">
               <div class="pp-card__head">
                 <h2 class="pp-card__title">Upcoming volunteer days</h2>
-                <router-link
-                  v-if="editing && canManageGarden && garden?.slug"
-                  :to="`/manage/gardens/${garden.slug}`"
+                <button
+                  v-if="editing && canLinkDays"
+                  type="button"
                   class="pp-dashbtn"
+                  @click="showLinkDay = true"
                 >
                   + Link a volunteer day
-                </router-link>
+                </button>
               </div>
 
               <ul v-if="upcomingEvents.length" class="pp-days">
@@ -814,10 +842,7 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
               </ul>
               <p v-else-if="isLead" class="pp-empty">
                 No volunteer days linked.
-                <template v-if="canManageGarden && garden?.slug">
-                  <router-link :to="`/manage/gardens/${garden.slug}`" class="pp-link">Link a volunteer day</router-link>
-                  from its event editor.
-                </template>
+                <button v-if="canLinkDays" type="button" class="pp-link pp-linkbtn" @click="showLinkDay = true">Link a volunteer day</button>
               </p>
               <p v-else class="pp-empty pp-empty--warm">
                 No volunteer days yet. Tap <b>I'm interested</b> and we'll let you know when one is posted.
@@ -1653,6 +1678,9 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
 
 /* ── Volunteer days ── */
 .pp-dashbtn {
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
   flex: none;
   border: 1.5px dashed #8aa37c;
   color: #064e3b;

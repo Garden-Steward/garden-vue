@@ -204,13 +204,10 @@ export const useProjectsStore = defineStore({
                 }));
             }
             
-            // Handle related_events (many-to-many relation)
-            if (data.related_events && Array.isArray(data.related_events)) {
-                data.related_events = data.related_events
-                    .filter(event => event && event.id)
-                    .map(event => ({
-                        id: typeof event === 'object' ? event.id : event
-                    }));
+            // related_events (many-to-many): accept ids or event objects. Plain
+            // ids used to be filtered out here, so unlinking one day cleared all.
+            if (Array.isArray(data.related_events)) {
+                data.related_events = relationToIds(data.related_events).map(id => ({ id }));
             }
 
             // Reduce relation objects to ids (Strapi accepts id or { id }).

@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia';
 import { useProjectsStore, useEventStore, useAlertStore } from '@/stores';
 import Project from '@/components/modals/Project.vue';
 import ProjectReviewDrawer from '@/components/ProjectReviewDrawer.vue';
+import LinkVolunteerDayModal from '@/components/modals/LinkVolunteerDayModal.vue';
 import { normalizeReviewStatus, projectCategoryOptions } from '@/_config/GardenConfig';
 import {
   categoryLook, imageStyle, hasPhoto, personName, firstName, initials, avatarStyle,
@@ -22,8 +23,6 @@ const props = defineProps({
   garden: { type: Object, required: true },
   editor: { type: Boolean, default: false }
 });
-
-const emit = defineEmits(['navigate']);
 
 const route = useRoute();
 const router = useRouter();
@@ -172,9 +171,15 @@ async function setStatus(p, status, message) {
   }
 }
 
-function linkDay() {
+const linkingProject = ref(null);
+
+function linkDay(p) {
   menuFor.value = null;
-  emit('navigate', 'events');
+  linkingProject.value = p;
+}
+
+function onDayLinked({ related_events }) {
+  if (linkingProject.value) linkingProject.value.related_events = related_events;
 }
 
 function onDocClick(e) {
@@ -377,9 +382,9 @@ const waitingNote = (p) => {
               >⋯</button>
               <div v-if="menuFor === p.id" class="pa-menu" role="menu">
                 <router-link v-if="publicRoute(p) && ['APPROVED', 'COMPLETED'].includes(normalizeReviewStatus(p.review_status))" :to="publicRoute(p)" target="_blank" class="pa-menu__item pa-menu__item--strong" role="menuitem">View public page ↗</router-link>
-                <router-link v-if="editRoute(p)" :to="editRoute(p)" class="pa-menu__item" role="menuitem">Edit project</router-link>
+                <router-link v-if="editRoute(p)" :to="{ ...editRoute(p), query: { action: 'edit' } }" class="pa-menu__item" role="menuitem">Edit project</router-link>
                 <template v-if="editor">
-                  <button v-if="tab === 'active'" type="button" class="pa-menu__item" role="menuitem" @click="linkDay">Link a volunteer day</button>
+                  <button v-if="tab === 'active'" type="button" class="pa-menu__item" role="menuitem" @click="linkDay(p)">Link a volunteer day</button>
                   <button v-if="tab === 'active'" type="button" class="pa-menu__item" role="menuitem" @click="setStatus(p, 'COMPLETED', `${p.title} marked completed.`)">Mark completed</button>
                   <button v-if="tab === 'completed'" type="button" class="pa-menu__item" role="menuitem" @click="setStatus(p, 'APPROVED', `${p.title} is active again.`)">Reopen</button>
                   <button v-if="normalizeReviewStatus(p.review_status) === 'ARCHIVED'" type="button" class="pa-menu__item" role="menuitem" @click="setStatus(p, 'APPROVED', `${p.title} restored to active.`)">Restore to active</button>
@@ -399,6 +404,15 @@ const waitingNote = (p) => {
         <span>{{ emptyCopy[tab] }}</span>
       </div>
     </template>
+
+    <LinkVolunteerDayModal
+      v-if="linkingProject && garden?.slug"
+      :project="linkingProject"
+      :garden-slug="garden.slug"
+      :garden-title="garden.title"
+      @linked="onDayLinked"
+      @close="linkingProject = null"
+    />
 
     <ProjectReviewDrawer
       v-if="reviewingId && queue.some(p => p.id === reviewingId)"

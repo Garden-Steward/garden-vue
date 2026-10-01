@@ -891,7 +891,8 @@ const onRemoveInterest = async (interestId) => {
 
         <!-- Projects Section -->
         <div v-if="activeSection === 'projects'" class="gm-panel rounded-lg shadow-md p-6">
-          <ProjectsList :garden="garden" :editor="editor" @navigate="setActiveSection" />
+          <!-- Administrators can help on any garden's projects, not just ones they manage. -->
+          <ProjectsList :garden="garden" :editor="editor || authStore.isAdmin" />
         </div>
 
         <!-- Tasks Section -->
