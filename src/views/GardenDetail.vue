@@ -2,13 +2,13 @@
 import { onMounted, ref, computed, defineOptions, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore, useLocationTrackingStore, useInterestsStore } from '@/stores';
+import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore, useLocationTrackingStore, useInterestsStore, useProjectsStore } from '@/stores';
+import { normalizeReviewStatus } from '@/_config/GardenConfig';
 import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
 import SmsCampaignModal from '@/components/modals/SmsCampaignModal.vue';
 import Volunteer from '@/components/VolunteerDetail.vue';
 import GardenTaskList from '@/components/GardenTaskList.vue';
 import ProjectsList from '@/components/ProjectsList.vue';
-import Project from '@/components/modals/Project.vue';
 import GardenSidebar from '@/components/GardenSidebar.vue';
 import GardenGeneral from '@/components/GardenGeneral.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
@@ -26,6 +26,8 @@ const route = useRoute();
 const router = useRouter();
 const gardenTaskStore = useGardenTaskStore();
 const messagesStore = useMessagesStore();
+const projectsStore = useProjectsStore();
+const { projects } = storeToRefs(projectsStore);
 
 const { user } = storeToRefs(authStore);
 const { garden } = storeToRefs(gardensStore);
@@ -114,6 +116,18 @@ watch(() => garden.value, (newGarden) => {
     gardenTaskStore.getGardenTasks(newGarden.id);
   }
 }, { immediate: true });
+
+// Loaded here rather than in ProjectsList so the sidebar can show how many
+// pitches are waiting before the Projects tab is opened.
+watch(() => garden.value?.id, (id) => {
+  if (id) projectsStore.getProjects(id);
+}, { immediate: true });
+
+const pendingProjectCount = computed(() => {
+  const list = Array.isArray(projects.value) ? projects.value : [];
+  return list.filter(p => (!p.garden || p.garden.id === garden.value?.id)
+    && normalizeReviewStatus(p.review_status) === 'CREATED').length;
+});
 
 // Watch for activeSection to fetch messages when messages section is active
 watch(() => activeSection.value, (section) => {
@@ -559,6 +573,7 @@ const onRemoveInterest = async (interestId) => {
         <!-- Sidebar Navigation -->
         <GardenSidebar 
           :active-section="activeSection" 
+          :badges="{ projects: pendingProjectCount }"
           @update:active-section="setActiveSection" 
         />
 
@@ -876,15 +891,8 @@ const onRemoveInterest = async (interestId) => {
 
         <!-- Projects Section -->
         <div v-if="activeSection === 'projects'" class="gm-panel rounded-lg shadow-md p-6">
-          <h2 class="text-2xl font-light font-serif mb-4 gm-text">Projects</h2>
-          <div v-if="editor && garden?.id" class="mb-4">
-            <Project 
-              :garden="garden.id"
-              :garden-slug="garden?.slug"
-              :editor="editor"
-            />
-          </div>
-          <ProjectsList :garden="garden" :editor="editor" />
+          <!-- Administrators can help on any garden's projects, not just ones they manage. -->
+          <ProjectsList :garden="garden" :editor="editor || authStore.isAdmin" />
         </div>
 
         <!-- Tasks Section -->

@@ -16,6 +16,8 @@ import {
 import ManageLayout from '@/components/ManageLayout.vue';
 import StaticPinMap from '@/components/StaticPinMap.vue';
 import ProjectLocationModal from '@/components/modals/ProjectLocationModal.vue';
+import ProjectDecisionBar from '@/components/ProjectDecisionBar.vue';
+import LinkVolunteerDayModal from '@/components/modals/LinkVolunteerDayModal.vue';
 
 /*
  * One project page, two modes. Members see a page built for taking part
@@ -36,7 +38,7 @@ const projectsStore = useProjectsStore();
 const gardensStore = useGardensStore();
 const authStore = useAuthStore();
 const alertStore = useAlertStore();
-const { project } = storeToRefs(projectsStore);
+const { project, projects: gardenProjects } = storeToRefs(projectsStore);
 const { gardens } = storeToRefs(gardensStore);
 const { user } = storeToRefs(authStore);
 
@@ -164,6 +166,16 @@ const startEdit = () => {
   showPhotos.value = false;
   editing.value = true;
 };
+
+// ?action=edit (the "Edit project" menu item on the garden's Projects tab)
+// opens the page straight into edit mode. Waits for the project and the
+// viewer's lead status, which can arrive after the role refresh.
+watch([current, isLead], ([p, lead]) => {
+  if (route.query.action !== 'edit' || !p?.id || !lead || editing.value) return;
+  startEdit();
+  const { action, ...query } = route.query;
+  router.replace({ query, hash: route.hash });
+}, { immediate: true });
 
 const cancelEdit = () => {
   if (isDirty.value && !window.confirm('Discard your changes to this project?')) return;
@@ -346,6 +358,67 @@ const setReviewStatus = async (status) => {
   }
 };
 
+// ── Admin review bar (design board 1i) ──
+// A pending pitch's full page carries the same decisions as the review drawer.
+const showReviewBar = computed(() => reviewStatus.value === 'CREATED' && canManageGarden.value && !editing.value);
+const deciding = ref(false);
+const decision = ref(null); // { text, nextDocumentId }
+
+const reviewQueue = computed(() => (Array.isArray(gardenProjects.value) ? gardenProjects.value : [])
+  .filter(p => p.garden?.id === garden.value?.id && normalizeReviewStatus(p.review_status) === 'CREATED')
+  .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)));
+const queuePosition = computed(() => {
+  const i = reviewQueue.value.findIndex(p => p.id === current.value?.id);
+  return i < 0 ? '' : `${i + 1} of ${reviewQueue.value.length}`;
+});
+watch(showReviewBar, (show) => {
+  if (show && garden.value?.id && !reviewQueue.value.length) projectsStore.getProjects(garden.value.id);
+}, { immediate: true });
+
+const queueRoute = computed(() => garden.value?.slug
+  ? { name: 'manage-garden-detail', params: { slug: garden.value.slug }, query: { review: current.value?.documentId }, hash: '#projects' }
+  : '/manage/projects');
+
+const decide = async (action, payload) => {
+  if (deciding.value) return;
+  deciding.value = true;
+  const title = current.value.title;
+  const first = owner.value?.firstName || 'The pitcher';
+  try {
+    const { project: updated } = await projectsStore.decide(current.value.id, action, payload);
+    projectsStore.patchCached(current.value.id, updated);
+    const next = reviewQueue.value.find(p => p.id !== current.value.id);
+    decision.value = {
+      text: action === 'approve'
+        ? `Approved ${title}. It's now on ${garden.value?.title || 'the garden'}'s public page.`
+        : action === 'request_changes'
+          ? `Sent to ${first}. ${title} is waiting on them until they resubmit.`
+          : `Denied ${title}. ${first} gets your reason by email.`,
+      nextDocumentId: next?.documentId || null
+    };
+  } catch (err) {
+    alertStore.error(err?.status === 409
+      ? 'Someone already reviewed this pitch.'
+      : (err?.message || 'Could not save your decision. Please try again.'));
+  } finally {
+    deciding.value = false;
+  }
+};
+
+const undoDecision = async () => {
+  if (deciding.value) return;
+  deciding.value = true;
+  try {
+    const updated = await projectsStore.undoDecision(current.value.id);
+    projectsStore.patchCached(current.value.id, updated);
+    decision.value = null;
+  } catch (err) {
+    alertStore.error(err?.message || 'That decision can no longer be undone.');
+  } finally {
+    deciding.value = false;
+  }
+};
+
 // ── Byline ──
 const createdOn = computed(() => {
   const d = current.value?.createdAt ? new Date(current.value.createdAt) : null;
@@ -452,6 +525,13 @@ const eventGoing = (e) => {
   return n ? `${n} going` : '';
 };
 
+// Linking a day needs a garden: the days come from it. Saves right away.
+const canLinkDays = computed(() => isLead.value && !!garden.value?.slug);
+const showLinkDay = ref(false);
+const onDayLinked = ({ related_events }) => {
+  current.value.related_events = related_events;
+};
+
 // Unlinking saves right away, like posting an update would; it isn't held
 // for the page-level Save.
 const unlink = async (e) => {
@@ -514,6 +594,46 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
           Changes saved. This is what volunteers see now.
           <button type="button" class="pp-saved__x" aria-label="Dismiss" @click="savedNotice = false">×</button>
         </div>
+
+        <!-- Admin review bar (1i) -->
+        <div v-if="showReviewBar" class="pp-reviewbar">
+          <ProjectDecisionBar
+            :key="current.id"
+            variant="page"
+            approve-label="Approve"
+            :pitcher-first="owner?.firstName || 'the pitcher'"
+            :busy="deciding"
+            @decide="decide"
+          >
+            <template #lead>
+              <span class="pp-reviewbar__pill">Pending review</span>
+              <span class="pp-reviewbar__text">
+                This pitch isn't public until it's approved.<template v-if="queuePosition">{{ ' ' }}<b>{{ queuePosition }}</b> in the queue.</template>
+              </span>
+              <router-link :to="queueRoute" class="pp-reviewbar__back">← Back to queue</router-link>
+            </template>
+          </ProjectDecisionBar>
+        </div>
+        <div v-else-if="decision" class="pp-decided" role="status">
+          <span class="pp-decided__check">✓</span>
+          <span class="pp-decided__text">{{ decision.text }}</span>
+          <button type="button" class="pp-decided__link" :disabled="deciding" @click="undoDecision">Undo</button>
+          <router-link
+            v-if="decision.nextDocumentId"
+            :to="{ name: 'manage-project', params: { documentId: decision.nextDocumentId } }"
+            class="pp-decided__link"
+          >Next pitch →</router-link>
+          <router-link v-else :to="queueRoute" class="pp-decided__link">Back to queue</router-link>
+        </div>
+
+        <LinkVolunteerDayModal
+          v-if="showLinkDay && garden?.slug"
+          :project="current"
+          :garden-slug="garden.slug"
+          :garden-title="garden.title"
+          @linked="onDayLinked"
+          @close="showLinkDay = false"
+        />
 
         <router-link to="/manage/projects" class="pp__back">← All projects</router-link>
 
@@ -611,7 +731,7 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
           </div>
 
           <div v-if="isLead && !editing" class="pp-head__actions">
-            <label class="pp-review">
+            <label v-if="!showReviewBar" class="pp-review">
               Review
               <select
                 :value="reviewStatus"
@@ -686,13 +806,14 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
             <section class="pp-card">
               <div class="pp-card__head">
                 <h2 class="pp-card__title">Upcoming volunteer days</h2>
-                <router-link
-                  v-if="editing && canManageGarden && garden?.slug"
-                  :to="`/manage/gardens/${garden.slug}`"
+                <button
+                  v-if="editing && canLinkDays"
+                  type="button"
                   class="pp-dashbtn"
+                  @click="showLinkDay = true"
                 >
                   + Link a volunteer day
-                </router-link>
+                </button>
               </div>
 
               <ul v-if="upcomingEvents.length" class="pp-days">
@@ -721,10 +842,7 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
               </ul>
               <p v-else-if="isLead" class="pp-empty">
                 No volunteer days linked.
-                <template v-if="canManageGarden && garden?.slug">
-                  <router-link :to="`/manage/gardens/${garden.slug}`" class="pp-link">Link a volunteer day</router-link>
-                  from its event editor.
-                </template>
+                <button v-if="canLinkDays" type="button" class="pp-link pp-linkbtn" @click="showLinkDay = true">Link a volunteer day</button>
               </p>
               <p v-else class="pp-empty pp-empty--warm">
                 No volunteer days yet. Tap <b>I'm interested</b> and we'll let you know when one is posted.
@@ -877,6 +995,88 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
 </template>
 
 <style scoped>
+/* ── Admin review bar (1i) — dark band in both themes ── */
+.pp-reviewbar {
+  background: #1f2d1a;
+  border-radius: 14px;
+  padding: 10px 12px 10px 24px;
+  margin-bottom: 18px;
+}
+
+.pp-reviewbar__pill {
+  background: #F9E2D1;
+  color: #7c3a12;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.pp-reviewbar__text {
+  flex: 1;
+  font-size: 14px;
+  color: #d0d0d0;
+}
+
+.pp-reviewbar__text b { color: #f5f5f5; }
+
+.pp-reviewbar__back {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 8px;
+  white-space: nowrap;
+  color: #c8dbbf;
+  text-decoration: none;
+}
+
+.pp-reviewbar__back:hover { color: #f5f5f5; }
+
+.pp-decided {
+  background: #8aa37c;
+  color: #14281a;
+  border-radius: 14px;
+  padding: 12px 20px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.pp-decided__check {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #14281a;
+  color: #8aa37c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.pp-decided__text { flex: 1; font-weight: 700; }
+
+.pp-decided__link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #14281a;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pp-decided__link:hover { color: #14281a; }
+
+@media (max-width: 767px) {
+  .pp-reviewbar { padding: 14px 16px 16px; }
+}
+
 .pp {
   min-width: 0;
   container: pp / inline-size;
@@ -1478,6 +1678,9 @@ const onLocationSaved = (loc) => { draft.value.location = loc; };
 
 /* ── Volunteer days ── */
 .pp-dashbtn {
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
   flex: none;
   border: 1.5px dashed #8aa37c;
   color: #064e3b;

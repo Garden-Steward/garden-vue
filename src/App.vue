@@ -7,6 +7,8 @@ import { RouterView } from 'vue-router';
 import '@fortawesome/fontawesome-free/css/all.css'
 
 const auth = useAuthStore();
+// The stored user is a login-time snapshot; pick up the current role (e.g. Administrator).
+auth.refreshRole();
 </script>
 
 <template>

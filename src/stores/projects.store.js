@@ -90,7 +90,7 @@ export const useProjectsStore = defineStore({
             throw err;
         },
         async getProjects(gardenId) {
-            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=impact_metrics&populate[5]=managers&filters[garden][id][$eq]=${gardenId}`)
+            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=impact_metrics&populate[5]=managers&populate[6]=created_by&populate[7]=interested&filters[garden][id][$eq]=${gardenId}&pagination[pageSize]=200`)
                 .then(response => {
                     const projects = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeProject);
                     this.projects = projects;
@@ -204,13 +204,10 @@ export const useProjectsStore = defineStore({
                 }));
             }
             
-            // Handle related_events (many-to-many relation)
-            if (data.related_events && Array.isArray(data.related_events)) {
-                data.related_events = data.related_events
-                    .filter(event => event && event.id)
-                    .map(event => ({
-                        id: typeof event === 'object' ? event.id : event
-                    }));
+            // related_events (many-to-many): accept ids or event objects. Plain
+            // ids used to be filtered out here, so unlinking one day cleared all.
+            if (Array.isArray(data.related_events)) {
+                data.related_events = relationToIds(data.related_events).map(id => ({ id }));
             }
 
             // Reduce relation objects to ids (Strapi accepts id or { id }).
@@ -395,6 +392,37 @@ export const useProjectsStore = defineStore({
                     return updated;
                 })
                 .catch(this.handleError);
+        },
+        /**
+         * Decide on a pending pitch from the review queue.
+         * action: 'approve' | 'request_changes' | 'deny'. Deny needs reasonCode;
+         * request_changes needs note. Resolves { project, nextProjectId, undoUntil }.
+         *
+         * Doesn't touch the cache: call patchCached(id, project) once you've
+         * moved on, so the list and an open review drawer re-render together.
+         */
+        async decide(id, action, { reasonCode, note } = {}) {
+            const response = await fetchWrapper.put(`${baseUrl}/${id}/review`, { data: { action, reasonCode, note } });
+            const project = normalizeProject(response?.data ?? response);
+            return { project, nextProjectId: response?.meta?.nextProjectId ?? null, undoUntil: response?.meta?.undoUntil ?? null };
+        },
+        /** Reverse the caller's own decision while its undo window is open. Same cache rule as decide(). */
+        async undoDecision(id) {
+            const response = await fetchWrapper.put(`${baseUrl}/${id}/review`, { data: { action: 'undo' } });
+            return normalizeProject(response?.data ?? response);
+        },
+        /** Copy review fields from a server response onto every cached copy. */
+        patchCached(id, updated) {
+            if (!updated) return;
+            const fields = ['review_status', 'review_reason', 'review_note', 'reviewed_at'];
+            const apply = (p) => fields.forEach(f => { p[f] = updated[f] ?? null; });
+            for (const list of [this.projects, this.communityProjects, this.userProjects]) {
+                if (Array.isArray(list)) {
+                    const found = list.find(p => p && p.id === id);
+                    if (found) apply(found);
+                }
+            }
+            if (this.project?.id === id) apply(this.project);
         },
         async uploadImage(formData) {
             return fetchWrapper.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData)

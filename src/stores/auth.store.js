@@ -50,6 +50,8 @@ export const useAuthStore = defineStore({
             this.auth.accessToken = jwt;
             localStorage.setItem('user', JSON.stringify(user));
             localStorage.setItem(localStorageTokenKey, jwt);
+            // Login responses don't carry the role; /users/me does.
+            this.refreshRole();
         },
         async login(username, password, { redirect = true } = {}) {
             const { jwt, user } = await fetchWrapper.post(`${baseUrl}/api/auth/local?populate=role`, { identifier: username, password });
