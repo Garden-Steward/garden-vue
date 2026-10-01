@@ -13,6 +13,11 @@ defineProps({
   activeSection: {
     type: String,
     required: true
+  },
+  // Counts shown beside a nav item, keyed by item id (0 hides the badge).
+  badges: {
+    type: Object,
+    default: () => ({})
   }
 });
 
@@ -143,6 +148,7 @@ onUnmounted(() => {
               >
                 <span class="sidebar-nav-icon" v-html="iconMap[item.id]"></span>
                 <span>{{ item.label }}</span>
+                <span v-if="badges[item.id]" class="sidebar-nav-badge">{{ badges[item.id] }}</span>
               </button>
             </li>
           </ul>
@@ -164,6 +170,7 @@ onUnmounted(() => {
             >
               <span class="sidebar-nav-icon" v-html="iconMap[item.id]"></span>
               <span>{{ item.label }}</span>
+              <span v-if="badges[item.id]" class="sidebar-nav-badge">{{ badges[item.id] }}</span>
             </button>
           </li>
         </ul>
@@ -210,6 +217,16 @@ onUnmounted(() => {
   background-color: #8aa37c;
   color: #fff;
   font-weight: 600;
+}
+
+.sidebar-nav-badge {
+  margin-left: auto;
+  background: #14281a;
+  color: #c8dbbf;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
 }
 
 .sidebar-nav-icon {

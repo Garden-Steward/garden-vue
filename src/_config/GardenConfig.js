@@ -359,6 +359,7 @@ export function getCampaignTypeLabel(type) {
 /** Mirrors REVIEW_STATUSES in the backend's project controller. */
 export const projectReviewOptions = [
   { value: 'CREATED',   label: 'Pending review' },
+  { value: 'CHANGES_REQUESTED', label: 'Changes requested' },
   { value: 'APPROVED',  label: 'Approved' },
   { value: 'REJECTED',  label: 'Denied' },
   { value: 'COMPLETED', label: 'Completed' },
@@ -371,8 +372,16 @@ export const projectReviewValues = projectReviewOptions.map(o => o.value);
 const interimReviewStatuses = {
   'PENDING REVIEW':    'CREATED',
   'APPROVED':          'APPROVED',
-  'CHANGES REQUESTED': 'REJECTED'
+  'CHANGES REQUESTED': 'CHANGES_REQUESTED'
 };
+
+/** Why a pitch was denied. Codes are stored; labels are shown to the pitcher. */
+export const projectDenyReasons = [
+  { value: 'not_a_fit',    label: 'Not a fit for this garden' },
+  { value: 'duplicate',    label: 'Duplicate of an existing project' },
+  { value: 'needs_rework', label: 'Needs more than a note can fix' },
+  { value: 'capacity',     label: 'Beyond what we can support now' }
+];
 
 /** Any stored review_status → a value the API accepts. */
 export function normalizeReviewStatus(status) {
