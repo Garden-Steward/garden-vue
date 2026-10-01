@@ -13,6 +13,7 @@ import {
   projectReviewLabel,
   normalizeReviewStatus
 } from '@/_config/GardenConfig';
+import { inGarden } from '@/helpers/project-review';
 import ManageLayout from '@/components/ManageLayout.vue';
 import StaticPinMap from '@/components/StaticPinMap.vue';
 import ProjectLocationModal from '@/components/modals/ProjectLocationModal.vue';
@@ -365,14 +366,14 @@ const deciding = ref(false);
 const decision = ref(null); // { text, nextDocumentId }
 
 const reviewQueue = computed(() => (Array.isArray(gardenProjects.value) ? gardenProjects.value : [])
-  .filter(p => p.garden?.id === garden.value?.id && normalizeReviewStatus(p.review_status) === 'CREATED')
+  .filter(p => p.garden && inGarden(p, garden.value) && normalizeReviewStatus(p.review_status) === 'CREATED')
   .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)));
 const queuePosition = computed(() => {
   const i = reviewQueue.value.findIndex(p => p.id === current.value?.id);
   return i < 0 ? '' : `${i + 1} of ${reviewQueue.value.length}`;
 });
 watch(showReviewBar, (show) => {
-  if (show && garden.value?.id && !reviewQueue.value.length) projectsStore.getProjects(garden.value.id);
+  if (show && garden.value?.id && !reviewQueue.value.length) projectsStore.getProjects(garden.value);
 }, { immediate: true });
 
 const queueRoute = computed(() => garden.value?.slug

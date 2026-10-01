@@ -126,6 +126,17 @@ export function dayChip(event) {
   return new Date(when).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).replace(',', '');
 }
 
+/**
+ * Whether a project's garden is `garden`. Compare documentIds: a garden's
+ * draft and published rows have different numeric ids.
+ */
+export function inGarden(project, garden) {
+  const g = project?.garden;
+  if (!g) return true;
+  if (g.documentId && garden?.documentId) return g.documentId === garden.documentId;
+  return g.id === garden?.id;
+}
+
 /** Which tab of the Projects list a project belongs to. */
 export function reviewTab(project) {
   switch (normalizeReviewStatus(project?.review_status)) {

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore, useLocationTrackingStore, useInterestsStore, useProjectsStore } from '@/stores';
 import { normalizeReviewStatus } from '@/_config/GardenConfig';
+import { inGarden } from '@/helpers/project-review';
 import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
 import SmsCampaignModal from '@/components/modals/SmsCampaignModal.vue';
 import Volunteer from '@/components/VolunteerDetail.vue';
@@ -120,12 +121,12 @@ watch(() => garden.value, (newGarden) => {
 // Loaded here rather than in ProjectsList so the sidebar can show how many
 // pitches are waiting before the Projects tab is opened.
 watch(() => garden.value?.id, (id) => {
-  if (id) projectsStore.getProjects(id);
+  if (id) projectsStore.getProjects(garden.value);
 }, { immediate: true });
 
 const pendingProjectCount = computed(() => {
   const list = Array.isArray(projects.value) ? projects.value : [];
-  return list.filter(p => (!p.garden || p.garden.id === garden.value?.id)
+  return list.filter(p => inGarden(p, garden.value)
     && normalizeReviewStatus(p.review_status) === 'CREATED').length;
 });
 

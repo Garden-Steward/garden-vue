@@ -88,7 +88,7 @@ async function decide(action, { reasonCode, note } = {}) {
     alertStore.error(err?.status === 409
       ? 'Someone already reviewed this pitch. The list has been refreshed.'
       : (err?.message || 'Could not save your decision. Please try again.'));
-    if (err?.status === 409) projectsStore.getProjects(props.garden.id);
+    if (err?.status === 409) projectsStore.getProjects(props.garden);
     busy.value = false;
     return;
   }
