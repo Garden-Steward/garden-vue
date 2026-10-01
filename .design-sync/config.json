@@ -2,5 +2,5 @@
   "projectId": "fbce1f4a-46cd-4f6f-a8f6-86c0153a2e36",
   "scope": "brand-kit",
   "lastSync": "2026-09-30",
-  "notes": "garden-vue is the app repo, not a design-system component package (no library build, no Storybook). Per user request, this sync uploads only Tailwind design tokens (colors/fonts) and brand images from public/, not a bundled component library."
+  "notes": "garden-vue is the app repo, not a design-system component package (no library build, no Storybook), so nothing is generated from a library target. The sync uploads Tailwind design tokens (colors/fonts) as styles.css, brand images from public/, and hand-authored component preview pages. Each preview needs a first-line <!-- @dsCard group=\"...\" --> marker or it contributes no card and the Design System pane reports the project empty; _ds_manifest.json is recompiled app-side after upload, not by the push."
 }
