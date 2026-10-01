@@ -9,7 +9,7 @@ import LinkVolunteerDayModal from '@/components/modals/LinkVolunteerDayModal.vue
 import { normalizeReviewStatus, projectCategoryOptions } from '@/_config/GardenConfig';
 import {
   categoryLook, imageStyle, hasPhoto, personName, firstName, initials, avatarStyle,
-  timeAgo, daysWaiting, waitingLabel, shortDate, dayChip, reviewTab, stageOf
+  timeAgo, daysWaiting, waitingLabel, shortDate, dayChip, reviewTab, stageOf, inGarden
 } from '@/helpers/project-review';
 
 /*
@@ -41,7 +41,7 @@ const reviewingId = ref(null);
 const lastDecision = ref(null); // { verb, title, projectId, at }
 
 const allProjects = computed(() => (Array.isArray(projects.value) ? projects.value : [])
-  .filter(p => !p.garden || p.garden.id === props.garden?.id));
+  .filter(p => inGarden(p, props.garden)));
 
 const byTab = computed(() => {
   const groups = { review: [], waiting: [], active: [], completed: [], archived: [] };

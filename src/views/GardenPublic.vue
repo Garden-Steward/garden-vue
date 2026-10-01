@@ -114,7 +114,7 @@ eventStore.getByGarden(route.params.slug);
 // Fetch projects when garden is loaded
 watch(() => garden.value?.id, (gardenId) => {
   if (gardenId) {
-    projectsStore.getProjects(gardenId);
+    projectsStore.getProjects(garden.value);
   }
 }, { immediate: true });
 

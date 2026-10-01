@@ -89,8 +89,14 @@ export const useProjectsStore = defineStore({
             // Re-throw so component can also handle the error
             throw err;
         },
-        async getProjects(gardenId) {
-            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=impact_metrics&populate[5]=managers&populate[6]=created_by&populate[7]=interested&filters[garden][id][$eq]=${gardenId}&pagination[pageSize]=200`)
+        // Accepts a garden object or a numeric id. Garden is draft-and-publish,
+        // so its draft and published rows have different numeric ids while
+        // projects link to the published one; documentId is shared by both.
+        async getProjects(garden) {
+            const gardenFilter = garden?.documentId
+                ? `filters[garden][documentId][$eq]=${garden.documentId}`
+                : `filters[garden][id][$eq]=${garden?.id ?? garden}`;
+            return fetchWrapper.get(`${baseUrl}?populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=related_events&populate[4]=impact_metrics&populate[5]=managers&populate[6]=created_by&populate[7]=interested&${gardenFilter}&pagination[pageSize]=200`)
                 .then(response => {
                     const projects = (Array.isArray(response.data) ? response.data : [response.data]).map(normalizeProject);
                     this.projects = projects;
