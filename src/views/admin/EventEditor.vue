@@ -631,7 +631,7 @@ onBeforeUnmount(() => {
               id="blurb"
               v-model="event.blurb"
               rows="3"
-              class="w-full p-2 border rounded mb-4 bg-white border-[#a8c49a] text-[#1a2617] focus:outline-none focus:border-[#8aa37c] dark:!bg-[rgba(26,26,26,0.6)] dark:border-[#3d4d36] dark:text-[#f5f5f5]"
+              class="w-full p-2 border rounded mb-4 bg-white border-[#a8c49a] text-[#1a2617] focus:outline-none focus:border-[#8aa37c] dark:bg-[rgba(26,26,26,0.6)] dark:border-[#3d4d36] dark:text-[#f5f5f5]"
             ></textarea>
             
             <label for="content" class="text-[#1a2617] dark:text-[#f5f5f5]">Content</label>
@@ -767,7 +767,7 @@ onBeforeUnmount(() => {
       class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/70"
       @click.self="closeCancelConfirm"
     >
-      <div class="w-full max-w-md rounded-lg shadow-xl bg-white text-[#1a2617] border-[#e2dccb] dark:!bg-[#2d3e26] dark:text-[#f5f5f5] dark:border-[#3d4d36] p-4 border" @click.stop>
+      <div class="w-full max-w-md rounded-lg shadow-xl bg-white text-[#1a2617] border-[#e2dccb] dark:bg-[#2d3e26] dark:text-[#f5f5f5] dark:border-[#3d4d36] p-4 border" @click.stop>
         <p class="text-sm mb-4">
           Are you sure you want to cancel this event? It will stop sending SMS reminders and will no longer appear in upcoming events. This cannot be undone here.
         </p>

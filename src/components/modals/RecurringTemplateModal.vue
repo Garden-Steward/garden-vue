@@ -438,7 +438,7 @@ const showCard = computed(() => !!cardTitle.value);
       @click.self="closeUp"
     >
       <div
-        class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl bg-white dark:!bg-[#2d3e26] text-gray-900 dark:text-[#f5f5f5] grid grid-cols-1 gap-3 p-4"
+        class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl bg-white dark:bg-[#2d3e26] text-gray-900 dark:text-[#f5f5f5] grid grid-cols-1 gap-3 p-4"
         @click.stop
       >
         <div class="flex items-center justify-between mb-2">
