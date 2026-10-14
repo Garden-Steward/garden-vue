@@ -195,6 +195,7 @@ export default {
           },
           body: JSON.stringify({
             userId: this.userId,
+            token: this.token,
             password: this.password,
             confirmPassword: this.confirmPassword
           })
