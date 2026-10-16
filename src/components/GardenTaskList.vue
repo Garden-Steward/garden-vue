@@ -41,7 +41,7 @@ watch(() => props.garden?.id, (newId) => {
   if (newId) {
     console.log("Fetching tasks for garden:", newId);
     gardenTaskStore.getGardenTasks(newId);
-    gardenTaskStore.getRecurringTasks(newId);
+    gardenTaskStore.getRecurringTasks(props.garden);
     weekSchedulerStore.find(newId);
   }
 }, { immediate: true });

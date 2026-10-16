@@ -113,7 +113,7 @@ watch(isEditor, (newValue) => {
 
 watch(() => garden.value, (newGarden) => {
   if (newGarden && !newGarden.loading && newGarden.id) {
-    gardenTaskStore.getRecurringTasks(newGarden.id);
+    gardenTaskStore.getRecurringTasks(newGarden);
     gardenTaskStore.getGardenTasks(newGarden.id);
   }
 }, { immediate: true });
