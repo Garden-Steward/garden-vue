@@ -1,296 +1,1181 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { ref } from 'vue';
-import { useRoute } from "vue-router";
+import { ref, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import MarkdownIt from 'markdown-it';
 import markdownItAttrs from 'markdown-it-attrs';
 
-import { useEventStore, useAuthStore  } from '@/stores';
+import { useEventStore, useAuthStore } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
 import EventProjectCard from '@/components/EventProjectCard.vue';
+import GardenContextBar from '@/components/GardenContextBar.vue';
 import { PrintDaySheetModal } from '@/components/modals';
+import '@/assets/garden-public.css';
+
 const md = new MarkdownIt().use(markdownItAttrs);
 
-
-import { watch, computed } from 'vue';
-
+const route = useRoute();
 const eventStore = useEventStore();
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
+const { event } = storeToRefs(eventStore);
+
 const showModal = ref(false);
 const showPrintDaySheet = ref(false);
 const phoneNumber = ref('');
 const phoneError = ref('');
 const isRSVPed = ref(false);
 
-const closeModal = () => {
-  showModal.value = false;
-};
+// The component is reused when moving between events (e.g. "Next in this
+// series"), so fetch on every id change, not just on mount.
+watch(
+  () => route.params.id,
+  (id) => { if (id) eventStore.findById(id); },
+  { immediate: true },
+);
 
+watch(
+  [() => event.value?.confirmed, () => user.value?.id],
+  ([confirmed, userId]) => {
+    isRSVPed.value = Array.isArray(confirmed) && !!userId && confirmed.some((c) => c.id === userId);
+  },
+  { immediate: true },
+);
 
-const route = useRoute()
-const { event } = storeToRefs(eventStore);
-let renderedContent = '';
+/* ---------- Event basics ---------- */
+
+const garden = computed(() => event.value?.garden || null);
+const hasGarden = computed(() => !!garden.value?.slug);
 
 const isEventPast = computed(() => {
   if (!event.value?.startDatetime) return false;
-  const eventDate = new Date(event.value.startDatetime);
-  const now = new Date();
-  return eventDate < now;
+  return new Date(event.value.startDatetime) < new Date();
 });
-
 const isEventCanceled = computed(() => event.value?.canceled === true);
 
-const linkedProjects = computed(() =>
-  Array.isArray(event.value?.projects) ? event.value.projects : []
-);
-
-// Check if user is a manager of the event's garden
 const isManager = computed(() => {
-  if (!event.value?.garden?.managers || !user.value) return false;
-  return event.value.garden.managers.some(manager => manager.id === user.value.id);
+  if (!garden.value?.managers || !user.value) return false;
+  return garden.value.managers.some((m) => m.id === user.value.id);
 });
 
-// Get hero image or use default
-const heroImage = computed(() => {
-  const heroImageUrl = event.value?.hero_image?.url;
-  return getImageOrDefault(heroImageUrl);
+const heroImage = computed(() =>
+  getImageOrDefault(event.value?.hero_image?.url || garden.value?.hero_image?.url));
+
+const renderedContent = computed(() => (event.value?.content ? md.render(event.value.content) : ''));
+
+const linkedProjects = computed(() => (Array.isArray(event.value?.projects) ? event.value.projects : []));
+
+const organization = computed(() => garden.value?.organization || event.value?.organization || null);
+
+const typeLabel = computed(() => ({
+  general: 'Workday',
+  land_work: 'Land work',
+  cleanup: 'Cleanup',
+  art: 'Art day',
+  workshop: 'Workshop',
+}[event.value?.type] || null));
+
+// "Every 3rd Sunday" from the template, when the event comes from one.
+const recurrenceLabel = computed(() => {
+  const t = event.value?.recurring_template;
+  if (!t) return null;
+  if (t.recurrence_type === 'nth_weekday' && t.nth_occurrence && t.weekday) {
+    const nth = { first: '1st', second: '2nd', third: '3rd', fourth: '4th', last: 'last' }[t.nth_occurrence];
+    return `Every ${nth} ${t.weekday}`;
+  }
+  if (t.recurrence_type === 'day_of_month' && t.day_of_month) {
+    const d = t.day_of_month;
+    const suffix = (d % 10 === 1 && d !== 11) ? 'st' : (d % 10 === 2 && d !== 12) ? 'nd' : (d % 10 === 3 && d !== 13) ? 'rd' : 'th';
+    return `Monthly on the ${d}${suffix}`;
+  }
+  return 'Recurring';
 });
 
-watch(event, (newVal) => {
-  if (newVal.content) {
-    renderedContent = md.render(newVal.content);
-  }
-  if (newVal.confirmed) {
-    isRSVPed.value = newVal.confirmed.some(item => item.id === user.value?.id);
-  }
+const heroPill = computed(() => [typeLabel.value, recurrenceLabel.value].filter(Boolean).join(' · '));
+
+/* ---------- Dates ---------- */
+
+const start = computed(() => (event.value?.startDatetime ? new Date(event.value.startDatetime) : null));
+
+const longDate = (d) => d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+const timeOf = (d) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+const chipMonth = (s) => (s ? new Date(s).toLocaleDateString('en-US', { month: 'short' }).toUpperCase() : '');
+const chipDay = (s) => (s ? new Date(s).getDate() : '');
+const shortWhen = (s) => (s ? `${new Date(s).toLocaleDateString('en-US', { weekday: 'long' })} · ${timeOf(new Date(s))}` : '');
+
+const whenLine = computed(() => {
+  if (!start.value) return '';
+  const end = event.value?.endText ? ` – ${event.value.endText}` : '';
+  return `${longDate(start.value)} · ${timeOf(start.value)}${end}`;
 });
 
-const rsvpEvent = async (e) => {
-  console.log(e);
+const locationText = computed(() => {
+  if (hasGarden.value) return garden.value.title;
+  return [event.value?.location_name, event.value?.location_address].filter(Boolean).join(', ');
+});
 
-  if (isEventPast.value) {
-    return;
+// Calendars need an end; the event only has free text for that, so use the
+// brief's typical length when it's a plain number of hours, else 2 hours.
+const calendarUrl = computed(() => {
+  if (!start.value) return null;
+  const hours = parseFloat(String(brief.value?.duration_text || '').replace('½', '.5').match(/\d+(\.\d+)?/)?.[0]) || 2;
+  const end = new Date(start.value.getTime() + Math.min(hours, 12) * 3600 * 1000);
+  const fmt = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: event.value.title || 'Garden event',
+    dates: `${fmt(start.value)}/${fmt(end)}`,
+    details: `${event.value.blurb || ''}\n\n${window.location.href}`.trim(),
+    location: [visit.value?.meeting_spot, locationText.value].filter(Boolean).join(', '),
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+});
+
+/* ---------- Brief, visit info, tasks, series ---------- */
+
+const brief = computed(() => event.value?.resolved_brief || null);
+const agenda = computed(() => brief.value?.agenda || []);
+const bringYou = computed(() => (brief.value?.bring_items || []).filter((i) => i.provided_by !== 'garden'));
+const bringGarden = computed(() => (brief.value?.bring_items || []).filter((i) => i.provided_by === 'garden'));
+const hasBring = computed(() => bringYou.value.length > 0 || bringGarden.value.length > 0);
+const hasHowItGoes = computed(() => !!brief.value?.what_to_expect || agenda.value.length > 0);
+
+const visit = computed(() => garden.value?.visit_info || null);
+
+const tasks = computed(() => (Array.isArray(event.value?.event_tasks) ? event.value.event_tasks : []));
+const plantings = computed(() => (Array.isArray(event.value?.planting) ? event.value.planting : [])
+  .map((p) => p.plant_name).filter(Boolean));
+
+const TASK_ICONS = { Planting: 'leaf', Harvest: 'leaf', Water: 'drop', Weeding: 'fork', General: 'house' };
+const taskIcon = (t) => TASK_ICONS[t.type] || 'house';
+
+const upcoming = computed(() => event.value?.series?.upcoming || []);
+const previous = computed(() => event.value?.series?.previous || null);
+const previousPhotos = computed(() => (Array.isArray(previous.value?.featured_gallery) ? previous.value.featured_gallery.slice(0, 3) : []));
+const ownGallery = computed(() => {
+  const g = event.value?.featured_gallery;
+  return Array.isArray(g) ? g : (g?.data || []);
+});
+const monthName = (s) => (s ? new Date(s).toLocaleDateString('en-US', { month: 'long' }) : '');
+
+const hosts = computed(() => (Array.isArray(garden.value?.managers) ? garden.value.managers : []));
+const hostName = (u) => [u.firstName, u.lastName ? `${u.lastName[0]}.` : ''].filter(Boolean).join(' ') || u.username;
+const initials = (u) => ((u.firstName?.[0] || u.username?.[0] || '') + (u.lastName?.[0] || '')).toUpperCase();
+const avatarStyle = (u) => (u.color ? { backgroundColor: u.color } : {});
+
+const going = computed(() => (Array.isArray(event.value?.confirmed) ? event.value.confirmed : []));
+const goingFaces = computed(() => going.value.slice(0, 3));
+
+const facts = computed(() => {
+  const out = [];
+  if (brief.value?.duration_text) out.push({ key: 'duration', label: 'How long', value: brief.value.duration_text, icon: 'clock' });
+  if (visit.value?.meeting_spot) out.push({ key: 'meet', label: 'Meet at', value: visit.value.meeting_spot, icon: 'pin' });
+  else if (!hasGarden.value && event.value?.location_name) out.push({ key: 'where', label: 'Where', value: event.value.location_name, icon: 'pin' });
+  if (brief.value?.good_for) out.push({ key: 'for', label: 'Good for', value: brief.value.good_for, icon: 'leaf' });
+  if (brief.value?.food) out.push({ key: 'food', label: 'Food', value: brief.value.food, icon: 'bowl' });
+  if (going.value.length && !isEventPast.value) out.push({ key: 'going', label: 'Going', value: `${going.value.length} ${going.value.length === 1 ? 'neighbor' : 'neighbors'}`, icon: 'people' });
+  return out;
+});
+
+const gettingThere = computed(() => {
+  const v = visit.value || {};
+  return [
+    { key: 'meet', title: v.meeting_spot ? `Meet at ${v.meeting_spot.charAt(0).toLowerCase()}${v.meeting_spot.slice(1)}` : null, text: v.meeting_note },
+    { key: 'parking', title: 'Parking & transit', text: v.parking_transit },
+    { key: 'restroom', title: 'Restroom', text: v.restroom },
+    { key: 'access', title: 'Accessibility', text: v.accessibility },
+    { key: 'kids', title: 'Kids & pets', text: v.kids_pets },
+  ].filter((r) => r.text || (r.key === 'meet' && r.title));
+});
+
+const mapsUrl = computed(() => {
+  const lat = Number(garden.value?.latitude);
+  const lng = Number(garden.value?.longitude);
+  if (hasGarden.value && Number.isFinite(lat) && Number.isFinite(lng) && (lat || lng)) {
+    return `https://www.google.com/maps?q=${lat},${lng}`;
   }
+  const q = [event.value?.location_name, event.value?.location_address].filter(Boolean).join(', ');
+  return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null;
+});
 
+/* ---------- RSVP ---------- */
+
+// The RSVP endpoint signs people up for the garden's SMS list, so it needs a
+// garden. Events without one can still link out to Partiful.
+const canRsvpHere = computed(() => hasGarden.value && !isEventPast.value && !isEventCanceled.value);
+const partifulOpen = computed(() => !!event.value?.partiful_link && !isEventPast.value && !isEventCanceled.value);
+const showRsvp = computed(() => partifulOpen.value || canRsvpHere.value);
+
+const rsvpEvent = async () => {
+  if (isEventPast.value || isRSVPed.value) return;
   if (user.value) {
-    await eventStore.rsvpEvent({ userId: user.value.id, id: route.params.id })
+    await eventStore.rsvpEvent({ userId: user.value.id, id: route.params.id });
   } else {
     showModal.value = true;
   }
-}
+};
+
+const closeModal = () => { showModal.value = false; };
 
 const submitPhoneNumber = async () => {
   if (isEventPast.value) {
     phoneError.value = 'This event has already passed. RSVP is no longer available.';
     return;
   }
-  
-  phoneError.value = ''
+  phoneError.value = '';
   const digitsOnly = phoneNumber.value.replace(/\D/g, '');
   if (digitsOnly && /^\d{10}$/.test(digitsOnly)) {
     try {
-      await eventStore.rsvpEvent({phoneNumber: digitsOnly, id: route.params.id});
+      await eventStore.rsvpEvent({ phoneNumber: digitsOnly, id: route.params.id });
       closeModal();
       isRSVPed.value = true;
     } catch (error) {
       console.error('Error RSVPing to event:', error);
-      phoneError.value = 'Error RSVPing to event';
+      phoneError.value = "Couldn't save your RSVP. Try again in a moment.";
     }
   } else {
     phoneError.value = 'Please enter a valid 10-digit phone number';
   }
 };
 
-const processDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric', 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
-}
-
-console.log("event: ", event);
-
-eventStore.findById(route.params.id);
-
 const formatPhoneNumber = (value) => {
   if (!value) return value;
-  const phoneNumber = value.replace(/[^\d]/g, '');
-  const phoneNumberLength = phoneNumber.length;
-  if (phoneNumberLength < 4) return phoneNumber;
-  if (phoneNumberLength < 7) {
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-  }
-  return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+  const digits = value.replace(/[^\d]/g, '');
+  if (digits.length < 4) return digits;
+  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
 };
-
-const handlePhoneInput = (event) => {
-  const formattedNumber = formatPhoneNumber(event.target.value);
-  phoneNumber.value = formattedNumber;
-};
-
-const handleKeyPress = (event) => {
-  if (event.key === 'Enter') {
-    submitPhoneNumber();
-  }
-};
-
+const handlePhoneInput = (e) => { phoneNumber.value = formatPhoneNumber(e.target.value); };
+const handleKeyPress = (e) => { if (e.key === 'Enter') submitPhoneNumber(); };
 </script>
 
 <template>
-    <div id="event-view" class="min-h-screen bg-[#344a34]">
-      <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light dark:bg-[#344a34] rounded-lg font-roboto">
+  <div id="event-view" class="ev-page">
+    <GardenContextBar v-if="hasGarden" :garden="garden" current="events" :page-title="event?.title" />
+    <div v-else-if="event?.id" class="ev-crumbs-bar">
+      <nav class="ev-content ev-crumbs" aria-label="Breadcrumb">
+        <router-link to="/events">Events</router-link>
+        <span aria-hidden="true">/</span>
+        <span class="ev-crumb-current" aria-current="page">{{ event.title }}</span>
+        <span v-if="organization?.title" class="ev-crumb-host">
+          Hosted by
+          <a v-if="organization.url" :href="organization.url" target="_blank" rel="noopener noreferrer">{{ organization.title }}</a>
+          <strong v-else>{{ organization.title }}</strong>
+        </span>
+      </nav>
+    </div>
 
-        <div class="w-full h-[350px] overflow-hidden rounded-lg mb-6">
-          <img id="heroImage" alt="Hero Image" class="w-full h-full object-cover object-center" :src="heroImage">
+    <div class="ev-content">
+      <div v-if="event?.loading" class="gp-hero gp-hero--loading animate-pulse" aria-hidden="true"></div>
+      <p v-else-if="event?.error" class="ev-error">Couldn't load this event — try refreshing.</p>
+
+      <template v-else-if="event?.id">
+        <!-- Manager strip -->
+        <div v-if="isManager" class="ev-manage">
+          <span class="ev-manage-label">You manage this garden</span>
+          <span class="ev-manage-links">
+            <router-link :to="`/manage/events/${event.id}/edit`">Edit this event</router-link>
+            <router-link v-if="garden?.slug && event.recurring_template" :to="`/manage/gardens/${garden.slug}/event-templates`">Edit series</router-link>
+            <button type="button" class="gp-link gp-link-button" @click="showPrintDaySheet = true">Print day sheet</button>
+          </span>
         </div>
-        <div class="flex justify-between items-start mb-6">
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-[#c9d966]">{{ event?.title }}</h1>
-          <div v-if="user && isManager && event?.id" class="flex gap-2">
-            <router-link
-              :to="`/manage/events/${event.id}/edit`"
-              class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded no-underline"
-            >
-              Edit Event
-            </router-link>
-            <button
-              type="button"
-              class="bg-custom-green hover:bg-custom-green-dark text-white font-bold py-2 px-4 rounded"
-              @click="showPrintDaySheet = true"
-            >
-              Print day sheet
-            </button>
-          </div>
-        </div>
-        <h4 class="text-lg font-bold mb-6 text-gray-700 dark:text-[#e8e8e8]">{{ processDate(event?.startDatetime) }}</h4>
-        <p v-if="isEventCanceled" class="mb-6 px-3 py-2 rounded bg-red-700 text-white font-semibold inline-block">
-          This event has been canceled.
-        </p>
-        <div v-if="event?.blurb" class="text-left brief-box dark:bg-[#2d3e26] dark:text-[#e8e8e8]">
-            <div v-html="event?.blurb"></div>
-        </div>
-        <div class="text-left text-gray-800 dark:text-[#e8e8e8]" v-if="event?.content">
-            <div v-html="renderedContent"></div>
-        </div>
-        
-        <!-- Linked project(s) -->
-        <section v-if="linkedProjects.length" class="mt-8 mb-6">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-600 dark:text-[#c9d966] mb-3">
-            {{ linkedProjects.length > 1 ? 'Part of these projects' : 'Part of this project' }}
-          </h2>
-          <div class="space-y-3">
-            <EventProjectCard
-              v-for="project in linkedProjects"
-              :key="project.documentId || project.id"
-              :project="project"
-            />
+
+        <!-- Hero -->
+        <section class="gp-hero ev-hero" aria-labelledby="event-title">
+          <img :src="heroImage" alt="" class="gp-hero-img" />
+          <div class="gp-hero-scrim" aria-hidden="true"></div>
+          <div class="gp-hero-body ev-hero-body">
+            <div class="ev-hero-text">
+              <span v-if="heroPill" class="ev-pill">{{ heroPill }}</span>
+              <h1 id="event-title" class="gp-title">{{ event.title }}</h1>
+              <p class="ev-when">{{ whenLine }}</p>
+              <p v-if="event.blurb" class="gp-blurb" v-html="event.blurb"></p>
+              <div v-if="showRsvp || (calendarUrl && !isEventPast && !isEventCanceled)" class="gp-hero-actions">
+                <a v-if="partifulOpen" :href="event.partiful_link" target="_blank" rel="noopener noreferrer" class="gp-btn gp-btn-cta">RSVP on Partiful</a>
+                <button v-else-if="canRsvpHere" type="button" class="gp-btn gp-btn-cta" :disabled="isRSVPed" @click="rsvpEvent">
+                  {{ isRSVPed ? "You're going" : 'RSVP' }}
+                </button>
+                <a v-if="calendarUrl && !isEventPast && !isEventCanceled" :href="calendarUrl" target="_blank" rel="noopener noreferrer" class="gp-btn gp-btn-ghost">
+                  <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+                  Add to calendar
+                </a>
+              </div>
+            </div>
+            <div v-if="going.length && !isEventPast" class="ev-going">
+              <span class="ev-faces">
+                <span v-for="u in goingFaces" :key="u.id" class="ev-face" :style="avatarStyle(u)">{{ initials(u) }}</span>
+                <span v-if="going.length > goingFaces.length" class="ev-face ev-face--more">+{{ going.length - goingFaces.length }}</span>
+              </span>
+              <span class="ev-going-text">{{ going.length }} going</span>
+            </div>
           </div>
         </section>
 
-        <!-- Featured Gallery -->
-        <Gallery 
-          :gallery="event?.featured_gallery"
-          title="Event Gallery"
-          :photo-album-url="event?.photo_album_url"
-        />
-        
-        <div v-if="user?.id" class="text-left mt-5 dark:text-[#e8e8e8]">
-            <div v-if="!isRSVPed && !isEventPast && !isEventCanceled" style="font-size: 1.2rem; font-weight: bold;" class="mb-2">Hello {{ user?.firstName }} {{ user?.lastName }}
-              <p>Would you like to RSVP for this event?</p>
+        <p v-if="isEventCanceled" class="ev-banner ev-banner--canceled" role="status">This event has been canceled.</p>
+
+        <!-- At a glance -->
+        <section v-if="facts.length" class="gp-facts" aria-label="Event at a glance">
+          <div v-for="f in facts" :key="f.key" class="gp-fact">
+            <span class="gp-fact-icon">
+              <svg v-if="f.icon === 'clock'" class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+              <svg v-else-if="f.icon === 'pin'" class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+              <svg v-else-if="f.icon === 'bowl'" class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11h18" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M9 4c0 1.5 1 2 1 3.5M13 4c0 1.5 1 2 1 3.5" /></svg>
+              <svg v-else-if="f.icon === 'people'" class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5" /><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c2 .7 3.2 2.5 3.5 5.2" /></svg>
+              <svg v-else class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V11" /><path d="M12 11C12 6 8 4 4 4c0 5 3 7 8 7z" /><path d="M12 13c0-4 3-6 8-6 0 4-3 6-8 6z" /></svg>
+            </span>
+            <span class="gp-fact-text">
+              <span class="gp-label">{{ f.label }}</span>
+              <span class="gp-fact-value">{{ f.value }}</span>
+            </span>
+          </div>
+        </section>
+
+        <div class="gp-body">
+          <!-- Main column -->
+          <div class="gp-main">
+            <section v-if="renderedContent" class="gp-section gp-section--about">
+              <h2 class="gp-h2">About this day</h2>
+              <div class="gp-prose ev-prose" v-html="renderedContent"></div>
+            </section>
+
+            <section v-if="tasks.length || plantings.length" class="gp-section">
+              <div class="gp-section-head">
+                <h2 class="gp-h2">{{ isEventPast ? 'What we worked on' : "What we'll work on" }}</h2>
+                <router-link v-if="hasGarden" :to="`/gardens/${garden.slug}/tasks`" class="gp-link">All garden tasks</router-link>
+              </div>
+              <div v-if="tasks.length" class="ev-task-grid">
+                <component
+                  :is="hasGarden ? 'router-link' : 'div'"
+                  v-for="t in tasks"
+                  :key="t.documentId || t.id"
+                  :to="hasGarden ? `/gardens/${garden.slug}/tasks/${t.id}` : undefined"
+                  class="ev-task"
+                >
+                  <span class="ev-task-icon" :class="{ 'ev-task-icon--warm': t.type === 'Planting' }">
+                    <svg v-if="taskIcon(t) === 'drop'" class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /></svg>
+                    <svg v-else-if="taskIcon(t) === 'fork'" class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20c4-1 6-5 8-9s4-7 8-7" /><path d="M4 20l4-4" /><path d="M14 4l6 6" /></svg>
+                    <svg v-else-if="taskIcon(t) === 'leaf'" class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V11" /><path d="M12 11C12 6 8 4 4 4c0 5 3 7 8 7z" /><path d="M12 13c0-4 3-6 8-6 0 4-3 6-8 6z" /></svg>
+                    <svg v-else class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10l8-6 8 6v10" /><path d="M9 20v-6h6v6" /></svg>
+                  </span>
+                  <span class="ev-task-text">
+                    <span class="ev-task-title">{{ t.title }}</span>
+                    <span v-if="t.overview" class="ev-task-desc">{{ t.overview }}</span>
+                    <span v-if="t.task_status === 'FINISHED'" class="ev-task-done">Done</span>
+                  </span>
+                </component>
+              </div>
+              <div v-if="plantings.length" class="ev-chips">
+                <span class="gp-label">Going in the ground</span>
+                <span v-for="p in plantings" :key="p" class="ev-chip">{{ p }}</span>
+              </div>
+            </section>
+
+            <section v-if="hasHowItGoes" class="gp-section">
+              <h2 class="gp-h2">How the day goes</h2>
+              <p v-if="brief.what_to_expect" class="gp-prose ev-lead">{{ brief.what_to_expect }}</p>
+              <ol v-if="agenda.length" class="ev-timeline">
+                <li v-for="(step, i) in agenda" :key="i" class="ev-step" :class="{ 'ev-step--untimed': !agenda.some((s) => s.time_text) }">
+                  <span v-if="agenda.some((s) => s.time_text)" class="ev-step-time">{{ step.time_text }}</span>
+                  <span class="ev-step-rail" aria-hidden="true">
+                    <span class="ev-step-dot" :class="{ 'ev-step-dot--first': i === 0, 'ev-step-dot--last': i === agenda.length - 1 }"></span>
+                    <span v-if="i < agenda.length - 1" class="ev-step-line"></span>
+                  </span>
+                  <span class="ev-step-body">
+                    <span class="ev-step-label">{{ step.label }}</span>
+                    <span v-if="step.detail" class="ev-step-detail">{{ step.detail }}</span>
+                  </span>
+                </li>
+              </ol>
+            </section>
+
+            <section v-if="hasBring" class="gp-section">
+              <h2 class="gp-h2">What to bring</h2>
+              <div class="ev-bring-grid">
+                <div v-if="bringYou.length" class="ev-bring ev-bring--you">
+                  <span class="gp-label gp-label--accent">You bring</span>
+                  <ul>
+                    <li v-for="item in bringYou" :key="item.label">
+                      <svg class="gp-icon ev-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>{{ item.label }}
+                    </li>
+                  </ul>
+                </div>
+                <div v-if="bringGarden.length" class="ev-bring ev-bring--garden">
+                  <span class="gp-label">{{ hasGarden ? 'The garden provides' : 'Provided' }}</span>
+                  <ul>
+                    <li v-for="item in bringGarden" :key="item.label">
+                      <svg class="gp-icon ev-check ev-check--soft" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>{{ item.label }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            <section v-if="linkedProjects.length" class="gp-section">
+              <span class="gp-label">{{ linkedProjects.length > 1 ? 'Part of these projects' : 'Part of this project' }}</span>
+              <div class="ev-projects">
+                <EventProjectCard v-for="project in linkedProjects" :key="project.documentId || project.id" :project="project" />
+              </div>
+            </section>
+
+            <section v-if="ownGallery.length || event.photo_album_url" class="gp-section">
+              <Gallery :gallery="event.featured_gallery" title="From this day" :photo-album-url="event.photo_album_url" />
+            </section>
+
+            <section v-else-if="previous && !isEventPast" class="gp-section">
+              <div class="gp-section-head">
+                <h2 class="gp-h2">Last time: {{ monthName(previous.startDatetime) }}</h2>
+                <a v-if="previous.photo_album_url" :href="previous.photo_album_url" target="_blank" rel="noopener noreferrer" class="gp-link">See the full album</a>
+              </div>
+              <router-link v-if="previousPhotos.length" :to="`/d/${previous.id}`" class="ev-recap" :aria-label="`Photos from ${previous.title}`">
+                <img v-for="img in previousPhotos" :key="img.id" :src="img.formats?.small?.url || img.url" :alt="img.alternativeText || ''" class="ev-recap-img" />
+              </router-link>
+            </section>
+          </div>
+
+          <!-- Aside -->
+          <aside id="rsvp" class="gp-aside" aria-label="RSVP and details">
+            <div class="gp-card gp-card--feature">
+              <p class="gp-label gp-label--accent">{{ isEventPast ? 'This day has passed' : isEventCanceled ? 'Canceled' : showRsvp ? 'Save your spot' : 'When' }}</p>
+              <div class="gp-event ev-when-card">
+                <span class="gp-datechip gp-datechip--solid">
+                  <span class="gp-datechip-month">{{ chipMonth(event.startDatetime) }}</span>
+                  <span class="gp-datechip-day">{{ chipDay(event.startDatetime) }}</span>
+                </span>
+                <span class="gp-event-text">
+                  <span class="gp-event-title">{{ start ? `${start.toLocaleDateString('en-US', { weekday: 'long' })}, ${timeOf(start)}` : '' }}</span>
+                  <span v-if="event.endText" class="gp-event-meta">until {{ event.endText }}</span>
+                </span>
+              </div>
+
+              <template v-if="partifulOpen">
+                <a :href="event.partiful_link" target="_blank" rel="noopener noreferrer" class="gp-btn gp-btn-primary gp-btn-block">RSVP on Partiful</a>
+              </template>
+              <template v-else-if="canRsvpHere">
+                <button type="button" class="gp-btn gp-btn-primary gp-btn-block" :disabled="isRSVPed" @click="rsvpEvent">
+                  {{ isRSVPed ? "You're going" : 'RSVP' }}
+                </button>
+                <p class="ev-fine">
+                  <template v-if="isRSVPed">Thanks{{ user?.firstName ? `, ${user.firstName}` : '' }}. We'll text you a reminder the day before.</template>
+                  <template v-else>We'll text you a reminder the day before. Reply STOP anytime.</template>
+                </p>
+              </template>
+              <p v-else-if="isEventPast" class="ev-fine">RSVP is closed for this one.<template v-if="upcoming.length"> The next one is below.</template></p>
+              <p v-else-if="isEventCanceled" class="ev-fine">Nothing to RSVP to.<template v-if="upcoming.length"> See the next one below.</template></p>
             </div>
-            <p v-if="isEventPast" class="text-gray-600 dark:text-[#b8b8b8] font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
-            <a v-if="event?.partiful_link && !isEventPast && !isEventCanceled" :href="event.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
-              {{ isRSVPed ? 'RSVP Initiated' : 'RSVP via Partiful' }}
-            </a>
-            <button v-else-if="!isEventPast && !isEventCanceled" :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="hover:bg-green-900 text-white font-bold py-2 px-4 rounded pointer no-underline" @click="rsvpEvent" :disabled="isRSVPed">
-              {{ isRSVPed ? 'RSVP Initiated' : 'RSVP' }}
-            </button>
-            <p v-if="isRSVPed">Thank you for RSVPing {{ user?.firstName }} {{ user?.lastName }}!</p>
-        </div>
 
+            <div v-if="gettingThere.length || mapsUrl || (!hasGarden && locationText)" class="gp-card">
+              <p class="gp-label">Getting there</p>
+              <div v-if="!hasGarden && locationText" class="ev-row">
+                <span class="ev-row-title">{{ event.location_name || event.location_address }}</span>
+                <span v-if="event.location_name && event.location_address" class="ev-row-text">{{ event.location_address }}</span>
+              </div>
+              <div v-for="r in gettingThere" :key="r.key" class="ev-row">
+                <span v-if="r.title" class="ev-row-title">{{ r.title }}</span>
+                <span v-if="r.text" class="ev-row-text">{{ r.text }}</span>
+              </div>
+              <a v-if="mapsUrl" :href="mapsUrl" target="_blank" rel="noopener noreferrer" class="gp-link">Open in Google Maps</a>
+            </div>
 
-        <!-- Conditional rendering of the agreement button -->
-        <div v-else class="mt-6 dark:text-[#e8e8e8]">
-          <p v-if="isEventPast" class="text-gray-600 dark:text-[#b8b8b8] font-medium mb-2">This event has already passed. RSVP is no longer available.</p>
-          <a v-if="event?.partiful_link && !isEventPast && !isEventCanceled" :href="event.partiful_link" :class="{ 'bg-gray-500': isRSVPed || isEventPast, 'bg-green-700 hover:bg-green-900': !isRSVPed && !isEventPast }" class="inline-block text-white font-bold py-2 px-4 rounded text-center no-underline" :style="{ pointerEvents: (isRSVPed || isEventPast) ? 'none' : 'auto', cursor: (isRSVPed || isEventPast) ? 'not-allowed' : 'pointer' }">
-            {{ isRSVPed ? 'RSVP Initiated' : 'RSVP via Partiful' }}
-          </a>
-          <button v-else-if="!isEventPast && !isEventCanceled" :class="{ 'bg-gray-500': isRSVPed, 'bg-green-700 hover:bg-green-900': !isRSVPed }" class="text-white font-bold py-2 px-4 rounded" @click="rsvpEvent" :disabled="isRSVPed">
-            {{ isRSVPed ? 'RSVP Initiated' : 'RSVP' }}
-          </button>
-          <p class="text-sm mt-2">
-            {{ isRSVPed ? 
-              'Alright! Thank you for being involved.'
-              : '' }}
-          </p>
+            <div v-if="hosts.length" class="gp-card">
+              <p class="gp-label">Your hosts</p>
+              <div v-for="h in hosts" :key="h.id" class="ev-host">
+                <span class="ev-face ev-face--lg" :style="avatarStyle(h)">{{ initials(h) }}</span>
+                <span class="ev-host-name">{{ hostName(h) }}</span>
+              </div>
+            </div>
+
+            <div v-if="upcoming.length" class="gp-card">
+              <p class="gp-label">Next in this series</p>
+              <div class="gp-event-list">
+                <router-link v-for="u in upcoming" :key="u.id" :to="`/d/${u.id}`" class="gp-event gp-event--compact">
+                  <span class="gp-datechip">
+                    <span class="gp-datechip-month">{{ chipMonth(u.startDatetime) }}</span>
+                    <span class="gp-datechip-day">{{ chipDay(u.startDatetime) }}</span>
+                  </span>
+                  <span class="gp-event-text">
+                    <span class="gp-event-title">{{ u.title }}</span>
+                    <span class="gp-event-meta">{{ shortWhen(u.startDatetime) }}</span>
+                  </span>
+                </router-link>
+              </div>
+              <router-link v-if="hasGarden" :to="`/gardens/${garden.slug}#events`" class="gp-link">All {{ garden.title }} events</router-link>
+            </div>
+
+            <div v-if="organization && !hasGarden" class="gp-card">
+              <p class="gp-label">Hosted by</p>
+              <a v-if="organization.url" :href="organization.url" target="_blank" rel="noopener noreferrer" class="gp-org-name">{{ organization.title }}</a>
+              <span v-else class="gp-org-name">{{ organization.title }}</span>
+              <p v-if="organization.description" class="gp-org-desc">{{ organization.description }}</p>
+            </div>
+          </aside>
         </div>
+      </template>
+    </div>
+
+    <!-- Back to the garden -->
+    <section v-if="hasGarden && event?.id" class="ev-band">
+      <div class="ev-content ev-band-inner">
+        <div class="ev-band-text">
+          <h2 class="gp-h2 ev-band-title">More from {{ garden.title }}</h2>
+          <p v-if="garden.blurb" class="ev-band-blurb">{{ garden.blurb }}</p>
+        </div>
+        <router-link :to="`/gardens/${garden.slug}`" class="gp-btn gp-btn-cream">Visit the garden</router-link>
       </div>
-      <div v-if="event.loading" class="spinner-border spinner-border-sm"></div>
-      <div v-if="event.error" class="text-danger">Error loading event: {{event.error}}</div>
-      <!-- Add this at the bottom of your template -->
-      <div class="text-center py-4 text-white">
-        This event is brought to you by 
-        <router-link 
-          v-if="event?.garden?.slug"
-          :to="{ name: 'garden-public', params: { slug: event?.garden?.slug } }"
-          class="font-bold underline hover:text-custom-peach"
-        >
-          {{ event?.garden?.title }}
-        </router-link>
-        <strong v-else>{{ event?.garden?.title }}</strong>
+    </section>
+  </div>
+
+  <!-- Phone RSVP modal -->
+  <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="closeModal">
+    <div class="bg-white dark:!bg-[#2d3e26] p-6 rounded-lg shadow-lg w-[90%] max-w-md" role="dialog" aria-modal="true" aria-labelledby="rsvp-modal-title">
+      <h3 id="rsvp-modal-title" class="md:text-xl mb-4 text-lg text-gray-900 dark:text-[#e8e8e8]">Garden Steward manages events through SMS. You will be asked to sign up for SMS updates for {{ garden?.title }} as part of RSVPing for this event.</h3>
+      <label for="rsvp-phone" class="sr-only">Phone number</label>
+      <input
+        id="rsvp-phone"
+        :value="phoneNumber"
+        type="tel"
+        placeholder="(123) 456-7890"
+        class="w-full p-2 border border-gray-300 dark:border-[#3d4d36] dark:bg-[#1a1a1a] dark:text-[#e8e8e8] rounded mb-2"
+        maxlength="14"
+        @input="handlePhoneInput"
+        @keypress="handleKeyPress"
+      >
+      <p class="text-sm mb-4 text-gray-600 dark:text-[#b8b8b8]">You can STOP SMS at any point by replying with STOP.</p>
+      <p v-if="phoneError" class="text-red-600 text-sm mb-2">{{ phoneError }}</p>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="px-4 py-2 bg-gray-200 dark:bg-[#3d4d36] dark:text-[#e8e8e8] rounded" @click="closeModal">Cancel</button>
+        <button type="button" class="px-4 py-2 bg-[#064e3b] text-white rounded font-bold" @click="submitPhoneNumber">Submit</button>
       </div>
     </div>
-      <!-- Modal -->
-      <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white dark:!bg-[#2d3e26] p-6 rounded-lg shadow-lg w-3/4 md:w-1/4">
-          <h3 class="md:text-xl mb-4 text-lg text-gray-900 dark:text-[#e8e8e8]">Garden Steward manages events through SMS. You will be asked to sign up for SMS Updates for {{ event?.garden?.title }} as a part of RSVPing for this event. </h3>
-          
-          <input 
-            :value="phoneNumber"
-            @input="handlePhoneInput"
-            @keypress="handleKeyPress"
-            type="tel" 
-            placeholder="(123) 456-7890" 
-            class="w-full p-2 border border-gray-300 dark:border-[#3d4d36] dark:bg-[#1a1a1a] dark:text-[#e8e8e8] rounded mb-2"
-            maxlength="14"
-          >
-          <p class="text-sm mb-4 text-gray-600 dark:text-[#b8b8b8]">You can STOP SMS at any point by replying with STOP.</p>
-          <p v-if="phoneError" class="text-red-500 text-sm mb-2">{{ phoneError }}</p>
-          <div class="flex justify-end">
-            <button @click="closeModal" class="mr-2 px-4 py-2 bg-gray-200 dark:bg-[#3d4d36] dark:text-[#e8e8e8] rounded">Cancel</button>
-            <button @click="submitPhoneNumber" class="px-4 py-2 bg-green-700 text-white rounded">Submit</button>
-          </div>
-        </div>
-      </div>
+  </div>
 
-      <PrintDaySheetModal
-        v-model="showPrintDaySheet"
-        :event-id="event?.id"
-        :is-manager="isManager"
-      />
-
+  <PrintDaySheetModal v-model="showPrintDaySheet" :event-id="event?.id" :is-manager="isManager" />
 </template>
 
 <style>
-#event-view a {
-  text-decoration: underline;
+/* Page frame: same ground as the garden page */
+.ev-page {
+  min-height: 100vh;
+  background-color: #ffffff;
+  color: #1f2a1f;
+  font-family: Roboto, system-ui, sans-serif;
 }
 
-#event-view a.no-underline {
+.dark .ev-page {
+  background-color: #2d3e26;
+  color: #f5f5f5;
+}
+
+.ev-content {
+  box-sizing: border-box;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 24px 0;
+}
+
+.ev-error {
+  padding: 48px 0;
+  color: #4b5563;
+}
+
+/* Breadcrumb for events with no garden */
+.ev-crumbs-bar {
+  border-bottom: 1px solid #e0d6c4;
+  background-color: #f3ece0;
+}
+
+.dark .ev-crumbs-bar {
+  background-color: #344a34;
+  border-bottom-color: #3d4d36;
+}
+
+.ev-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+  font-size: 0.8125rem;
+  color: #4b5563;
+}
+
+.ev-crumbs a {
+  color: #4b5563;
   text-decoration: none;
 }
 
-/* Add this CSS for the brief box */
-.brief-box {
-  background-color: #FFDAB9; /* Peach color */
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
+.ev-crumbs a:hover {
+  text-decoration: underline;
 }
+
+.ev-crumb-current {
+  color: #1f2a1f;
+  font-weight: 700;
+}
+
+.ev-crumb-host {
+  margin-left: auto;
+}
+
+.ev-crumb-host a {
+  color: #064e3b;
+  font-weight: 700;
+}
+
+.dark .ev-crumbs,
+.dark .ev-crumbs a {
+  color: #a8b89e;
+}
+
+.dark .ev-crumb-current {
+  color: #f5f5f5;
+}
+
+.dark .ev-crumb-host a {
+  color: #c5d4b8;
+}
+
+/* Manager strip */
+.ev-manage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  padding: 10px 16px;
+  border: 1px dashed #8aa37c;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  color: #376451;
+}
+
+.ev-manage-label {
+  font-weight: 700;
+}
+
+.ev-manage-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+
+.ev-manage-links a {
+  color: #064e3b;
+  font-weight: 700;
+}
+
+.dark .ev-manage,
+.dark .ev-manage-links a {
+  color: #c5d4b8;
+}
+
+/* Hero */
+.ev-hero-body {
+  max-width: none;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.ev-hero-text {
+  flex: 1 1 520px;
+  min-width: 0;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ev-pill {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background-color: rgba(247, 241, 227, 0.16);
+  border: 1px solid rgba(247, 241, 227, 0.45);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ev-when {
+  margin: 0;
+  font-size: clamp(1rem, 1.6vw, 1.1875rem);
+  font-weight: 700;
+}
+
+.ev-hero .gp-btn:disabled {
+  opacity: 0.85;
+  cursor: default;
+  transform: none;
+}
+
+.ev-going {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.ev-going-text {
+  font-weight: 700;
+}
+
+.ev-faces {
+  display: flex;
+}
+
+.ev-face {
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #f7f1e3;
+  background-color: #8aa37c;
+  color: #1f2a1f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.ev-faces .ev-face + .ev-face {
+  margin-left: -10px;
+}
+
+.ev-face--more {
+  background-color: #376451;
+  color: #f7f1e3;
+}
+
+.ev-face--lg {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-color: transparent;
+}
+
+.ev-banner {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.ev-banner--canceled {
+  background-color: #F9E2D1;
+  color: #7c2d12;
+}
+
+/* Main column pieces */
+.ev-prose p {
+  margin: 0 0 1em;
+}
+
+.ev-lead {
+  margin: 0;
+}
+
+.ev-task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.ev-task,
+a.ev-task:hover {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #c8d0c0;
+  border-radius: 14px;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.ev-task:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark .ev-task {
+  border-color: #3d4d36;
+  background-color: #344a34;
+}
+
+.ev-task-icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: #f3ece0;
+  color: #064e3b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ev-task-icon--warm {
+  background-color: #F9E2D1;
+  color: #C2410C;
+}
+
+.dark .ev-task-icon {
+  background-color: #2d3e26;
+  color: #c5d4b8;
+}
+
+.ev-task-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ev-task-title {
+  font-weight: 700;
+}
+
+.ev-task-desc {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #4b5563;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dark .ev-task-desc {
+  color: #d0d0d0;
+}
+
+.ev-task-done {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #064e3b;
+}
+
+.dark .ev-task-done {
+  color: #c5d4b8;
+}
+
+.ev-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ev-chips .gp-label {
+  margin-right: 4px;
+}
+
+.ev-chip {
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background-color: #f3ece0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #376451;
+}
+
+.dark .ev-chip {
+  background-color: #344a34;
+  color: #c5d4b8;
+}
+
+/* Agenda timeline */
+.ev-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ev-step {
+  display: grid;
+  grid-template-columns: 76px 20px minmax(0, 1fr);
+  column-gap: 14px;
+}
+
+.ev-step--untimed {
+  grid-template-columns: 20px minmax(0, 1fr);
+}
+
+.ev-step-time {
+  padding-top: 1px;
+  font-weight: 700;
+  color: #064e3b;
+}
+
+.dark .ev-step-time {
+  color: #c5d4b8;
+}
+
+.ev-step-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ev-step-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background-color: #8aa37c;
+}
+
+.ev-step-dot--first {
+  background-color: #064e3b;
+}
+
+.dark .ev-step-dot--first {
+  background-color: #c5d4b8;
+}
+
+.ev-step-line {
+  flex: 1;
+  width: 2px;
+  background-color: #c8d0c0;
+}
+
+.dark .ev-step-line {
+  background-color: #3d4d36;
+}
+
+.ev-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 20px;
+}
+
+.ev-step-label {
+  font-weight: 700;
+}
+
+.ev-step-detail {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .ev-step-detail {
+  color: #d0d0d0;
+}
+
+/* What to bring */
+.ev-bring-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.ev-bring {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px;
+  border-radius: 14px;
+}
+
+.ev-bring ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ev-bring li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ev-bring--you {
+  background-color: #f7f1e3;
+}
+
+.ev-bring--garden {
+  border: 1px solid #c8d0c0;
+}
+
+.dark .ev-bring--you {
+  background-color: #344a34;
+}
+
+.dark .ev-bring--garden {
+  border-color: #3d4d36;
+}
+
+.ev-check {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.4;
+  color: #064e3b;
+}
+
+.ev-check--soft {
+  color: #6c8a6a;
+}
+
+.dark .ev-check {
+  color: #c5d4b8;
+}
+
+.ev-projects {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Last-time recap */
+.ev-recap {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ev-recap-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* Aside pieces */
+.ev-when-card {
+  pointer-events: none;
+}
+
+.ev-fine {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #4b5563;
+}
+
+.dark .ev-fine {
+  color: #a8b89e;
+}
+
+#event-view .gp-btn:disabled {
+  cursor: default;
+  transform: none;
+  opacity: 0.8;
+}
+
+.ev-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ev-row-title {
+  font-weight: 700;
+}
+
+.ev-row-text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #4b5563;
+  white-space: pre-line;
+}
+
+.dark .ev-row-text {
+  color: #d0d0d0;
+}
+
+.ev-host {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ev-host-name {
+  font-weight: 700;
+}
+
+/* Return band */
+.ev-band {
+  background-color: #344a34;
+  color: #f7f1e3;
+}
+
+.dark .ev-band {
+  background-color: #1f2d1a;
+}
+
+.ev-band-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.ev-band-text {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.ev-band-title,
+.dark .ev-band-title {
+  color: #f7f1e3;
+}
+
+.ev-band-blurb {
+  margin: 8px 0 0;
+  max-width: 70ch;
+  line-height: 1.5;
+  color: #e6dccb;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .ev-content {
+    padding: 16px 16px 0;
+  }
+
+  .ev-going {
+    align-items: flex-start;
+  }
+
+  .ev-step {
+    grid-template-columns: 58px 20px minmax(0, 1fr);
+    column-gap: 10px;
+  }
+
+  .ev-recap {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ev-recap-img:nth-child(3) {
+    display: none;
+  }
+
+  .ev-crumb-host {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+
+/* Kept from the previous EventView: these were global and other pages may
+   lean on them. */
 h4 {
   font-weight: bold;
   margin-bottom: 0.5rem;
