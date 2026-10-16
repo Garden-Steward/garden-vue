@@ -260,17 +260,6 @@ const loadMoreLatestEvents = () => {
   latestEventsToShow.value += 2;
 };
 
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
 // Truncate description to 200 characters
 const truncateDescription = (htmlString) => {
   if (!htmlString) return '';
@@ -352,39 +341,6 @@ const gardenHeroImage = computed(() => {
   return heroImageUrl || getRandomDefaultImage();
 });
 
-// Get featured projects
-const featuredProjects = computed(() => {
-  if (!projects.value || !Array.isArray(projects.value) || projects.value.length === 0) {
-    return [];
-  }
-  
-  // Get all projects
-  const allProjects = projects.value.filter(p => p?.id);
-
-  if (allProjects.length === 0) return [];
-
-  // Get all featured projects
-  const featured = allProjects.filter(p => p.featured);
-
-  // Sort featured projects by date_start (most recent first)
-  if (featured.length > 0) {
-    return featured.sort((a, b) => {
-      const dateA = a.date_start ? new Date(a.date_start) : new Date(0);
-      const dateB = b.date_start ? new Date(b.date_start) : new Date(0);
-      return dateB - dateA;
-    });
-  }
-
-  // If no featured projects, return most recent project
-  const sorted = [...allProjects].sort((a, b) => {
-    const dateA = a.date_start ? new Date(a.date_start) : new Date(0);
-    const dateB = b.date_start ? new Date(b.date_start) : new Date(0);
-    return dateB - dateA;
-  });
-  
-  return sorted.slice(0, 1); // Return just the most recent as a single-item array
-});
-
 // Get project hero image helper function
 const getProjectHeroImage = (project) => {
   if (!project) return null;
@@ -449,26 +405,9 @@ const volunteerCount = computed(() => {
   return Array.isArray(v) ? v.length : 0;
 });
 
-const activeVolunteersBubbleText = computed(() => {
-  const n = volunteerCount.value;
-  const noun = n === 1 ? 'Active Volunteer' : 'Active Volunteers';
-  return `${n} ${noun}`;
-});
-
 const gardenStartedAt = computed(() => {
   return garden.value?.createdAt || garden.value?.publishedAt || null;
 });
-
-const formatStartedDate = (dateString) => {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-};
-
-const gardenStartedLabel = computed(() => formatStartedDate(gardenStartedAt.value));
 
 /** All projects for this garden (public list beside map). */
 const gardenProjectsList = computed(() => {
@@ -476,12 +415,78 @@ const gardenProjectsList = computed(() => {
   if (!list || !Array.isArray(list)) return [];
   return list.filter((p) => p?.id);
 });
+
+/** Featured projects first, then most recent. */
+const orderedProjects = computed(() => {
+  const byDate = (p) => (p.date_start ? new Date(p.date_start).getTime() : 0);
+  return [...gardenProjectsList.value].sort((a, b) => {
+    const featuredDiff = (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+    return featuredDiff || byDate(b) - byDate(a);
+  });
+});
+
+const projectsToShow = ref(4);
+const visibleProjects = computed(() => orderedProjects.value.slice(0, projectsToShow.value));
+const hasMoreProjects = computed(() => orderedProjects.value.length > projectsToShow.value);
+const showAllProjects = () => {
+  projectsToShow.value = orderedProjects.value.length;
+};
+
+const projectLinkProps = (project) => {
+  if (project?.slug && garden.value?.slug) {
+    return { to: `/gardens/${garden.value.slug}/p/${project.slug}` };
+  }
+  return {};
+};
+
+// The next upcoming workday drives the hero CTA and the sidebar feature card
+const nextEvent = computed(() => upcomingEvents.value[0] || null);
+const laterEvents = computed(() => upcomingEvents.value.slice(1));
+
+const formatShortDay = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+const formatTime = (dateString) => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+};
+
+const formatWeekdayTime = (dateString) => {
+  if (!dateString) return '';
+  const weekday = new Date(dateString).toLocaleDateString('en-US', { weekday: 'long' });
+  return `${weekday} · ${formatTime(dateString)}`;
+};
+
+const chipMonth = (dateString) =>
+  dateString ? new Date(dateString).toLocaleDateString('en-US', { month: 'short' }).toUpperCase() : '';
+const chipDay = (dateString) => (dateString ? new Date(dateString).getDate() : '');
+
+const gardenSinceLabel = computed(() => {
+  if (!gardenStartedAt.value) return '';
+  return new Date(gardenStartedAt.value).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric'
+  });
+});
+
+const scrollToSection = (id) => {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 </script>
 
 <template>
   <div class="garden-public-container">
     <!-- Dark Mode Toggle Button -->
-    <button 
+    <button
       @click="toggleDarkMode"
       class="dark-mode-toggle"
       :aria-label="isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'"
@@ -490,107 +495,225 @@ const gardenProjectsList = computed(() => {
       <i v-else class="fas fa-moon"></i>
     </button>
 
-    <!-- Full Screen Content -->
     <div class="garden-public-content">
-      <!-- Title + blurb first -->
-      <div v-if="garden.id" class="garden-header garden-header-top">
-        <h1 class="garden-title">{{ garden.title }}</h1>
-        <p v-if="garden.blurb" class="garden-blurb">{{ garden.blurb }}</p>
-      </div>
-      <div v-else-if="garden.loading" class="garden-header garden-header-top">
-        <div class="garden-title h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
-        <div class="garden-blurb h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
-      </div>
-
-      <!-- Hero Image -->
-      <div v-if="garden.id" class="garden-hero-image">
-        <img
-          :src="gardenHeroImage"
-          :alt="garden.title || 'Garden Image'"
-          class="hero-image"
-        />
-      </div>
-      <div v-else-if="garden.loading" class="garden-hero-image">
-        <div class="hero-image bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-      </div>
-
-      <!-- Upcoming Events and Latest Events (before map / stats) -->
-      <section v-if="garden.id" class="two-column-section">
-        <div class="two-column-layout">
-          <!-- Left: Upcoming Events -->
-          <div class="column-content">
-            <h2 v-if="upcomingEvents.length > 0" class="section-title">Upcoming Events</h2>
-            <div v-if="upcomingEvents.length > 0" class="events-list">
-              <div 
-                v-for="event in upcomingEvents" 
-                :key="event.id"
-                class="event-item"
-              >
-                <router-link 
-                  :to="`/d/${event.id}`"
-                  class="event-link"
-                >
-                  <h3 class="event-title">{{ event.title }}</h3>
-                  <p class="event-date">{{ formatDate(event.startDatetime) }}</p>
-                  <div v-if="event.blurb" class="event-description" v-html="event.blurb"></div>
-                </router-link>
-              </div>
-            </div>
-            
-            <div v-if="upcomingEvents.length === 0 && latestEvents.length === 0 && !volunteerDays.loading" class="section-empty">
-              <p>No events scheduled at this time.</p>
-            </div>
-          </div>
-          
-          <!-- Right: Latest Events -->
-          <div class="column-content">
-            <div v-if="latestEvents.length > 0">
-              <h2 class="section-title">
-                <span v-if="upcomingEvents.length > 0">Latest Events</span>
-                <span v-else>Events</span>
-              </h2>
-              <div class="events-list">
-                <div 
-                  v-for="event in latestEvents" 
-                  :key="event.id"
-                  class="event-item"
-                >
-                  <router-link 
-                    :to="`/d/${event.id}`"
-                    class="event-link"
-                  >
-                    <h3 class="event-title">{{ event.title }}</h3>
-                    <p class="event-date">{{ formatDate(event.startDatetime) }}</p>
-                    <div v-if="event.blurb" class="event-description" v-html="event.blurb"></div>
-                  </router-link>
-                </div>
-              </div>
-              <button 
-                v-if="hasMoreLatestEvents"
-                @click="loadMoreLatestEvents"
-                class="btn-load-more"
-              >
-                Load More
-              </button>
-            </div>
+      <!-- Hero: title, blurb and the main action sit on the photo -->
+      <section v-if="garden.id" class="gp-hero" aria-labelledby="garden-title">
+        <img :src="gardenHeroImage" :alt="garden.title || 'Garden image'" class="gp-hero-img" />
+        <div class="gp-hero-scrim" aria-hidden="true"></div>
+        <div class="gp-hero-body">
+          <h1 id="garden-title" class="gp-title">{{ garden.title }}</h1>
+          <p v-if="garden.blurb" class="gp-blurb">{{ garden.blurb }}</p>
+          <div class="gp-hero-actions">
+            <router-link v-if="nextEvent" :to="`/d/${nextEvent.id}`" class="gp-btn gp-btn-cta">
+              RSVP · {{ formatShortDay(nextEvent.startDatetime) }}
+              <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </router-link>
+            <button v-else type="button" class="gp-btn gp-btn-cta" @click="openDonationModal">
+              Donate to the Garden
+            </button>
+            <button v-if="nextEvent" type="button" class="gp-btn gp-btn-ghost" @click="openDonationModal">
+              Donate
+            </button>
+            <router-link v-else to="/events" class="gp-btn gp-btn-ghost">View all events</router-link>
           </div>
         </div>
       </section>
+      <div v-else-if="garden.loading" class="gp-hero gp-hero--loading animate-pulse" aria-hidden="true"></div>
 
-      <section v-if="garden.description" class="garden-section">
-
-        <div class="section-content" v-html="garden.description.replace(/\n/g, '<br>')"></div>
+      <!-- At a glance: replaces the old stats panel -->
+      <section v-if="garden.id" class="gp-facts" aria-label="Garden at a glance">
+        <div v-if="nextEvent" class="gp-fact">
+          <span class="gp-fact-icon">
+            <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+          </span>
+          <span class="gp-fact-text">
+            <span class="gp-label">Next workday</span>
+            <router-link :to="`/d/${nextEvent.id}`" class="gp-fact-value gp-fact-link gp-nowrap">
+              {{ formatShortDay(nextEvent.startDatetime) }} · {{ formatTime(nextEvent.startDatetime) }}
+            </router-link>
+          </span>
+        </div>
+        <div class="gp-fact">
+          <span class="gp-fact-icon">
+            <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5" /><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c2 .7 3.2 2.5 3.5 5.2" /></svg>
+          </span>
+          <span class="gp-fact-text">
+            <span class="gp-label">Volunteers</span>
+            <span class="gp-fact-value">{{ volunteerCount }} active</span>
+          </span>
+        </div>
+        <div v-if="organization?.title" class="gp-fact">
+          <span class="gp-fact-icon">
+            <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V11" /><path d="M12 11C12 6 8 4 4 4c0 5 3 7 8 7z" /><path d="M12 13c0-4 3-6 8-6 0 4-3 6-8 6z" /></svg>
+          </span>
+          <span class="gp-fact-text">
+            <span class="gp-label">Stewarded by</span>
+            <a
+              v-if="organization.url"
+              :href="organization.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gp-fact-value gp-fact-link"
+            >{{ organization.title }}</a>
+            <span v-else class="gp-fact-value">{{ organization.title }}</span>
+          </span>
+        </div>
+        <div v-if="gardenSinceLabel" class="gp-fact">
+          <span class="gp-fact-icon">
+            <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+          </span>
+          <span class="gp-fact-text">
+            <span class="gp-label">Tending since</span>
+            <span class="gp-fact-value">{{ gardenSinceLabel }}</span>
+          </span>
+        </div>
+        <div v-if="gardenProjectsList.length" class="gp-fact">
+          <span class="gp-fact-icon">
+            <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10l8-6 8 6v10" /><path d="M9 20v-6h6v6" /></svg>
+          </span>
+          <span class="gp-fact-text">
+            <span class="gp-label">Projects</span>
+            <button type="button" class="gp-fact-value gp-fact-link gp-fact-button" @click="scrollToSection('projects')">
+              {{ gardenProjectsList.length }} underway
+            </button>
+          </span>
+        </div>
       </section>
 
-      <!-- Map (left) + stats (right) on wide screens -->
-      <section v-if="garden.id" class="garden-map-stats-section">
-        <div
-          class="garden-map-stats-row"
-          :class="{ 'garden-map-stats-row--no-map': !showGardenMap }"
-        >
-          <div v-if="showGardenMap" class="garden-map-column">
+      <div v-if="garden.id" class="gp-body">
+        <!-- Main column: story, projects, activity -->
+        <div class="gp-main">
+          <section v-if="garden.description" id="about" class="gp-section gp-section--about">
+            <h2 class="gp-h2">About this garden</h2>
+            <div class="gp-prose" v-html="garden.description.replace(/\n/g, '<br>')"></div>
+          </section>
+
+          <section v-if="orderedProjects.length" id="projects" class="gp-section">
+            <div class="gp-section-head">
+              <h2 class="gp-h2">What we're working on</h2>
+              <span class="gp-muted">
+                {{ orderedProjects.length }} {{ orderedProjects.length === 1 ? 'project' : 'projects' }}
+              </span>
+            </div>
+            <div class="gp-project-grid">
+              <component
+                :is="projectLinkProps(project).to ? 'router-link' : 'div'"
+                v-for="project in visibleProjects"
+                :key="project.id"
+                v-bind="projectLinkProps(project)"
+                class="gp-project-card"
+                @click="saveScrollPosition"
+              >
+                <img
+                  v-if="getProjectHeroImage(project)"
+                  :src="getProjectHeroImage(project)"
+                  :alt="project.title || 'Project image'"
+                  class="gp-project-img"
+                />
+                <span v-else class="gp-project-img gp-project-img--empty" aria-hidden="true">
+                  <svg class="gp-icon gp-icon--lg" viewBox="0 0 24 24"><path d="M12 21V11" /><path d="M12 11C12 6 8 4 4 4c0 5 3 7 8 7z" /><path d="M12 13c0-4 3-6 8-6 0 4-3 6-8 6z" /></svg>
+                </span>
+                <span class="gp-project-body">
+                  <span class="gp-project-title">{{ project.title }}</span>
+                  <span
+                    v-if="project.short_description || project.description"
+                    class="gp-project-desc"
+                    v-html="truncateDescription(project.short_description || project.description)"
+                  ></span>
+                  <span v-if="projectLinkProps(project).to" class="gp-project-more">
+                    Explore project
+                    <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  </span>
+                </span>
+              </component>
+            </div>
+            <button v-if="hasMoreProjects" type="button" class="gp-btn gp-btn-outline" @click="showAllProjects">
+              Show all {{ orderedProjects.length }} projects
+            </button>
+          </section>
+
+          <!-- Garden Activity (only if there's activity) -->
+          <section v-show="hasGardenActivity" class="gp-section">
+            <h2 class="gp-h2">Garden activity</h2>
+            <VolunteerActivity
+              :garden-id="garden.id"
+              @has-activity="hasGardenActivity = $event"
+            />
+          </section>
+        </div>
+
+        <!-- Sidebar: events, map, organization -->
+        <aside id="events" class="gp-aside" aria-label="Events and garden details">
+          <div class="gp-card gp-card--feature">
+            <p class="gp-label gp-label--accent">
+              {{ upcomingEvents.length > 1 ? 'Upcoming workdays' : 'Upcoming workday' }}
+            </p>
+            <template v-if="nextEvent">
+              <router-link :to="`/d/${nextEvent.id}`" class="gp-event">
+                <span class="gp-datechip gp-datechip--solid">
+                  <span class="gp-datechip-month">{{ chipMonth(nextEvent.startDatetime) }}</span>
+                  <span class="gp-datechip-day">{{ chipDay(nextEvent.startDatetime) }}</span>
+                </span>
+                <span class="gp-event-text">
+                  <span class="gp-event-title">{{ nextEvent.title }}</span>
+                  <span class="gp-event-meta">{{ formatWeekdayTime(nextEvent.startDatetime) }}</span>
+                </span>
+              </router-link>
+              <div v-if="nextEvent.blurb" class="gp-event-blurb" v-html="nextEvent.blurb"></div>
+              <router-link :to="`/d/${nextEvent.id}`" class="gp-btn gp-btn-primary gp-btn-block">RSVP</router-link>
+
+              <div v-if="laterEvents.length" class="gp-event-list gp-event-list--later">
+                <p class="gp-label">Also coming up</p>
+                <router-link
+                  v-for="event in laterEvents"
+                  :key="event.id"
+                  :to="`/d/${event.id}`"
+                  class="gp-event gp-event--compact"
+                >
+                  <span class="gp-datechip">
+                    <span class="gp-datechip-month">{{ chipMonth(event.startDatetime) }}</span>
+                    <span class="gp-datechip-day">{{ chipDay(event.startDatetime) }}</span>
+                  </span>
+                  <span class="gp-event-text">
+                    <span class="gp-event-title">{{ event.title }}</span>
+                    <span class="gp-event-meta">{{ formatWeekdayTime(event.startDatetime) }}</span>
+                  </span>
+                </router-link>
+              </div>
+            </template>
+            <div v-else-if="volunteerDays.loading" class="gp-skeleton animate-pulse" aria-hidden="true"></div>
+            <p v-else class="gp-empty">No workdays scheduled right now. Check back soon.</p>
+          </div>
+
+          <div v-if="latestEvents.length" class="gp-card">
+            <p class="gp-label">Past workdays</p>
+            <div class="gp-event-list">
+              <router-link
+                v-for="event in latestEvents"
+                :key="event.id"
+                :to="`/d/${event.id}`"
+                class="gp-event gp-event--compact"
+              >
+                <span class="gp-datechip">
+                  <span class="gp-datechip-month">{{ chipMonth(event.startDatetime) }}</span>
+                  <span class="gp-datechip-day">{{ chipDay(event.startDatetime) }}</span>
+                </span>
+                <span class="gp-event-text">
+                  <span class="gp-event-title">{{ event.title }}</span>
+                </span>
+              </router-link>
+            </div>
+            <div class="gp-card-links">
+              <button v-if="hasMoreLatestEvents" type="button" class="gp-link gp-link-button" @click="loadMoreLatestEvents">
+                Show more
+              </button>
+              <router-link to="/events" class="gp-link">See all events</router-link>
+            </div>
+          </div>
+
+          <div v-if="showGardenMap" class="gp-card gp-card--map">
             <div class="garden-map-container garden-map-container--inline">
-              <LeafletMap 
+              <LeafletMap
                 :location-trackings="mapLocationTrackings"
                 :center-coordinates="gardenCoordinates"
               />
@@ -600,165 +723,46 @@ const gardenProjectsList = computed(() => {
               :href="googleMapsUrl"
               target="_blank"
               rel="noopener noreferrer"
-              class="garden-google-maps-link"
+              class="gp-link gp-map-link"
             >
               Open in Google Maps
             </a>
           </div>
-          <div class="garden-stats-column">
-            <p class="garden-active-volunteers-bubble">{{ activeVolunteersBubbleText }}</p>
-            <dl class="garden-stats-dl">
-              <div v-if="organization?.title" class="garden-stat">
-                <dt class="garden-stat-label">Organization</dt>
-                <dd class="garden-stat-value">
-                  <a
-                    v-if="organization.url"
-                    :href="organization.url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="garden-stat-link"
-                  >{{ organization.title }}</a>
-                  <template v-else>{{ organization.title }}</template>
-                </dd>
-              </div>
-              <div v-if="gardenStartedLabel" class="garden-stat">
-                <dt class="garden-stat-label">Started</dt>
-                <dd class="garden-stat-value">{{ gardenStartedLabel }}</dd>
-              </div>
-              <div class="garden-stat">
-                <dt class="garden-stat-label">Projects</dt>
-                <dd class="garden-stat-value">
-                  {{ gardenProjectsList.length > 0 ? gardenProjectsList.length : 'Working on it' }}
-                </dd>
-              </div>
-            </dl>
-            <ul v-if="gardenProjectsList.length" class="garden-projects-mini-list">
-              <li
-                v-for="proj in gardenProjectsList"
-                :key="proj.id"
-                class="garden-projects-mini-item"
-              >
-                <router-link
-                  v-if="proj.slug && garden.slug"
-                  :to="`/gardens/${garden.slug}/p/${proj.slug}`"
-                  class="garden-projects-mini-link"
-                  @click="saveScrollPosition"
-                >
-                  {{ proj.title }}
-                </router-link>
-                <span v-else class="garden-projects-mini-text">{{ proj.title }}</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
 
-      <!-- Garden Activity (only if there's activity) -->
-      <section 
-        v-if="garden?.id" 
-        v-show="hasGardenActivity"
-        class="garden-section"
-      >
-        <h2 class="section-title">Garden Activity</h2>
-        <VolunteerActivity 
-          :garden-id="garden.id"
-          @has-activity="hasGardenActivity = $event"
-        />
-      </section>
-
-      <!-- What We're Working On (Featured Projects) -->
-      <section v-if="featuredProjects.length > 0" class="garden-section">
-        <h2 class="section-title">What We're Working On</h2>
-        <div 
-          v-for="(project, index) in featuredProjects" 
-          :key="project.id"
-          class="project-section"
-          :class="{ 'project-section-spacing': index > 0 }"
-        >
-          <div class="project-layout" :class="{ 'project-layout-reverse': index % 2 === 1 }">
-            <!-- Copy/Text -->
-            <div class="project-content">
-              <h3 class="project-title">{{ project.title }}</h3>
-              <div v-if="project.short_description" class="project-description" v-html="truncateDescription(project.short_description)"></div>
-              <div v-else-if="project.description" class="project-description" v-html="truncateDescription(project.description)"></div>
-              <router-link 
-                v-if="project.slug && garden?.slug"
-                :to="`/gardens/${garden.slug}/p/${project.slug}`"
-                class="btn-explore-project"
-                @click="saveScrollPosition"
-              >
-                Explore this Project
-              </router-link>
-            </div>
-            
-            <!-- Hero Image (cropped square) -->
-            <div v-if="getProjectHeroImage(project)" class="project-image-wrapper">
-              <img 
-                :src="getProjectHeroImage(project)" 
-                :alt="project.title || 'Project image'"
-                class="project-hero-image"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Join/Contact Section -->
-      <section class="garden-section garden-cta">
-        <h2 class="section-title">Get Involved</h2>
-        <p class="section-content">
-          Interested in volunteering or learning more about this garden?
-        </p>
-        <div class="cta-buttons">
-          <button 
-            @click="openDonationModal"
-            class="btn-primary"
-          >
-            Donate to the Garden
-          </button>
-          <router-link 
-            to="/events"
-            class="btn-secondary"
-          >
-            View All Events
-          </router-link>
-        </div>
-      </section>
-
-      <!-- Organization Section -->
-      <section v-if="organization" class="garden-section organization-section">
-        <div class="organization-content">
-          <p class="organization-intro">
-            This is a project of <span class="heart-emoji">❤️</span> by the 
-            <span v-if="organization.title" class="organization-name-inline">
-              <a 
-                v-if="organization.url"
-                :href="organization.url" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="organization-link-inline"
-              >
-                <strong>{{ organization.title }}</strong>
-              </a>
-              <strong v-else>{{ organization.title }}</strong>
-            </span>
-          </p>
-          <p v-if="organization.description" class="organization-description">
-            {{ organization.description }}
-          </p>
-          <div v-if="organization.url" class="organization-url">
-            <a 
-              :href="organization.url" 
-              target="_blank" 
+          <div v-if="organization" class="gp-card">
+            <p class="gp-label">A project of</p>
+            <a
+              v-if="organization.url && organization.title"
+              :href="organization.url"
+              target="_blank"
               rel="noopener noreferrer"
-              class="organization-website-link"
+              class="gp-org-name"
+            >{{ organization.title }}</a>
+            <span v-else-if="organization.title" class="gp-org-name">{{ organization.title }}</span>
+            <p v-if="organization.description" class="gp-org-desc">{{ organization.description }}</p>
+            <a
+              v-if="organization.url"
+              :href="organization.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gp-link"
             >
-              Visit Website
-              <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
+              Visit website
+              <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
             </a>
           </div>
+        </aside>
+      </div>
+
+      <!-- Get involved -->
+      <section v-if="garden.id" class="gp-involved">
+        <div class="gp-involved-text">
+          <h2 class="gp-h2 gp-h2--on-dark">Get involved</h2>
+          <p>Interested in volunteering or learning more about this garden?</p>
+        </div>
+        <div class="gp-involved-actions">
+          <button type="button" class="gp-btn gp-btn-cream" @click="openDonationModal">Donate to the Garden</button>
+          <router-link to="/events" class="gp-btn gp-btn-ghost">View all events</router-link>
         </div>
       </section>
 
@@ -842,7 +846,7 @@ const gardenProjectsList = computed(() => {
   height: 100vh;
   overflow-y: auto;
   background-color: #ffffff;
-  color: #1a1a1a;
+  color: #1f2a1f;
   transition: background-color 0.3s ease, color 0.3s ease;
   z-index: 10000;
   margin: 0;
@@ -913,290 +917,833 @@ const gardenProjectsList = computed(() => {
   color: #ffffff;
 }
 
-/* Full screen content wrapper */
+/* Page wrapper */
 .garden-public-content {
+  box-sizing: border-box;
   min-height: 100vh;
-  padding: 80px 30px 40px;
-  max-width: 1400px;
+  padding: 72px 24px 40px;
+  max-width: 1280px;
   margin: 0 auto;
-  transition: all 0.3s ease;
+  font-family: Roboto, system-ui, sans-serif;
 }
 
-/* Hero Image */
-.garden-hero-image {
-  width: 100%;
-  margin-bottom: 60px;
+.gp-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gp-icon--lg {
+  width: 36px;
+  height: 36px;
+}
+
+/* ---------- Hero ---------- */
+.gp-hero {
+  position: relative;
+  height: clamp(360px, 52vh, 480px);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  background-color: #344a34;
 }
 
-.garden-hero-image:has(+ .two-column-section) {
-  margin-bottom: 36px;
+.gp-hero--loading {
+  background-color: #e5e7eb;
 }
 
-.dark .garden-hero-image {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+.dark .gp-hero--loading {
+  background-color: #344a34;
 }
 
-.hero-image {
+.gp-hero-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  max-height: 500px;
+  height: 100%;
   object-fit: cover;
+  object-position: 50% 45%;
   display: block;
 }
 
-/* Header (title + blurb at top, before hero) */
-.garden-header {
-  text-align: center;
-}
-.garden-header-top {
-  margin-bottom: 28px;
+/* Readability scrim: darkest bottom-left, where the text sits */
+.gp-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(22, 34, 22, 0.9) 0%, rgba(22, 34, 22, 0.6) 40%, rgba(22, 34, 22, 0) 78%),
+    linear-gradient(to right, rgba(22, 34, 22, 0.4) 0%, rgba(22, 34, 22, 0) 60%);
 }
 
-/* Map (narrow, left) + stats (right); whole block centered with panel background */
-.garden-map-stats-section {
+.gp-hero-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   box-sizing: border-box;
-  width: 100%;
-  max-width: 920px;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 60px;
-  padding: 28px 32px 32px;
-  border-radius: 16px;
-  background-color: rgba(234, 241, 229, 0.95);
-  border: 1px solid rgba(138, 163, 124, 0.35);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  max-width: 760px;
+  padding: clamp(20px, 4vw, 44px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #f7f1e3;
 }
 
-.dark .garden-map-stats-section {
-  background-color: rgba(31, 45, 28, 0.92);
-  border-color: rgba(138, 163, 124, 0.28);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-}
-
-.garden-map-stats-row {
-  display: grid;
-  grid-template-columns: minmax(260px, 38%) minmax(0, 1fr);
-  gap: 40px;
-  align-items: start;
-}
-
-.garden-map-stats-row--no-map {
-  grid-template-columns: 1fr;
-}
-
-.garden-stats-column {
-  text-align: left;
-  min-width: 0;
-}
-
-.garden-active-volunteers-bubble {
-  display: inline-block;
-  margin: 0 0 20px 0;
-  padding: 12px 20px;
-  border-radius: 9999px;
-  font-size: 1.05rem;
-  font-weight: 600;
-  line-height: 1.3;
-  color: #1a3d1f;
-  background-color: rgba(138, 163, 124, 0.28);
-  border: 1px solid rgba(108, 138, 106, 0.45);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-}
-
-.dark .garden-active-volunteers-bubble {
-  color: #e8f0e4;
-  background-color: rgba(138, 163, 124, 0.35);
-  border-color: rgba(197, 212, 184, 0.35);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.garden-stats-dl {
+.gp-title {
   margin: 0;
-  padding: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 800;
+  font-size: clamp(2.25rem, 4.6vw, 3.5rem);
+  line-height: 1.05;
+  color: #f7f1e3;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.25);
 }
 
-.garden-stat {
-  margin-bottom: 18px;
+.gp-blurb {
+  margin: 0;
+  max-width: 62ch;
+  font-size: clamp(1rem, 1.4vw, 1.125rem);
+  line-height: 1.55;
+  color: #f7f1e3;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.garden-stat:last-of-type {
-  margin-bottom: 0;
+.gp-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
 }
 
-.garden-stat-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+/* ---------- Buttons ---------- */
+.gp-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  font-family: Roboto, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.gp-btn:hover {
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.gp-btn:focus-visible,
+.gp-link:focus-visible,
+.gp-event:focus-visible,
+.gp-project-card:focus-visible,
+.gp-fact-link:focus-visible {
+  outline: 3px solid #8aa37c;
+  outline-offset: 2px;
+}
+
+.gp-btn.gp-btn-cta,
+.gp-btn.gp-btn-cta:hover {
+  background-color: #C2410C;
+  color: #ffffff;
+}
+
+.gp-btn.gp-btn-cta:hover {
+  background-color: #a8370a;
+}
+
+.gp-btn.gp-btn-ghost,
+.gp-btn.gp-btn-ghost:hover {
+  background-color: transparent;
+  color: #f7f1e3;
+  border-color: #f7f1e3;
+}
+
+.gp-btn.gp-btn-ghost:hover {
+  background-color: rgba(247, 241, 227, 0.15);
+}
+
+.gp-btn.gp-btn-primary,
+.gp-btn.gp-btn-primary:hover {
+  background-color: #064e3b;
+  color: #ffffff;
+}
+
+.gp-btn.gp-btn-primary:hover {
+  background-color: #376451;
+}
+
+.dark .gp-btn.gp-btn-primary,
+.dark .gp-btn.gp-btn-primary:hover {
+  background-color: #8aa37c;
+  color: #1f2a1f;
+}
+
+.gp-btn.gp-btn-outline,
+.gp-btn.gp-btn-outline:hover {
+  align-self: flex-start;
+  background-color: transparent;
+  color: #064e3b;
+  border-color: #064e3b;
+}
+
+.gp-btn.gp-btn-outline:hover {
+  background-color: #064e3b;
+  color: #ffffff;
+}
+
+.dark .gp-btn.gp-btn-outline {
+  color: #c5d4b8;
+  border-color: #c5d4b8;
+}
+
+.dark .gp-btn.gp-btn-outline:hover {
+  background-color: #c5d4b8;
+  color: #1f2a1f;
+}
+
+.gp-btn.gp-btn-cream,
+.gp-btn.gp-btn-cream:hover {
+  background-color: #f7f1e3;
+  color: #064e3b;
+}
+
+.gp-btn.gp-btn-cream:hover {
+  background-color: #ffffff;
+}
+
+.gp-btn-block {
+  width: 100%;
+}
+
+/* ---------- At a glance ---------- */
+.gp-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  padding: 22px 4px;
+  border-bottom: 1px solid #c8d0c0;
+}
+
+.dark .gp-facts {
+  border-bottom-color: #3d4d36;
+}
+
+.gp-fact {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.gp-fact-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #f3ece0;
+  color: #064e3b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dark .gp-fact-icon {
+  background-color: #344a34;
+  color: #c5d4b8;
+}
+
+.gp-fact-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.gp-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #666;
-  margin: 0 0 4px 0;
+  color: #4b5563;
 }
 
-.dark .garden-stat-label {
+.dark .gp-label {
   color: #a8b89e;
 }
 
-.garden-stat-value {
-  margin: 0;
-  font-size: 1.15rem;
-  line-height: 1.4;
-  color: #1a1a1a;
+.gp-label--accent {
+  color: #064e3b;
 }
 
-.dark .garden-stat-value {
+.dark .gp-label--accent {
+  color: #c5d4b8;
+}
+
+.gp-fact-value {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #1f2a1f;
+}
+
+.dark .gp-fact-value {
   color: #f5f5f5;
 }
 
-.garden-stat-link {
-  color: #6c8a6a;
+.gp-fact-link,
+.gp-fact-link:hover {
+  color: #064e3b;
   text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s ease;
 }
 
-.garden-stat-link:hover {
-  color: #8aa37c;
+.gp-fact-link:hover {
   text-decoration: underline;
 }
 
-.dark .garden-stat-link {
-  color: #a3c49a;
-}
-
-.dark .garden-stat-link:hover {
+.dark .gp-fact-link,
+.dark .gp-fact-link:hover {
   color: #c5d4b8;
 }
 
-.garden-projects-mini-list {
-  list-style: none;
-  margin: 20px 0 0 0;
+.gp-nowrap {
+  white-space: nowrap;
+}
+
+.gp-fact-button {
   padding: 0;
-  border-top: 1px solid rgba(138, 163, 124, 0.25);
-  padding-top: 16px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.dark .garden-projects-mini-list {
-  border-top-color: rgba(138, 163, 124, 0.35);
+/* ---------- Body ---------- */
+.gp-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 48px 56px;
+  padding: 40px 0 56px;
 }
 
-.garden-projects-mini-item {
-  margin-bottom: 10px;
+.gp-main {
+  flex: 999 1 560px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 52px;
 }
 
-.garden-projects-mini-item:last-child {
-  margin-bottom: 0;
+.gp-aside {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.garden-projects-mini-link {
-  color: #6c8a6a;
-  font-weight: 500;
-  text-decoration: none;
-  transition: color 0.2s ease;
+.gp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scroll-margin-top: 80px;
 }
 
-.garden-projects-mini-link:hover {
-  color: #8aa37c;
-  text-decoration: underline;
+.gp-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.dark .garden-projects-mini-link {
-  color: #a3c49a;
+.gp-h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(1.5rem, 2.4vw, 1.875rem);
+  line-height: 1.2;
+  color: #376451;
 }
 
-.garden-projects-mini-text {
-  color: #4a4a4a;
+.dark .gp-h2 {
+  color: #f5f5f5;
 }
 
-.dark .garden-projects-mini-text {
+.gp-muted {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .gp-muted {
+  color: #a8b89e;
+}
+
+.gp-prose {
+  max-width: 70ch;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #4b5563;
+  overflow-wrap: break-word;
+}
+
+.dark .gp-prose {
   color: #d0d0d0;
 }
 
-.garden-map-column {
-  min-width: 0;
+.gp-prose a {
+  color: #064e3b;
 }
 
-.garden-google-maps-link {
-  display: inline-block;
-  margin-top: 14px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #6c8a6a;
+.dark .gp-prose a {
+  color: #c5d4b8;
+}
+
+/* ---------- Projects ---------- */
+.gp-project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.gp-project-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #c8d0c0;
+  border-radius: 14px;
+  background-color: #ffffff;
+  color: inherit;
   text-decoration: none;
-  transition: color 0.2s ease, text-decoration 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.garden-google-maps-link:hover {
-  color: #4a6b48;
+a.gp-project-card:hover {
+  color: inherit;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark .gp-project-card {
+  background-color: #344a34;
+  border-color: #3d4d36;
+}
+
+.gp-project-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.gp-project-img--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #6c8a6a;
+  color: #f7f1e3;
+}
+
+.gp-project-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px 20px;
+}
+
+.gp-project-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 1.375rem;
+  line-height: 1.25;
+  color: #1f2a1f;
+}
+
+.dark .gp-project-title {
+  color: #f5f5f5;
+}
+
+.gp-project-desc {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: #4b5563;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gp-project-desc p {
+  margin: 0;
+}
+
+.dark .gp-project-desc {
+  color: #d0d0d0;
+}
+
+.gp-project-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #064e3b;
+}
+
+.dark .gp-project-more {
+  color: #c5d4b8;
+}
+
+.gp-project-more .gp-icon,
+.gp-link .gp-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Sidebar cards ---------- */
+.gp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid #c8d0c0;
+  border-radius: 14px;
+  background-color: #ffffff;
+}
+
+.dark .gp-card {
+  background-color: #344a34;
+  border-color: #3d4d36;
+}
+
+.gp-card--feature {
+  background-color: #f7f1e3;
+}
+
+.dark .gp-card--feature {
+  background-color: #344a34;
+}
+
+.gp-card--map {
+  gap: 10px;
+  padding: 12px;
+}
+
+.gp-card--map .garden-map-container {
+  height: 220px;
+  margin: 0;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.gp-map-link {
+  padding: 0 8px 4px;
+}
+
+.gp-event {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.gp-event:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+.gp-event:hover .gp-event-title {
   text-decoration: underline;
 }
 
-.dark .garden-google-maps-link {
-  color: #a3c49a;
+.gp-datechip {
+  flex: none;
+  box-sizing: border-box;
+  width: 52px;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid #c8d0c0;
+  border-radius: 10px;
+  color: #4b5563;
+  line-height: 1.1;
 }
 
-.dark .garden-google-maps-link:hover {
+.gp-datechip-month {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.gp-datechip-day {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 800;
+  font-size: 1.375rem;
+  color: #1f2a1f;
+}
+
+.gp-datechip--solid {
+  width: 60px;
+  background-color: #064e3b;
+  border-color: #064e3b;
+  color: #ffffff;
+}
+
+.gp-datechip--solid .gp-datechip-day {
+  font-size: 1.75rem;
+  color: #ffffff;
+}
+
+.dark .gp-datechip {
+  border-color: #6c8a6a;
+  color: #a8b89e;
+}
+
+.dark .gp-datechip-day {
+  color: #f5f5f5;
+}
+
+.dark .gp-datechip--solid {
+  background-color: #8aa37c;
+  border-color: #8aa37c;
+  color: #1f2a1f;
+}
+
+.dark .gp-datechip--solid .gp-datechip-day {
+  color: #1f2a1f;
+}
+
+.gp-event-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gp-event-title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #1f2a1f;
+}
+
+.gp-event--compact .gp-event-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.dark .gp-event-title {
+  color: #f5f5f5;
+}
+
+.gp-event-meta {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .gp-event-meta {
+  color: #d0d0d0;
+}
+
+.gp-event-blurb {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #4b5563;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gp-event-blurb p {
+  margin: 0;
+}
+
+.dark .gp-event-blurb {
+  color: #d0d0d0;
+}
+
+.gp-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gp-event-list--later {
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid #c8d0c0;
+}
+
+.dark .gp-event-list--later {
+  border-top-color: #3d4d36;
+}
+
+.gp-empty {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #4b5563;
+}
+
+.dark .gp-empty {
+  color: #d0d0d0;
+}
+
+.gp-skeleton {
+  height: 96px;
+  border-radius: 10px;
+  background-color: #e5e7eb;
+}
+
+.dark .gp-skeleton {
+  background-color: #2d3e26;
+}
+
+.gp-card-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.gp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #064e3b;
+  text-decoration: none;
+}
+
+.gp-link:hover {
+  color: #376451;
+  text-decoration: underline;
+}
+
+.dark .gp-link {
   color: #c5d4b8;
+}
+
+.dark .gp-link:hover {
+  color: #f5f5f5;
+}
+
+.gp-link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.gp-org-name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #064e3b;
+  text-decoration: none;
+}
+
+a.gp-org-name:hover {
+  color: #376451;
+  text-decoration: underline;
+}
+
+.dark .gp-org-name,
+.dark a.gp-org-name:hover {
+  color: #f5f5f5;
+}
+
+.gp-org-desc {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.dark .gp-org-desc {
+  color: #d0d0d0;
+}
+
+/* ---------- Get involved ---------- */
+.gp-involved {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 32px;
+  margin-bottom: 24px;
+  padding: clamp(24px, 4vw, 40px);
+  border-radius: 16px;
+  background-color: #344a34;
+  color: #f7f1e3;
+}
+
+.dark .gp-involved {
+  border: 1px solid #3d4d36;
+}
+
+.gp-involved-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gp-involved-text p {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: #f7f1e3;
+}
+
+.gp-h2--on-dark,
+.dark .gp-h2--on-dark {
+  color: #f7f1e3;
+}
+
+.gp-involved-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---------- Map ---------- */
+.garden-map-container {
+  width: 100%;
+  height: 300px;
+  margin: 24px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .garden-map-container--inline {
   margin-top: 0;
   max-width: 100%;
-  width: 100%;
-}
-
-@media (max-width: 900px) {
-  .garden-map-stats-section {
-    padding: 22px 18px 24px;
-    border-radius: 14px;
-  }
-
-  .garden-map-stats-row:not(.garden-map-stats-row--no-map) {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
-}
-
-.garden-title {
-  font-size: 3.5rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: #1a1a1a;
-  transition: color 0.3s ease;
-}
-
-.dark .garden-title {
-  color: #f5f5f5;
-}
-
-.garden-blurb {
-  font-size: 1.25rem;
-  line-height: 1.6;
-  color: #4a4a4a;
-  max-width: 1000px;
-  margin: 0 auto;
-  transition: color 0.3s ease;
-}
-
-.dark .garden-blurb {
-  color: #d0d0d0;
-}
-
-/* Garden Map Container */
-.garden-map-container {
-  max-height: 300px;
-  margin-top: 30px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.dark .garden-map-container {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /*
@@ -1224,358 +1771,7 @@ const gardenProjectsList = computed(() => {
   background-color: #ffffff !important;
 }
 
-/* Actions */
-.garden-actions {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-/* Sections */
-.garden-section {
-  background-color: rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
-  padding: 40px 50px;
-  margin-bottom: 30px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.dark .garden-section {
-  background-color: rgba(26, 26, 26, 0.6);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Two-column section */
-.two-column-section {
-  background-color: transparent;
-  padding: 0;
-  margin-bottom: 30px;
-  box-shadow: none;
-}
-
-.dark .two-column-section {
-  background-color: transparent;
-  box-shadow: none;
-}
-
-.two-column-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 50px;
-}
-
-.column-content {
-  min-width: 0; /* Allow content to shrink */
-}
-
-.activity-content {
-  color: #4a4a4a;
-}
-
-.dark .activity-content {
-  color: #d0d0d0;
-}
-
-.activity-text {
-  font-size: 1.1rem;
-  line-height: 1.8;
-}
-
-.section-title {
-  font-size: 1.75rem;
-  font-weight: 300;
-  font-family: Georgia, "Times New Roman", Times, serif;
-  margin-bottom: 24px;
-  color: #1a1a1a;
-  transition: color 0.3s ease;
-}
-
-.dark .section-title {
-  color: #f5f5f5;
-}
-
-.section-content {
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: #4a4a4a;
-  transition: color 0.3s ease;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  max-width: 100%;
-}
-
-.dark .section-content {
-  color: #d0d0d0;
-}
-
-.section-empty {
-  color: #888;
-  font-style: italic;
-  transition: color 0.3s ease;
-}
-
-.dark .section-empty {
-  color: #888;
-}
-
-/* Events List */
-.events-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: none;
-}
-
-/* Garden Activity Section - hide when no activity but keep rendered for IntersectionObserver */
-.garden-activity-hidden {
-  visibility: hidden;
-  position: absolute;
-  left: -9999px;
-  height: 0;
-  overflow: hidden;
-}
-
-/* Garden Activity Section - hide when no activity but keep rendered for IntersectionObserver */
-.garden-activity-hidden {
-  visibility: hidden;
-  position: absolute;
-  left: -9999px;
-  height: 0;
-  overflow: hidden;
-}
-
-.event-item {
-  border-left: 4px solid #8aa37c;
-  padding: 12px 20px;
-  margin: 0 -20px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  background-color: rgba(138, 163, 124, 0.1);
-  box-shadow: none;
-}
-
-.dark .event-item {
-  background-color: rgba(138, 163, 124, 0.8);
-}
-
-.event-item:hover {
-  background-color: rgba(108, 138, 106, 0.25);
-}
-
-.dark .event-item:hover {
-  background-color: rgba(108, 138, 106, 0.35);
-}
-
-.event-link {
-  display: block;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  color: inherit;
-}
-
-.event-link:hover {
-  text-decoration: none;
-}
-
-.event-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #1a1a1a;
-  transition: color 0.3s ease;
-}
-
-.dark .event-title {
-  color: #f5f5f5;
-}
-
-.event-link:hover .event-title {
-  color: #8aa37c;
-}
-
-.event-date {
-  font-size: 1rem;
-  color: #666;
-  margin-bottom: 12px;
-  transition: color 0.3s ease;
-}
-
-.dark .event-date {
-  color: #999;
-}
-
-.event-description {
-  color: #4a4a4a;
-  margin-top: 8px;
-  transition: color 0.3s ease;
-}
-
-.dark .event-description {
-  color: #d0d0d0;
-}
-
-/* CTA Section */
-.garden-cta {
-  text-align: center;
-  background: linear-gradient(135deg, rgba(138, 163, 124, 0.1) 0%, rgba(138, 163, 124, 0.05) 100%);
-}
-
-.dark .garden-cta {
-  background: linear-gradient(135deg, rgba(138, 163, 124, 0.2) 0%, rgba(138, 163, 124, 0.1) 100%);
-}
-
-.cta-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  justify-content: center;
-  align-items: center;
-  margin-top: 30px;
-}
-
-@media (min-width: 640px) {
-  .cta-buttons {
-    flex-direction: row;
-  }
-}
-
-/* Buttons - Using custom green colors */
-.btn-primary,
-.btn-secondary,
-.btn-manage {
-  display: inline-block;
-  padding: 14px 32px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background-color: #8aa37c;
-  color: #ffffff;
-}
-
-.btn-primary:hover {
-  background-color: #6c8a6a;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
-}
-
-.btn-secondary {
-  background-color: transparent;
-  color: #8aa37c;
-  border: 2px solid #8aa37c;
-}
-
-.btn-secondary:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
-}
-
-.dark .btn-secondary {
-  color: #8aa37c;
-  border-color: #8aa37c;
-}
-
-.dark .btn-secondary:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-}
-
-.btn-explore-project {
-  display: inline-block;
-  padding: 14px 32px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  background-color: transparent;
-  color: #8aa37c;
-  border: 2px solid #8aa37c;
-  margin-top: 20px;
-}
-
-.btn-explore-project:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
-}
-
-.dark .btn-explore-project {
-  color: #8aa37c;
-  border-color: #8aa37c;
-}
-
-.dark .btn-explore-project:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-}
-
-/* Make button full width on mobile */
-@media (max-width: 768px) {
-  .btn-explore-project {
-    display: block;
-    width: 100%;
-    text-align: center;
-  }
-}
-
-.btn-manage {
-  background-color: #8aa37c;
-  color: #ffffff;
-  padding: 12px 28px;
-  font-size: 1rem;
-}
-
-.btn-manage:hover {
-  background-color: #6c8a6a;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
-}
-
-.btn-load-more {
-  display: inline-block;
-  padding: 8px 16px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-decoration: none;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  background-color: transparent;
-  color: #8aa37c;
-  border: 1px solid #8aa37c;
-  cursor: pointer;
-  margin-top: 12px;
-}
-
-.btn-load-more:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(138, 163, 124, 0.3);
-}
-
-.dark .btn-load-more {
-  color: #8aa37c;
-  border-color: #8aa37c;
-}
-
-.dark .btn-load-more:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-}
-
-/* Loading State */
+/* ---------- Loading / error ---------- */
 .loading-state {
   text-align: center;
   padding: 60px 20px;
@@ -1586,7 +1782,6 @@ const gardenProjectsList = computed(() => {
   color: #d0d0d0;
 }
 
-/* Error State */
 .error-state {
   background-color: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -1602,309 +1797,81 @@ const gardenProjectsList = computed(() => {
   color: #fca5a5;
 }
 
-/* Project Section Layout */
-.project-section {
-  padding: 0;
-  overflow: hidden;
-  margin-bottom: 0;
-}
-
-.project-section + .project-section,
-.project-section-spacing {
-  margin-top: 40px;
-  padding-top: 40px;
-  border-top: 1px solid rgba(138, 163, 124, 0.2);
-}
-
-.dark .project-section + .project-section {
-  border-top-color: rgba(138, 163, 124, 0.3);
-}
-
-.project-layout {
-  display: flex;
-  flex-direction: row;
-  gap: 50px;
-  align-items: center;
-}
-
-.project-layout-reverse {
-  flex-direction: row-reverse;
-}
-
-.project-content {
-  padding: 40px 30px;
-  min-width: 0; /* Allow text to wrap properly */
-  flex: 1;
-}
-
-.project-title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 16px;
-  line-height: 1.2em;
-  color: #1a1a1a;
-  transition: color 0.3s ease;
-}
-
-.dark .project-title {
-  color: #f5f5f5;
-}
-
-.project-description {
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: #4a4a4a;
-  transition: color 0.3s ease;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  max-width: 100%;
-}
-
-.dark .project-description {
-  color: #d0d0d0;
-}
-
-.project-image-wrapper {
-  width: 100%;
-  max-width: 400px;
-  aspect-ratio: 1;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  border-radius: 12px;
-  border: 3px solid #8aa37c;
-  background-color: rgba(138, 163, 124, 0.05);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-
-.dark .project-image-wrapper {
-  border-color: #8aa37c;
-  background-color: rgba(138, 163, 124, 0.1);
-}
-
-.project-hero-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  border-radius: 8px;
-}
-
-/* Organization Section */
-.organization-section {
-  text-align: center;
-}
-
-.organization-content {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.organization-intro {
-  font-size: 1.25rem;
-  line-height: 1.8;
-  color: #4a4a4a;
-  margin-bottom: 24px;
-  transition: color 0.3s ease;
-}
-
-.dark .organization-intro {
-  color: #d0d0d0;
-}
-
-.organization-name-inline {
-  display: inline;
-}
-
-.organization-link-inline {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.organization-link-inline:hover {
-  color: #8aa37c;
-  text-decoration: underline;
-}
-
-.organization-link-inline strong {
-  font-weight: 700;
-  color: #1a1a1a;
-  transition: color 0.3s ease;
-}
-
-.dark .organization-link-inline strong {
-  color: #f5f5f5;
-}
-
-.organization-link-inline:hover strong {
-  color: #8aa37c;
-}
-
-.heart-emoji {
-  display: inline-block;
-  margin-left: 6px;
-  font-size: 1.1rem;
-}
-
-.organization-description {
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: #4a4a4a;
-  margin-bottom: 24px;
-  transition: color 0.3s ease;
-}
-
-.dark .organization-description {
-  color: #d0d0d0;
-}
-
-.organization-url {
-  margin-top: 24px;
-}
-
-.organization-website-link {
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #8aa37c;
-  text-decoration: none;
-  border: 2px solid #8aa37c;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.organization-website-link:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
-}
-
-.dark .organization-website-link {
-  color: #8aa37c;
-  border-color: #8aa37c;
-}
-
-.dark .organization-website-link:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-}
-
-/* Responsive adjustments */
+/* ---------- Small screens ---------- */
 @media (max-width: 768px) {
-  .garden-title {
-    font-size: 2.5rem;
-  }
-  
-  .garden-blurb {
-    font-size: 1.1rem;
-  }
-  
-  .garden-section {
-    padding: 24px;
-  }
-  
-  .garden-public-content {
-    padding: 60px 15px 30px;
-  }
-  
   .dark-mode-toggle {
     display: none;
   }
-  
-  .project-layout {
-    flex-direction: column !important;
-    gap: 0;
+}
+
+@media (max-width: 640px) {
+  .garden-public-content {
+    padding: 56px 16px 32px;
+  }
+
+  .gp-hero {
+    height: 380px;
+    margin: 0 -16px;
+    border-radius: 0;
+  }
+
+  .gp-hero-actions .gp-btn {
+    flex: 1 1 auto;
+  }
+
+  .gp-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 12px;
+    padding: 20px 0;
+  }
+
+  .gp-fact {
+    gap: 10px;
+  }
+
+  .gp-nowrap {
+    white-space: normal;
+  }
+
+  .gp-fact-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .gp-fact-icon .gp-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  /*
+   * One column on phones: flatten the two columns so the next workday
+   * sits right after the hero, then the story, then everything else.
+   */
+  .gp-body {
+    flex-direction: column;
     align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 36px;
+    padding: 28px 0 40px;
   }
-  
-  .project-layout-reverse {
-    flex-direction: column !important;
+
+  .gp-main,
+  .gp-aside {
+    display: contents;
   }
-  
-  .project-content {
-    padding: 24px;
-    width: 100%;
-    order: 2;
+
+  .gp-main > *,
+  .gp-aside > * {
+    order: 3;
   }
-  
-  .project-image-wrapper {
-    aspect-ratio: 16/9;
-    margin-bottom: 0;
-    width: 100%;
-    max-width: 100%;
+
+  .gp-aside > .gp-card--feature {
     order: 1;
   }
-  
-  /* Ensure image is always at top on mobile, regardless of reverse class */
-  .project-layout-reverse .project-image-wrapper,
-  .project-layout .project-image-wrapper {
-    order: 1;
-  }
-  
-  .project-layout-reverse .project-content,
-  .project-layout .project-content {
+
+  .gp-main > .gp-section--about {
     order: 2;
-  }
-  
-  .two-column-layout {
-    grid-template-columns: 1fr;
-    gap: 30px;
-  }
-  
-  .organization-title {
-    font-size: 1.75rem;
-  }
-
-  /* Inset event cards on mobile so the section background shows through
-     on the sides and the rounded corners are visible. */
-  .event-item {
-    margin: 0 8px;
-    border-radius: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .garden-title {
-    font-size: 2rem;
-  }
-  
-  .section-title {
-    font-size: 1.5rem;
-  }
-}
-
-/* Garden Map Container */
-.garden-map-container {
-  width: 100%;
-  height: 300px;
-  margin: 24px 0;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dark .garden-map-container {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-@media (max-width: 768px) {
-  .garden-map-container {
-    height: 250px;
-    margin: 16px 0;
-  }
-}
-
-@media (max-width: 480px) {
-  .garden-map-container {
-    height: 200px;
-    margin: 12px 0;
   }
 }
 
@@ -1927,7 +1894,4 @@ const gardenProjectsList = computed(() => {
   border: 1px solid rgba(138, 163, 124, 0.3);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(138, 163, 124, 0.1) !important;
 }
-
 </style>
-
-
