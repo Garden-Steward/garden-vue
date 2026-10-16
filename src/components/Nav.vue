@@ -204,6 +204,7 @@ const handleEscape = (e) => {
                     :class="{ 'mobile-nav-section-active': isGardensNavActive }"
                     @click="toggleMobileMenu"
                 >Gardens</router-link>
+                <router-link to="/projects" class="nav-item nav-link" @click="toggleMobileMenu">Projects</router-link>
                 <router-link
                     to="/manage"
                     class="nav-item nav-link"
@@ -269,6 +270,7 @@ const handleEscape = (e) => {
                         class="nav-item nav-link"
                         :class="{ 'nav-link--section-active': isGardensNavActive }"
                     >Gardens</router-link>
+                    <router-link to="/projects" class="nav-item nav-link">Projects</router-link>
                     <router-link
                         to="/manage"
                         class="nav-item nav-link"
@@ -320,7 +322,7 @@ const handleEscape = (e) => {
 
 <style scoped>
 .nav-link {
-    margin-right: 20px;
+    margin-right: 14px;
 }
 
 /*
@@ -339,6 +341,7 @@ html.dark .gs-navbar.navbar.bg-custom-light {
     background-color: #f7f1e3 !important;
 }
 .gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link {
+    padding: 0.35rem 0.5rem;
     color: #376451 !important;
     -webkit-text-fill-color: #376451 !important;
 }
@@ -427,8 +430,8 @@ html.dark .gs-navbar.navbar.bg-custom-light {
 .nav-dropdown-item {
     display: block;
     margin: 0 !important;
-    padding: 0.5rem 1.25rem !important;
-    font-size: 1rem !important;
+    padding: 0.45rem 1.1rem !important;
+    font-size: 0.95rem !important;
     white-space: nowrap;
 }
 
@@ -694,10 +697,11 @@ html.dark .gs-navbar.navbar.bg-custom-light {
 
 .nav-item.nav-link {
     text-align: left;
-    font-size: 1.25rem;
+    font-size: 1.05rem;
 }
 .mobile-menu .nav-item.nav-link {
     margin: 10px;
+    font-size: 1.15rem;
 }
 .mobile-menu .nav-item.nav-link.image {
     margin:0px 0px 0px 30px;
