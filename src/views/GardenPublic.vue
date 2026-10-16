@@ -503,18 +503,20 @@ const scrollToSection = (id) => {
         <div class="gp-hero-body">
           <h1 id="garden-title" class="gp-title">{{ garden.title }}</h1>
           <p v-if="garden.blurb" class="gp-blurb">{{ garden.blurb }}</p>
-          <div class="gp-hero-actions">
-            <router-link v-if="nextEvent" :to="`/d/${nextEvent.id}`" class="gp-btn gp-btn-cta">
+          <!-- RSVPing to a workday is how new volunteers join, so it's the only hero action -->
+          <div v-if="nextEvent" class="gp-hero-actions">
+            <router-link :to="`/d/${nextEvent.id}`" class="gp-btn gp-btn-cta">
               RSVP · {{ formatShortDay(nextEvent.startDatetime) }}
               <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </router-link>
-            <button v-else type="button" class="gp-btn gp-btn-cta" @click="openDonationModal">
-              Donate to the Garden
+            <button
+              v-if="upcomingEvents.length > 1"
+              type="button"
+              class="gp-btn gp-btn-ghost"
+              @click="scrollToSection('events')"
+            >
+              More workdays
             </button>
-            <button v-if="nextEvent" type="button" class="gp-btn gp-btn-ghost" @click="openDonationModal">
-              Donate
-            </button>
-            <router-link v-else to="/events" class="gp-btn gp-btn-ghost">View all events</router-link>
           </div>
         </div>
       </section>
@@ -754,15 +756,19 @@ const scrollToSection = (id) => {
         </aside>
       </div>
 
-      <!-- Get involved -->
-      <section v-if="garden.id" class="gp-involved">
+      <!-- Donations: only when the stewarding org has a Venmo handle to receive them -->
+      <section v-if="garden.id && venmoPaymentLink" class="gp-involved">
         <div class="gp-involved-text">
-          <h2 class="gp-h2 gp-h2--on-dark">Get involved</h2>
-          <p>Interested in volunteering or learning more about this garden?</p>
+          <h2 class="gp-h2 gp-h2--on-dark">Support this garden</h2>
+          <p>
+            Donations go to
+            <template v-if="organization?.title">{{ organization.title }}</template>
+            <template v-else>the garden's stewards</template>
+            via Venmo.
+          </p>
         </div>
         <div class="gp-involved-actions">
-          <button type="button" class="gp-btn gp-btn-cream" @click="openDonationModal">Donate to the Garden</button>
-          <router-link to="/events" class="gp-btn gp-btn-ghost">View all events</router-link>
+          <button type="button" class="gp-btn gp-btn-cream" @click="openDonationModal">Donate</button>
         </div>
       </section>
 
