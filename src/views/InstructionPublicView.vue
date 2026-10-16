@@ -62,13 +62,13 @@ instSTore.findSlug(route.params.slug);
     <div>
       <div class="max-w-4xl mx-auto px-6 py-12 bg-gray-100 dark:bg-[#2d3e26] rounded-lg" v-if="!instruction.loading && !instruction.error">
         <h1 class="text-3xl font-bold mb-6 dark:text-[#f5f5f5]">{{ instruction?.title }}</h1>
-        <StrapiBlocks :content="instruction?.content" :modifiers="modifiers" :blocks="blocks" class="text-left"/>
+        <StrapiBlocks :content="instruction?.content" :modifiers="modifiers" :blocks="blocks" class="instruction-body text-left text-gray-800 dark:text-[#e5e5e5]"/>
         <!-- Conditional rendering of the agreement button -->
         <div v-if="instruction?.accept_required" class="mt-6">
           <button :class="{ 'bg-gray-500': isApproved, 'bg-green-700 hover:bg-green-900': !isApproved }" class="text-white font-bold py-2 px-4 rounded" @click="acceptTask" :disabled="isApproved">
             {{ isApproved ? 'Submitted' : instruction?.affirm_button_title }}
           </button>
-          <p class="text-sm mt-2 dark:text-[#d0d0d0]">
+          <p class="text-sm mt-2 text-gray-700 dark:text-[#d0d0d0]">
             {{ isApproved ? 
               'Alright! Thank you for being involved.'
               : instruction?.affirm_explain }}
@@ -104,3 +104,39 @@ instSTore.findSlug(route.params.slug);
       </div>
     </div>
 </template>
+
+<style scoped>
+/* Rich-text blocks from Strapi: keep headings, lists and links readable on the dark panel */
+.dark .instruction-body :deep(h1),
+.dark .instruction-body :deep(h2),
+.dark .instruction-body :deep(h3),
+.dark .instruction-body :deep(h4),
+.dark .instruction-body :deep(h5),
+.dark .instruction-body :deep(h6) {
+  color: #f5f5f5;
+}
+
+.dark .instruction-body :deep(li::marker) {
+  color: #d0d0d0;
+}
+
+.instruction-body :deep(a) {
+  color: #376451;
+  text-decoration: underline;
+}
+
+.dark .instruction-body :deep(a) {
+  color: #86efac;
+}
+
+.dark .instruction-body :deep(blockquote) {
+  color: #d0d0d0;
+  border-color: #6c8a6a;
+}
+
+.dark .instruction-body :deep(code),
+.dark .instruction-body :deep(pre) {
+  background-color: #344a34;
+  color: #f5f5f5;
+}
+</style>
