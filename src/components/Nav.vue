@@ -340,31 +340,43 @@ const handleEscape = (e) => {
 html.dark .gs-navbar.navbar.bg-custom-light {
     background-color: #f7f1e3 !important;
 }
+/*
+ * GitHub-style tabs: hover draws a soft rounded box behind the link; the current
+ * section is bold with a thick orange bar along the bottom edge of the header.
+ */
 .gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link {
-    padding: 0.35rem 0.5rem;
+    position: relative;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
     color: #376451 !important;
     -webkit-text-fill-color: #376451 !important;
+    text-decoration: none !important;
+    transition: background-color 0.12s ease;
 }
 .gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link:hover {
+    background-color: rgba(55, 100, 81, 0.1);
     color: #2d4a2e !important;
     -webkit-text-fill-color: #2d4a2e !important;
-    text-decoration: underline;
 }
 /* Router uses `linkActiveClass: 'active'` (see src/helpers/router.js). */
-.gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.active {
-    color: #2d4a2e !important;
-    -webkit-text-fill-color: #2d4a2e !important;
-}
+.gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.active,
 .gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.nav-link--section-active {
+    font-weight: 700;
     color: #064e3b !important;
     -webkit-text-fill-color: #064e3b !important;
-    text-decoration: underline;
-    text-underline-offset: 0.2rem;
-    text-decoration-thickness: 2px;
 }
-.gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.nav-link--section-active:hover {
-    color: #064e3b !important;
-    -webkit-text-fill-color: #064e3b !important;
+.gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.active:not(.nav-dropdown-item)::after,
+.gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.nav-link--section-active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* Reaches down to the header's bottom border. */
+    bottom: -17px;
+    height: 3px;
+    border-radius: 3px;
+    background-color: #c2410c;
+    pointer-events: none;
 }
 
 .gs-navbar.navbar.bg-custom-light .nav-right-section .nav-item.nav-link.login-btn {
