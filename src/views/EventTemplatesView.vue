@@ -23,10 +23,10 @@ const { templates: recurringTemplates } = storeToRefs(recurringTemplateStore);
 gardensStore.getSlug(route.params.slug);
 
 watch(
-  () => garden.value?.id,
-  (gardenId) => {
-    if (gardenId) {
-      recurringTemplateStore.getByGarden(gardenId);
+  () => garden.value?.documentId || garden.value?.id,
+  (gardenKey) => {
+    if (gardenKey) {
+      recurringTemplateStore.getByGarden(gardenKey);
     }
   },
   { immediate: true }
@@ -84,11 +84,11 @@ function onSidebarSection(section) {
 
 function onRecurringTemplateSaved() {
   eventStore.getByGarden(route.params.slug, 1, 15);
-  recurringTemplateStore.getByGarden(garden.value?.id);
+  recurringTemplateStore.getByGarden(garden.value?.documentId || garden.value?.id);
 }
 
 function onRecurringTemplateDeleted() {
-  recurringTemplateStore.getByGarden(garden.value?.id);
+  recurringTemplateStore.getByGarden(garden.value?.documentId || garden.value?.id);
 }
 </script>
 
@@ -150,6 +150,7 @@ function onRecurringTemplateDeleted() {
               :key="t.id"
               v-bind="t"
               :garden="garden.id"
+              :garden-document-id="garden.documentId"
               :editor="isEditor"
               @saved="onRecurringTemplateSaved"
               @deleted="onRecurringTemplateDeleted"
@@ -160,6 +161,7 @@ function onRecurringTemplateDeleted() {
             v-if="isEditor"
             hide-trigger
             :garden="garden.id"
+              :garden-document-id="garden.documentId"
             :editor="isEditor"
             :show="showCreateModal"
             @update:show="showCreateModal = $event"

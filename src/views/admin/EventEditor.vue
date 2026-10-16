@@ -1,8 +1,8 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 import { ref, watch, computed, nextTick, onBeforeUnmount } from 'vue';
-import { useRoute } from "vue-router";
-import { useEventStore, useAlertStore, useProjectsStore } from '@/stores';
+import { useRoute, useRouter } from "vue-router";
+import { useEventStore, useAlertStore, useProjectsStore, useGardenTaskStore } from '@/stores';
 import { relationKey } from '@/helpers';
 import Tiptap from '@/components/Tiptap.vue'
 import UserProfileDisplay from '@/components/UserProfileDisplay.vue'
@@ -17,11 +17,20 @@ import DropDown from '@/components/form/DropDown.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import EventProjectCard from '@/components/EventProjectCard.vue';
 import { PrintDaySheetModal } from '@/components/modals';
+import BriefEditor from '@/components/form/BriefEditor.vue';
+import { briefToState, briefToPayload, briefEquals, briefHasContent, fetchBriefStarters } from '@/helpers/event-brief';
 
 const eventStore = useEventStore();
 const alertStore = useAlertStore();
 const projectsStore = useProjectsStore();
+const gardenTaskStore = useGardenTaskStore();
 const route = useRoute()
+const router = useRouter()
+
+// Strapi v5 re-creates an event's published row on every save, so its numeric
+// id changes. Writes and post-save reads go by documentId, which is stable
+// (the by-id route accepts either), and the URL switches to it.
+const eventKey = () => event.value?.documentId || route.params.id;
 
 const { event } = storeToRefs(eventStore);
 const isLoading = ref(true);
@@ -101,6 +110,99 @@ const removeProject = (project) => {
   event.value.projects = linkedProjects.value.filter((p) => relationKey(p) !== key);
 };
 
+// --- Event page details ---
+// Kept outside `event`: the core PUT response that replaces/merges into
+// `event` doesn't carry these by-id-only fields, so they live in their own
+// refs, seeded from the event as loaded.
+const briefState = ref(briefToState(null));
+const briefSaved = ref(briefToState(null));
+const seriesBrief = ref(null);
+const briefLoaded = ref(false);
+const starters = ref({});
+const dayTasks = ref([]);
+const newPlanting = ref('');
+const taskToLink = ref('');
+const taskBusy = ref(false);
+
+fetchBriefStarters().then((s) => { starters.value = s; });
+
+const initDetails = (ev) => {
+  // Only a backend that knows about briefs returns `resolved_brief`.
+  briefLoaded.value = 'resolved_brief' in ev;
+  briefState.value = briefToState(ev.brief);
+  briefSaved.value = briefToState(ev.brief);
+  const tb = ev.recurring_template?.brief;
+  seriesBrief.value = briefHasContent(tb) ? briefToState(tb) : null;
+  dayTasks.value = Array.isArray(ev.event_tasks) ? [...ev.event_tasks] : [];
+};
+
+const briefDirty = computed(() => briefLoaded.value && !briefEquals(briefState.value, briefSaved.value));
+const canSave = computed(() => hasChanges.value || briefDirty.value);
+
+const inheritedBrief = computed(() => seriesBrief.value || starters.value[event.value?.type || 'general'] || null);
+const inheritedLabel = computed(() => (seriesBrief.value ? 'the series' : 'the Garden Steward starter'));
+const gardenSlug = computed(() => event.value?.garden?.slug || null);
+
+// Plantings: stored on the event itself (planting component), so they ride
+// the normal change detection and save.
+const plantingSupported = computed(() => Array.isArray(originalEventData.value?.planting));
+const addPlanting = () => {
+  const name = newPlanting.value.trim();
+  if (!name || !event.value) return;
+  event.value.planting = [...(event.value.planting || []), { plant_name: name }];
+  newPlanting.value = '';
+};
+const removePlanting = (index) => {
+  event.value.planting = (event.value.planting || []).filter((_, i) => i !== index);
+};
+
+// Tasks for this day: garden tasks whose volunteer_day is this event. Linking
+// and unlinking save immediately on the task, not with the event.
+watch(() => event.value?.garden?.id, (gardenId) => {
+  if (gardenId) gardenTaskStore.getGardenTasks(gardenId).catch(() => {});
+}, { immediate: true });
+
+const HIDDEN_TASK_STATUSES = ['ABANDONED', 'SKIPPED', 'FINISHED'];
+const linkableTasks = computed(() => {
+  const linked = new Set(dayTasks.value.map((t) => t.documentId || t.id));
+  const all = Array.isArray(gardenTaskStore.gardenTasks) ? gardenTaskStore.gardenTasks : [];
+  return all.filter((t) => !t.recurring_task
+    && !HIDDEN_TASK_STATUSES.includes(t.task_status)
+    && !linked.has(t.documentId || t.id));
+});
+
+const linkTask = async () => {
+  const task = linkableTasks.value.find((t) => String(t.id) === String(taskToLink.value));
+  taskToLink.value = '';
+  if (!task || !event.value?.documentId) return;
+  taskBusy.value = true;
+  try {
+    await gardenTaskStore.update(task.documentId || task.id, { volunteer_day: event.value.documentId });
+    dayTasks.value = [...dayTasks.value, {
+      id: task.id, documentId: task.documentId, title: task.title, overview: task.overview, type: task.type, task_status: task.task_status,
+    }];
+    alertStore.success(`"${task.title}" is on the list for this day.`);
+  } catch (e) {
+    console.error('Error linking task:', e);
+    alertStore.error("Couldn't add that task. Try again in a moment.");
+  } finally {
+    taskBusy.value = false;
+  }
+};
+
+const unlinkTask = async (task) => {
+  taskBusy.value = true;
+  try {
+    await gardenTaskStore.update(task.documentId || task.id, { volunteer_day: null });
+    dayTasks.value = dayTasks.value.filter((t) => (t.documentId || t.id) !== (task.documentId || task.id));
+  } catch (e) {
+    console.error('Error unlinking task:', e);
+    alertStore.error("Couldn't remove that task. Try again in a moment.");
+  } finally {
+    taskBusy.value = false;
+  }
+};
+
 const prettyDay = computed(() => {
   return format(new Date(event.value.startDatetime), 'PPP');
 });
@@ -131,6 +233,7 @@ watch(event, async (newEvent) => {
     // Deep clone to prevent mutations
     originalEventData.value = JSON.parse(JSON.stringify(newEvent));
     hasChanges.value = false;
+    initDetails(newEvent);
     // Enable auto-save only AFTER this load flush settles, so the initial
     // population of hero_image/featured_gallery doesn't trigger a PUT.
     nextTick(() => { autoSaveReady.value = true; });
@@ -194,8 +297,10 @@ watch(
   },
   (newIds, oldIds) => {
     if (!autoSaveReady.value || !originalEventData.value || isLoading.value || isAutoSaving.value) return;
-    // Only auto-save if gallery was modified (not initial load)
-    if (oldIds && newIds !== oldIds) {
+    // Only auto-save if gallery was modified (not initial load). An empty
+    // string means the event is mid-reload (no gallery at all), not that the
+    // gallery was emptied — ignore both sides of that transition.
+    if (oldIds && newIds && newIds !== oldIds) {
       // Clear any existing timeout
       if (autoSaveTimeout.value) {
         clearTimeout(autoSaveTimeout.value);
@@ -344,13 +449,29 @@ const saveEvent = async (isAutoSave = false) => {
     // featured_gallery → [{ id }]
     eventData.featured_gallery = getGalleryIds(src.featured_gallery).map((id) => ({ id }));
 
+    // Event page details. Each only when the backend sent it on load, so an
+    // older backend can't be asked to write fields it doesn't have.
+    if (briefDirty.value) {
+      eventData.brief = briefToPayload(briefState.value);
+    }
+    if (plantingSupported.value && Array.isArray(src.planting)) {
+      eventData.planting = src.planting
+        .filter((p) => p?.plant_name?.trim())
+        .map((p) => ({ plant_name: p.plant_name.trim() }));
+    }
+    if (!src.garden && 'location_name' in (originalEventData.value || {})) {
+      eventData.location_name = src.location_name || null;
+      eventData.location_address = src.location_address || null;
+    }
+
     // projects → { set: [documentId] }. Skipped when the load didn't include
     // the relation, so an older backend can't wipe the links.
     if (projectsSupported.value && Array.isArray(src.projects)) {
       eventData.projects = { set: src.projects.map(relationKey) };
     }
 
-    await eventStore.update(route.params.id, eventData)
+    await eventStore.update(eventKey(), eventData)
+    if (briefDirty.value) briefSaved.value = JSON.parse(JSON.stringify(briefState.value));
     
     if (isAutoSave) {
       // For auto-save, just update originalEventData without refreshing to avoid interrupting uploads
@@ -360,12 +481,19 @@ const saveEvent = async (isAutoSave = false) => {
       }
     } else {
       // For manual save, refresh event data from store and reset change tracking
-      await eventStore.findById(route.params.id)
+      // Reload by documentId and put it in the URL: the numeric id just
+      // changed and will change again on the next save.
+      const stableId = event.value?.documentId || route.params.id
+      if (String(stableId) !== String(route.params.id)) {
+        router.replace({ path: `/manage/events/${stableId}/edit` })
+      }
+      await eventStore.findById(stableId)
       await nextTick()
       
       if (event.value && event.value) {
         originalEventData.value = JSON.parse(JSON.stringify(event.value));
         hasChanges.value = false;
+        initDetails(event.value);
       }
       
       alertStore.success('Event saved successfully!')
@@ -389,7 +517,7 @@ const confirmCancelEvent = async () => {
   if (!event.value?.id) return;
   isCanceling.value = true;
   try {
-    await eventStore.cancel(event.value.id);
+    await eventStore.cancel(eventKey());
     showCancelConfirm.value = false;
     alertStore.success('Event canceled. It will no longer send SMS reminders or appear in upcoming events.');
   } catch (error) {
@@ -403,7 +531,7 @@ const confirmCancelEvent = async () => {
   const uncancelEvent = async () => {
     if (!event.value?.id) return;
     try {
-      await eventStore.update(event.value.id, { canceled: false });
+      await eventStore.update(eventKey(), { canceled: false });
       if (event.value) event.value.canceled = false;
       alertStore.success('Event restored. SMS reminders and listings will resume.');
     } catch (error) {
@@ -687,6 +815,102 @@ onBeforeUnmount(() => {
                 />
               </div>
             </div>
+
+            <!-- Event page details: everything else the public event page shows -->
+            <section class="ep-panel" aria-labelledby="ep-title">
+              <div class="ep-head">
+                <h2 id="ep-title" class="ep-title">On the event page</h2>
+                <router-link :to="`/d/${event.id}`" class="ep-link">Preview</router-link>
+              </div>
+
+              <!-- What we'll work on -->
+              <div class="ep-block">
+                <h3 class="ep-h3">What we'll work on</h3>
+                <p class="ep-help">Garden tasks scheduled for this day. They also print on the day sheet.</p>
+                <ul v-if="dayTasks.length" class="ep-tasks">
+                  <li v-for="t in dayTasks" :key="t.documentId || t.id" class="ep-task">
+                    <span class="ep-task-text">
+                      <span class="ep-task-title">{{ t.title }}</span>
+                      <span v-if="t.type" class="ep-task-meta">{{ t.type }}<template v-if="t.task_status === 'FINISHED'"> · done</template></span>
+                    </span>
+                    <button type="button" class="ep-remove" :disabled="taskBusy" :aria-label="`Take ${t.title} off this day`" @click="unlinkTask(t)">Remove</button>
+                  </li>
+                </ul>
+                <p v-else class="ep-empty">No tasks on the list yet.</p>
+                <div class="ep-row">
+                  <label for="ep-task-pick" class="sr-only">Add a garden task to this day</label>
+                  <select id="ep-task-pick" v-model="taskToLink" class="ep-select" :disabled="taskBusy || !linkableTasks.length" @change="linkTask">
+                    <option value="" disabled>{{ linkableTasks.length ? 'Add a garden task…' : 'No open garden tasks to add' }}</option>
+                    <option v-for="t in linkableTasks" :key="t.id" :value="t.id">{{ t.title }}</option>
+                  </select>
+                  <router-link v-if="gardenSlug" :to="`/manage/gardens/${gardenSlug}#tasks`" class="ep-link">New task</router-link>
+                </div>
+
+                <template v-if="plantingSupported">
+                  <h4 class="ep-h4">Going in the ground</h4>
+                  <div class="ep-chips">
+                    <span v-for="(p, i) in event.planting" :key="`${p.plant_name}-${i}`" class="ep-chip">
+                      {{ p.plant_name }}
+                      <button type="button" class="ep-chip-x" :aria-label="`Remove ${p.plant_name}`" @click="removePlanting(i)">×</button>
+                    </span>
+                  </div>
+                  <form class="ep-row" @submit.prevent="addPlanting">
+                    <label for="ep-planting" class="sr-only">Add a plant</label>
+                    <input id="ep-planting" v-model="newPlanting" type="text" class="ep-input" placeholder="e.g. Fava beans" />
+                    <button type="submit" class="ep-btn" :disabled="!newPlanting.trim()">Add plant</button>
+                  </form>
+                </template>
+              </div>
+
+              <!-- Brief override -->
+              <div v-if="briefLoaded" class="ep-block">
+                <h3 class="ep-h3">How the day goes &amp; what to bring</h3>
+                <p class="ep-help">
+                  <template v-if="seriesBrief">
+                    Comes from the series<template v-if="templateInfo"> “{{ templateInfo.name }}”</template>.
+                    Fill in a field only to change it for this one event.
+                    <router-link v-if="gardenSlug" :to="`/manage/gardens/${gardenSlug}/event-templates`" class="ep-link">Edit the series</router-link>
+                  </template>
+                  <template v-else-if="templateInfo">
+                    The series “{{ templateInfo.name }}” has no brief yet, so this event shows the Garden Steward starter.
+                    <router-link v-if="gardenSlug" :to="`/manage/gardens/${gardenSlug}/event-templates`" class="ep-link">Write one for the series</router-link>
+                    or change it just here.
+                  </template>
+                  <template v-else>
+                    Shows the Garden Steward starter until you change it here.
+                  </template>
+                </p>
+                <BriefEditor
+                  v-model="briefState"
+                  :inherited="inheritedBrief"
+                  :inherited-label="inheritedLabel"
+                  id-prefix="event-brief"
+                />
+              </div>
+
+              <!-- Garden logistics (read-only here) -->
+              <div v-if="event.garden" class="ep-block">
+                <h3 class="ep-h3">Getting there</h3>
+                <p class="ep-help">
+                  Meeting spot, parking, restroom and accessibility come from the garden and show on all its events.
+                  <router-link v-if="gardenSlug" :to="`/manage/gardens/${gardenSlug}#events`" class="ep-link">Edit garden visit info</router-link>
+                </p>
+              </div>
+              <div v-else-if="'location_name' in event" class="ep-block">
+                <h3 class="ep-h3">Where</h3>
+                <p class="ep-help">This event isn't at a garden, so tell people where to go.</p>
+                <div class="ep-grid2">
+                  <div>
+                    <label for="ep-loc-name" class="ep-label">Place</label>
+                    <input id="ep-loc-name" v-model="event.location_name" type="text" class="ep-input" placeholder="e.g. Main Library" />
+                  </div>
+                  <div>
+                    <label for="ep-loc-addr" class="ep-label">Address</label>
+                    <input id="ep-loc-addr" v-model="event.location_address" type="text" class="ep-input" placeholder="e.g. 125 14th St, Oakland" />
+                  </div>
+                </div>
+              </div>
+            </section>
               </div>
             </div>
             
@@ -695,8 +919,8 @@ onBeforeUnmount(() => {
               <div class="stew lg:sticky lg:top-4">
                 <!-- Save Event Button -->
                 <button 
-                  @click="saveEvent" 
-                  :disabled="!hasChanges"
+                  @click="saveEvent()" 
+                  :disabled="!canSave"
                   class="w-full bg-custom-green hover:bg-darker-green text-white font-bold py-2 px-4 rounded-md mb-4 transition-all disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-600 dark:disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300 dark:disabled:hover:bg-gray-600"
                 >
                   Save Event
@@ -937,5 +1161,250 @@ html.dark .event-editor select {
 html.dark .event-editor .tooltip-icon {
   background-color: rgba(26, 26, 26, 0.6);
   color: #d0d0d0;
+}
+</style>
+
+<style>
+/* "On the event page" section */
+.event-editor .ep-panel {
+  font-family: Roboto, system-ui, sans-serif;
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #e2dccb;
+  border-radius: 10px;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.event-editor .ep-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.event-editor .ep-title {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #376451;
+}
+
+.event-editor .ep-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 20px;
+  border-top: 1px solid #e2dccb;
+}
+
+.event-editor .ep-h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1a2617;
+}
+
+.event-editor .ep-h4 {
+  margin: 12px 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #1a2617;
+}
+
+.event-editor .ep-help,
+.event-editor .ep-empty {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #4b5563;
+}
+
+.event-editor .ep-link {
+  color: #376451;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-decoration: underline;
+}
+
+.event-editor .ep-tasks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-editor .ep-task {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e2dccb;
+  border-radius: 8px;
+}
+
+.event-editor .ep-task-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.event-editor .ep-task-title {
+  font-weight: 700;
+}
+
+.event-editor .ep-task-meta {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.event-editor .ep-remove {
+  flex: none;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: #9a3412;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.event-editor .ep-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.event-editor .ep-row > .ep-select,
+.event-editor .ep-row > .ep-input {
+  flex: 1 1 240px;
+  margin: 0;
+}
+
+.event-editor .ep-select,
+.event-editor .ep-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #a8c49a;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #1a2617;
+  font-size: 0.9375rem;
+}
+
+.event-editor .ep-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background-color: #8aa37c;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.event-editor .ep-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.event-editor .ep-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.event-editor .ep-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 12px;
+  border-radius: 9999px;
+  background-color: #f3ece0;
+  color: #376451;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.event-editor .ep-chip-x {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.event-editor .ep-chip-x:hover {
+  background-color: #e2dccb;
+}
+
+.event-editor .ep-grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.event-editor .ep-label {
+  font-size: 0.875rem;
+}
+
+html.dark .event-editor .ep-panel {
+  background-color: #2d3e26;
+  border-color: #3d4d36;
+}
+
+html.dark .event-editor .ep-title,
+html.dark .event-editor .ep-h3,
+html.dark .event-editor .ep-h4 {
+  color: #f5f5f5;
+}
+
+html.dark .event-editor .ep-block,
+html.dark .event-editor .ep-task {
+  border-color: #3d4d36;
+}
+
+html.dark .event-editor .ep-help,
+html.dark .event-editor .ep-empty,
+html.dark .event-editor .ep-task-meta {
+  color: #c5d4b8;
+}
+
+html.dark .event-editor .ep-link {
+  color: #c5d4b8;
+}
+
+html.dark .event-editor .ep-remove {
+  color: #fca5a5;
+}
+
+html.dark .event-editor .ep-select,
+html.dark .event-editor .ep-input {
+  background-color: rgba(26, 26, 26, 0.6);
+  border-color: #3d4d36;
+  color: #f5f5f5;
+}
+
+html.dark .event-editor .ep-chip {
+  background-color: #344a34;
+  color: #c5d4b8;
+}
+
+html.dark .event-editor .ep-chip-x:hover {
+  background-color: #3d4d36;
 }
 </style>

@@ -268,9 +268,12 @@ export const useEventStore = defineStore({
             return fetchWrapper.put(`${baseUrl}/${documentId}?${populate}`, { data: data })
                 .then(res => {
                     this.volunteerDay = res.data;
-                    // Update the event in state if it matches
+                    // Update the event in state if it matches. Merge rather than
+                    // replace: the core PUT response doesn't carry the by-id-only
+                    // fields (brief, planting, event_tasks, series...), and
+                    // dropping them would make the next save wipe them.
                     if (this.event?.id === id || this.event?.documentId === documentId) {
-                        this.event = res.data;
+                        this.event = { ...this.event, ...res.data };
                     }
                 })
                 .catch(this.handleError);
