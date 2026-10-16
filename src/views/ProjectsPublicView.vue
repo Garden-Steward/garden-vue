@@ -5,6 +5,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useProjectsStore, useAuthStore } from '@/stores';
+import ProjectAlertSignup from '@/components/ProjectAlertSignup.vue';
 import {
   projectStatusOptions,
   resolveProjectStatus,
@@ -178,6 +179,9 @@ onUnmounted(() => {
         >{{ f }}</button>
       </div>
     </div>
+
+    <!-- Email alerts for new projects in a zip or city -->
+    <ProjectAlertSignup />
 
     <!-- Cards -->
     <div class="plist-cards">

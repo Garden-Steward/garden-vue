@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, GardensPublicView, SetPassword,
     InstructionPublic, HelpView,
-    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, ProjectManage, ProjectsView, ProjectsPublicView, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView, VerifyEmail, PlantsDirectory, PlantsDetail, AboutView } from '@/views';
+    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, ProjectManage, ProjectsView, ProjectsPublicView, ProjectAlertUnsubscribe, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView, VerifyEmail, PlantsDirectory, PlantsDetail, AboutView } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
@@ -73,6 +73,11 @@ export const router = createRouter({
             path: '/projects',
             component: ProjectsPublicView,
             name: 'projects-public-list'
+        },
+        {
+            path: '/alerts/unsubscribe',
+            component: ProjectAlertUnsubscribe,
+            name: 'project-alert-unsubscribe'
         },
         {
             path: '/gardens',
@@ -210,7 +215,8 @@ router.beforeEach(async (to, from) => {
         '/map',
         '/privacy',
         '/gardens',
-        '/projects'
+        '/projects',
+        '/alerts/unsubscribe'
     ];
     
     // Check if route starts with public patterns
