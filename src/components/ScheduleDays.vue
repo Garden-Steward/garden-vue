@@ -19,7 +19,7 @@ const props = defineProps({
  });
 //  const editor = garden.data.managers
 const weekSchedulerStore = useWeekSchedulerStore();  
-weekSchedulerStore.find(props.garden.id);
+weekSchedulerStore.find(props.garden);
 
 const { weekscheduler } = storeToRefs(weekSchedulerStore);
 

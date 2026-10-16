@@ -42,7 +42,7 @@ watch(() => props.garden?.id, (newId) => {
     console.log("Fetching tasks for garden:", newId);
     gardenTaskStore.getGardenTasks(newId);
     gardenTaskStore.getRecurringTasks(props.garden);
-    weekSchedulerStore.find(newId);
+    weekSchedulerStore.find(props.garden);
   }
 }, { immediate: true });
 
@@ -167,8 +167,11 @@ const getSchedulerEntriesForTask = (recurringTask) => {
   days.forEach(day => {
     const dayEntries = weekscheduler.value[day] || [];
     dayEntries.forEach(sched => {
-      const schedRecurringTaskId = sched.recurring_task?.id;
-      if (schedRecurringTaskId === recurringTaskId && sched.recurring_task?.scheduler_type !== 'No Schedule') {
+      const schedTask = sched.recurring_task;
+      const sameTask = schedTask?.documentId && recurringTask?.documentId
+        ? schedTask.documentId === recurringTask.documentId
+        : schedTask?.id === recurringTaskId;
+      if (sameTask && schedTask?.scheduler_type !== 'No Schedule') {
         entries.push({ ...sched, day });
       }
     });
@@ -347,14 +350,16 @@ const createNewScheduler = async (recurringTask) => {
   try {
     const schedulerData = {
       day: selectedDay,
-      garden: props.garden.id,
-      recurring_task: taskId
+      // documentId connects to the garden itself rather than whichever
+      // draft/published row props.garden.id happens to be.
+      garden: props.garden.documentId || props.garden.id,
+      recurring_task: recurringTask.documentId || taskId
     };
     
     await weekSchedulerStore.register(schedulerData);
     
     // Refresh scheduler data
-    await weekSchedulerStore.find(props.garden.id);
+    await weekSchedulerStore.find(props.garden);
     
     // Reset form
     showAddDayForm.value[taskId] = false;

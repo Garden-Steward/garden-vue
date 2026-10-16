@@ -534,8 +534,9 @@ const onRemoveInterest = async (interestId) => {
     <!-- Garden Title Header -->
     <div class="bg-gradient-to-r from-forest-hero to-forest-hero-end text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex-1">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <!-- Right padding below lg keeps the title clear of the sidebar hamburger -->
+          <div class="flex-1 pr-16 lg:pr-0">
             <h1
               v-if="garden.title"
               class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight cursor-pointer hover:opacity-90 transition-opacity"
@@ -898,27 +899,34 @@ const onRemoveInterest = async (interestId) => {
 
         <!-- Tasks Section -->
         <div v-if="activeSection === 'tasks'" class="gm-panel rounded-lg shadow-md p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="gm-heading text-2xl font-light font-serif">Tasks</h2>
-            <div class="flex items-center gap-2">
-              <button
-                v-if="garden.slug"
-                type="button"
-                @click="showPrintDaySheet = true"
-                class="gm-secondary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
-              >
-                Print day sheet
-              </button>
-              <router-link
-                v-if="garden.slug"
-                :to="`/gardens/${garden.slug}/tasks`"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="gm-secondary-btn px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
-              >
-                View Public Tasks Page
-              </router-link>
-            </div>
+          <h2 class="gm-heading text-2xl font-light font-serif mb-3">Tasks</h2>
+          <div v-if="garden.slug" class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-5">
+            <router-link
+              :to="`/gardens/${garden.slug}`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gm-secondary-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
+            >
+              <i class="fas fa-external-link-alt text-xs opacity-80"></i>
+              Public Garden Page
+            </router-link>
+            <router-link
+              :to="`/gardens/${garden.slug}/tasks`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gm-secondary-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
+            >
+              <i class="fas fa-external-link-alt text-xs opacity-80"></i>
+              Public Tasks Page
+            </router-link>
+            <button
+              type="button"
+              @click="showPrintDaySheet = true"
+              class="gm-secondary-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 font-medium text-sm rounded shadow-md focus:outline-none focus:ring-0 transition duration-150 ease-in-out"
+            >
+              <i class="fas fa-print text-xs opacity-80"></i>
+              Print Day Sheet
+            </button>
           </div>
           <GardenTaskList :garden="garden" :editor="editor" />
           <StandingTasksEditor

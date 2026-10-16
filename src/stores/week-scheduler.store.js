@@ -19,9 +19,17 @@ export const useWeekSchedulerStore = defineStore({
         alertStore.error(message);
         console.error('Week Scheduler Error: ', err);
       },
+      // Takes a garden object (preferred) or a bare numeric id. Garden is
+      // draft-and-publish in Strapi v5, so its draft and published rows have
+      // different numeric ids; the id on the manage page can be the draft
+      // row's while schedulers link to the published one. Filter on
+      // documentId, which both rows share (same fix as #85 for recurring tasks).
       async find(garden) {
           this.weekscheduler = { loading: true };
-          fetchWrapper.get(`${baseUrl}?populate=*&filters[garden]=${garden}`)
+          const gardenFilter = garden?.documentId
+              ? `filters[garden][documentId][$eq]=${garden.documentId}`
+              : `filters[garden][id][$eq]=${garden?.id ?? garden}`;
+          return fetchWrapper.get(`${baseUrl}?populate=*&${gardenFilter}&pagination[pageSize]=200`)
               .then(res => this.weekscheduler = groupedSchedules(res.data))
               .catch(error => this.weekscheduler = { error })
       },
