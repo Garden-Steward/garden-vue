@@ -15,3 +15,4 @@ export * from './location-tracking.store';
 export * from './media.store';
 export * from './recurring-template.store';
 export * from './plants.store';
+export * from './project-alerts.store';
