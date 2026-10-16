@@ -53,7 +53,7 @@ const statCards = computed(() => {
   }));
 });
 
-// Get latest 3 events, sorted from soonest to happen to longest
+// Get the next 3 upcoming events, sorted from soonest to happen to longest
 const latestEvents = computed(() => {
   if (!props.volunteerDays?.days || !Array.isArray(props.volunteerDays.days)) {
     return [];
@@ -62,9 +62,13 @@ const latestEvents = computed(() => {
   // v5 events are flat already.
   const normalizedEvents = props.volunteerDays.days;
   
-  // Filter out events without startDatetime or canceled, and sort by startDatetime (soonest first)
+  // Keep today's events visible all day; anything before today is past.
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  // Filter out past, canceled, or undated events, and sort by startDatetime (soonest first)
   const sortedEvents = normalizedEvents
-    .filter(event => event.startDatetime && !event.canceled)
+    .filter(event => event.startDatetime && !event.canceled && new Date(event.startDatetime) >= startOfToday)
     .sort((a, b) => {
       const dateA = new Date(a.startDatetime);
       const dateB = new Date(b.startDatetime);
