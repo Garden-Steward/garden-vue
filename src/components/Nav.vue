@@ -840,9 +840,10 @@ html.dark .gs-navbar.navbar.bg-custom-light {
     }
 }
 
-/* On mobile, Login is a simple text link — not a pill button */
+/* On mobile, Login is a simple text link — not a pill button.
+   Selectors match the pill rule's specificity so this override actually wins. */
 @media (max-width: 768px) {
-    .nav-right-section .login-btn {
+    .gs-navbar.navbar.bg-custom-light .nav-right-section .nav-item.nav-link.login-btn {
         background-color: transparent !important;
         color: #376451 !important;
         -webkit-text-fill-color: #376451 !important;
@@ -851,7 +852,7 @@ html.dark .gs-navbar.navbar.bg-custom-light {
         font-weight: 600;
         border-radius: 0;
     }
-    .nav-right-section .login-btn:hover {
+    .gs-navbar.navbar.bg-custom-light .nav-right-section .nav-item.nav-link.login-btn:hover {
         background-color: transparent !important;
         color: #2d4a2e !important;
         -webkit-text-fill-color: #2d4a2e !important;

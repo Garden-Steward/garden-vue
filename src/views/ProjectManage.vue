@@ -1998,6 +1998,10 @@ html.dark .pp-person__name,
 html.dark .pp-empty--warm,
 html.dark .pp-lede,
 html.dark .pp-prose { color: #e6f0db; }
+html.dark .pp-prose h1,
+html.dark .pp-prose h2,
+html.dark .pp-prose h3 { color: #c8dbbf; }
+html.dark .pp-prose a { color: #86efac; }
 html.dark .pp-link,
 html.dark .pp__back,
 html.dark .pp-more,

@@ -200,11 +200,10 @@ const goBack = () => {
           <!-- Instruction Section -->
           <div v-if="taskInstruction" class="task-detail-instruction">
             <h2 class="instruction-title">Task Instructions:</h2>
-            <StrapiBlocks
-              v-if="taskInstruction.content"
-              :content="taskInstruction.content"
-              class="instruction-content text-left"
-            />
+            <!-- StrapiBlocks renders a fragment, so classes on it are dropped; style the wrapper -->
+            <div v-if="taskInstruction.content" class="instruction-content text-left">
+              <StrapiBlocks :content="taskInstruction.content" />
+            </div>
           </div>
 
           <!-- Sign Up Button -->

@@ -62,7 +62,10 @@ instSTore.findSlug(route.params.slug);
     <div>
       <div class="max-w-4xl mx-auto px-6 py-12 bg-gray-100 dark:bg-[#2d3e26] rounded-lg" v-if="!instruction.loading && !instruction.error">
         <h1 class="text-3xl font-bold mb-6 dark:text-[#f5f5f5]">{{ instruction?.title }}</h1>
-        <StrapiBlocks :content="instruction?.content" :modifiers="modifiers" :blocks="blocks" class="instruction-body text-left text-gray-800 dark:text-[#e5e5e5]"/>
+        <!-- StrapiBlocks renders a fragment, so classes on it are dropped; color the wrapper instead -->
+        <div class="instruction-body text-left text-gray-800 dark:text-[#e5e5e5]">
+          <StrapiBlocks :content="instruction?.content" :modifiers="modifiers" :blocks="blocks"/>
+        </div>
         <!-- Conditional rendering of the agreement button -->
         <div v-if="instruction?.accept_required" class="mt-6">
           <button :class="{ 'bg-gray-500': isApproved, 'bg-green-700 hover:bg-green-900': !isApproved }" class="text-white font-bold py-2 px-4 rounded" @click="acceptTask" :disabled="isApproved">

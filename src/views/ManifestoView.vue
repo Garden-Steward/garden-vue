@@ -130,7 +130,7 @@ We must act as nature.`
         <a href="/join" class="hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
           Join Our Movement
         </a>
-        <a href="/contribute" class="hover:underline text-slate-50 mt-3 btn btn-secondary bg-custom-green hover:bg-custom-green border-white">
+        <a href="/contribute" class="hover:underline text-slate-50 mt-3 btn btn-secondary bg-custom-green hover:bg-custom-green border-white dark:!text-slate-50 dark:!border-white">
           Get Involved
         </a>
       </div>
