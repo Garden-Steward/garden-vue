@@ -497,7 +497,7 @@ const submit = async () => {
             garden: props.garden
           };
           await gardenTaskStore.registerRecurring(templatePayload);
-          alertStore.success('Saved as new template');
+          alertStore.success('Also saved as a recurring task');
         } catch (templateErr) {
           console.error('Error saving template:', templateErr);
           alertStore.error('Task created, but failed to save as template');
@@ -598,12 +598,17 @@ defineExpose({ openModal });
   </div>
   
   <div v-else-if="showCreateButton" class="inline-flex shrink-0">
+    <!-- Phones: a round "+" so it doesn't crowd the type filter. sm and up: "+ Create". -->
     <button
       type="button"
-      class="gt-create-trigger px-5 py-2.5 font-semibold text-sm rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
+      aria-label="Create task"
+      class="gt-create-trigger inline-flex items-center justify-center w-11 h-11 rounded-full sm:w-auto sm:h-auto sm:px-5 sm:py-2.5 sm:rounded-lg font-semibold text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
       @click="show = true"
     >
-      + Create
+      <svg class="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+      </svg>
+      <span class="hidden sm:inline">+ Create</span>
     </button>
   </div>
 
@@ -752,7 +757,7 @@ defineExpose({ openModal });
               ></textarea>
             </div>
 
-            <!-- Step 5: Group settings + Save as template + Submit -->
+            <!-- Step 5: Group settings + Also make recurring + Submit -->
             <div v-else-if="currentStep === 5" class="gt-step space-y-4">
               <p class="gt-text font-semibold text-center">Almost done</p>
 
@@ -781,8 +786,8 @@ defineExpose({ openModal });
 
               <FormToggle
                 v-model="saveAsTemplate"
-                label="Save this task as a new template"
-                description="Reuse it later from the Templates list."
+                label="Also make this a recurring task"
+                description="Adds it to Recurring Tasks on this garden's Tasks page, where you can edit it and assign it to volunteer days."
               />
             </div>
 

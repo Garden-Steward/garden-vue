@@ -164,8 +164,18 @@ export const useGardenTaskStore = defineStore({
                     throw error;
                 });
         },
-        async getRecurringTasks(gardenId) {
-            return fetchWrapper.get(`${recurringUrl}?populate=*&filters[garden][id][$eq]=${gardenId}`)
+        /**
+         * Pass the garden object. Garden is draft-and-publish, so its draft and
+         * published rows have different numeric ids, and /gardens/:slug/full can
+         * hand back the draft id while recurring tasks link to the published
+         * row. documentId is shared by both (same fix as getProjects, #82).
+         * A bare numeric id still works for older callers.
+         */
+        async getRecurringTasks(garden) {
+            const gardenFilter = garden?.documentId
+                ? `filters[garden][documentId][$eq]=${garden.documentId}`
+                : `filters[garden][id][$eq]=${garden?.id ?? garden}`;
+            return fetchWrapper.get(`${recurringUrl}?populate=*&${gardenFilter}&pagination[pageSize]=200`)
                 .then(response => {
                     this.recurringTasks = response.data;
                 })

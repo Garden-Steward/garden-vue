@@ -41,7 +41,7 @@ watch(() => props.garden?.id, (newId) => {
   if (newId) {
     console.log("Fetching tasks for garden:", newId);
     gardenTaskStore.getGardenTasks(newId);
-    gardenTaskStore.getRecurringTasks(newId);
+    gardenTaskStore.getRecurringTasks(props.garden);
     weekSchedulerStore.find(newId);
   }
 }, { immediate: true });
@@ -523,6 +523,18 @@ const openRecurringEditModal = (taskId) => {
 <template>
   <div class="bg-[#2d3e26] p-1 md:p-6 rounded-lg shadow-md mb-4">
     
+    <!-- Editors with no recurring tasks yet: say where they come from instead of hiding the section. -->
+    <div
+      v-if="editor && recurringTasks.length === 0"
+      class="mb-8 rounded-lg border border-dashed border-[#3d4d36] p-4"
+    >
+      <h3 class="text-xl font-bold text-[#f5f5f5]">Recurring Tasks</h3>
+      <p class="mt-1 text-sm text-[#d0d0d0]">
+        None yet. When you create a task, turn on <span class="font-semibold">Also make this a recurring task</span>
+        on the last step, and it will show up here to edit and assign to volunteer days.
+      </p>
+    </div>
+
     <!-- Recurring Tasks Section (one outer container, lighter green; tasks inside, no borders) -->
     <div v-if="recurringTasks.length > 0" class="mb-8 rounded-lg border border-[#3d4d36]/50 overflow-hidden bg-[#2d3e26]">
       <div
