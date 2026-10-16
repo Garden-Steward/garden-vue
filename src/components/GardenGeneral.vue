@@ -66,9 +66,10 @@ const latestEvents = computed(() => {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  // Filter out past, canceled, or undated events, and sort by startDatetime (soonest first)
+  // Filter out past or undated events, and sort by startDatetime (soonest first).
+  // Canceled events stay in the list, flagged, so the cancellation is visible.
   const sortedEvents = normalizedEvents
-    .filter(event => event.startDatetime && !event.canceled && new Date(event.startDatetime) >= startOfToday)
+    .filter(event => event.startDatetime && new Date(event.startDatetime) >= startOfToday)
     .sort((a, b) => {
       const dateA = new Date(a.startDatetime);
       const dateB = new Date(b.startDatetime);
@@ -358,6 +359,9 @@ const saveDescription = async () => {
               <i class="fas fa-calendar-alt text-[#d0d0d0] text-sm"></i>
               <span class="text-sm font-medium text-[#f5f5f5]">{{ event.title || 'Untitled Event' }}</span>
               <span class="text-sm text-[#d0d0d0]">- {{ formatEventDate(event.startDatetime) }}</span>
+              <span v-if="event.canceled" class="inline-block px-2 py-0.5 text-xs font-semibold bg-red-700 text-white rounded">
+                Canceled
+              </span>
             </div>
           </div>
         </div>

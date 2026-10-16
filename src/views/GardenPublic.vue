@@ -172,8 +172,9 @@ const upcomingEvents = computed(() => {
       const eventDate = new Date(day.startDatetime);
       console.log(`Event "${day.title}": ${eventDate} >= ${now}?`, eventDate >= now);
       
-      // Include events that haven't passed yet (disabled events still show, they just don't send SMS)
-      return eventDate >= now && day.canceled !== true;
+      // Include events that haven't passed yet (disabled events still show, they just don't send SMS;
+      // canceled ones show with a Canceled tag so visitors know not to come)
+      return eventDate >= now;
     })
     .sort((a, b) => {
       // Sort by startDatetime, earliest first
@@ -455,9 +456,10 @@ const projectLinkProps = (project) => {
   return {};
 };
 
-// The next upcoming workday drives the hero CTA and the sidebar feature card
-const nextEvent = computed(() => upcomingEvents.value[0] || null);
-const laterEvents = computed(() => upcomingEvents.value.slice(1));
+// The next workday that's still on drives the hero CTA and the sidebar feature
+// card. Canceled ones only show in the list under it, tagged.
+const nextEvent = computed(() => upcomingEvents.value.find(e => !e.canceled) || null);
+const laterEvents = computed(() => upcomingEvents.value.filter(e => e !== nextEvent.value));
 
 // RSVP to the next workday right here rather than sending people to the event
 // page. Signed-in stewards RSVP directly; everyone else gives a phone number.
@@ -717,7 +719,8 @@ watch(
             <p class="gp-label gp-label--accent">
               {{ upcomingEvents.length > 1 ? 'Upcoming workdays' : 'Upcoming workday' }}
             </p>
-            <template v-if="nextEvent">
+            <template v-if="nextEvent || laterEvents.length">
+              <template v-if="nextEvent">
               <router-link :to="`/d/${nextEvent.id}`" class="gp-event gp-event--feature" :aria-label="`${nextEvent.title}, view workday details`">
                 <span class="gp-datechip gp-datechip--solid">
                   <span class="gp-datechip-month">{{ chipMonth(nextEvent.startDatetime) }}</span>
@@ -748,9 +751,10 @@ watch(
                   {{ nextEventRsvped ? "You're going" : 'RSVP' }}
                 </button>
               </div>
+              </template>
 
               <div v-if="laterEvents.length" class="gp-event-list gp-event-list--later">
-                <p class="gp-label">Also coming up</p>
+                <p class="gp-label">{{ nextEvent ? 'Also coming up' : 'Coming up' }}</p>
                 <router-link
                   v-for="event in laterEvents"
                   :key="event.id"
@@ -762,7 +766,10 @@ watch(
                     <span class="gp-datechip-day">{{ chipDay(event.startDatetime) }}</span>
                   </span>
                   <span class="gp-event-text">
-                    <span class="gp-event-title">{{ event.title }}</span>
+                    <span class="gp-event-title">
+                      {{ event.title }}
+                      <span v-if="event.canceled" class="gp-canceled-tag">Canceled</span>
+                    </span>
                     <span class="gp-event-meta">{{ formatWeekdayTime(event.startDatetime) }}</span>
                   </span>
                 </router-link>

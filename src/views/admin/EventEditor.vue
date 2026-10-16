@@ -32,6 +32,15 @@ const router = useRouter()
 // (the by-id route accepts either), and the URL switches to it.
 const eventKey = () => event.value?.documentId || route.params.id;
 
+// Put the documentId in the URL after any write (save, cancel, restore) so a
+// refresh or browser back/forward doesn't land on a row that no longer exists.
+const syncRouteId = async () => {
+  const stableId = event.value?.documentId;
+  if (stableId && String(stableId) !== String(route.params.id)) {
+    await router.replace({ path: `/manage/events/${stableId}/edit`, hash: route.hash });
+  }
+};
+
 const { event } = storeToRefs(eventStore);
 const isLoading = ref(true);
 const hasChanges = ref(false);
@@ -472,6 +481,7 @@ const saveEvent = async (isAutoSave = false) => {
 
     await eventStore.update(eventKey(), eventData)
     if (briefDirty.value) briefSaved.value = JSON.parse(JSON.stringify(briefState.value));
+    await syncRouteId()
     
     if (isAutoSave) {
       // For auto-save, just update originalEventData without refreshing to avoid interrupting uploads
@@ -518,8 +528,9 @@ const confirmCancelEvent = async () => {
   isCanceling.value = true;
   try {
     await eventStore.cancel(eventKey());
+    await syncRouteId();
     showCancelConfirm.value = false;
-    alertStore.success('Event canceled. It will no longer send SMS reminders or appear in upcoming events.');
+    alertStore.success('Event canceled. Its page stays up with a canceled notice, and SMS reminders are off.');
   } catch (error) {
     console.error('Error canceling event:', error);
     alertStore.error('Failed to cancel event. Please try again.');
@@ -533,6 +544,7 @@ const confirmCancelEvent = async () => {
     try {
       await eventStore.update(eventKey(), { canceled: false });
       if (event.value) event.value.canceled = false;
+      await syncRouteId();
       alertStore.success('Event restored. SMS reminders and listings will resume.');
     } catch (error) {
       console.error('Error uncanceling event:', error);
@@ -569,7 +581,7 @@ onBeforeUnmount(() => {
           <div class="flex-1">
             <!-- Back link -->
             <router-link 
-              :to="`/manage/gardens/${event?.garden?.slug}#events`"
+              :to="event?.garden?.slug ? `/manage/gardens/${event.garden.slug}#events` : '/manage/gardens'"
               class="inline-flex items-center text-white/90 hover:text-white mb-2"
             >
               <i class="fas fa-arrow-left mr-2"></i>

@@ -712,6 +712,19 @@ a.gp-project-card:hover {
   color: #f5f5f5;
 }
 
+/* Canceled workdays stay listed so visitors know not to come. */
+.gp-canceled-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  vertical-align: middle;
+  color: #fff;
+  background-color: #b91c1c;
+  border-radius: 4px;
+}
+
 .gp-event-meta {
   font-size: 0.875rem;
   color: #4b5563;
