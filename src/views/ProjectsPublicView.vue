@@ -159,7 +159,7 @@ onUnmounted(() => {
         <span class="chip chip--place">
           Oakland <span class="chip-count">{{ listedProjects.length }}</span>
         </span>
-        <router-link to="/join" class="chip chip--ghost">Your city?</router-link>
+        <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="chip chip--ghost">Your city?</a>
       </div>
 
       <div class="chip-row chip-row--status">
@@ -222,10 +222,10 @@ onUnmounted(() => {
       <p class="pcity-eyebrow">Outside Oakland</p>
       <h2 class="pcity-title">Start the first project in your city.</h2>
       <p class="pcity-body">
-        Each SMS number is its own cooperative of local projects. Pitch one and we'll help
-        you stand it up.
+        Each SMS number is its own cooperative of local projects. Tell us about yours and
+        we'll help you stand it up.
       </p>
-      <router-link to="/join" class="pcity-btn">Pitch a project</router-link>
+      <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="pcity-btn">Email us about your city</a>
     </div>
 
   </div>

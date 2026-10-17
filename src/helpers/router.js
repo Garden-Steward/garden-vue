@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, GardensPublicView, SetPassword,
-    InstructionPublic, GardenApplyForm, HelpView,
+    InstructionPublic, HelpView,
     BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, ProjectManage, ProjectsView, ProjectsPublicView, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView, VerifyEmail, PlantsDirectory, PlantsDetail, AboutView } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
@@ -27,10 +27,6 @@ export const router = createRouter({
         {
             path: '/oauth/google/callback',
             component: GoogleOAuth
-        },
-        {
-            path: '/join',
-            component: GardenApplyForm
         },
         {
             path: '/help',
@@ -122,6 +118,10 @@ export const router = createRouter({
             path: '/home',
             redirect: '/manage/home'
         },
+        {
+            path: '/join',
+            redirect: '/gardens'
+        },
         
         // Management routes (authenticated)
         // The gardens dashboard is the management index at /manage.
@@ -205,7 +205,6 @@ router.beforeEach(async (to, from) => {
         '/help', 
         '/blog', 
         '/events', 
-        '/join', 
         '/contribute',
         '/manifesto',
         '/map',

@@ -324,7 +324,7 @@ function isActive(index) {
 
         <router-link to="/projects" class="featured-cta">See all projects</router-link>
         <p class="featured-elsewhere">
-          Not in Oakland? <router-link to="/join" class="featured-elsewhere-link">Start a project in your city</router-link>
+          Not in Oakland? <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="featured-elsewhere-link">Start a project in your city</a>
         </p>
       </div>
 
@@ -345,8 +345,8 @@ function isActive(index) {
         </p>
 
         <div class="cta-row">
-          <a href="/join" class="btn-home btn-home-primary">
-            Submit your Community Project
+          <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="btn-home btn-home-primary">
+            Bring Garden Steward to your city
           </a>
           <a
             href="https://github.com/Garden-Steward"

@@ -27,8 +27,8 @@
       </p>
 
       <div class="cta-row">
-        <a href="/join" class="btn-about btn-about-primary">
-          Submit your Community Project
+        <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="btn-about btn-about-primary">
+          Bring Garden Steward to your city
         </a>
         <a
           href="https://github.com/Garden-Steward"

@@ -127,8 +127,8 @@ We must act as nature.`
     <div class="manifesto-media mt-8 p-6 bg-[#344a34] rounded-lg text-center dark:bg-[#344a34]">
       <p class="manifesto-media-text text-xl mb-4">Does this resonate with you?</p>
       <div class="flex flex-col sm:flex-row gap-3 justify-center">
-        <a href="/join" class="hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
-          Join Our Movement
+        <a href="/gardens" class="hover:underline text-slate-50 mt-3 btn btn-primary bg-custom-green hover:bg-custom-green border-white">
+          Find a Garden
         </a>
         <a href="/contribute" class="hover:underline text-slate-50 mt-3 btn btn-secondary bg-custom-green hover:bg-custom-green border-white dark:!text-slate-50 dark:!border-white">
           Get Involved

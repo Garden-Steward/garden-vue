@@ -274,7 +274,7 @@ const rsvp = async (event) => {
             </div>
             <div class="dash-header__actions">
                 <button type="button" class="dash-btn dash-btn--primary" @click="openPitch">Pitch a project</button>
-                <a class="dash-btn dash-btn--ghost" href="/join">Apply for a new garden</a>
+                <a class="dash-btn dash-btn--ghost" href="mailto:volunteer@oufp.org?subject=Adding%20a%20garden%20to%20Garden%20Steward">Request a new garden</a>
             </div>
         </header>
 
@@ -328,9 +328,9 @@ const rsvp = async (event) => {
                 </div>
             </div>
 
-            <a class="garden-card garden-card--apply" href="/join">
+            <a class="garden-card garden-card--apply" href="mailto:volunteer@oufp.org?subject=Adding%20a%20garden%20to%20Garden%20Steward">
                 <span class="garden-card--apply__plus">+</span>
-                <span>Apply for a new garden</span>
+                <span>Request a new garden</span>
             </a>
         </div>
 

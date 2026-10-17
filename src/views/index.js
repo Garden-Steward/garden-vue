@@ -7,7 +7,6 @@ export { default as HelpView } from './HelpView.vue';
 export { default as Garden } from './GardenDetail.vue';
 export { default as GardenManage } from './GardenDetail.vue';
 export { default as GardenPublic } from './GardenPublic.vue';
-export { default as GardenApplyForm } from './GardenApplyForm.vue';
 export { default as EventView } from './EventView.vue';
 export { default as SetPassword } from './SetPassword.vue';
 export { default as InstructionPublic } from './InstructionPublicView.vue';
