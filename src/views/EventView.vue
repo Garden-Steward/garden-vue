@@ -113,6 +113,16 @@ const locationText = computed(() => {
   return [event.value?.location_name, event.value?.location_address].filter(Boolean).join(', ');
 });
 
+// On a calendar grid only the title shows, so lead with the garden's name. The
+// date that recurring titles carry ("… - November 8, 2026") is dropped since
+// the calendar already places the event on that day.
+const calendarTitle = computed(() => {
+  const title = (event.value?.title || 'Garden event').replace(/\s+[-–—]\s+[A-Z][a-z]+ \d{1,2},? \d{4}$/, '');
+  const gardenName = hasGarden.value ? garden.value.title : '';
+  if (!gardenName || title.toLowerCase().includes(gardenName.toLowerCase())) return title;
+  return `${gardenName}: ${title}`;
+});
+
 // Calendars need an end; the event only has free text for that, so use the
 // brief's typical length when it's a plain number of hours, else 2 hours.
 const calendarUrl = computed(() => {
@@ -122,7 +132,7 @@ const calendarUrl = computed(() => {
   const fmt = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: event.value.title || 'Garden event',
+    text: calendarTitle.value,
     dates: `${fmt(start.value)}/${fmt(end)}`,
     details: `${event.value.blurb || ''}\n\n${window.location.href}`.trim(),
     location: [visit.value?.meeting_spot, locationText.value].filter(Boolean).join(', '),
