@@ -266,17 +266,21 @@ const handleEscape = (e) => {
             <div class="web-nav">
                 <div class="d-flex align-items-center">
                     <router-link
+                        to="/manage"
+                        class="nav-item nav-link nav-home-link"
+                        v-show="authStore.user"
+                        :class="{ 'nav-link--section-active': isManageNavActive }"
+                        aria-label="Dashboard"
+                        title="Dashboard"
+                    >
+                        <svg class="nav-home-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M11.3 2.7a1 1 0 0 1 1.4 0l8.6 8.1a1 1 0 0 1-.7 1.7H19v7.5a1.5 1.5 0 0 1-1.5 1.5H6.5A1.5 1.5 0 0 1 5 20v-7.5H3.4a1 1 0 0 1-.7-1.7zM10 21.5h4v-5a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1z" /></svg>
+                    </router-link>
+                    <router-link
                         to="/gardens"
                         class="nav-item nav-link"
                         :class="{ 'nav-link--section-active': isGardensNavActive }"
                     >Gardens</router-link>
                     <router-link to="/projects" class="nav-item nav-link">Projects</router-link>
-                    <router-link
-                        to="/manage"
-                        class="nav-item nav-link"
-                        v-show="authStore.user"
-                        :class="{ 'nav-link--section-active': isManageNavActive }"
-                    >Dashboard</router-link>
                     <router-link to="/join" class="nav-item nav-link">Join</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
 
@@ -357,6 +361,18 @@ html.dark .gs-navbar.navbar.bg-custom-light {
     background-color: rgba(55, 100, 81, 0.1);
     color: #2d4a2e !important;
     -webkit-text-fill-color: #2d4a2e !important;
+}
+/* Dashboard as a filled house: icon only, always the brand dark green. */
+.gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.nav-home-link {
+    display: inline-flex;
+    align-items: center;
+    color: #064e3b !important;
+    -webkit-text-fill-color: #064e3b !important;
+}
+.nav-home-icon {
+    width: 26px;
+    height: 26px;
+    fill: currentColor;
 }
 /* Router uses `linkActiveClass: 'active'` (see src/helpers/router.js). */
 .gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.active,
