@@ -7,6 +7,7 @@ import markdownItAttrs from 'markdown-it-attrs';
 
 import { useEventStore, useAuthStore } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
+import { titleWithoutDate } from '@/helpers/event-utils';
 import Gallery from '@/components/Gallery.vue';
 import EventProjectCard from '@/components/EventProjectCard.vue';
 import GardenContextBar from '@/components/GardenContextBar.vue';
@@ -114,10 +115,9 @@ const locationText = computed(() => {
 });
 
 // On a calendar grid only the title shows, so lead with the garden's name. The
-// date that recurring titles carry ("… - November 8, 2026") is dropped since
-// the calendar already places the event on that day.
+// calendar already places the event on its day, so the title's date goes.
 const calendarTitle = computed(() => {
-  const title = (event.value?.title || 'Garden event').replace(/\s+[-–—]\s+[A-Z][a-z]+ \d{1,2},? \d{4}$/, '');
+  const title = titleWithoutDate(event.value?.title) || 'Garden event';
   const gardenName = hasGarden.value ? garden.value.title : '';
   if (!gardenName || title.toLowerCase().includes(gardenName.toLowerCase())) return title;
   return `${gardenName}: ${title}`;
