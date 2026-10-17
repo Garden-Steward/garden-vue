@@ -10,6 +10,7 @@ import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-priv
 import SunIcon from '@/components/icons/Sun.svg?raw';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import { RsvpPhoneModal } from '@/components/modals';
+import GardenMemberMenu from '@/components/GardenMemberMenu.vue';
 import '@/assets/garden-public.css';
 
 const route = useRoute();
@@ -640,6 +641,12 @@ watch(
             </button>
           </span>
         </div>
+        <!-- Signed-in members: mute this garden's texts or leave it -->
+        <GardenMemberMenu
+          class="gp-member-menu"
+          :garden-slug="garden.slug"
+          :garden-title="garden.title"
+        />
       </section>
 
       <div v-if="garden.id" class="gp-body">
@@ -1023,6 +1030,12 @@ watch(
   max-width: 1280px;
   margin: 0 auto;
   font-family: Roboto, system-ui, sans-serif;
+}
+
+/* Member menu sits at the far end of the at-a-glance strip */
+.gp-member-menu {
+  align-self: center;
+  margin-left: auto;
 }
 
 /* ---------- Map ---------- */
