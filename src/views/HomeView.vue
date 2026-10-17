@@ -2,6 +2,7 @@
 import { storeToRefs } from 'pinia';
 
 import { useAuthStore, useGardensStore } from '@/stores';
+import EmailLink from '@/components/EmailLink.vue';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
@@ -38,7 +39,7 @@ gardensStore.getAll(user.value.id);
           Thank you for helping out with your garden! This app is currently in
           <strong>Beta</strong> so feedback is encouraged. Feedback &amp;
           Support email:
-          <a href="mailto:volunteer@oufp.org" class="body-link">volunteer@oufp.org</a>
+          <EmailLink class="body-link" />
           &mdash; screenshots helpful.
         </p>
       </div>

@@ -1,5 +1,6 @@
 <script setup>
 import PageHeader from '@/components/PageHeader.vue';
+import EmailLink from '@/components/EmailLink.vue';
 </script>
 
 <template>
@@ -120,7 +121,7 @@ import PageHeader from '@/components/PageHeader.vue';
                     <li><strong>Unsubscribe</strong> from email communications</li>
                 </ul>
                 <p class="mb-4">
-                    To exercise these rights, contact us at: <a href="mailto:volunteer@oufp.org" class="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-200 hover:underline">volunteer@oufp.org</a>
+                    To exercise these rights, contact us at: <EmailLink class="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-200 hover:underline" />
                 </p>
             </div>
 
@@ -165,7 +166,7 @@ import PageHeader from '@/components/PageHeader.vue';
                 <p class="mb-2">If you have questions about this Privacy Policy or your personal information, contact:</p>
                 <p class="mb-2">
                     <strong>Garden Steward</strong><br>
-                    Email: <a href="mailto:volunteer@oufp.org" class="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-200 hover:underline">volunteer@oufp.org</a><br>
+                    Email: <EmailLink class="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-200 hover:underline" /><br>
                     GitHub: <a href="https://github.com/Garden-Steward" target="_blank" rel="noopener noreferrer" class="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-200 hover:underline">https://github.com/Garden-Steward</a>
                 </p>
             </div>

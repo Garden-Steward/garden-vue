@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { isProjectPubliclyVisible, isProjectVisibleTo } from '@/_config/GardenConfig';
 import { useProjectsStore, useAuthStore } from '@/stores';
 import NewsletterSignup from '@/components/NewsletterSignup.vue';
+import EmailLink from '@/components/EmailLink.vue';
 
 // ── Video sections ──────────────────────────────────
 // Each clip is paired with its line on purpose — "hole-water" carries
@@ -324,7 +325,7 @@ function isActive(index) {
 
         <router-link to="/projects" class="featured-cta">See all projects</router-link>
         <p class="featured-elsewhere">
-          Not in Oakland? <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="featured-elsewhere-link">Start a project in your city</a>
+          Not in Oakland? <EmailLink subject="Garden Steward in my city" class="featured-elsewhere-link">Start a project in your city</EmailLink>
         </p>
       </div>
 
@@ -345,9 +346,9 @@ function isActive(index) {
         </p>
 
         <div class="cta-row">
-          <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="btn-home btn-home-primary">
+          <EmailLink subject="Garden Steward in my city" class="btn-home btn-home-primary">
             Bring Garden Steward to your city
-          </a>
+          </EmailLink>
           <a
             href="https://github.com/Garden-Steward"
             target="_blank"

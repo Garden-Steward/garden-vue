@@ -17,6 +17,7 @@ import {
     getProjectCategoryBadgeClasses
 } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
+import EmailLink from '@/components/EmailLink.vue';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
@@ -274,7 +275,7 @@ const rsvp = async (event) => {
             </div>
             <div class="dash-header__actions">
                 <button type="button" class="dash-btn dash-btn--primary" @click="openPitch">Pitch a project</button>
-                <a class="dash-btn dash-btn--ghost" href="mailto:volunteer@oufp.org?subject=Adding%20a%20garden%20to%20Garden%20Steward">Request a new garden</a>
+                <EmailLink subject="Adding a garden to Garden Steward" class="dash-btn dash-btn--ghost">Request a new garden</EmailLink>
             </div>
         </header>
 
@@ -328,10 +329,10 @@ const rsvp = async (event) => {
                 </div>
             </div>
 
-            <a class="garden-card garden-card--apply" href="mailto:volunteer@oufp.org?subject=Adding%20a%20garden%20to%20Garden%20Steward">
+            <EmailLink subject="Adding a garden to Garden Steward" class="garden-card garden-card--apply">
                 <span class="garden-card--apply__plus">+</span>
                 <span>Request a new garden</span>
-            </a>
+            </EmailLink>
         </div>
 
         <!-- ── Gardens I volunteer at ── -->

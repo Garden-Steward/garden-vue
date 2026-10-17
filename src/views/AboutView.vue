@@ -1,5 +1,6 @@
 <script setup>
 import PageHeader from '@/components/PageHeader.vue';
+import EmailLink from '@/components/EmailLink.vue';
 </script>
 
 <template>
@@ -25,9 +26,9 @@ import PageHeader from '@/components/PageHeader.vue';
       </p>
 
       <div class="cta-row">
-        <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="btn-about btn-about-primary">
+        <EmailLink subject="Garden Steward in my city" class="btn-about btn-about-primary">
           Bring Garden Steward to your city
-        </a>
+        </EmailLink>
         <a
           href="https://github.com/Garden-Steward"
           target="_blank"

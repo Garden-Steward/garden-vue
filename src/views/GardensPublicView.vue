@@ -5,6 +5,7 @@ import { useGardensStore, useAuthStore } from '@/stores';
 import { fetchWrapper } from '@/helpers';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import PageHeader from '@/components/PageHeader.vue';
+import EmailLink from '@/components/EmailLink.vue';
 import { isProjectPubliclyVisible } from '@/_config/GardenConfig';
 
 const gardensStore = useGardensStore();
@@ -181,7 +182,7 @@ onUnmounted(() => {
         <span class="chip chip--place">
           Oakland <span class="chip-count">{{ listedGardens.length }}</span>
         </span>
-        <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="chip chip--ghost">Your city?</a>
+        <EmailLink subject="Garden Steward in my city" class="chip chip--ghost">Your city?</EmailLink>
       </div>
 
       <div class="chip-row chip-row--status">
@@ -269,7 +270,7 @@ onUnmounted(() => {
         Run a community garden somewhere else? Email us and we'll help you set up workdays, volunteer texts
         and projects for your neighbors.
       </p>
-      <a href="mailto:volunteer@oufp.org?subject=Adding%20a%20garden%20to%20Garden%20Steward" class="gcity-btn">Email us about your garden</a>
+      <EmailLink subject="Adding a garden to Garden Steward" class="gcity-btn">Email us about your garden</EmailLink>
     </div>
 
   </div>

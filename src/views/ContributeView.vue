@@ -1,5 +1,6 @@
 <script setup>
 import PageHeader from '@/components/PageHeader.vue';
+import EmailLink from '@/components/EmailLink.vue';
 </script>
 
 <template>
@@ -108,7 +109,7 @@ import PageHeader from '@/components/PageHeader.vue';
                     Have questions about contributing? We'd love to hear from you!
                 </p>
                 <p class="dark:text-white">
-                    Email: <a href="mailto:volunteer@oufp.org" class="text-green-700 hover:text-green-900 hover:underline dark:text-white dark:hover:text-gray-200 dark:hover:underline">volunteer@oufp.org</a>
+                    Email: <EmailLink class="text-green-700 hover:text-green-900 hover:underline dark:text-white dark:hover:text-gray-200 dark:hover:underline" />
                 </p>
             </div>
 

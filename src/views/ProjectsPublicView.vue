@@ -1,5 +1,6 @@
 <script setup>
 import PageHeader from '@/components/PageHeader.vue';
+import EmailLink from '@/components/EmailLink.vue';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
@@ -163,7 +164,7 @@ onUnmounted(() => {
         <span class="chip chip--place">
           Oakland <span class="chip-count">{{ listedProjects.length }}</span>
         </span>
-        <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="chip chip--ghost">Your city?</a>
+        <EmailLink subject="Garden Steward in my city" class="chip chip--ghost">Your city?</EmailLink>
       </div>
 
       <div class="chip-row chip-row--status">
@@ -229,7 +230,7 @@ onUnmounted(() => {
         Each SMS number is its own cooperative of local projects. Tell us about yours and
         we'll help you stand it up.
       </p>
-      <a href="mailto:volunteer@oufp.org?subject=Garden%20Steward%20in%20my%20city" class="pcity-btn">Email us about your city</a>
+      <EmailLink subject="Garden Steward in my city" class="pcity-btn">Email us about your city</EmailLink>
     </div>
 
   </div>
