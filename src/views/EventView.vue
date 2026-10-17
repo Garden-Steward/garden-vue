@@ -8,6 +8,8 @@ import markdownItAttrs from 'markdown-it-attrs';
 import { useEventStore, useAuthStore } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import { titleWithoutDate } from '@/helpers/event-utils';
+import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
+import LeafletMap from '@/components/LeafletMap.vue';
 import Gallery from '@/components/Gallery.vue';
 import EventProjectCard from '@/components/EventProjectCard.vue';
 import GardenContextBar from '@/components/GardenContextBar.vue';
@@ -197,11 +199,33 @@ const gettingThere = computed(() => {
   ].filter((r) => r.text || (r.key === 'meet' && r.title));
 });
 
+const gardenPoint = computed(() => {
+  const latitude = Number(garden.value?.latitude);
+  const longitude = Number(garden.value?.longitude);
+  if (!hasGarden.value || garden.value?.latitude == null || garden.value?.longitude == null) return null;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || (!latitude && !longitude)) return null;
+  return { latitude, longitude };
+});
+
+// Same rule as the garden page: signed-out visitors see a 300-yard area, not
+// the pin, and get no exact Maps link.
+const approximateArea = computed(() => {
+  if (user.value || !gardenPoint.value) return null;
+  const { latitude, longitude } = gardenPoint.value;
+  const center = garden.value?.location_approximate
+    ? { latitude, longitude }
+    : approximateCenter(latitude, longitude, garden.value?.id ?? garden.value?.slug);
+  return center ? { ...center, radiusMeters: APPROX_AREA_RADIUS_M } : null;
+});
+
+const mapPins = computed(() => (gardenPoint.value
+  ? [{ ...gardenPoint.value, label: garden.value?.title || 'Garden' }]
+  : []));
+
 const mapsUrl = computed(() => {
-  const lat = Number(garden.value?.latitude);
-  const lng = Number(garden.value?.longitude);
-  if (hasGarden.value && Number.isFinite(lat) && Number.isFinite(lng) && (lat || lng)) {
-    return `https://www.google.com/maps?q=${lat},${lng}`;
+  if (gardenPoint.value) {
+    if (!user.value) return null;
+    return `https://www.google.com/maps?q=${gardenPoint.value.latitude},${gardenPoint.value.longitude}`;
   }
   const q = [event.value?.location_name, event.value?.location_address].filter(Boolean).join(', ');
   return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null;
@@ -440,8 +464,21 @@ const rsvpEvent = async () => {
               <p v-else-if="isEventCanceled" class="ev-fine">Nothing to RSVP to.<template v-if="upcoming.length"> See the next one below.</template></p>
             </div>
 
-            <div v-if="gettingThere.length || mapsUrl || (!hasGarden && locationText)" class="gp-card">
+            <div v-if="gettingThere.length || mapsUrl || gardenPoint || (!hasGarden && locationText)" class="gp-card">
               <p class="gp-label">Getting there</p>
+              <div v-if="gardenPoint" class="ev-map">
+                <!-- Keyed on sign-in so the map redraws when the exact spot unlocks -->
+                <LeafletMap
+                  :key="approximateArea ? 'area' : 'pin'"
+                  :location-trackings="mapPins"
+                  :center-coordinates="approximateArea || gardenPoint"
+                  :area="approximateArea"
+                />
+              </div>
+              <p v-if="approximateArea" class="ev-fine">
+                Approximate area ·
+                <button type="button" class="ev-textbtn" @click="authStore.openLoginModal(route.fullPath)">Sign in for location details</button>
+              </p>
               <div v-if="!hasGarden && locationText" class="ev-row">
                 <span class="ev-row-title">{{ event.location_name || event.location_address }}</span>
                 <span v-if="event.location_name && event.location_address" class="ev-row-text">{{ event.location_address }}</span>
@@ -535,6 +572,29 @@ const rsvpEvent = async () => {
 .ev-error {
   padding: 48px 0;
   color: #4b5563;
+}
+
+/* Garden map in Getting there */
+.ev-map {
+  height: 200px;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.ev-textbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: #064e3b;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.dark .ev-textbtn {
+  color: #c5d4b8;
 }
 
 /* Breadcrumb for events with no garden */

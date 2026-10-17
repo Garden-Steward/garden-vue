@@ -18,6 +18,12 @@ const props = defineProps({
   centerCoordinates: {
     type: Object,
     default: () => ({ latitude: 37.80189465989609, longitude: -122.24179398126134 })
+  },
+  // { latitude, longitude, radiusMeters }: draw this circle instead of the
+  // pins, for places whose exact spot stays private.
+  area: {
+    type: Object,
+    default: null
   }
 });
 
@@ -33,6 +39,18 @@ onMounted(() => {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
+
+  if (props.area) {
+    const circle = L.circle([props.area.latitude, props.area.longitude], {
+      radius: props.area.radiusMeters,
+      color: '#064e3b',
+      weight: 2,
+      fillColor: '#8aa37c',
+      fillOpacity: 0.3
+    }).addTo(map);
+    map.fitBounds(circle.getBounds(), { padding: [40, 40], maxZoom: 17 });
+    return;
+  }
 
   // Add a marker with an SVG icon to the map
   props.locationTrackings.forEach(locationTracking => {
@@ -64,7 +82,7 @@ onMounted(() => {
 });
 
 watch(() => props.centerCoordinates, (newCoords) => {
-  if (map) {
+  if (map && !props.area) {
     map.setView([newCoords.latitude, newCoords.longitude], 15);
   }
 });
