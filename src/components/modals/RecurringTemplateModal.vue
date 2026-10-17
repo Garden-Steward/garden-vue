@@ -5,11 +5,15 @@ import { format, parseISO, addMonths, startOfMonth, getDay, addDays, addWeeks } 
 import TextInput from '@/components/form/TextInput.vue';
 import Switch from '@/components/form/Switch.vue';
 import DropDown from '@/components/form/DropDown.vue';
+import BriefEditor from '@/components/form/BriefEditor.vue';
+import { briefToState, briefToPayload, fetchBriefStarters, EVENT_TYPE_OPTIONS } from '@/helpers/event-brief';
 
 const emit = defineEmits(['update:show', 'saved', 'deleted']);
 
 const props = defineProps({
   id: Number,
+  /** v5 core update/delete key on documentId */
+  documentId: String,
   template_name: String,
   title_template: String,
   event_title_template: String,
@@ -24,6 +28,12 @@ const props = defineProps({
   is_active: { type: Boolean, default: true },
   max_future_instances: { type: Number, default: 3 },
   garden: Number,
+  /** Preferred over `garden` for relations: the numeric id can be a draft row's */
+  gardenDocumentId: String,
+  /** Event type; picks which Garden Steward starter brief applies */
+  type: String,
+  /** events.brief component as returned by the API */
+  brief: Object,
   editor: Boolean,
   show: { type: Boolean, default: false },
   /** When true, do not render the card or create button; modal is opened via :show only */
@@ -196,10 +206,20 @@ const form = ref({
   end_text: props.end_text || 'around noon',
   blurb: props.blurb || '',
   is_active: props.is_active ?? true,
-  max_future_instances: props.max_future_instances ?? 3
+  max_future_instances: props.max_future_instances ?? 3,
+  type: props.type || 'general',
+  brief: briefToState(props.brief)
 });
 
 const isEditing = computed(() => !!form.value.id);
+
+// Garden Steward starter briefs, offered when this series has none yet.
+const starters = ref({});
+const starter = computed(() => starters.value[form.value.type || 'general'] || null);
+const typeLabel = computed(() => EVENT_TYPE_OPTIONS.find((o) => o.value === form.value.type)?.label?.toLowerCase() || '');
+watch(isVisible, (open) => {
+  if (open) fetchBriefStarters().then((s) => { starters.value = s; });
+}, { immediate: true });
 const topic = computed(() => (isEditing.value ? 'Edit Recurring Template' : 'Create Recurring Template'));
 
 const recurrenceDescription = computed(() => {
@@ -239,7 +259,7 @@ watch(isVisible, (newVal) => {
   }
 });
 
-watch(() => [props.id, props.template_name, props.title_template, props.event_title_template, props.naming_convention, props.recurrence_type, props.day_of_month, props.nth_occurrence, props.day_of_week, props.start_time, props.end_text, props.blurb, props.is_active, props.max_future_instances], () => {
+watch(() => [props.id, props.template_name, props.title_template, props.event_title_template, props.naming_convention, props.recurrence_type, props.day_of_month, props.nth_occurrence, props.day_of_week, props.start_time, props.end_text, props.blurb, props.is_active, props.max_future_instances, props.type, props.brief], () => {
   form.value = {
     id: props.id,
     template_name: props.template_name || props.title_template || '',
@@ -253,7 +273,9 @@ watch(() => [props.id, props.template_name, props.title_template, props.event_ti
     end_text: props.end_text || 'around noon',
     blurb: props.blurb || '',
     is_active: props.is_active ?? true,
-    max_future_instances: props.max_future_instances ?? 3
+    max_future_instances: props.max_future_instances ?? 3,
+    type: props.type || 'general',
+    brief: briefToState(props.brief)
   };
 }, { deep: true });
 
@@ -284,9 +306,11 @@ async function saveTemplate() {
       start_time,
       end_text: form.value.end_text || null,
       blurb: form.value.blurb || null,
-      garden: props.garden,
+      garden: props.gardenDocumentId || props.garden,
       is_active: form.value.is_active,
-      max_future_instances: form.value.max_future_instances
+      max_future_instances: form.value.max_future_instances,
+      type: form.value.type || null,
+      brief: briefToPayload(form.value.brief)
     };
 
     if (form.value.recurrence_type === 'day_of_month') {
@@ -306,7 +330,10 @@ async function saveTemplate() {
     }
 
     if (isEditing.value) {
-      await templateStore.update(form.value.id, data);
+      const updated = await templateStore.update(props.documentId || form.value.id, data);
+      // Saving re-creates the published row, so the numeric id (used by the
+      // preview route) changes; carry the new one.
+      if (updated?.id) form.value.id = updated.id;
       alertStore.success('Recurring template updated');
     } else {
       const result = await templateStore.create(data);
@@ -333,7 +360,7 @@ async function deleteTemplate() {
   modalErrors.value = [];
   isLoading.value = true;
   try {
-    await templateStore.delete(form.value.id);
+    await templateStore.delete(props.documentId || form.value.id);
     alertStore.success('Recurring template deleted');
     emit('deleted');
     closeUp();
@@ -568,6 +595,29 @@ const showCard = computed(() => !!cardTitle.value);
               placeholder="Default description for generated events"
             />
           </div>
+        </div>
+
+        <div class="border border-gray-300 dark:border-[#3d4d36] rounded-lg p-3">
+          <div class="flex flex-wrap items-end justify-between gap-3 mb-1">
+            <div>
+              <h3 class="text-base font-bold m-0">What volunteers see</h3>
+              <p class="text-xs text-gray-600 dark:text-[#c5d4b8] mt-1 mb-0">
+                Shown on every event in this series. Change it here and the upcoming events update too.
+              </p>
+            </div>
+            <div class="w-44">
+              <label class="block text-xs text-gray-600 dark:text-[#999] mb-1">Event type</label>
+              <DropDown v-model="form.type" :options="EVENT_TYPE_OPTIONS" size="md" :disabled="!editor" />
+            </div>
+          </div>
+          <BriefEditor
+            v-model="form.brief"
+            :starter="starter"
+            :starter-label="typeLabel ? `a ${typeLabel}` : ''"
+            :disabled="!editor"
+            :id-prefix="`tpl-${form.id || 'new'}`"
+            class="mt-3"
+          />
         </div>
 
         <div class="grid grid-cols-2 gap-3">

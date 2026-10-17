@@ -10,8 +10,13 @@ const SCHEMA_FIELDS = new Set([
     'title_template', 'naming_convention', 'recurrence_type', 'day_of_month',
     'nth_occurrence', 'weekday', 'start_time', 'end_text', 'blurb', 'content',
     'garden', 'interest', 'accessibility', 'type', 'hero_image', 'is_active',
-    'first_occurrence_date', 'max_future_instances'
+    'first_occurrence_date', 'max_future_instances', 'brief'
 ]);
+
+// Object-form populate (v5 rejects mixing index-style with nested keys).
+const templatePopulate = 'populate[garden]=true&populate[brief][populate][agenda]=true&populate[brief][populate][bring_items]=true';
+
+const sameTemplate = (t, id) => t && (t.id === id || t.documentId === id);
 
 function toSchemaPayload(data) {
     if (!data || typeof data !== 'object') return data;
@@ -45,9 +50,15 @@ export const useRecurringTemplateStore = defineStore({
             throw err;
         },
 
-        async getByGarden(gardenId) {
+        // Pass the garden's documentId when you have it: the numeric id from
+        // /gardens/:slug/full can be the draft row's, which matches no
+        // published template. A number still filters by id, as before.
+        async getByGarden(garden) {
             this.templates = { loading: true };
-            const url = `${baseUrl}?filters[garden][id][$eq]=${gardenId}&populate[0]=garden&sort=createdAt:desc`;
+            const filter = typeof garden === 'string'
+                ? `filters[garden][documentId][$eq]=${encodeURIComponent(garden)}`
+                : `filters[garden][id][$eq]=${garden}`;
+            const url = `${baseUrl}?${filter}&${templatePopulate}&sort=createdAt:desc`;
             return fetchWrapper.get(url)
                 .then(res => {
                     if (res.data && res.meta?.pagination) {
@@ -68,7 +79,7 @@ export const useRecurringTemplateStore = defineStore({
 
         async findById(id) {
             this.template = { loading: true };
-            return fetchWrapper.get(`${baseUrl}/${id}?populate[0]=garden`)
+            return fetchWrapper.get(`${baseUrl}/${id}?${templatePopulate}`)
                 .then(res => {
                     this.template = res.data;
                     return res.data;
@@ -77,7 +88,7 @@ export const useRecurringTemplateStore = defineStore({
         },
 
         async create(data) {
-            return fetchWrapper.post(`${baseUrl}`, { data: toSchemaPayload(data) })
+            return fetchWrapper.post(`${baseUrl}?${templatePopulate}`, { data: toSchemaPayload(data) })
                 .then(res => {
                     const newTemplate = res.data;
                     if (this.templates.items && Array.isArray(this.templates.items)) {
@@ -91,12 +102,13 @@ export const useRecurringTemplateStore = defineStore({
                 });
         },
 
+        // `id` must be the template's documentId: v5's core update keys on it.
         async update(id, data) {
-            return fetchWrapper.put(`${baseUrl}/${id}`, { data: toSchemaPayload(data) })
+            return fetchWrapper.put(`${baseUrl}/${id}?${templatePopulate}`, { data: toSchemaPayload(data) })
                 .then(res => {
                     const updatedTemplate = res.data;
                     if (this.templates.items && Array.isArray(this.templates.items)) {
-                        const idx = this.templates.items.findIndex(t => t.id === id);
+                        const idx = this.templates.items.findIndex(t => sameTemplate(t, id));
                         if (idx !== -1) {
                             this.templates.items[idx] = updatedTemplate;
                         }
@@ -114,10 +126,10 @@ export const useRecurringTemplateStore = defineStore({
                 .then(() => {
                     // Remove from list
                     if (this.templates.items && Array.isArray(this.templates.items)) {
-                        this.templates.items = this.templates.items.filter(t => t.id !== id);
+                        this.templates.items = this.templates.items.filter(t => !sameTemplate(t, id));
                     }
                     // Clear current template if it was deleted
-                    if (this.template?.id === id) {
+                    if (sameTemplate(this.template, id)) {
                         this.template = {};
                     }
                 })

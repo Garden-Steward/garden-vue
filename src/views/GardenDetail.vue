@@ -16,6 +16,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import PlantsCatalog from '@/components/PlantsCatalog.vue';
 import PrintDaySheetModal from '@/components/modals/PrintDaySheetModal.vue';
 import StandingTasksEditor from '@/components/StandingTasksEditor.vue';
+import GardenVisitInfoEditor from '@/components/GardenVisitInfoEditor.vue';
 
 const authStore = useAuthStore();
 const gardensStore = useGardensStore();
@@ -968,6 +969,9 @@ const onRemoveInterest = async (interestId) => {
           </div>
 
           <VolunteerDayModal v-model:show="showDayModal" :garden="garden.id" :interests="garden.interests" :editor="editor" />
+
+          <!-- Shown on every event page for this garden -->
+          <GardenVisitInfoEditor :garden="garden" :editor="editor" />
 
           <!-- Events table (past + upcoming, sortable) -->
           <div v-if="allEventsSorted.length > 0" class="relative sm:overflow-x-auto">
