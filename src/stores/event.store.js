@@ -281,7 +281,11 @@ export const useEventStore = defineStore({
         async rsvpEvent(data) {
             return fetchWrapper.post(`${baseUrl}/rsvp/${data.id}`,{data: data})
                 .then(res => {
-                    this.event = res.data;
+                    // The RSVP response only populates `confirmed`. Merge that in
+                    // rather than replacing the event, which would drop the
+                    // garden, brief, tasks and series the event page renders.
+                    const confirmed = res?.data?.confirmed;
+                    this.event = { ...this.event, ...(Array.isArray(confirmed) ? { confirmed } : {}) };
                 })
                 .catch(this.handleError);
         },
