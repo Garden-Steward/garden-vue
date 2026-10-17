@@ -8,6 +8,7 @@ import VolunteerActivity from '@/components/VolunteerActivity.vue';
 import LeafletMap from '@/components/LeafletMap.vue';
 import SunIcon from '@/components/icons/Sun.svg?raw';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import { RsvpPhoneModal } from '@/components/modals';
 import '@/assets/garden-public.css';
 
 const route = useRoute();
@@ -444,6 +445,31 @@ const projectLinkProps = (project) => {
 const nextEvent = computed(() => upcomingEvents.value[0] || null);
 const laterEvents = computed(() => upcomingEvents.value.slice(1));
 
+// RSVP to the next workday right here rather than sending people to the event
+// page. Signed-in stewards RSVP directly; everyone else gives a phone number.
+const showRsvpModal = ref(false);
+const rsvpedIds = ref(new Set());
+const rsvpBusy = ref(false);
+const nextEventRsvped = computed(() => !!nextEvent.value && rsvpedIds.value.has(nextEvent.value.id));
+const markRsvped = (id) => { rsvpedIds.value = new Set(rsvpedIds.value).add(id); };
+
+const rsvpNextEvent = async () => {
+  if (!nextEvent.value || nextEventRsvped.value || rsvpBusy.value) return;
+  if (!user.value) {
+    showRsvpModal.value = true;
+    return;
+  }
+  rsvpBusy.value = true;
+  try {
+    await eventStore.rsvpEvent({ userId: user.value.id, id: nextEvent.value.id });
+    markRsvped(nextEvent.value.id);
+  } catch {
+    // The store's error handler already raises an alert.
+  } finally {
+    rsvpBusy.value = false;
+  }
+};
+
 const formatShortDay = (dateString) => {
   if (!dateString) return '';
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -666,7 +692,7 @@ watch(
               {{ upcomingEvents.length > 1 ? 'Upcoming workdays' : 'Upcoming workday' }}
             </p>
             <template v-if="nextEvent">
-              <router-link :to="`/d/${nextEvent.id}`" class="gp-event">
+              <router-link :to="`/d/${nextEvent.id}`" class="gp-event gp-event--feature" :aria-label="`${nextEvent.title}, view workday details`">
                 <span class="gp-datechip gp-datechip--solid">
                   <span class="gp-datechip-month">{{ chipMonth(nextEvent.startDatetime) }}</span>
                   <span class="gp-datechip-day">{{ chipDay(nextEvent.startDatetime) }}</span>
@@ -675,9 +701,27 @@ watch(
                   <span class="gp-event-title">{{ nextEvent.title }}</span>
                   <span class="gp-event-meta">{{ formatWeekdayTime(nextEvent.startDatetime) }}</span>
                 </span>
+                <svg class="gp-icon gp-event-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
               </router-link>
               <div v-if="nextEvent.blurb" class="gp-event-blurb" v-html="nextEvent.blurb"></div>
-              <router-link :to="`/d/${nextEvent.id}`" class="gp-btn gp-btn-primary gp-btn-block">RSVP</router-link>
+              <div class="gp-rsvp-row">
+                <a
+                  v-if="nextEvent.partiful_link"
+                  :href="nextEvent.partiful_link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="gp-btn gp-btn-primary gp-btn-sm"
+                >RSVP on Partiful</a>
+                <button
+                  v-else
+                  type="button"
+                  class="gp-btn gp-btn-primary gp-btn-sm"
+                  :disabled="nextEventRsvped || rsvpBusy"
+                  @click="rsvpNextEvent"
+                >
+                  {{ nextEventRsvped ? "You're going" : 'RSVP' }}
+                </button>
+              </div>
 
               <div v-if="laterEvents.length" class="gp-event-list gp-event-list--later">
                 <p class="gp-label">Also coming up</p>
@@ -855,6 +899,13 @@ watch(
       </div>
     </div>
   </Teleport>
+
+  <RsvpPhoneModal
+    v-model="showRsvpModal"
+    :event-id="nextEvent?.id"
+    :garden-title="garden?.title"
+    @rsvped="markRsvped"
+  />
 </template>
 
 <style>

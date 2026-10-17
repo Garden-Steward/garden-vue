@@ -10,7 +10,7 @@ import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
 import EventProjectCard from '@/components/EventProjectCard.vue';
 import GardenContextBar from '@/components/GardenContextBar.vue';
-import { PrintDaySheetModal } from '@/components/modals';
+import { PrintDaySheetModal, RsvpPhoneModal } from '@/components/modals';
 import '@/assets/garden-public.css';
 
 const md = new MarkdownIt().use(markdownItAttrs);
@@ -23,8 +23,6 @@ const { event } = storeToRefs(eventStore);
 
 const showModal = ref(false);
 const showPrintDaySheet = ref(false);
-const phoneNumber = ref('');
-const phoneError = ref('');
 const isRSVPed = ref(false);
 
 // The component is reused when moving between events (e.g. "Next in this
@@ -216,38 +214,6 @@ const rsvpEvent = async () => {
   }
 };
 
-const closeModal = () => { showModal.value = false; };
-
-const submitPhoneNumber = async () => {
-  if (isEventPast.value) {
-    phoneError.value = 'This event has already passed. RSVP is no longer available.';
-    return;
-  }
-  phoneError.value = '';
-  const digitsOnly = phoneNumber.value.replace(/\D/g, '');
-  if (digitsOnly && /^\d{10}$/.test(digitsOnly)) {
-    try {
-      await eventStore.rsvpEvent({ phoneNumber: digitsOnly, id: route.params.id });
-      closeModal();
-      isRSVPed.value = true;
-    } catch (error) {
-      console.error('Error RSVPing to event:', error);
-      phoneError.value = "Couldn't save your RSVP. Try again in a moment.";
-    }
-  } else {
-    phoneError.value = 'Please enter a valid 10-digit phone number';
-  }
-};
-
-const formatPhoneNumber = (value) => {
-  if (!value) return value;
-  const digits = value.replace(/[^\d]/g, '');
-  if (digits.length < 4) return digits;
-  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-};
-const handlePhoneInput = (e) => { phoneNumber.value = formatPhoneNumber(e.target.value); };
-const handleKeyPress = (e) => { if (e.key === 'Enter') submitPhoneNumber(); };
 </script>
 
 <template>
@@ -525,29 +491,12 @@ const handleKeyPress = (e) => { if (e.key === 'Enter') submitPhoneNumber(); };
     </section>
   </div>
 
-  <!-- Phone RSVP modal -->
-  <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="closeModal">
-    <div class="bg-white dark:!bg-[#2d3e26] p-6 rounded-lg shadow-lg w-[90%] max-w-md" role="dialog" aria-modal="true" aria-labelledby="rsvp-modal-title">
-      <h3 id="rsvp-modal-title" class="md:text-xl mb-4 text-lg text-gray-900 dark:text-[#e8e8e8]">Garden Steward manages events through SMS. You will be asked to sign up for SMS updates for {{ garden?.title }} as part of RSVPing for this event.</h3>
-      <label for="rsvp-phone" class="sr-only">Phone number</label>
-      <input
-        id="rsvp-phone"
-        :value="phoneNumber"
-        type="tel"
-        placeholder="(123) 456-7890"
-        class="w-full p-2 border border-gray-300 dark:border-[#3d4d36] dark:bg-[#1a1a1a] dark:text-[#e8e8e8] rounded mb-2"
-        maxlength="14"
-        @input="handlePhoneInput"
-        @keypress="handleKeyPress"
-      >
-      <p class="text-sm mb-4 text-gray-600 dark:text-[#b8b8b8]">You can STOP SMS at any point by replying with STOP.</p>
-      <p v-if="phoneError" class="text-red-600 text-sm mb-2">{{ phoneError }}</p>
-      <div class="flex justify-end gap-2">
-        <button type="button" class="px-4 py-2 bg-gray-200 dark:bg-[#3d4d36] dark:text-[#e8e8e8] rounded" @click="closeModal">Cancel</button>
-        <button type="button" class="px-4 py-2 bg-[#064e3b] text-white rounded font-bold" @click="submitPhoneNumber">Submit</button>
-      </div>
-    </div>
-  </div>
+  <RsvpPhoneModal
+    v-model="showModal"
+    :event-id="route.params.id"
+    :garden-title="garden?.title"
+    @rsvped="isRSVPed = true"
+  />
 
   <PrintDaySheetModal v-model="showPrintDaySheet" :event-id="event?.id" :is-manager="isManager" />
 </template>

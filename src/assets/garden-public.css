@@ -206,6 +206,18 @@
   width: 100%;
 }
 
+.gp-btn.gp-btn-sm {
+  min-height: 40px;
+  padding: 0 18px;
+  font-size: 0.9375rem;
+}
+
+.gp-btn:disabled {
+  cursor: default;
+  opacity: 0.75;
+  transform: none;
+}
+
 /* ---------- At a glance ---------- */
 .gp-facts {
   display: flex;
@@ -395,15 +407,16 @@
 }
 
 /* ---------- Projects ---------- */
+/* Compact rows (thumbnail beside text) so one project doesn't fill the page. */
 .gp-project-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .gp-project-card {
   display: flex;
-  flex-direction: column;
+  align-items: stretch;
   overflow: hidden;
   border: 1px solid #c8d0c0;
   border-radius: 14px;
@@ -426,9 +439,10 @@ a.gp-project-card:hover {
 }
 
 .gp-project-img {
+  flex: none;
   display: block;
-  width: 100%;
-  aspect-ratio: 16 / 10;
+  width: 200px;
+  min-height: 140px;
   object-fit: cover;
 }
 
@@ -441,16 +455,29 @@ a.gp-project-card:hover {
 }
 
 .gp-project-body {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 18px 20px 20px;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 20px;
+}
+
+@media (max-width: 560px) {
+  .gp-project-img {
+    width: 104px;
+    min-height: 104px;
+  }
+
+  .gp-project-body {
+    padding: 12px 14px;
+  }
 }
 
 .gp-project-title {
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 700;
-  font-size: 1.375rem;
+  font-size: 1.25rem;
   line-height: 1.25;
   color: #1f2a1f;
 }
@@ -553,6 +580,44 @@ a.gp-project-card:hover {
 
 .gp-event:hover .gp-event-title {
   text-decoration: underline;
+}
+
+/* The featured workday reads as a link: a chevron and a hover wash. */
+.gp-event--feature {
+  margin: -8px;
+  padding: 8px;
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.gp-event--feature:hover {
+  background-color: rgba(6, 78, 59, 0.07);
+}
+
+.dark .gp-event--feature:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.gp-event-chevron {
+  flex: none;
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  color: #064e3b;
+  transition: transform 0.2s ease;
+}
+
+.gp-event--feature:hover .gp-event-chevron {
+  transform: translateX(3px);
+}
+
+.dark .gp-event-chevron {
+  color: #c5d4b8;
+}
+
+.gp-rsvp-row {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .gp-datechip {
