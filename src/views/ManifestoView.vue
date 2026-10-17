@@ -1,4 +1,5 @@
 <script setup>
+import PageHeader from '@/components/PageHeader.vue';
 const audioUrl = 'https://storage.googleapis.com/steward_upload/uploads/manifesto_audio_391eee28a7/manifesto_audio_391eee28a7.m4a'
 
 const manifestoText = `We are life-seeking fulfillment.
@@ -97,13 +98,10 @@ We must act as nature.`
 </script>
 
 <template>
+  <PageHeader eyebrow="Manifesto" title="Our manifesto" width="900px" />
   <!-- Light: cream panel + forest copy. Dark: same canvas #2d3e26 as body, light gray copy. -->
   <div class="manifesto-page py-6 md:py-10 dark:bg-[#2d3e26] rounded-none md:rounded-lg">
     <div class="manifesto-panel bg-custom-light dark:bg-[#2d3e26] p-5 rounded-lg md:w-2/3 lg:w-3/4 mx-auto text-gray-900 dark:text-[#d0d0d0]">
-    <h1 class="manifesto-heading text-3xl text-center mb-6 font-serif text-gray-900 dark:text-[#c8dbbf]">
-      Our Manifesto
-    </h1>
-
     <!-- Audio Player Section -->
     <div class="manifesto-media bg-[#344a34] p-6 rounded-lg mb-8 text-center dark:bg-[#344a34]">
       <p class="manifesto-media-text text-lg mb-4">Listen to the audio version</p>

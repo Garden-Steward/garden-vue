@@ -1,11 +1,11 @@
 <script setup>
+import PageHeader from '@/components/PageHeader.vue';
 </script>
 
 <template>
+    <PageHeader eyebrow="Legal" title="Privacy policy" width="944px" />
     <div class="bg-custom-light dark:bg-[#2d3e26] p-5 rounded-lg md:w-2/3 lg:w-3/4 mx-auto">
         <div class="text-lg max-w-4xl w-full mx-auto mt-8 mb-4">
-            <h1 class="text-2xl text-center mb-6 uppercase font-roboto dark:text-[#f5f5f5]">Privacy Policy for Garden Steward</h1>
-            
             <div class="mb-4">
                 <p class="dark:text-[#d0d0d0]"><strong>Effective Date:</strong> [Insert Date]</p>
             </div>

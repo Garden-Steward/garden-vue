@@ -1,11 +1,13 @@
 <script setup>
+import PageHeader from '@/components/PageHeader.vue';
 </script>
 
 <template>
+    <PageHeader eyebrow="Contribute" title="Help build Garden Steward" width="624px">
+        An open-source project. Developers, designers and organizers are all welcome.
+    </PageHeader>
     <div class="bg-custom-light dark:bg-[#2d3e26] p-5 rounded-lg md:w-2/3 lg:w-3/4 mx-auto">
         <div class="text-lg max-w-xl w-full mx-auto mt-8 mb-4 dark:text-white">
-            <h1 class="text-2xl text-center mb-6 dark:text-white">Contribute to Garden Steward</h1>
-            
             <div class="mb-6">
                 <h2 class="text-xl font-bold mb-3 dark:text-white">About the Project</h2>
                 <p class="mb-4 dark:text-white">

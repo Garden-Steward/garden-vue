@@ -1,4 +1,5 @@
 <script setup>
+import PageHeader from '@/components/PageHeader.vue';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
@@ -152,6 +153,9 @@ onUnmounted(() => {
 
 <template>
   <div class="plist">
+    <PageHeader eyebrow="Projects" title="What neighbors are building" width="1080px">
+      Garden builds, plantings and restoration work underway near you. Find one to join.
+    </PageHeader>
 
     <!-- Filter bar (the logo + hamburger row above it is the app's global nav) -->
     <div class="plist-bar" :style="{ top: `${navOffset}px` }">

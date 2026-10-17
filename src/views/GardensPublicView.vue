@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useGardensStore, useAuthStore } from '@/stores';
 import { fetchWrapper } from '@/helpers';
 import { getImageOrDefault } from '@/helpers/image-utils';
+import PageHeader from '@/components/PageHeader.vue';
 import { isProjectPubliclyVisible } from '@/_config/GardenConfig';
 
 const gardensStore = useGardensStore();
@@ -170,6 +171,9 @@ onUnmounted(() => {
 
 <template>
   <div class="glist">
+    <PageHeader eyebrow="Gardens" title="Community gardens" width="1080px">
+      Pick one close to you and come to a workday. No experience needed — tools, gloves and good company provided.
+    </PageHeader>
 
     <!-- Filter bar (the logo + hamburger row above it is the app's global nav) -->
     <div class="glist-bar" :style="{ top: `${navOffset}px` }">
@@ -204,14 +208,6 @@ onUnmounted(() => {
         </button>
       </div>
     </div>
-
-    <!-- Intro -->
-    <header class="glist-intro">
-      <h1 class="glist-title">Community gardens</h1>
-      <p class="glist-lede">
-        Pick one close to you and come to a workday. No experience needed — tools, gloves and good company provided.
-      </p>
-    </header>
 
     <!-- Cards -->
     <div class="glist-cards">
@@ -399,36 +395,6 @@ html.dark .chip--status.is-selected {
   background: #8aa37c;
   border-color: #8aa37c;
   color: #14281a;
-}
-
-/* ── Intro ─────────────────────────────────────────── */
-.glist-intro {
-  padding: 20px 16px 0;
-}
-
-.glist-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: #064e3b;
-  margin: 0 0 6px;
-}
-
-.glist-lede {
-  font-size: 14px;
-  line-height: 1.55;
-  color: #4b5563;
-  margin: 0;
-  max-width: 560px;
-}
-
-html.dark .glist-title {
-  color: #f7f1e3;
-}
-
-html.dark .glist-lede {
-  color: #cfd8c8;
 }
 
 /* ── Cards ─────────────────────────────────────────── */
@@ -648,23 +614,10 @@ html.dark .gcard-count {
 
 /* ── Wider screens ─────────────────────────────────── */
 @media (min-width: 700px) {
-  .chip-row,
-  .glist-intro {
+  .chip-row {
     max-width: 1080px;
     margin-left: auto;
     margin-right: auto;
-  }
-
-  .glist-intro {
-    padding: 28px 24px 0;
-  }
-
-  .glist-title {
-    font-size: 32px;
-  }
-
-  .glist-lede {
-    font-size: 15px;
   }
 
   .glist-cards {

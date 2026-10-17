@@ -1,6 +1,8 @@
 <template>
   <div v-if="!locationTrackings.loading">
-    <h1 class="dark:text-[#f5f5f5]">Pollinator Pathways</h1>
+    <PageHeader eyebrow="Map" title="Pollinator Pathways" width="1280px">
+      Plantings neighbors have logged for pollinators. Tap a spot to see what's growing.
+    </PageHeader>
     <LeafletMap ref="leafletMap" :locationTrackings="locationTrackings" :centerCoordinates="centerCoordinates" @select-location="selectLocation" />
     <div>
       <div v-if="selectedLocation">
@@ -28,6 +30,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue';
 import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import LeafletMap from '@/components/LeafletMap.vue';

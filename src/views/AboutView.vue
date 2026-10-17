@@ -1,15 +1,13 @@
 <script setup>
+import PageHeader from '@/components/PageHeader.vue';
 </script>
 
 <template>
   <div class="about-wrapper min-h-screen bg-[#f7f1e3] dark:bg-[#2d3e26]">
 
-    <!-- Hero heading -->
-    <div class="hero-section">
-      <p class="hero-eyebrow">About</p>
-      <h1 class="hero-title">Garden Steward</h1>
-      <p class="hero-tagline">Community-grown tools for urban agriculture</p>
-    </div>
+    <PageHeader eyebrow="About" title="Garden Steward" width="640px">
+      Community-grown tools for urban agriculture
+    </PageHeader>
 
     <!-- About content -->
     <div class="content-section">
@@ -53,45 +51,11 @@
   min-height: 100vh;
 }
 
-/* ── Hero heading ──────────────────────────────────── */
-.hero-section {
-  text-align: center;
-  padding: 3.5rem 1.5rem 2rem;
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-.hero-eyebrow {
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: #8aa37c;
-  margin: 0 0 0.4rem;
-}
-
-.hero-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(2.5rem, 6vw, 4rem);
-  font-weight: 800;
-  color: #376451;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin: 0 0 0.75rem;
-}
-
-.hero-tagline {
-  font-size: 1.1rem;
-  color: #6b7280;
-  margin: 0;
-  font-weight: 400;
-}
-
 /* ── Content block ─────────────────────────────────── */
 .content-section {
   max-width: 640px;
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 4rem;
+  padding: 2rem 1.5rem 4rem;
   text-align: center;
 }
 
@@ -184,21 +148,6 @@
 -->
 <style>
 /* ── Dark mode ─────────────────────────────────────── */
-html.dark .hero-title {
-  color: #c8dbbf;
-  -webkit-text-fill-color: #c8dbbf;
-}
-
-html.dark .hero-eyebrow {
-  color: #a5c499;
-  -webkit-text-fill-color: #a5c499;
-}
-
-html.dark .hero-tagline {
-  color: #a0a8a0;
-  -webkit-text-fill-color: #a0a8a0;
-}
-
 html.dark .body-text {
   color: #e8e8e8 !important;
   -webkit-text-fill-color: #e8e8e8 !important;

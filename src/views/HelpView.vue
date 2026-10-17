@@ -1,4 +1,5 @@
 <script setup>
+import PageHeader from '@/components/PageHeader.vue';
 import { ref } from 'vue';
 
 const faqs = ref([
@@ -19,8 +20,10 @@ const toggle = (index) => {
 </script>
 
 <template>
-    <div class="max-w-xl w-full mx-auto mt-8 stew">
-        <h1 class="text-2xl pb-5 pt-2 text-center uppercase font-roboto">using garden steward</h1>
+    <PageHeader eyebrow="Help" title="Using Garden Steward" width="624px">
+        Answers to common questions. Tap one to open it.
+    </PageHeader>
+    <div class="max-w-xl w-full mx-auto mt-6 stew px-4 md:px-0">
         <div v-for="(item, index) in faqs" :key="index" class="faq-item">
             <h2 class="faq-question py-4 mb-0" @click="toggle(index)">
                 {{ item.question }}

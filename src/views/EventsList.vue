@@ -7,6 +7,7 @@ import { useEventStore } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import { titleWithoutDate } from '@/helpers/event-utils';
 import '@/assets/garden-public.css';
+import PageHeader from '@/components/PageHeader.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -134,16 +135,10 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
 
 <template>
   <div class="evl-page">
-    <header class="evl-head">
-      <div class="evl-wrap">
-        <p class="gp-label gp-label--accent">Events</p>
-        <h1 class="evl-title">Workdays &amp; gatherings</h1>
-        <p class="evl-sub">
-          Harvests, build days and restoration in community gardens near you.
-          Everyone's welcome, no experience needed.
-        </p>
-      </div>
-    </header>
+    <PageHeader eyebrow="Events" title="Workdays & gatherings">
+      Harvests, build days and restoration in community gardens near you.
+      Everyone's welcome, no experience needed.
+    </PageHeader>
 
     <div class="evl-wrap">
       <!-- Filters -->
@@ -286,43 +281,6 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
   max-width: 960px;
   margin: 0 auto;
   padding: 0 24px;
-}
-
-/* Header */
-.evl-head {
-  padding: 48px 0 36px;
-  background-color: #f7f1e3;
-  border-bottom: 1px solid #e0d6c4;
-}
-
-.dark .evl-head {
-  background-color: #344a34;
-  border-bottom-color: #3d4d36;
-}
-
-.evl-title {
-  margin: 8px 0 10px;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 700;
-  font-size: clamp(2rem, 4.5vw, 3rem);
-  line-height: 1.1;
-  color: #064e3b;
-}
-
-.dark .evl-title {
-  color: #f5f5f5;
-}
-
-.evl-sub {
-  max-width: 56ch;
-  margin: 0;
-  font-size: 1.0625rem;
-  line-height: 1.6;
-  color: #4b5563;
-}
-
-.dark .evl-sub {
-  color: #d0d0d0;
 }
 
 /* Filters */
@@ -718,10 +676,6 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
 }
 
 @media (max-width: 720px) {
-  .evl-head {
-    padding: 32px 0 24px;
-  }
-
   .evl-wrap {
     padding: 0 16px;
   }
