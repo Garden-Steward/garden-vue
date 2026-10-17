@@ -21,7 +21,16 @@ export const useGardensStore = defineStore({
         },
         async getAllPublic() {
             this.gardens = { loading: true };
-            fetchWrapper.get(`${baseUrl}?populate=hero_image`)
+            // Relations are trimmed to the fields the list counts or filters on —
+            // a bare `populate=volunteers` would ship whole user records.
+            const populate = [
+                'populate[hero_image]=true',
+                'populate[volunteers][fields][0]=id',
+                'populate[projects][fields][0]=review_status',
+                'populate[projects][fields][1]=date_start',
+                'populate[projects][fields][2]=date_end'
+            ].join('&');
+            fetchWrapper.get(`${baseUrl}?${populate}&pagination[pageSize]=100`)
                 .then(res => this.gardens = res.data)
                 .catch(error => this.gardens = { error })
         },

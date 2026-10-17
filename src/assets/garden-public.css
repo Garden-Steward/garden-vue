@@ -564,6 +564,17 @@ a.gp-project-card:hover {
   padding: 0 8px 4px;
 }
 
+.gp-map-note {
+  margin: 0;
+  padding: 0 8px 4px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.dark .gp-map-note {
+  color: #cfd8c8;
+}
+
 .gp-event {
   display: flex;
   align-items: center;

@@ -6,6 +6,7 @@ import { computed, ref, onMounted, watch, nextTick } from 'vue';
 import { getRandomDefaultImage, getImageOrDefault } from '@/helpers/image-utils';
 import VolunteerActivity from '@/components/VolunteerActivity.vue';
 import LeafletMap from '@/components/LeafletMap.vue';
+import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
 import SunIcon from '@/components/icons/Sun.svg?raw';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import { RsvpPhoneModal } from '@/components/modals';
@@ -386,6 +387,18 @@ const mapLocationTrackings = computed(() => {
   }];
 });
 
+// Signed-out visitors get a 300-yard area, not the exact spot.
+const approximateArea = computed(() => {
+  if (user.value || !gardenCoordinates.value) return null;
+  const { latitude, longitude } = gardenCoordinates.value;
+  // Strapi already offsets coordinates for signed-out callers and says so;
+  // offsetting again would double the shift.
+  const center = garden.value?.location_approximate
+    ? { latitude, longitude }
+    : approximateCenter(latitude, longitude, garden.value?.id ?? garden.value?.slug);
+  return center ? { ...center, radiusMeters: APPROX_AREA_RADIUS_M } : null;
+});
+
 const showGardenMap = computed(() => {
   return !!(
     garden.value?.id &&
@@ -396,7 +409,7 @@ const showGardenMap = computed(() => {
 
 const googleMapsUrl = computed(() => {
   const c = gardenCoordinates.value;
-  if (!c) return null;
+  if (!c || !user.value) return null;
   const { latitude: lat, longitude: lng } = c;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   return `https://www.google.com/maps?q=${lat},${lng}`;
@@ -544,20 +557,26 @@ watch(
         <div class="gp-hero-body">
           <h1 id="garden-title" class="gp-title">{{ garden.title }}</h1>
           <p v-if="garden.blurb" class="gp-blurb">{{ garden.blurb }}</p>
-          <!-- RSVPing to a workday is how new volunteers join, so it's the only hero action -->
+          <!-- RSVPing to a workday is how new volunteers join, so it leads the hero -->
           <div v-if="nextEvent" class="gp-hero-actions">
-            <router-link :to="`/d/${nextEvent.id}`" class="gp-btn gp-btn-cta">
-              RSVP · {{ formatShortDay(nextEvent.startDatetime) }}
+            <a
+              v-if="nextEvent.partiful_link"
+              :href="nextEvent.partiful_link"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gp-btn gp-btn-cta"
+            >RSVP to next event</a>
+            <button
+              v-else
+              type="button"
+              class="gp-btn gp-btn-cta"
+              :disabled="nextEventRsvped || rsvpBusy"
+              @click="rsvpNextEvent"
+            >{{ nextEventRsvped ? "You're going" : 'RSVP to next event' }}</button>
+            <router-link :to="`/d/${nextEvent.id}`" class="gp-btn gp-btn-ghost">
+              Next event · {{ formatShortDay(nextEvent.startDatetime) }}
               <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </router-link>
-            <button
-              v-if="upcomingEvents.length > 1"
-              type="button"
-              class="gp-btn gp-btn-ghost"
-              @click="scrollToSection('events')"
-            >
-              More workdays
-            </button>
           </div>
         </div>
       </section>
@@ -774,11 +793,18 @@ watch(
 
           <div v-if="showGardenMap" class="gp-card gp-card--map">
             <div class="garden-map-container garden-map-container--inline">
+              <!-- Keyed on sign-in so the map redraws when the exact spot unlocks -->
               <LeafletMap
+                :key="approximateArea ? 'area' : 'pin'"
                 :location-trackings="mapLocationTrackings"
-                :center-coordinates="gardenCoordinates"
+                :center-coordinates="approximateArea || gardenCoordinates"
+                :area="approximateArea"
               />
             </div>
+            <p v-if="approximateArea" class="gp-map-note">
+              Approximate area ·
+              <button type="button" class="gp-link gp-link-button" @click="authStore.openLoginModal(route.fullPath)">Sign in for location details</button>
+            </p>
             <a
               v-if="googleMapsUrl"
               :href="googleMapsUrl"
