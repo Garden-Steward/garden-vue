@@ -91,7 +91,13 @@ export default {
     onMounted(() => {
       editor.value = new Editor({
         extensions: [
-          StarterKit,
+          // Tiptap 3's StarterKit added Link, Underline and TrailingNode. Keep
+          // them off so the stored markdown matches what the 2.x editor wrote.
+          StarterKit.configure({
+            link: false,
+            underline: false,
+            trailingNode: false,
+          }),
           Markdown,
         ],
         content: props.modelValue,
@@ -108,7 +114,7 @@ export default {
 
     watch(() => props.modelValue, (newValue) => {
       if (editor.value && newValue !== editor.value.storage.markdown.getMarkdown()) {
-        editor.value.commands.setContent(newValue, false)
+        editor.value.commands.setContent(newValue, { emitUpdate: false })
       }
     })
 
