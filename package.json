@@ -5,18 +5,16 @@
         "node": "^22.0.0"
     },
     "resolutions": {
-        "node-forge": "^1.3.2",
-        "jws": "^4.0.1",
-        "lodash": "^4.17.23",
-        "lodash-es": "^4.17.23",
-        "js-yaml": "^4.3.2"
+        "lodash": "^4.18.1",
+        "lodash-es": "^4.18.1",
+        "js-yaml": "^4.3.2",
+        "postcss-selector-parser": "^7.1.6"
     },
     "overrides": {
-        "node-forge": "^1.3.2",
-        "jws": "^4.0.1",
-        "lodash": "^4.17.23",
-        "lodash-es": "^4.17.23",
-        "js-yaml": "^4.3.2"
+        "lodash": "^4.18.1",
+        "lodash-es": "^4.18.1",
+        "js-yaml": "^4.3.2",
+        "postcss-selector-parser": "^7.1.6"
     },
     "scripts": {
         "dev": "vite",
@@ -45,7 +43,7 @@
         "tiptap-markdown": "^0.8.10",
         "vcards-js": "^2.10.0",
         "vee-validate": "^4.5.11",
-        "vue": "^3.2.33",
+        "vue": "^3.5.44",
         "vue-router": "^4.0.14",
         "vue-strapi-blocks-renderer": "^0.2.2",
         "vue3-slide-up-down": "^2.0.1",
