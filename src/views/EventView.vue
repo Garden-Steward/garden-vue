@@ -16,7 +16,11 @@ import GardenContextBar from '@/components/GardenContextBar.vue';
 import { PrintDaySheetModal, RsvpPhoneModal } from '@/components/modals';
 import '@/assets/garden-public.css';
 
-const md = new MarkdownIt().use(markdownItAttrs);
+// Without an allowlist markdown-it-attrs accepts any attribute, so
+// `[x](https://…){onmouseover=…}` would run script on this public page.
+const md = new MarkdownIt().use(markdownItAttrs, {
+  allowedAttributes: ['id', 'class', 'title', 'target', 'rel', 'width', 'height'],
+});
 
 const route = useRoute();
 const eventStore = useEventStore();

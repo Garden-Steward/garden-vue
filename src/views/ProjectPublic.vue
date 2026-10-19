@@ -9,7 +9,11 @@ import Gallery from '@/components/Gallery.vue';
 import MarkdownIt from 'markdown-it';
 import markdownItAttrs from 'markdown-it-attrs';
 
-const md = new MarkdownIt().use(markdownItAttrs);
+// Without an allowlist markdown-it-attrs accepts any attribute, so
+// `[x](https://…){onmouseover=…}` would run script on this public page.
+const md = new MarkdownIt().use(markdownItAttrs, {
+  allowedAttributes: ['id', 'class', 'title', 'target', 'rel', 'width', 'height'],
+});
 
 const route = useRoute();
 const projectsStore = useProjectsStore();

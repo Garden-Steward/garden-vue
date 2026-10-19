@@ -13,6 +13,9 @@ import {
   normalizeReviewStatus
 } from '@/_config/GardenConfig';
 import MediaSelector from '@/components/form/MediaSelector.vue';
+import MarkdownIt from 'markdown-it';
+
+const md = new MarkdownIt();
 
 const props = defineProps({
   title: String,
@@ -349,6 +352,10 @@ const displayedGalleryImages = computed(() => {
 const hasMoreGalleryImages = computed(() => {
   return validGalleryImages.value.length > visibleGalleryImages.value;
 });
+
+// The description is markdown; render it (escaping raw HTML) instead of
+// injecting the stored string.
+const descriptionHtml = computed(() => (form.value.description ? md.render(form.value.description) : ''));
 
 // Public page URL
 const publicPageUrl = computed(() => {
@@ -1463,7 +1470,7 @@ onUnmounted(() => {
 
               <!-- Description -->
               <div v-if="form.description" class="mb-8 prose prose-lg max-w-none">
-                <div v-html="form.description"></div>
+                <div v-html="descriptionHtml"></div>
               </div>
 
               <!-- Featured Gallery -->
