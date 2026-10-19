@@ -56,9 +56,6 @@
         <button @click="editor.chain().focus().redo().run()" :disabled="!editor.can().chain().focus().redo().run()">
           <i class="fas fa-redo"></i>
         </button>
-        <button @click="editor.chain().focus().setColor('#958DF1').run()" :class="{ 'is-active': editor.isActive('textStyle', { color: '#958DF1' }) }">
-          <i class="fas fa-palette" style="color: #958DF1;"></i>
-        </button>
       </div>
     </div>
     <editor-content :editor="editor" />
@@ -91,10 +88,15 @@ export default {
     onMounted(() => {
       editor.value = new Editor({
         extensions: [
-          // Tiptap 3's StarterKit added Link, Underline and TrailingNode. Keep
-          // them off so the stored markdown matches what the 2.x editor wrote.
+          // Tiptap 3's StarterKit added Link, Underline and TrailingNode.
+          // Link round-trips as [text](url) (a pasted or typed URL as <url>);
+          // it rejects javascript: and other unsafe hrefs. Underline has no
+          // markdown syntax and TrailingNode changes the output, so both stay off.
           StarterKit.configure({
-            link: false,
+            link: {
+              openOnClick: false,
+              defaultProtocol: 'https',
+            },
             underline: false,
             trailingNode: false,
           }),
@@ -247,6 +249,13 @@ export default {
     border-left-color: #8aa37c;
     color: #6b7280;
   }
+
+  a {
+    color: #2f6b2f;
+    text-decoration: underline;
+    text-decoration-color: #8aa37c;
+    text-underline-offset: 2px;
+  }
 }
 
 .dark-mode-editor {
@@ -351,6 +360,10 @@ html.dark .tiptap.prose {
 
   blockquote {
     color: #d0d0d0;
+  }
+
+  a {
+    color: #b5d3a5;
   }
 }
 
