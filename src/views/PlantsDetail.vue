@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia';
 import { usePlantsStore } from '@/stores';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import ManageLayout from '@/components/ManageLayout.vue';
+import { renderMarkdown } from '@/helpers/safe-html';
 
 const route = useRoute();
 const router = useRouter();
@@ -206,12 +207,12 @@ const getPotency = (potency) => {
 
             <div v-if="plant.magic" id="magic" class="plant-detail__section">
               <h2 class="plant-detail__section-title">Magic</h2>
-              <div class="plant-detail__text plant-detail__text--magic" v-html="plant.magic"></div>
+              <div class="plant-detail__text plant-detail__text--magic" v-html="renderMarkdown(plant.magic)"></div>
             </div>
 
             <div v-if="plant.description" id="description" class="plant-detail__section">
                           <h2 class="plant-detail__section-title">Description</h2>
-                          <div class="plant-detail__text" v-html="plant.description"></div>
+                          <div class="plant-detail__text" v-html="renderMarkdown(plant.description)"></div>
             </div>
 
                         <div v-if="getImages().length > 0" class="plant-detail__section">
@@ -230,7 +231,7 @@ const getPotency = (potency) => {
 
                         <div v-if="plant.uses" id="uses" class="plant-detail__section">
                           <h2 class="plant-detail__section-title">Uses</h2>
-                          <div class="plant-detail__text" v-html="plant.uses"></div>
+                          <div class="plant-detail__text" v-html="renderMarkdown(plant.uses)"></div>
             </div>
           </div>
 

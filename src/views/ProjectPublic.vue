@@ -6,14 +6,7 @@ import { isProjectVisibleTo } from '@/_config/GardenConfig';
 import { computed, ref, onMounted } from 'vue';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
-import MarkdownIt from 'markdown-it';
-import markdownItAttrs from 'markdown-it-attrs';
-
-// Without an allowlist markdown-it-attrs accepts any attribute, so
-// `[x](https://…){onmouseover=…}` would run script on this public page.
-const md = new MarkdownIt().use(markdownItAttrs, {
-  allowedAttributes: ['id', 'class', 'title', 'target', 'rel', 'width', 'height'],
-});
+import { renderMarkdown } from '@/helpers/safe-html';
 
 const route = useRoute();
 const projectsStore = useProjectsStore();
@@ -92,7 +85,7 @@ const projectHeroImage = computed(() => {
 // Render description markdown
 const renderedDescription = computed(() => {
   if (!project.value?.description) return '';
-  return md.render(project.value.description);
+  return renderMarkdown(project.value.description);
 });
 
 // Format project dates

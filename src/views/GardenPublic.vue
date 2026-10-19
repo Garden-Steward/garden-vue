@@ -7,6 +7,7 @@ import { getRandomDefaultImage, getImageOrDefault } from '@/helpers/image-utils'
 import VolunteerActivity from '@/components/VolunteerActivity.vue';
 import LeafletMap from '@/components/LeafletMap.vue';
 import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
+import { truncatePlainText } from '@/helpers/safe-html';
 import SunIcon from '@/components/icons/Sun.svg?raw';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import { RsvpPhoneModal } from '@/components/modals';
@@ -266,25 +267,6 @@ const loadMoreLatestEvents = () => {
 };
 
 // Truncate description to 200 characters
-const truncateDescription = (htmlString) => {
-  if (!htmlString) return '';
-  // Strip HTML tags using regex to get plain text length
-  const plainText = htmlString.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-  
-  if (plainText.length <= 200) {
-    return htmlString;
-  }
-  
-  // Truncate plain text to 200 characters
-  const truncated = plainText.substring(0, 200).trim();
-  // Find the last space to avoid cutting words
-  const lastSpace = truncated.lastIndexOf(' ');
-  const finalText = lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated;
-  
-  // Return truncated text with ellipsis (keeping it as plain text since we're truncating)
-  return finalText + '...';
-};
-
 const isManager = computed(() => {
   if (!garden.value?.managers || !user.value) return false;
   return garden.value.managers.some(manager => manager.id === user.value.id);
@@ -656,7 +638,7 @@ watch(
         <div class="gp-main">
           <section v-if="garden.description" id="about" class="gp-section gp-section--about">
             <h2 class="gp-h2">About this garden</h2>
-            <div class="gp-prose" v-html="garden.description.replace(/\n/g, '<br>')"></div>
+            <div class="gp-prose gp-prose--plain">{{ garden.description }}</div>
           </section>
 
           <section v-if="orderedProjects.length" id="projects" class="gp-section">
@@ -689,8 +671,7 @@ watch(
                   <span
                     v-if="project.short_description || project.description"
                     class="gp-project-desc"
-                    v-html="truncateDescription(project.short_description || project.description)"
-                  ></span>
+                  >{{ truncatePlainText(project.short_description || project.description) }}</span>
                   <span v-if="projectLinkProps(project).to" class="gp-project-more">
                     Explore project
                     <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -732,7 +713,7 @@ watch(
                 </span>
                 <svg class="gp-icon gp-event-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
               </router-link>
-              <div v-if="nextEvent.blurb" class="gp-event-blurb" v-html="nextEvent.blurb"></div>
+              <div v-if="nextEvent.blurb" class="gp-event-blurb">{{ nextEvent.blurb }}</div>
               <div class="gp-rsvp-row">
                 <a
                   v-if="nextEvent.partiful_link"

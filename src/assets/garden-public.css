@@ -398,6 +398,11 @@
   color: #d0d0d0;
 }
 
+/* Plain text from a textarea: keep its line breaks. */
+.gp-prose--plain {
+  white-space: pre-line;
+}
+
 .gp-prose a {
   color: #064e3b;
 }
