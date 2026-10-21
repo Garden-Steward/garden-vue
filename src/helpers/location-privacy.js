@@ -7,8 +7,8 @@
  * stays the same on every load: a new random offset each time would let
  * someone average a few reloads back to the real point.
  *
- * This only hides the spot in the UI. The API still returns exact
- * coordinates, so locking them down for real has to happen in Strapi.
+ * Strapi applies the same offset for signed-out callers and marks the garden
+ * `location_approximate`; this helper covers responses that arrive without it.
  */
 
 const YARD_M = 0.9144;
