@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useGardensStore, useAuthStore } from '@/stores';
+import { useGardensStore, useAuthStore, useUsageStore } from '@/stores';
 import PitchProject from '@/components/modals/PitchProject.vue';
 
 /*
@@ -19,6 +19,10 @@ const { user } = storeToRefs(authStore);
 
 // Gardens are needed for the pitch modal's association dropdown on every page.
 gardensStore.getAll();
+
+const usageStore = useUsageStore();
+const { orgs: usageOrgs } = storeToRefs(usageStore);
+usageStore.loadOrgs();
 
 const showPitch = ref(false);
 const openPitch = () => { showPitch.value = true; };
@@ -38,13 +42,15 @@ const navIconPaths = {
   grid: 'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z',
   project: 'M4 7a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z',
   leaf: 'M12 20V10 M12 10c0-3-2-5-6-5 0 3 2 5 6 5z M12 10c0-3 2-5 6-5 0 3-2 5-6 5z',
-  calendar: 'M8 7V3 M16 7V3 M4 11h16 M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z'
+  calendar: 'M8 7V3 M16 7V3 M4 11h16 M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z',
+  chart: 'M4 20V11 M10 20V4 M16 20v-6 M3 20h18'
 };
 
 const navItems = computed(() => [
   { label: 'Dashboard', icon: 'grid', href: '/manage', active: route.path === '/manage' },
   { label: 'Projects', icon: 'project', href: '/manage/projects', active: route.path.startsWith('/manage/project') },
   { label: 'Plants', icon: 'leaf', href: '/manage/plants', active: route.path.startsWith('/manage/plant') },
+  ...(usageOrgs.value.length ? [{ label: 'Usage', icon: 'chart', href: '/manage/usage', active: route.path.startsWith('/manage/usage') }] : []),
   { label: 'Events', icon: 'calendar', active: false, desktopOnly: true }
 ]);
 </script>
