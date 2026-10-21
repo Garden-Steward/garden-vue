@@ -2,8 +2,7 @@
 import { storeToRefs } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import MarkdownIt from 'markdown-it';
-import markdownItAttrs from 'markdown-it-attrs';
+import { renderMarkdown } from '@/helpers/safe-html';
 
 import { useEventStore, useAuthStore } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
@@ -15,12 +14,6 @@ import EventProjectCard from '@/components/EventProjectCard.vue';
 import GardenContextBar from '@/components/GardenContextBar.vue';
 import { PrintDaySheetModal, RsvpPhoneModal } from '@/components/modals';
 import '@/assets/garden-public.css';
-
-// Without an allowlist markdown-it-attrs accepts any attribute, so
-// `[x](https://…){onmouseover=…}` would run script on this public page.
-const md = new MarkdownIt().use(markdownItAttrs, {
-  allowedAttributes: ['id', 'class', 'title', 'target', 'rel', 'width', 'height'],
-});
 
 const route = useRoute();
 const eventStore = useEventStore();
@@ -67,7 +60,7 @@ const isManager = computed(() => {
 const heroImage = computed(() =>
   getImageOrDefault(event.value?.hero_image?.url || garden.value?.hero_image?.url));
 
-const renderedContent = computed(() => (event.value?.content ? md.render(event.value.content) : ''));
+const renderedContent = computed(() => (event.value?.content ? renderMarkdown(event.value.content) : ''));
 
 const linkedProjects = computed(() => (Array.isArray(event.value?.projects) ? event.value.projects : []));
 
@@ -294,7 +287,7 @@ const rsvpEvent = async () => {
               <span v-if="heroPill" class="ev-pill">{{ heroPill }}</span>
               <h1 id="event-title" class="gp-title">{{ event.title }}</h1>
               <p class="ev-when">{{ whenLine }}</p>
-              <p v-if="event.blurb" class="gp-blurb" v-html="event.blurb"></p>
+              <p v-if="event.blurb" class="gp-blurb">{{ event.blurb }}</p>
               <div v-if="showRsvp || (calendarUrl && !isEventPast && !isEventCanceled)" class="gp-hero-actions">
                 <a v-if="partifulOpen" :href="event.partiful_link" target="_blank" rel="noopener noreferrer" class="gp-btn gp-btn-cta">RSVP on Partiful</a>
                 <button v-else-if="canRsvpHere" type="button" class="gp-btn gp-btn-cta" :disabled="isRSVPed" @click="rsvpEvent">
