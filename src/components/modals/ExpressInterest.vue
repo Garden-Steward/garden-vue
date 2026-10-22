@@ -57,10 +57,10 @@ const submit = async () => {
 </script>
 
 <template>
-  <Teleport to="#modals">
+  <Teleport to="body">
     <div v-if="modelValue">
-      <div class="fixed inset-0 bg-black/70 z-[10000]" @click="close"></div>
-      <div class="fixed inset-0 flex items-center justify-center z-[10001]" @click="close">
+      <div class="fixed inset-0 bg-black/70 z-[99998]" @click="close"></div>
+      <div class="fixed inset-0 flex items-center justify-center z-[99999]" @click="close">
         <div
           class="int-modal relative w-[95%] max-w-[420px] rounded-2xl p-6 bg-white dark:!bg-[#2d3e26] text-gray-900 dark:text-[#f5f5f5] shadow-2xl"
           @click.stop

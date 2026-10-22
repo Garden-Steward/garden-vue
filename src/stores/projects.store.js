@@ -174,23 +174,23 @@ export const useProjectsStore = defineStore({
                 .catch(this.handleError);
         },
         async getSlug(slug) {
-            this.project = { loading: true };
-            return fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=garden.organization&populate[4]=related_events&populate[5]=related_events.hero_image&populate[6]=impact_metrics`)
-                .then(response => {
-                    const projects = Array.isArray(response.data) ? response.data : [response.data];
-                    if (projects.length === 0) {
-                        this.project = { error: 'Project not found' };
-                        return null;
-                    }
-                    
-                    this.project = normalizeProject(projects[0]);
-                    return this.project;
-                })
-                .catch(error => {
-                    this.project = { error };
-                    throw error;
-                });
-        },
+                    this.project = { loading: true };
+                    return fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=garden.organization&populate[4]=related_events&populate[5]=related_events.hero_image&populate[6]=impact_metrics&populate[7]=interested&populate[8]=documentId`)
+                        .then(response => {
+                            const projects = Array.isArray(response.data) ? response.data : [response.data];
+                            if (projects.length === 0) {
+                                this.project = { error: 'Project not found' };
+                                return null;
+                            }
+
+                            this.project = normalizeProject(projects[0]);
+                            return this.project;
+                        })
+                        .catch(error => {
+                            this.project = { error };
+                            throw error;
+                        });
+                },
         async update(id, data) {
             data = stripReadOnly(data);
             coerceWorkflowFields(data, this.findCached(id));

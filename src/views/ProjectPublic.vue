@@ -1,18 +1,20 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
-import { useProjectsStore, useGardensStore, useAuthStore } from '@/stores';
+import { useProjectsStore, useGardensStore, useAuthStore, useAlertStore } from '@/stores';
 import { isProjectVisibleTo } from '@/_config/GardenConfig';
 import { computed, ref, onMounted } from 'vue';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
 import { renderMarkdown } from '@/helpers/safe-html';
+import ExpressInterest from '@/components/modals/ExpressInterest.vue';
 
 const route = useRoute();
 const projectsStore = useProjectsStore();
 const gardensStore = useGardensStore();
 
 const authStore = useAuthStore();
+const alertStore = useAlertStore();
 
 const { project } = storeToRefs(projectsStore);
 const { garden } = storeToRefs(gardensStore);
@@ -208,6 +210,42 @@ const getEventImage = (event) => {
 
   return getImageOrDefault(imageUrl);
 };
+
+// ── Interest ──
+const showInterestModal = ref(false);
+const togglingInterest = ref(false);
+
+const relationIds = (rel) => {
+  const arr = rel?.data || rel || [];
+  return (Array.isArray(arr) ? arr : []).map((x) => x?.id ?? x);
+};
+
+const interestedCount = computed(() => relationIds(project.value?.interested).length);
+
+const isInterested = computed(() =>
+  relationIds(project.value?.interested).includes(user.value?.id)
+);
+
+const handleInterest = () => {
+  if (isInterested.value) return; // already in — no-op (button becomes "You're in")
+  if (user.value) {
+    toggleInterest();
+  } else {
+    showInterestModal.value = true;
+  }
+};
+
+const toggleInterest = async () => {
+  if (togglingInterest.value) return;
+  togglingInterest.value = true;
+  try {
+    await projectsStore.toggleInterest(project.value.id);
+  } catch (e) {
+    // store surfaces its own error alert
+  } finally {
+    togglingInterest.value = false;
+  }
+};
 </script>
 
 <template>
@@ -249,10 +287,20 @@ const getEventImage = (event) => {
       </div>
 
       <!-- Header -->
-      <div v-if="project?.id" class="project-header">
-        <h1 class="project-title">{{ project.title }}</h1>
-        <p v-if="projectDateText" class="project-date-text">{{ projectDateText }}</p>
-      </div>
+            <div v-if="project?.id" class="project-header">
+              <h1 class="project-title">{{ project.title }}</h1>
+              <p v-if="projectDateText" class="project-date-text">{{ projectDateText }}</p>
+              <button
+                type="button"
+                class="project-interest-btn"
+                :class="{ 'is-in': isInterested }"
+                :disabled="togglingInterest"
+                @click="handleInterest"
+              >
+                {{ isInterested ? "You're in" : "I'm interested" }}
+                <span v-if="interestedCount" class="project-interest-count">{{ interestedCount }}</span>
+              </button>
+            </div>
 
       <!-- Description -->
       <section v-if="project?.description" class="project-section">
@@ -309,19 +357,36 @@ const getEventImage = (event) => {
       </section>
 
       <!-- Garden Link -->
-      <section v-if="garden?.id" class="project-section garden-link-section">
-        <p class="garden-link-text">
-          This project is part of 
-          <router-link 
-            :to="`/gardens/${garden.slug}`"
-            class="garden-link"
-          >
-            {{ garden.title }}
-          </router-link>
-        </p>
-      </section>
+            <section v-if="garden?.id" class="project-section garden-link-section">
+              <p class="garden-link-text">
+                This project is part of 
+                <router-link 
+                  :to="`/gardens/${garden.slug}`"
+                  class="garden-link"
+                >
+                  {{ garden.title }}
+                </router-link>
+              </p>
+            </section>
 
-      </template>
+            <!-- Bottom interest CTA -->
+            <section v-if="project?.id" class="project-section project-bottom-cta">
+              <p class="project-bottom-cta__text">
+                Interested in getting involved? Sound the call and we'll keep you posted when a workday is announced.
+              </p>
+              <button
+                type="button"
+                class="project-interest-btn project-interest-btn--lg"
+                :class="{ 'is-in': isInterested }"
+                :disabled="togglingInterest"
+                @click="handleInterest"
+              >
+                {{ isInterested ? "You're in" : "I'm interested" }}
+                <span v-if="interestedCount" class="project-interest-count">{{ interestedCount }}</span>
+              </button>
+            </section>
+
+            </template>
 
       <!-- Loading State -->
       <div v-if="project.loading" class="loading-state">
@@ -330,12 +395,18 @@ const getEventImage = (event) => {
       </div>
 
       <!-- Error State -->
-      <div v-if="project.error" class="error-state">
-        <p>Error loading project: {{ project.error }}</p>
-      </div>
-    </div>
-  </div>
-</template>
+            <div v-if="project.error" class="error-state">
+              <p>Error loading project: {{ project.error }}</p>
+            </div>
+          </div>
+        </div>
+
+        <ExpressInterest
+          v-model="showInterestModal"
+          :project-id="project?.id"
+          :project-title="project?.title"
+        />
+      </template>
 
 <style>
 /* Full-screen container - takes over entire viewport */
@@ -521,6 +592,70 @@ const getEventImage = (event) => {
 }
 
 .dark .project-date-text {
+  color: #c0c0c0;
+}
+
+/* Interest button */
+.project-interest-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 24px;
+  padding: 0.7rem 1.8rem;
+  border-radius: 999px;
+  border: none;
+  background-color: #86b153;
+  color: #14250f;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.project-interest-btn:hover:not(:disabled) {
+  background-color: #97c264;
+  transform: translateY(-1px);
+}
+.project-interest-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.project-interest-btn.is-in {
+  background-color: #d7e8c8;
+  color: #2f5233;
+}
+.dark .project-interest-btn.is-in {
+  background-color: #86b153;
+  color: #14250f;
+}
+.project-interest-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background-color: rgba(20, 37, 15, 0.18);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.project-interest-btn--lg {
+  padding: 0.9rem 2.4rem;
+  font-size: 1.15rem;
+}
+
+/* Bottom CTA */
+.project-bottom-cta {
+  text-align: center;
+}
+.project-bottom-cta__text {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #4a4a4a;
+  max-width: 560px;
+  margin: 0 auto 8px;
+}
+.dark .project-bottom-cta__text {
   color: #c0c0c0;
 }
 
