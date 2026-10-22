@@ -204,7 +204,7 @@ const gardenPoint = computed(() => {
   return { latitude, longitude };
 });
 
-// Same rule as the garden page: signed-out visitors see a 300-yard area, not
+// Same rule as the garden page: signed-out visitors see a 600-yard area, not
 // the pin, and get no exact Maps link.
 const approximateArea = computed(() => {
   if (user.value || !gardenPoint.value) return null;

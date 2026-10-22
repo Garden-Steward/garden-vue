@@ -371,7 +371,7 @@ const mapLocationTrackings = computed(() => {
   }];
 });
 
-// Signed-out visitors get a 300-yard area, not the exact spot.
+// Signed-out visitors get a 600-yard area, not the exact spot.
 const approximateArea = computed(() => {
   if (user.value || !gardenCoordinates.value) return null;
   const { latitude, longitude } = gardenCoordinates.value;

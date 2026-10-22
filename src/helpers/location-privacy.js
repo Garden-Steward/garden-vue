@@ -1,7 +1,7 @@
 /**
  * Approximate garden locations for signed-out visitors.
  *
- * Signed-out visitors see a circle 300 yards across instead of a pin. The
+ * Signed-out visitors see a circle 600 yards across instead of a pin. The
  * circle's center is moved about 20 ft off the true spot so its middle isn't
  * the address. The direction comes from a hash of the garden's id, so it
  * stays the same on every load: a new random offset each time would let
@@ -14,7 +14,7 @@
 const YARD_M = 0.9144;
 const FOOT_M = 0.3048;
 
-export const APPROX_AREA_RADIUS_M = 150 * YARD_M; // 300 yd diameter
+export const APPROX_AREA_RADIUS_M = 300 * YARD_M; // 600 yd diameter
 const CENTER_OFFSET_M = 20 * FOOT_M;
 const EARTH_RADIUS_M = 6371000;
 
