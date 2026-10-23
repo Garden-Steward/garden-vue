@@ -3,7 +3,6 @@ import PageHeader from '@/components/PageHeader.vue';
 import EmailLink from '@/components/EmailLink.vue';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
 import { useProjectsStore, useAuthStore } from '@/stores';
 import ProjectAlertSignup from '@/components/ProjectAlertSignup.vue';
 import {
@@ -16,7 +15,6 @@ import {
 
 const projectsStore = useProjectsStore();
 const authStore = useAuthStore();
-const router = useRouter();
 const { communityProjects } = storeToRefs(projectsStore);
 const { user } = storeToRefs(authStore);
 
@@ -111,8 +109,7 @@ function interestedCount(project) {
 async function toggleInterest(project) {
   // Interest is attached to a user account, so signed-out visitors sign in first.
   if (!user.value?.id) {
-    authStore.returnUrl = '/projects';
-    router.push('/login');
+    authStore.openLoginModal('/projects');
     return;
   }
   if (togglingId.value) return;

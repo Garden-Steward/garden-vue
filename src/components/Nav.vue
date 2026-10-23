@@ -98,6 +98,13 @@ const toggleMobileMenu = async () => {
     }
 };
 
+const openPhoneLogin = () => {
+    if (isMobileMenuOpen.value) {
+        toggleMobileMenu();
+    }
+    authStore.openLoginModal();
+};
+
 const handleClickOutside = (event) => {
     const profileMenu = event.target.closest('.profile-menu');
     const profileButton = event.target.closest('.profile-menu-button');
@@ -217,12 +224,12 @@ const handleEscape = (e) => {
                 <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
                 <router-link to="/manifesto" class="nav-item nav-link" @click="toggleMobileMenu">Manifesto</router-link>
                 <router-link to="/help" class="nav-item nav-link" @click="toggleMobileMenu">Help</router-link>
-                <router-link
-                    to="/login"
-                    class="nav-item nav-link login-btn login-btn--mobile"
-                    v-show="!authStore.user"
-                    @click="toggleMobileMenu"
-                >Login</router-link>
+                <button
+                                    type="button"
+                                    class="nav-item nav-link login-btn login-btn--mobile"
+                                    v-show="!authStore.user"
+                                    @click="openPhoneLogin"
+                                >Login</button>
 
                 <div class="mobile-theme-options">
                     <span class="mobile-theme-inline-label">Theme</span>
@@ -300,12 +307,13 @@ const handleEscape = (e) => {
             </div>
 
             <div class="nav-right-section">
-                <router-link
-                    v-show="!authStore.user"
-                    to="/login"
-                    class="nav-item nav-link login-btn"
-                >Login</router-link>
-            </div>
+                            <button
+                                type="button"
+                                v-show="!authStore.user"
+                                class="nav-item nav-link login-btn"
+                                @click="openPhoneLogin"
+                            >Login</button>
+                        </div>
 
             <div v-if="authStore.user" class="profile-container">
                 <UserProfileDisplay
@@ -412,6 +420,15 @@ html.dark .gs-navbar.navbar.bg-custom-light {
     color: #fff !important;
     -webkit-text-fill-color: #fff !important;
     text-decoration: none !important;
+}
+
+/* Login is a <button> so it can open the phone modal; reset browser button chrome. */
+button.login-btn {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
 }
 
 /* ── About dropdown ──────────────────────────────────── */
