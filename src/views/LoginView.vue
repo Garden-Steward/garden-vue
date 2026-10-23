@@ -11,15 +11,19 @@ const schema = Yup.object().shape({
     password: Yup.string().required('Password is required')
 });
 
+const authStore = useAuthStore();
 const showRegisterModal = ref(false);
 
 function onSubmit(values, { setErrors }) {
-    const authStore = useAuthStore();
     console.log("starting login")
     const { username, password } = values;
 
     return authStore.login(username, password)
         .catch(error => setErrors({ apiError: error }));
+}
+
+function openPhoneLogin() {
+    authStore.openLoginModal('/manage');
 }
 
 function openRegisterModal() {
@@ -40,10 +44,26 @@ function closeRegisterModal() {
         </div>
 
         <div class="text-lg mt-8 max-w-md w-full mx-auto mb-4 text-gray-800 dark:text-[#d0d0d0]">
-          <p>Garden Steward is a community-driven, open-source project developing SMS-first software for managing volunteer events, watering schedules, and harvest coordination. </p>
-      </div>
+                  <p>Garden Steward is a community-driven, open-source project developing SMS-first software for managing volunteer events, watering schedules, and harvest coordination. </p>
+              </div>
 
-      <h3 class="text-xl mt-10 mb-3 text-gray-900 dark:text-[#f5f5f5]">Login:</h3>
+              <div class="max-w-md mx-auto mb-6">
+                <button type="button" @click="openPhoneLogin" class="login-phone-btn">
+                  <svg class="login-phone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  Sign in with your phone
+                </button>
+                <p class="login-phone-sub">We'll text you a 6-digit code. No password needed.</p>
+              </div>
+
+              <div class="flex items-center gap-3 max-w-md mx-auto my-6">
+                <span class="login-divider"></span>
+                <span class="text-sm text-gray-500 dark:text-[#8aa37c]">or</span>
+                <span class="login-divider"></span>
+              </div>
+
+              <h3 class="text-xl mb-3 text-gray-900 dark:text-[#f5f5f5]">Sign in with email</h3>
         <Form @submit="onSubmit" :validation-schema="schema" v-slot="{ errors, isSubmitting }">
             <div class="form-group">
                 <label class="text-green-900 dark:text-[#c5d4b8]">Email</label>
@@ -155,9 +175,51 @@ function closeRegisterModal() {
     width: 15rem;
   }
   .color-green {
-    color:#f7f1e3;
-  }
-@media (max-width: 640px) {
+      color:#f7f1e3;
+    }
+    .login-phone-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      width: 100%;
+      padding: 0.9rem 1.25rem;
+      border-radius: 0.6rem;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #14250f;
+      background: linear-gradient(135deg, #6bb57a 0%, #47965f 55%, #2f7a4b 100%);
+      transition: filter 0.15s ease, transform 0.1s ease;
+    }
+    .login-phone-btn:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+    .login-phone-icon {
+      width: 1.3rem;
+      height: 1.3rem;
+      flex-shrink: 0;
+    }
+    .login-phone-sub {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 0.5rem;
+    }
+    html.dark .login-phone-sub {
+      color: #a3b89e;
+    }
+    .login-divider {
+      flex: 1;
+      height: 1px;
+      background-color: #d1d5db;
+    }
+    html.dark .login-divider {
+      background-color: #3d4d36;
+    }
+  @media (max-width: 640px) {
   .stew {
     padding: 0;
   }
