@@ -10,7 +10,8 @@ const auth = useAuthStore();
 
 const step = ref('phone'); // 'phone' | 'code' | 'email'
 const phoneDisplay = ref('');
-const code = ref('');
+const digits = ref(['', '', '', '', '', '']);
+const digitRefs = [];
 const email = ref('');
 const password = ref('');
 const error = ref('');
@@ -19,8 +20,11 @@ const isSubmitting = ref(false);
 const resendRemaining = ref(0);
 
 const phoneInput = ref(null);
-const codeInput = ref(null);
 const emailInput = ref(null);
+
+const codeDigits = computed(() => digits.value.join(''));
+const isCodeComplete = computed(() => /^\d{6}$/.test(codeDigits.value));
+const clearDigits = () => { digits.value = ['', '', '', '', '', '']; };
 
 const formatPhoneNumber = (value) => {
     // Remove all non-digits
@@ -61,7 +65,7 @@ const focusStep = async () => {
     if (step.value === 'phone') {
         phoneInput.value?.focus();
     } else if (step.value === 'code') {
-        codeInput.value?.focus();
+        digitRefs[0]?.focus();
     } else {
         emailInput.value?.focus();
     }
@@ -76,16 +80,16 @@ const submitPhone = async () => {
     isSubmitting.value = true;
     error.value = '';
     try {
-        await auth.requestSmsCode(phoneDigits.value);
-        step.value = 'code';
-        code.value = '';
-        startCountdown();
-    } catch (err) {
-        error.value = sendErrorMessage(err);
-    } finally {
-        isSubmitting.value = false;
-    }
-};
+            await auth.requestSmsCode(phoneDigits.value);
+            step.value = 'code';
+            clearDigits();
+            startCountdown();
+        } catch (err) {
+            error.value = sendErrorMessage(err);
+        } finally {
+            isSubmitting.value = false;
+        }
+    };
 
 const resend = async () => {
     if (resendRemaining.value > 0 || isSubmitting.value) return;
@@ -100,30 +104,69 @@ const resend = async () => {
 };
 
 const submitCode = async () => {
-    if (!/^\d{6}$/.test(code.value)) return;
+    if (!isCodeComplete.value) return;
     isSubmitting.value = true;
     error.value = '';
     try {
-        await auth.verifySmsCode(phoneDigits.value, code.value);
+        await auth.verifySmsCode(phoneDigits.value, codeDigits.value);
         auth.finishModalLogin();
     } catch {
         error.value = INVALID_CODE_ERROR;
-        code.value = '';
-        focusStep();
+        clearDigits();
+        digitRefs[0]?.focus();
     } finally {
         isSubmitting.value = false;
     }
 };
 
-const onCodeInput = (e) => {
-    code.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+const handleDigitInput = (index, event) => {
+    const el = event.target;
+    const val = (el.value || '').replace(/\D/g, '');
+    if (!val) {
+        digits.value[index] = '';
+        return;
+    }
+    const last = val.slice(-1);
+    digits.value[index] = last;
+    el.value = last;
+    if (index < 5) digitRefs[index + 1]?.focus();
 };
+
+const handleDigitKeydown = (index, event) => {
+    if (event.key === 'Backspace') {
+        event.preventDefault();
+        if (digits.value[index]) {
+            digits.value[index] = '';
+        } else if (index > 0) {
+            digits.value[index - 1] = '';
+            digitRefs[index - 1]?.focus();
+        }
+    } else if (event.key === 'ArrowLeft' && index > 0) {
+        digitRefs[index - 1]?.focus();
+    } else if (event.key === 'ArrowRight' && index < 5) {
+        digitRefs[index + 1]?.focus();
+    }
+};
+
+const handleDigitPaste = (event) => {
+    const text = (event.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+    if (!text) return;
+    event.preventDefault();
+    for (let i = 0; i < 6; i++) digits.value[i] = text[i] || '';
+    const next = Math.min(text.length, 5);
+    digitRefs[next]?.focus();
+};
+
+// Auto-submit the moment all six digits are filled.
+watch(isCodeComplete, (complete) => {
+    if (complete && !isSubmitting.value) submitCode();
+});
 
 const useDifferentNumber = () => {
     step.value = 'phone';
     error.value = '';
     info.value = '';
-    code.value = '';
+    clearDigits();
 };
 
 const useEmail = () => {
@@ -193,61 +236,74 @@ onBeforeUnmount(() => {
                         </svg>
                     </button>
 
-                    <h2 id="login-modal-title" class="login-modal-title">Log in to continue</h2>
+                    <h2 id="login-modal-title" class="login-modal-title">
+                                            {{ step === 'code' ? 'Enter your code' : step === 'email' ? 'Sign in with email' : 'Sign in with your phone' }}
+                                        </h2>
 
-                    <form v-if="step === 'phone'" @submit.prevent="submitPhone">
-                        <label for="login-modal-phone" class="login-modal-label">Phone number</label>
-                        <input
-                            id="login-modal-phone"
-                            ref="phoneInput"
-                            type="tel"
-                            autocomplete="tel"
-                            :value="phoneDisplay"
-                            @input="phoneDisplay = formatPhoneNumber($event.target.value)"
-                            placeholder="(555) 555-5555"
-                            class="login-modal-input"
-                        />
-                        <p v-if="error" class="login-modal-error">{{ error }}</p>
-                        <button type="submit" class="login-modal-btn" :disabled="!isValidPhone || isSubmitting">
-                            {{ isSubmitting ? 'Sending...' : 'Text me a code' }}
-                        </button>
-                        <button type="button" class="login-modal-link" @click="useEmail">Use email &amp; password instead</button>
-                    </form>
+                                        <form v-if="step === 'phone'" @submit.prevent="submitPhone">
+                                            <p class="login-modal-subtitle login-modal-subtitle--lead">
+                                                We'll text you a 6-digit code to sign you in. No password needed.
+                                            </p>
+                                            <label for="login-modal-phone" class="login-modal-label">Phone number</label>
+                                            <input
+                                                id="login-modal-phone"
+                                                ref="phoneInput"
+                                                type="tel"
+                                                autocomplete="tel"
+                                                :value="phoneDisplay"
+                                                @input="phoneDisplay = formatPhoneNumber($event.target.value)"
+                                                placeholder="(555) 555-5555"
+                                                class="login-modal-input login-modal-input--phone"
+                                            />
+                                            <p v-if="error" class="login-modal-error">{{ error }}</p>
+                                            <button type="submit" class="login-modal-btn" :disabled="!isValidPhone || isSubmitting">
+                                                {{ isSubmitting ? 'Sending...' : 'Text me a code' }}
+                                            </button>
+                                            <button type="button" class="login-modal-link" @click="useEmail">Use email &amp; password instead</button>
+                                        </form>
 
-                    <div v-else-if="step === 'code'">
-                        <p class="login-modal-subtitle">If that number has an account, we texted a code.</p>
-                        <p>
-                            Sent to {{ phoneDisplay }}
-                            <button type="button" class="login-modal-link" @click="useDifferentNumber">Use a different number</button>
-                        </p>
-                        <form @submit.prevent="submitCode">
-                            <input
-                                id="login-modal-code"
-                                ref="codeInput"
-                                type="text"
-                                inputmode="numeric"
-                                autocomplete="one-time-code"
-                                maxlength="6"
-                                pattern="\d{6}"
-                                :value="code"
-                                @input="onCodeInput"
-                                class="login-modal-input"
-                                placeholder="123456"
-                            />
-                            <p v-if="error" class="login-modal-error">{{ error }}</p>
-                            <p v-if="info" class="login-modal-info">{{ info }}</p>
-                            <button type="submit" class="login-modal-btn" :disabled="code.length !== 6 || isSubmitting">Verify</button>
-                            <button
-                                type="button"
-                                class="login-modal-link"
-                                :disabled="resendRemaining > 0 || isSubmitting"
-                                @click="resend"
-                            >
-                                {{ resendRemaining > 0 ? `Resend in ${resendRemaining}s` : 'Resend code' }}
-                            </button>
-                            <button type="button" class="login-modal-link" @click="useEmail">Use email &amp; password instead</button>
-                        </form>
-                    </div>
+                    <div v-else-if="step === 'code'" class="login-otp-panel">
+                                            <p class="login-modal-subtitle">We texted a 6-digit code to</p>
+                                            <p class="login-otp-phone">{{ phoneDisplay }}</p>
+
+                                            <form @submit.prevent="submitCode">
+                                                <div class="login-otp-inputs" aria-label="6-digit code">
+                                                    <input
+                                                        v-for="(digit, i) in digits"
+                                                        :key="i"
+                                                        :ref="el => { if (el) digitRefs[i] = el; }"
+                                                        type="text"
+                                                        inputmode="numeric"
+                                                        autocomplete="one-time-code"
+                                                        maxlength="1"
+                                                        class="login-otp-digit"
+                                                        :class="{ 'login-otp-digit--active': i === digits.findIndex(d => d === '') && !isCodeComplete }"
+                                                        :value="digit"
+                                                        @input="handleDigitInput(i, $event)"
+                                                        @keydown="handleDigitKeydown(i, $event)"
+                                                        @paste="handleDigitPaste"
+                                                    />
+                                                </div>
+                                                <p v-if="error" class="login-modal-error">{{ error }}</p>
+                                                <p v-if="info" class="login-modal-info">{{ info }}</p>
+                                                <button type="submit" class="login-modal-btn" :disabled="!isCodeComplete || isSubmitting">
+                                                    {{ isSubmitting ? 'Verifying...' : 'Verify' }}
+                                                </button>
+                                                <div class="login-otp-actions">
+                                                    <button
+                                                        type="button"
+                                                        class="login-modal-link"
+                                                        :disabled="resendRemaining > 0 || isSubmitting"
+                                                        @click="resend"
+                                                    >
+                                                        {{ resendRemaining > 0 ? `Resend in ${resendRemaining}s` : 'Resend code' }}
+                                                    </button>
+                                                    <span class="login-otp-divider">·</span>
+                                                    <button type="button" class="login-modal-link" @click="useDifferentNumber">Use a different number</button>
+                                                </div>
+                                                <button type="button" class="login-modal-link login-otp-other" @click="useEmail">Try another way</button>
+                                            </form>
+                                        </div>
 
                     <form v-else @submit.prevent="submitEmail">
                         <input
@@ -392,6 +448,102 @@ onBeforeUnmount(() => {
     font-size: 0.875rem;
     color: #dc2626;
 }
+
+.login-modal-subtitle--lead {
+    font-size: 0.95rem;
+    line-height: 1.45;
+    margin-top: 0;
+    margin-bottom: 1.1rem;
+}
+
+/* ── OTP code step ── */
+.login-otp-panel {
+    position: relative;
+    margin: 0.25rem 0 0;
+    padding: 1.6rem 1.25rem 1.25rem;
+    border-radius: 0.9rem;
+    text-align: center;
+    overflow: hidden;
+    background: linear-gradient(135deg, #14371f 0%, #1f5133 28%, #2f7a4b 55%, #47965f 78%, #6bb57a 100%);
+}
+.login-otp-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 15% 15%, rgba(255, 214, 102, 0.38), transparent 50%),
+        radial-gradient(ellipse at 85% 85%, rgba(95, 205, 160, 0.45), transparent 55%),
+        radial-gradient(ellipse at 70% 10%, rgba(64, 155, 122, 0.5), transparent 45%);
+    pointer-events: none;
+}
+.login-otp-panel .login-modal-subtitle {
+    position: relative;
+    margin-top: 0;
+    color: rgba(255, 255, 255, 0.92);
+}
+.login-otp-phone {
+    position: relative;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0.25rem 0 1.5rem;
+    letter-spacing: 0.03em;
+}
+.login-otp-inputs {
+    position: relative;
+    display: flex;
+    gap: 0.55rem;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+}
+.login-otp-digit {
+    width: 2.75rem;
+    height: 3.3rem;
+    text-align: center;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.14);
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-radius: 0.6rem;
+    padding: 0;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.login-otp-digit:focus {
+    outline: none;
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.28);
+}
+.login-otp-digit--active {
+    border-color: #ffd76a;
+    box-shadow: 0 0 0 3px rgba(255, 215, 106, 0.28);
+}
+.login-otp-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-top: 0.35rem;
+}
+.login-otp-divider {
+    color: rgba(255, 255, 255, 0.45);
+}
+.login-otp-other {
+    display: block;
+    position: relative;
+    margin-top: 1rem;
+}
+.login-otp-panel .login-modal-link { color: #ffe9b3; }
+.login-otp-panel .login-modal-link:disabled { color: rgba(255, 255, 255, 0.4); }
+.login-otp-panel .login-modal-btn {
+    position: relative;
+    background-color: #ffffff;
+    color: #1f4037;
+}
+.login-otp-panel .login-modal-btn:hover:not(:disabled) { background-color: #f0fdf4; }
+.login-otp-panel .login-modal-error { color: #ffd6d6; }
+.login-otp-panel .login-modal-info { color: rgba(255, 255, 255, 0.9); }
 </style>
 
 <style>
