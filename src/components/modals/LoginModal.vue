@@ -263,7 +263,7 @@ onBeforeUnmount(() => {
                                         </form>
 
                     <div v-else-if="step === 'code'" class="login-otp-panel">
-                                            <p class="login-modal-subtitle">We texted a 6-digit code to</p>
+                                            <p class="login-modal-subtitle">If that number has an account, we texted a 6-digit code to</p>
                                             <p class="login-otp-phone">{{ phoneDisplay }}</p>
 
                                             <form @submit.prevent="submitCode">
