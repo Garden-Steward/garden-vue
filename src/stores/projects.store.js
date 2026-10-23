@@ -175,7 +175,7 @@ export const useProjectsStore = defineStore({
         },
         async getSlug(slug) {
                     this.project = { loading: true };
-                    return fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=garden.organization&populate[4]=related_events&populate[5]=related_events.hero_image&populate[6]=impact_metrics&populate[7]=interested&populate[8]=documentId`)
+                    return fetchWrapper.get(`${baseUrl}?filters[slug][$eq]=${slug}&populate[0]=hero_image&populate[1]=featured_gallery&populate[2]=garden&populate[3]=garden.organization&populate[4]=related_events&populate[5]=related_events.hero_image&populate[6]=impact_metrics&populate[7]=interested`)
                         .then(response => {
                             const projects = Array.isArray(response.data) ? response.data : [response.data];
                             if (projects.length === 0) {
