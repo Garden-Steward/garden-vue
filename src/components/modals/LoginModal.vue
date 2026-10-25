@@ -21,6 +21,8 @@ const resendRemaining = ref(0);
 
 const phoneInput = ref(null);
 const emailInput = ref(null);
+const dialogElement = ref(null);
+let opener = null;
 
 const codeDigits = computed(() => digits.value.join(''));
 const isCodeComplete = computed(() => /^\d{6}$/.test(codeDigits.value));
@@ -200,10 +202,28 @@ const close = () => {
 };
 
 const onKeydown = (e) => {
-    if (e.key === 'Escape') close();
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+        return;
+    }
+    if (e.key !== 'Tab') return;
+    const controls = [...dialogElement.value.querySelectorAll('button, a[href], input, select, textarea, [tabindex]')]
+        .filter(element => element.tabIndex >= 0 && !element.matches(':disabled') && !element.closest('[inert]') && element.getClientRects().length > 0 && getComputedStyle(element).visibility === 'visible');
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (!first) return;
+    if (e.shiftKey && (document.activeElement === first || !dialogElement.value.contains(document.activeElement))) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !dialogElement.value.contains(document.activeElement))) {
+        e.preventDefault();
+        first.focus();
+    }
 };
 
 onMounted(() => {
+    if (document.activeElement instanceof HTMLElement) opener = document.activeElement;
     focusStep();
     window.addEventListener('keydown', onKeydown);
 });
@@ -214,6 +234,7 @@ onBeforeUnmount(() => {
         timer = null;
     }
     window.removeEventListener('keydown', onKeydown);
+    if (opener?.isConnected && opener.tabIndex >= 0 && !opener.matches(':disabled') && !opener.closest('[inert]') && opener.getClientRects().length > 0 && getComputedStyle(opener).visibility === 'visible') opener.focus();
 });
 </script>
 
@@ -222,8 +243,9 @@ onBeforeUnmount(() => {
         <div class="login-modal-wrapper">
             <div class="login-modal-backdrop" @click="close"></div>
 
-            <div class="fixed inset-0 flex items-center justify-center p-4" @click="close">
+            <div class="login-modal-positioner" @click="close">
                 <div
+                    ref="dialogElement"
                     class="login-modal-content"
                     role="dialog"
                     aria-modal="true"
@@ -306,14 +328,18 @@ onBeforeUnmount(() => {
                                         </div>
 
                     <form v-else @submit.prevent="submitEmail">
+                        <label for="login-modal-email" class="login-modal-label">Email</label>
                         <input
+                            id="login-modal-email"
                             ref="emailInput"
                             type="email"
                             autocomplete="username"
                             v-model="email"
                             class="login-modal-input"
                         />
+                        <label for="login-modal-password" class="login-modal-label">Password</label>
                         <input
+                            id="login-modal-password"
                             type="password"
                             autocomplete="current-password"
                             v-model="password"
@@ -331,235 +357,215 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .login-modal-wrapper {
+    position: fixed;
+    inset: 0;
     z-index: 10001;
+    color: #024023;
+    font: 18px/1.5 var(--gs-body-font);
 }
 
 .login-modal-backdrop {
     position: fixed;
     inset: 0;
-    background-color: rgba(17, 24, 39, 0.5);
-    transition: background-color 0.3s ease;
+    background: #02402366;
+}
+
+.login-modal-positioner {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
 }
 
 .login-modal-content {
-    background-color: #ffffff;
-    color: #111827;
-    border-radius: 0.75rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    max-width: 28rem;
-    width: 100%;
-    padding: 1.5rem;
     position: relative;
-    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 32rem;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(22px, 4vw, 36px);
+    border: 1px solid #bac5a6;
+    background: #F1F2D5;
+    box-shadow: 0 16px 48px #02402326;
 }
 
 .login-modal-close {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    color: #9ca3af;
-    transition: color 0.2s;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    background: transparent;
+    color: #024023;
+    cursor: pointer;
 }
+
 .login-modal-close:hover {
-    color: #4b5563;
+    background: #e4e8cc;
+}
+
+.login-modal-close:focus-visible,
+.login-modal-link:focus-visible,
+.login-modal-btn:focus-visible {
+    outline: 2px solid #024023;
+    outline-offset: 3px;
 }
 
 .login-modal-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 1rem;
+    margin: 0 28px 22px 0;
+    color: #024023;
+    font: 400 clamp(30px, 5vw, 38px)/1.1 var(--gs-heading-font);
 }
 
 .login-modal-subtitle {
-    color: #4b5563;
-    margin-top: 0.5rem;
+    margin: 0 0 16px;
+    color: #50634d;
+    overflow-wrap: anywhere;
 }
 
 .login-modal-label {
     display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 0.5rem;
+    margin-bottom: 7px;
+    color: #024023;
+    font-size: 16px;
 }
 
 .login-modal-input {
+    box-sizing: border-box;
     width: 100%;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    border: 1px solid #d1d5db;
-    background-color: #ffffff;
-    color: #111827;
-    font-size: 1.125rem;
-    transition: all 0.2s;
-    margin-bottom: 0.75rem;
+    min-width: 0;
+    min-height: 48px;
+    margin-bottom: 18px;
+    padding: 10px 12px;
+    border: 1px solid #92a282;
+    border-radius: 0;
+    background: #F1F2D5;
+    color: #024023;
+    font: inherit;
 }
+
 .login-modal-input::placeholder {
-    color: #9ca3af;
+    color: #6a7a60;
+    opacity: 1;
 }
-.login-modal-input:focus {
-    outline: none;
-    border-color: transparent;
-    box-shadow: 0 0 0 2px #22c55e;
+
+.login-modal-input:focus,
+.login-otp-digit:focus {
+    outline: 2px solid #024023;
+    outline-offset: 2px;
 }
 
 .login-modal-info {
-    font-size: 0.875rem;
-    color: #6b7280;
+    margin: 10px 0;
+    color: #50634d;
+    font-size: 16px;
 }
 
 .login-modal-btn {
     width: 100%;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    color: #ffffff;
-    transition: all 0.2s;
-    border: none;
+    min-height: 48px;
+    margin-bottom: 16px;
+    padding: 11px 16px;
+    border: 1px solid #024023;
+    border-radius: 0;
+    background: #024023;
+    color: #F1F2D5;
+    font: inherit;
     cursor: pointer;
-    background-color: #16a34a;
-    margin-bottom: 0.5rem;
 }
+
 .login-modal-btn:hover:not(:disabled) {
-    background-color: #15803d;
+    background: #0d5a35;
 }
+
 .login-modal-btn:disabled {
-    opacity: 0.5;
+    border-color: #bac5a6;
+    background: #e4e8cc;
+    color: #65765c;
     cursor: not-allowed;
 }
 
 .login-modal-link {
-    color: #16a34a;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #024023;
+    font: 16px/1.5 var(--gs-body-font);
+    text-align: left;
     text-decoration: underline;
-    font-size: 0.875rem;
-    background: none;
-    border: none;
+    text-underline-offset: 4px;
     cursor: pointer;
 }
+
 .login-modal-link:disabled {
-    opacity: 0.5;
+    color: #65765c;
     cursor: not-allowed;
     text-decoration: none;
 }
 
 .login-modal-error {
-    margin-top: 0.5rem;
-    font-size: 0.875rem;
-    color: #dc2626;
+    margin: 0 0 16px;
+    color: #a42829;
+    font-size: 16px;
+    overflow-wrap: anywhere;
 }
 
-.login-modal-subtitle--lead {
-    font-size: 0.95rem;
-    line-height: 1.45;
-    margin-top: 0;
-    margin-bottom: 1.1rem;
-}
-
-/* ── OTP code step ── */
 .login-otp-panel {
-    position: relative;
-    margin: 0.25rem 0 0;
-    padding: 1.6rem 1.25rem 1.25rem;
-    border-radius: 0.9rem;
-    text-align: center;
-    overflow: hidden;
-    background: linear-gradient(135deg, #14371f 0%, #1f5133 28%, #2f7a4b 55%, #47965f 78%, #6bb57a 100%);
+    padding-top: 20px;
+    border-top: 1px solid #bac5a6;
 }
-.login-otp-panel::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(ellipse at 15% 15%, rgba(255, 214, 102, 0.38), transparent 50%),
-        radial-gradient(ellipse at 85% 85%, rgba(95, 205, 160, 0.45), transparent 55%),
-        radial-gradient(ellipse at 70% 10%, rgba(64, 155, 122, 0.5), transparent 45%);
-    pointer-events: none;
-}
-.login-otp-panel .login-modal-subtitle {
-    position: relative;
-    margin-top: 0;
-    color: rgba(255, 255, 255, 0.92);
-}
+
 .login-otp-phone {
-    position: relative;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin: 0.25rem 0 1.5rem;
-    letter-spacing: 0.03em;
+    margin: -8px 0 22px;
+    color: #024023;
+    font-size: 22px;
+    overflow-wrap: anywhere;
 }
+
 .login-otp-inputs {
-    position: relative;
-    display: flex;
-    gap: 0.55rem;
-    justify-content: center;
-    margin-bottom: 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: clamp(6px, 2vw, 10px);
+    margin-bottom: 24px;
 }
+
 .login-otp-digit {
-    width: 2.75rem;
-    height: 3.3rem;
-    text-align: center;
-    font-size: 1.55rem;
-    font-weight: 700;
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.14);
-    border: 2px solid rgba(255, 255, 255, 0.45);
-    border-radius: 0.6rem;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: 56px;
     padding: 0;
-    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    border: 1px solid #92a282;
+    border-radius: 0;
+    background: #F1F2D5;
+    color: #024023;
+    font: 26px/1 var(--gs-body-font);
+    text-align: center;
 }
-.login-otp-digit:focus {
-    outline: none;
-    border-color: #ffffff;
-    background: rgba(255, 255, 255, 0.28);
-}
+
 .login-otp-digit--active {
-    border-color: #ffd76a;
-    box-shadow: 0 0 0 3px rgba(255, 215, 106, 0.28);
+    border-color: #024023;
 }
+
 .login-otp-actions {
-    position: relative;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    margin-top: 0.35rem;
+    gap: 6px;
 }
+
 .login-otp-divider {
-    color: rgba(255, 255, 255, 0.45);
+    color: #92a282;
 }
+
 .login-otp-other {
     display: block;
-    position: relative;
-    margin-top: 1rem;
+    margin-top: 18px;
 }
-.login-otp-panel .login-modal-link { color: #ffe9b3; }
-.login-otp-panel .login-modal-link:disabled { color: rgba(255, 255, 255, 0.4); }
-.login-otp-panel .login-modal-btn {
-    position: relative;
-    background-color: #ffffff;
-    color: #1f4037;
-}
-.login-otp-panel .login-modal-btn:hover:not(:disabled) { background-color: #f0fdf4; }
-.login-otp-panel .login-modal-error { color: #ffd6d6; }
-.login-otp-panel .login-modal-info { color: rgba(255, 255, 255, 0.9); }
-</style>
-
-<style>
-html.dark .login-modal-backdrop { background-color: rgba(0,0,0,0.8) !important; }
-html.dark .login-modal-content { background-color: #2d3e26 !important; color: #f5f5f5 !important; border: 1px solid #3d4d36 !important; }
-html.dark .login-modal-title, html.dark .login-modal-label { color: #f5f5f5 !important; }
-html.dark .login-modal-subtitle, html.dark .login-modal-info { color: #d0d0d0 !important; }
-html.dark .login-modal-input { background-color: #344a34 !important; border-color: #3d4d36 !important; color: #f5f5f5 !important; }
-html.dark .login-modal-input::placeholder { color: #a8b89e !important; }
-html.dark .login-modal-input:focus { box-shadow: 0 0 0 2px #8aa37c !important; }
-html.dark .login-modal-input:-webkit-autofill,
-html.dark .login-modal-input:-webkit-autofill:hover,
-html.dark .login-modal-input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px #344a34 inset !important; -webkit-text-fill-color: #f5f5f5 !important; caret-color: #f5f5f5; }
-html.dark .login-modal-btn { background-color: #8aa37c !important; }
-html.dark .login-modal-btn:hover:not(:disabled) { background-color: #6b8560 !important; }
-html.dark .login-modal-link { color: #8aa37c !important; }
-html.dark .login-modal-error { color: #f87171 !important; }
-html.dark .login-modal-close:hover { color: #f5f5f5 !important; }
 </style>
