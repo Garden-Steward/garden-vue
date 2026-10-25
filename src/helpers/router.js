@@ -134,7 +134,7 @@ export const router = createRouter({
             path: '/manage',
             component: GardensView,
             name: 'manage-gardens-list',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/home',
@@ -152,31 +152,31 @@ export const router = createRouter({
             path: '/manage/projects',
             component: ProjectsView,
             name: 'manage-projects',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/usage',
             component: UsageView,
             name: 'manage-usage',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/plants',
             component: PlantsDirectory,
             name: 'manage-plants',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/plant/:slug',
             component: PlantsDetail,
             name: 'manage-plant-detail',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/project/:documentId',
             component: ProjectManage,
             name: 'manage-project',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/gardens/:slug/event-templates',
@@ -206,32 +206,6 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to, from) => {
-    const publicPages = [
-        '/login', 
-        '/oauth/google/callback', 
-        '/set-password',
-        '/verify-email',
-        '/', 
-        '/about',
-        '/help', 
-        '/blog', 
-        '/events', 
-        '/contribute',
-        '/manifesto',
-        '/map',
-        '/privacy',
-        '/gardens',
-        '/projects',
-        '/alerts/unsubscribe'
-    ];
-    
-    // Check if route starts with public patterns
-    const isPublicRoute = publicPages.includes(to.path) || 
-                         to.path.startsWith('/i/') ||
-                         to.path.startsWith('/blog/') ||
-                         to.path.startsWith('/d/') ||
-                         to.path.startsWith('/gardens/'); // Public garden pages (includes nested project pages)
-    
     const authRequired = to.meta.requiresAuth || to.path.startsWith('/manage/');
     const auth = useAuthStore();
     
