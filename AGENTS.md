@@ -13,7 +13,7 @@ for running public, foragable community gardens — volunteer days, watering sch
 tasks, projects, plants. It's been in use with the Oakland Urban Farming Project since 2022.
 
 The backend is **steward-bank** (Strapi v5), a separate repo:
-`Garden-Steward/steward-bank`. Most volunteers reach the app from a
+`Garden-Steward/steward-bank` (hackathon fork `steward-bank-hack`). Most volunteers reach the app from a
 text message link on their phone, so mobile matters more than desktop.
 
 ## Setup
