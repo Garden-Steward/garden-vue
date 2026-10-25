@@ -24,10 +24,13 @@ function deferred() {
     return { promise, resolve, reject };
 }
 
-async function harness(get, auth = { user: { id: 7 } }, post = async () => ({})) {
+async function harness(get, auth = { user: { id: 7 } }, post = async () => ({}), globals = {}) {
     const options = {};
     const fetchWrapper = { get, post };
-    const context = createContext({ Headers, Promise, console: { log() {}, error() {} } });
+    const context = createContext({
+        Headers, Promise, console: { log() {}, error() {} },
+        window: { clearInterval() {} }, document: { removeEventListener() {} }, ...globals
+    });
     const modules = new Map();
     const mocks = {
         pinia: { defineStore(definition) { options[definition.id] = definition; return () => Object.assign(definition.state(), definition.actions); }, storeToRefs: store => Object.fromEntries(Object.keys(store).map(key => [key, { get value() { return store[key]; } }])) },
@@ -35,7 +38,7 @@ async function harness(get, auth = { user: { id: 7 } }, post = async () => ({}))
         '@/helpers/fetch-wrapper': { fetchWrapper },
         '@/stores': { useAlertStore: () => ({ error() {} }), useGardensStore: () => ({}), useAuthStore: () => auth },
         '@/_config/GardenConfig': { normalizeReviewStatus: value => value, isProjectPubliclyVisible: () => true },
-        vue: { computed, ref, onBeforeUnmount() {} },
+        vue: { computed, ref, onMounted() {}, onBeforeUnmount() {} },
         '@/components/ManageLayout.vue': { default: null },
         '@/components/EmailLink.vue': { default: null }
     };
@@ -50,6 +53,7 @@ async function harness(get, auth = { user: { id: 7 } }, post = async () => ({}))
         modules.set(file, module);
         await module.link(async specifier => {
             if (specifier === '@/helpers/public-collection') return moduleFor('helpers/public-collection.js');
+            if (specifier === '@/helpers/schedule-calendar') return moduleFor('helpers/schedule-calendar.js');
             const exports = mocks[specifier];
             assert.ok(exports, `Unexpected source import ${specifier}`);
             return new SyntheticModule(Object.keys(exports), function () {
@@ -135,6 +139,7 @@ test('actual Home setup and directory requests remain independent in both comple
     for (const homeFirst of [true, false]) {
         const requests = [];
         const { moduleFor, mocks } = await harness(url => {
+            if (new URL(url).pathname === '/api/volunteer-days/public') return Promise.resolve(envelope([]));
             const request = deferred();
             requests.push({ ...request, url });
             return request.promise;
@@ -164,6 +169,130 @@ test('actual Home setup and directory requests remain independent in both comple
         assert.equal(store.publicProjects[0].id, 20);
         assert.equal(store.communityProjects.loading, undefined);
     }
+});
+
+test('Home waits for every event page and shows the first three eligible future gatherings', async () => {
+    const later = deferred();
+    const now = Date.now();
+    const event = (id, offset, extra = {}) => ({ id, documentId: `event-${id}`, title: `Gathering ${id}`, startDatetime: new Date(now + offset).toISOString(), ...extra });
+    const pageOne = Array.from({ length: 100 }, (_, index) => event(index + 1, 30 * 86400000));
+    const pageTwo = [
+        event(501, -86400000), event(502, 3600000, { startDatetime: 'invalid date' }),
+        event(503, 3600000, { canceled: true }), event(504, 3600000, { disabled: true }),
+        event(505, 3600000, { documentId: 'tie-b' }), event(506, 3600000, { documentId: 'tie-a' }),
+        event(507, 7200000), event(508, 3600000, { id: null })
+    ];
+    const { moduleFor, mocks } = await harness(url => {
+        assert.equal(new URL(url).pathname, '/api/volunteer-days/public');
+        if (new URL(url).searchParams.get('pagination[page]') === '2') return later.promise;
+        return Promise.resolve(envelope(pageOne, 108));
+    });
+    const directory = [row(80)];
+    const store = { publicProjects: directory, getPublicProjectPage: async () => envelope([row(10)], 1, 1, 3) };
+    mocks['@/stores'].useProjectsStore = () => store;
+    const home = (await moduleFor('views/PublicHomeView.vue', '\nexport { gatherings, upcomingEvents, featuredProjects };')).namespace;
+    await new Promise(setImmediate);
+    assert.equal(home.gatherings.value.loading, true);
+    assert.equal(home.upcomingEvents.value.length, 0);
+    assert.equal(home.featuredProjects.value[0].id, 10);
+    later.resolve(envelope(pageTwo, 108, 2));
+    await new Promise(setImmediate);
+    assert.deepEqual(Array.from(home.upcomingEvents.value, item => item.id), [506, 505, 507]);
+    assert.equal(store.publicProjects, directory);
+});
+
+test('a Home event page failure leaves successful project stories intact without partial gatherings', async () => {
+    const failure = new Error('Later events unavailable');
+    const { moduleFor, mocks } = await harness(async url => {
+        if (new URL(url).searchParams.get('pagination[page]') === '2') throw failure;
+        return envelope(Array.from({ length: 100 }, (_, index) => ({ ...row(index + 1), startDatetime: new Date(Date.now() + 86400000).toISOString() })), 101);
+    });
+    mocks['@/stores'].useProjectsStore = () => ({ getPublicProjectPage: async () => envelope([row(10)], 1, 1, 3) });
+    const home = (await moduleFor('views/PublicHomeView.vue', '\nexport { gatherings, upcomingEvents, featuredProjects };')).namespace;
+    await new Promise(setImmediate);
+    assert.equal(home.gatherings.value.error, failure);
+    assert.equal(home.upcomingEvents.value.length, 0);
+    assert.equal(home.featuredProjects.value[0].id, 10);
+});
+
+test('failed Home project reads do not hide actual upcoming gatherings', async () => {
+    const failure = new Error('Projects unavailable');
+    const { moduleFor, mocks } = await harness(async () => envelope([{ ...row(20), startDatetime: new Date(Date.now() + 86400000).toISOString() }]));
+    mocks['@/stores'].useProjectsStore = () => ({ getPublicProjectPage: async () => { throw failure; } });
+    const home = (await moduleFor('views/PublicHomeView.vue', '\nexport { gatherings, upcomingEvents, featured };')).namespace;
+    await new Promise(setImmediate);
+    assert.equal(home.featured.value.error, failure);
+    assert.equal(home.upcomingEvents.value[0].id, 20);
+});
+
+test('an unmounted Home ignores late event success and failure', async () => {
+    for (const rejected of [false, true]) {
+        const response = deferred();
+        let unmount;
+        const { moduleFor, mocks } = await harness(() => response.promise);
+        mocks.vue.onBeforeUnmount = callback => { unmount = callback; };
+        mocks['@/stores'].useProjectsStore = () => ({ getPublicProjectPage: async () => envelope([], 0, 1, 3) });
+        const home = (await moduleFor('views/PublicHomeView.vue', '\nexport { gatherings, upcomingEvents };')).namespace;
+        unmount();
+        if (rejected) response.reject(new Error('Late failure'));
+        else response.resolve(envelope([{ ...row(1), startDatetime: new Date(Date.now() + 86400000).toISOString() }]));
+        await new Promise(setImmediate);
+        assert.equal(home.gatherings.value.loading, true);
+        assert.equal(home.upcomingEvents.value.length, 0);
+    }
+});
+
+test('mounted Home removes started gatherings without another read and releases its clock on unmount', async () => {
+    const base = Date.parse('2026-10-25T09:00:00Z');
+    let now = base;
+    class ClockDate extends Date {
+        static now() { return now; }
+    }
+    const timers = new Map();
+    const visibility = new Set();
+    const events = Array.from({ length: 4 }, (_, index) => ({
+        id: index + 801, documentId: `clock-${index}`, title: `Clock gathering ${index}`,
+        startDatetime: new Date(base + (index + 1) * 60000).toISOString()
+    }));
+    let reads = 0;
+    const { moduleFor, mocks } = await harness(async () => {
+        reads += 1;
+        return envelope(events);
+    }, { user: null }, async () => ({}), {
+        Date: ClockDate,
+        window: {
+            setInterval(callback, delay) { timers.set(1, callback); assert.ok(delay > 0 && delay <= 60000); return 1; },
+            clearInterval(id) { timers.delete(id); }
+        },
+        document: {
+            addEventListener(event, callback) { assert.equal(event, 'visibilitychange'); visibility.add(callback); },
+            removeEventListener(event, callback) { assert.equal(event, 'visibilitychange'); visibility.delete(callback); }
+        }
+    });
+    let mount = () => {};
+    let unmount = () => {};
+    mocks.vue.onMounted = callback => { mount = callback; };
+    mocks.vue.onBeforeUnmount = callback => { unmount = callback; };
+    mocks['@/stores'].useProjectsStore = () => ({ getPublicProjectPage: async () => envelope([], 0, 1, 3) });
+    const home = (await moduleFor('views/PublicHomeView.vue', '\nexport { upcomingEvents };')).namespace;
+    mount();
+    await new Promise(setImmediate);
+    assert.deepEqual(Array.from(home.upcomingEvents.value, event => event.id), [801, 802, 803]);
+    now = base + 61000;
+    for (const callback of timers.values()) callback();
+    assert.deepEqual(Array.from(home.upcomingEvents.value, event => event.id), [802, 803, 804]);
+    assert.equal(reads, 1);
+    now = base + 181000;
+    for (const callback of visibility) callback();
+    assert.deepEqual(Array.from(home.upcomingEvents.value, event => event.id), [804]);
+    unmount();
+    assert.equal(timers.size, 0);
+    assert.equal(visibility.size, 0);
+    now = base + 300000;
+    for (const callback of timers.values()) callback();
+    for (const callback of visibility) callback();
+    assert.deepEqual(Array.from(home.upcomingEvents.value, event => event.id), [804]);
+    assert.equal(reads, 1);
 });
 
 test('interest uses returned count and state and keeps public cached users id-only', async () => {

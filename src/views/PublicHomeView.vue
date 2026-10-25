@@ -1,17 +1,36 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { isProjectPubliclyVisible } from '@/_config/GardenConfig';
 import { useProjectsStore } from '@/stores';
+import { readPublicCollection } from '@/helpers/public-collection';
+import { scheduleTimeZone } from '@/helpers/schedule-calendar';
 import ManageLayout from '@/components/ManageLayout.vue';
 import EmailLink from '@/components/EmailLink.vue';
 
 const projectsStore = useProjectsStore();
 const featured = ref({ loading: true });
+const gatherings = ref({ loading: true });
+const failedGatheringImages = ref(new Set());
+const currentTime = ref(Date.now());
+let clockInterval = null;
 let active = true;
-onBeforeUnmount(() => { active = false; });
+const refreshTime = () => { currentTime.value = Date.now(); };
+onMounted(() => {
+  refreshTime();
+  clockInterval = window.setInterval(refreshTime, 60000);
+  document.addEventListener('visibilitychange', refreshTime);
+});
+onBeforeUnmount(() => {
+  active = false;
+  window.clearInterval(clockInterval);
+  document.removeEventListener('visibilitychange', refreshTime);
+});
 projectsStore.getPublicProjectPage(1, 3)
   .then(response => { if (active) featured.value = response.data; })
   .catch(error => { if (active) featured.value = { error }; });
+readPublicCollection(`${import.meta.env.VITE_API_URL}/api/volunteer-days/public`)
+  .then(response => { if (active) gatherings.value = response.data; })
+  .catch(error => { if (active) gatherings.value = { error }; });
 
 const featuredProjects = computed(() => {
   const list = Array.isArray(featured.value) ? featured.value : [];
@@ -20,14 +39,34 @@ const featuredProjects = computed(() => {
     .sort((a, b) => Number(isProjectPubliclyVisible(b)) - Number(isProjectPubliclyVisible(a)))
     .slice(0, 3);
 });
-const heroProject = computed(() => featuredProjects.value.find(project => projectImage(project)));
+const heroProject = computed(() => featuredProjects.value.find(project => heroImage(project)));
+const upcomingEvents = computed(() => {
+  if (!Array.isArray(gatherings.value)) return [];
+  const now = currentTime.value;
+  return gatherings.value
+    .filter(event => !event.canceled && !event.disabled && Number.isSafeInteger(event.id) && event.id > 0 && Date.parse(event.startDatetime) > now)
+    .sort((first, second) => {
+      const byTime = Date.parse(first.startDatetime) - Date.parse(second.startDatetime);
+      if (byTime) return byTime;
+      return first.documentId.localeCompare(second.documentId);
+    })
+    .slice(0, 3);
+});
+const gatheringDate = new Intl.DateTimeFormat('en-US', { timeZone: scheduleTimeZone, month: 'short', day: 'numeric' });
+const gatheringTime = new Intl.DateTimeFormat('en-US', { timeZone: scheduleTimeZone, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 
-function projectImage(project) {
-  const image = project?.hero_image;
+function heroImage(item) {
+  const image = item?.hero_image;
   const url = image?.formats?.medium?.url || image?.formats?.small?.url || image?.url;
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
   return `${import.meta.env.VITE_API_URL}${url}`;
+}
+
+function gatheringImage(event) {
+  const url = heroImage(event);
+  if (failedGatheringImages.value.has(url)) return '';
+  return url;
 }
 
 function projectLink(project) {
@@ -52,12 +91,39 @@ function projectLink(project) {
         </div>
         <figure v-if="heroProject" class="public-home__hero-photo">
           <router-link :to="projectLink(heroProject)" :aria-label="`Explore ${heroProject.title}`">
-            <img :src="projectImage(heroProject)" :alt="`Photo for ${heroProject.title}`">
+            <img :src="heroImage(heroProject)" :alt="`Photo for ${heroProject.title}`">
           </router-link>
           <span class="public-home__stamp" aria-hidden="true">Small acts.<br>Deep roots.</span>
           <figcaption>{{ heroProject.title }}</figcaption>
         </figure>
       </header>
+
+      <section class="public-home__section" aria-labelledby="home-gatherings">
+        <div class="public-home__section-head">
+          <div>
+            <h2 id="home-gatherings">Your next good thing.</h2>
+            <p class="public-home__gathering-intro">Find a way to join in.</p>
+          </div>
+          <router-link to="/schedule" class="public-home__text-link">View Schedule ↗</router-link>
+        </div>
+        <p v-if="gatherings.loading" class="public-home__state" role="status">Loading gatherings…</p>
+        <p v-else-if="gatherings.error" class="public-home__state" role="alert">Couldn't load gatherings. Try again in a moment.</p>
+        <p v-else-if="!upcomingEvents.length" class="public-home__state">No upcoming gatherings right now. <router-link to="/gardens">Find a garden near you ↗</router-link></p>
+        <div v-else class="public-home__gatherings">
+          <article v-for="event in upcomingEvents" :key="event.documentId" class="gathering-card">
+            <router-link v-if="gatheringImage(event)" :to="`/d/${event.id}`" class="gathering-card__photo" :aria-label="`Explore ${event.title}`">
+              <img :src="gatheringImage(event)" :alt="`Photo for ${event.title}`" loading="lazy" @error="failedGatheringImages.add(heroImage(event))">
+            </router-link>
+            <div v-else class="gathering-card__date"><time :datetime="event.startDatetime">{{ gatheringDate.format(new Date(event.startDatetime)) }}</time></div>
+            <div class="gathering-card__copy">
+              <time class="gathering-card__when" :datetime="event.startDatetime">{{ gatheringTime.format(new Date(event.startDatetime)) }}</time>
+              <h3><router-link :to="`/d/${event.id}`">{{ event.title }}</router-link></h3>
+              <p v-if="event.garden?.title" class="gathering-card__garden">{{ event.garden.title }}</p>
+              <router-link :to="`/d/${event.id}`" class="gathering-card__link">Explore gathering <span aria-hidden="true">↗</span></router-link>
+            </div>
+          </article>
+        </div>
+      </section>
 
       <section class="public-home__section" aria-labelledby="home-projects">
         <div class="public-home__section-head">
@@ -71,9 +137,9 @@ function projectLink(project) {
         <p v-else-if="featured.error" class="public-home__state" role="alert">Couldn't load projects. Try again in a moment.</p>
         <p v-else-if="!featuredProjects.length" class="public-home__state">No projects to show right now. <router-link to="/gardens">Find a garden near you ↗</router-link></p>
         <div v-else class="public-home__stories" :class="{ 'public-home__stories--single': featuredProjects.length === 1 }">
-          <article v-for="project in featuredProjects" :key="project.id" class="project-story" :class="{ 'project-story--text-only': !projectImage(project) }">
-            <router-link v-if="projectImage(project)" :to="projectLink(project)" class="project-story__photo" :aria-label="`Explore ${project.title}`">
-              <img :src="projectImage(project)" :alt="`Photo for ${project.title}`" loading="lazy">
+          <article v-for="project in featuredProjects" :key="project.id" class="project-story" :class="{ 'project-story--text-only': !heroImage(project) }">
+            <router-link v-if="heroImage(project)" :to="projectLink(project)" class="project-story__photo" :aria-label="`Explore ${project.title}`">
+              <img :src="heroImage(project)" :alt="`Photo for ${project.title}`" loading="lazy">
             </router-link>
             <div class="project-story__copy">
               <p v-if="project.garden?.title" class="project-story__garden">{{ project.garden.title }}</p>
@@ -136,6 +202,19 @@ function projectLink(project) {
 .public-home__section-head .public-home__eyebrow { margin-bottom: 13px; }
 .public-home__text-link { font-size: 16px; white-space: normal; }
 .public-home__section-head > a { flex-shrink: 0; }
+.public-home__gathering-intro { margin: 10px 0 0; color: var(--gs-muted); font-size: 16px; }
+.public-home__gatherings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 20px; }
+.gathering-card { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--gs-rule); border-radius: 3px; overflow: hidden; }
+.gathering-card__photo { display: block; }
+.gathering-card__photo img { display: block; width: 100%; aspect-ratio: 1.75 / 1; object-fit: cover; }
+.gathering-card__date { display: grid; place-items: center; aspect-ratio: 1.75 / 1; background: #e4e8cc; font: 400 clamp(30px, 3vw, 48px)/1.1 var(--gs-heading-font); }
+.gathering-card__copy { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 20px; }
+.gathering-card__when { color: var(--gs-muted); font-size: 13px; line-height: 1.5; }
+.gathering-card h3 { margin: 12px 0 10px; font-size: clamp(25px, 2.1vw, 34px); line-height: 1.12; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.gathering-card h3 a { text-decoration: none; }
+.gathering-card h3 a:hover { text-decoration: underline; }
+.gathering-card__garden { margin: 0 0 22px; color: var(--gs-muted); font-size: 16px; }
+.gathering-card__link { display: flex; justify-content: space-between; align-items: center; gap: 20px; width: 100%; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--gs-rule); font-size: 15px; }
 .public-home__stories { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); align-items: start; gap: 24px; }
 .project-story { min-width: 0; padding: 8px; background: #e4e8cc; transform: rotate(-1deg); }
 .project-story:nth-child(2) { background: #ece0c2; transform: rotate(1deg); }
@@ -173,6 +252,7 @@ function projectLink(project) {
   .public-home__section { padding: 30px 0 35px; }
   .public-home__section-head { display: block; }
   .public-home__section-head > a { display: inline-block; margin-top: 18px; }
+  .public-home__gatherings { grid-template-columns: minmax(0, 1fr); gap: 22px; }
   .public-home__stories { grid-template-columns: minmax(0, 1fr); gap: 30px; }
   .public-home__stories--single .project-story, .public-home__first-visit, .public-home__about { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .public-home__stories--single .project-story { gap: 7px; }
