@@ -240,9 +240,9 @@ const pageLabel = computed(() => {
     </Teleport>
     <div class="manage-shell__grid">
       <Teleport to="body" :disabled="!isMobile">
-        <aside v-show="sidebarOpen" id="manage-sidebar" ref="sidebar" class="dash-sidebar" :role="sidebarRole" :aria-modal="isMobile && sidebarOpen" aria-label="Workspace menu">
+        <aside v-show="sidebarOpen" id="manage-sidebar" ref="sidebar" class="dash-sidebar" :role="sidebarRole" :aria-modal="isMobile && sidebarOpen" aria-label="Menu">
           <div class="dash-sidebar__head">
-            <span class="dash-sidebar__title">Your workspace</span>
+            <span class="dash-sidebar__title">Menu</span>
             <button ref="closeButton" type="button" class="manage-shell__icon-button" aria-label="Close sidebar" aria-controls="manage-sidebar" :aria-expanded="sidebarOpen" @click="closeSidebar">
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16M15 9l-3 3 3 3" /></svg>
             </button>
@@ -257,11 +257,6 @@ const pageLabel = computed(() => {
               <span>{{ item.label }}</span>
             </a>
           </nav>
-          <div class="dash-sidebar__bottom">
-            <button type="button" class="dash-btn dash-sidebar__cta" @click="openPitch">+ Pitch a Project</button>
-            <p>East Bay<br>Permaculture Guild</p>
-            <span>A little care, close to home.</span>
-          </div>
         </aside>
       </Teleport>
       <div class="manage-shell__content">
@@ -324,13 +319,6 @@ const pageLabel = computed(() => {
 .dash-nav__item:hover, .dash-nav__item--active { background: var(--manage-paper); color: var(--manage-ink); }
 .dash-nav__item:not([href]) { opacity: .65; cursor: default; }
 .dash-nav__icon { width: 21px; height: 21px; flex-shrink: 0; }
-.dash-btn { display: inline-flex; justify-content: center; align-items: center; padding: 10px 16px; border: 1px solid var(--manage-ink); font-size: 18px; cursor: pointer; }
-.dash-btn--primary { background: var(--manage-ink); color: var(--manage-paper); }
-.dash-sidebar__cta { width: 100%; border-color: #869c77; background: transparent; color: var(--manage-ink); font: 400 16px/1.4 var(--gs-body-font); }
-.dash-sidebar__cta:hover { background: var(--manage-paper); }
-.dash-sidebar__bottom { margin-top: auto; color: var(--manage-muted); }
-.dash-sidebar__bottom p { margin: 24px 0 8px; font-size: 21px; line-height: 1.25; color: var(--manage-ink); }
-.dash-sidebar__bottom span { font-size: 15px; }
 @media (max-width: 1200px) { .manage-shell__main { padding: 35px 30px 50px; } .manage-shell__breadcrumb { padding-left: 30px; padding-right: 30px; } }
 .manage-shell__backdrop { display: none; }
 @media (max-width: 820px) {

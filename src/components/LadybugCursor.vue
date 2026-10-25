@@ -52,7 +52,7 @@ function move(event) {
     window.clearTimeout(settleTimer);
     settleTimer = window.setTimeout(() => {
         mode.value = 'idle';
-    }, 140);
+    }, 500);
 }
 
 function press(event) {
@@ -109,8 +109,8 @@ onUnmounted(() => {
             :style="{ left: `${position.x}px`, top: `${position.y}px` }"
             aria-hidden="true"
         >
-            <img v-if="mode === 'idle'" class="ladybug-cursor__closed" src="/brand/ladybug-closed.svg" alt="">
-            <img v-else class="ladybug-cursor__open" src="/brand/ladybug-open.svg" alt="">
+            <img v-if="mode === 'idle'" class="ladybug-cursor__closed" src="/brand/ladybug-rest-v2.svg" alt="">
+            <img v-else class="ladybug-cursor__open" src="/brand/ladybug-flight-v2.svg" alt="">
         </div>
     </Teleport>
 </template>
@@ -138,8 +138,8 @@ html.gs-ladybug-cursor [role="textbox"] * {
 .ladybug-cursor {
     position: fixed;
     z-index: 2147483647;
-    width: 36px;
-    height: 45px;
+    width: 44px;
+    height: 50px;
     transform: translate(-50%, -50%);
     pointer-events: none;
     user-select: none;

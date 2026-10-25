@@ -47,7 +47,8 @@ export const router = createRouter({
         },
         {
             path: '/blog',
-            component: BlogList
+            component: BlogList,
+            meta: { viewport: 'wide' }
         },
         {
             path: '/blog/:slug',

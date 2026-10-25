@@ -255,7 +255,7 @@ html.dark .pcard-tag--category[data-category="Planting" i], html.dark .pcard-tag
 .plist { min-height: 0; font-size: 18px; line-height: 1.55; }
 .plist-heading { padding: 0; margin-bottom: 30px; }
 .plist-heading h1 { font-size: clamp(44px, 4.8vw, 76px); line-height: 1.08; font-weight: 400; }
-.plist-heading p { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; max-width: 60ch; }
+.plist-heading p { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; max-width: none; }
 .plist-cards { padding: 0; }
 .pcard { column-gap: 44px; padding: 34px 0; border-bottom: 0; border-top: 1px solid var(--gs-rule); }
 .pcard-name { font-size: clamp(34px, 3vw, 52px); line-height: 1.15; }

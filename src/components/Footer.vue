@@ -6,7 +6,7 @@
     <div class="text-center mt-4">
       <p>
         <img 
-          src="/brand/garden-steward-wordmark.svg"
+          src="/brand/garden-steward-stacked-whole-transparent.png"
           class="navbar-brand footer-wordmark mx-auto"
           alt="Garden Steward"
         >

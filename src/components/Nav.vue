@@ -97,7 +97,7 @@ onUnmounted(() => {
 
     <header class="gs-navbar">
         <div class="gs-navbar__top">
-            <router-link to="/" class="gs-navbar__logo"><img src="/brand/garden-steward-wordmark.svg" alt="Garden Steward"></router-link>
+            <router-link to="/" class="gs-navbar__logo"><img src="/brand/garden-steward-stacked-whole.svg" alt="Garden Steward"></router-link>
             <div class="gs-navbar__actions">
                 <button v-if="!authStore.user" type="button" class="gs-navbar__cta" @click="openPhoneLogin">Get involved ↗</button>
                 <router-link v-else to="/gardens" class="gs-navbar__cta gs-navbar__cta--signed-in">Get involved ↗</router-link>
@@ -105,11 +105,8 @@ onUnmounted(() => {
             </div>
         </div>
         <nav class="gs-navbar__links" aria-label="Public pages">
-            <router-link to="/gardens">Gardens</router-link>
-            <router-link to="/projects">Projects</router-link>
-            <router-link to="/events">Events</router-link>
-            <span class="gs-navbar__unavailable" aria-disabled="true">Newsletter</span>
-            <div ref="aboutMenu" class="gs-navbar__about" @mouseenter="showAboutDropdown = true" @mouseleave="showAboutDropdown = false">
+            <router-link to="/gardens">Find your garden</router-link>
+            <div ref="aboutMenu" class="gs-navbar__about">
                 <router-link to="/about" @click="showAboutDropdown = false">About</router-link>
                 <button ref="aboutButton" type="button" aria-label="More about pages" aria-controls="about-pages" :aria-expanded="showAboutDropdown" @click="showAboutDropdown = !showAboutDropdown">⌄</button>
                 <div v-show="showAboutDropdown" id="about-pages" class="gs-navbar__about-menu">
@@ -130,14 +127,13 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.gs-navbar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 24px; min-height: 88px; padding: 22px 30px; background: #F1F2D5; border-bottom: 1px solid #bac5a6; color: #024023; font: 16px/1.4 var(--gs-body-font); }
+.gs-navbar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 24px; min-height: 88px; padding: 14px 30px; background: #F1F2D5; border-bottom: 1px solid #bac5a6; color: #024023; font: 16px/1.4 var(--gs-body-font); }
 .gs-navbar__top { display: contents; }
 .gs-navbar__logo { order: 1; flex: 0 0 auto; display: block; }
-.gs-navbar__logo img { display: block; width: 204px; height: auto; }
+.gs-navbar__logo img { display: block; width: 150px; height: auto; }
 .gs-navbar__links { order: 2; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 24px; }
 .gs-navbar__links > a, .gs-navbar__about > a { color: #024023; text-decoration: none; white-space: nowrap; }
-.gs-navbar__links a:hover, .gs-navbar__links a.router-link-active { text-decoration: underline; text-underline-offset: 6px; }
-.gs-navbar__unavailable { opacity: .65; white-space: nowrap; cursor: default; }
+.gs-navbar__links a:hover, .gs-navbar__links a.active { text-decoration: underline; text-underline-offset: 6px; }
 .gs-navbar__actions { order: 3; display: flex; align-items: center; gap: 14px; flex: 0 0 auto; }
 .gs-navbar__cta { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 9px 15px; border: 1px solid #024023; border-radius: 2px; background: #024023; color: #F1F2D5; font: 16px/1.4 var(--gs-body-font); white-space: nowrap; text-decoration: none; cursor: pointer; }
 .gs-navbar__cta:hover { background: #0d5a35; color: #F1F2D5; text-decoration: none; }
@@ -168,7 +164,7 @@ onUnmounted(() => {
 @media (max-width: 1024px) {
     .gs-navbar { display: block; min-height: 0; padding: 20px; }
     .gs-navbar__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .gs-navbar__logo img { width: clamp(145px, 45vw, 175px); }
+    .gs-navbar__logo img { width: 125px; }
     .gs-navbar__links { justify-content: space-between; gap: clamp(8px, 3vw, 18px); margin-top: 19px; overflow-x: auto; scrollbar-width: none; font-size: clamp(12px, 3.85vw, 16px); }
     .gs-navbar__links::-webkit-scrollbar { display: none; }
     .gs-navbar__about > button { font-size: 14px; }

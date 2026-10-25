@@ -184,7 +184,6 @@ onBeforeUnmount(() => {
         @click="onBackClick"
       >
         <img :src="next.src" alt="" loading="lazy" draggable="false" />
-        <span class="photo-stack__grip">Next photo</span>
       </button>
       <component :is="frontComponent" :to="to || undefined" class="photo-stack__front" :aria-label="to && label">
         <img v-if="!frontFailed" :src="current.src" :alt="current.alt" loading="lazy" draggable="false" @error="frontFailed = true" />
@@ -209,7 +208,6 @@ onBeforeUnmount(() => {
 .photo-stack__back:active { cursor: grabbing; }
 .photo-stack__back img { pointer-events: none; }
 .photo-stack__back:focus-visible { outline: 3px solid var(--gs-ink); outline-offset: 5px; }
-.photo-stack__grip { position: absolute; top: 3px; right: 7px; background: #faf9ed; color: #024023; font: 14px/1.4 var(--gs-body-font); padding: 1px 7px; pointer-events: none; }
 .photo-stack__controls { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .photo-stack__error { display: block; color: var(--gs-ink); margin-top: 8px; }
 .photo-stack__fallback { display: grid; place-items: center; width: 100%; height: 100%; color: var(--gs-muted); }
@@ -217,6 +215,5 @@ onBeforeUnmount(() => {
   .photo-stack { padding: 37px 26px 0 0; }
   .photo-stack--single { padding: 0; }
   .photo-stack__back { transform: translate(22px, -22px) rotate(2deg); }
-  .photo-stack__grip { font-size: 13px; top: 1px; padding: 0 6px; }
 }
 </style>

@@ -717,7 +717,6 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
 .evl-seg-btn.is-active, .dark .evl-seg-btn.is-active, .evl-chip.is-active, .dark .evl-chip.is-active { background: var(--gs-ink); border-color: var(--gs-ink); color: var(--gs-paper); }
 .evl-feature, .evl-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 76px); min-width: 0; border: 0; border-bottom: 1px solid var(--gs-rule); border-radius: 0; padding: clamp(30px, 4vw, 66px) 0; margin: 0; background: transparent; }
 .dark .evl-feature { background: transparent; border-color: var(--gs-rule); }
-.evl-feature--text-only, .evl-row--text-only { grid-template-columns: minmax(0, 1fr); }
 .evl-feature:hover, .evl-row:hover, .dark .evl-row:hover { box-shadow: none; transform: none; background: transparent; }
 .evl-feature-body, .evl-row-body { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; min-width: 0; padding: 0; }
 .evl-feature-title, .evl-row-title, .dark .evl-feature-title, .dark .evl-row-title { font: 400 clamp(34px, 3.4vw, 62px)/1.08 var(--gs-heading-font); color: var(--gs-ink); margin: 0; }
@@ -741,9 +740,10 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
 .evl-page { font-size: 18px; line-height: 1.55; }
 .evl-heading { padding: 0; margin-bottom: 30px; }
 .evl-heading h1 { font-size: clamp(44px, 4.8vw, 76px); line-height: 1.08; }
-.evl-heading p { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; max-width: 60ch; }
+.evl-heading p { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; max-width: none; }
 .evl-wrap { padding: 0; }
 .evl-feature, .evl-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px; padding: 34px 0; border-top: 1px solid var(--gs-rule); border-bottom: 0; }
+.evl-feature--text-only, .evl-row--text-only { grid-template-columns: minmax(0, 1fr); }
 .evl-feature-title, .evl-row-title, .dark .evl-feature-title, .dark .evl-row-title { font-size: clamp(34px, 3vw, 52px); line-height: 1.15; }
 .evl-feature-blurb, .evl-row-blurb { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; }
 @media (max-width: 760px) {

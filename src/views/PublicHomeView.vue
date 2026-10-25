@@ -4,7 +4,6 @@ import { storeToRefs } from 'pinia';
 import { isProjectPubliclyVisible, isProjectVisibleTo } from '@/_config/GardenConfig';
 import { useProjectsStore, useAuthStore } from '@/stores';
 import ManageLayout from '@/components/ManageLayout.vue';
-import NewsletterSignup from '@/components/NewsletterSignup.vue';
 import EmailLink from '@/components/EmailLink.vue';
 
 const projectsStore = useProjectsStore();
@@ -19,6 +18,7 @@ const featuredProjects = computed(() => {
     .sort((a, b) => Number(isProjectPubliclyVisible(b)) - Number(isProjectPubliclyVisible(a)))
     .slice(0, 3);
 });
+const heroProject = computed(() => featuredProjects.value.find(project => projectImage(project)));
 
 function projectImage(project) {
   const image = project?.hero_image;
@@ -40,62 +40,70 @@ function projectLink(project) {
 <template>
   <ManageLayout>
     <main class="public-home">
-      <header class="public-home__intro">
-        <h1>Garden Steward</h1>
-        <p class="public-home__welcome">Hi, welcome.</p>
-        <p>In a mission to restore biodiversity, Garden Steward helps communities organize around their land.</p>
-        <div class="public-home__actions">
-          <router-link to="/gardens">Explore gardens ↗</router-link>
-          <router-link to="/projects">See projects ↗</router-link>
+      <header class="public-home__hero" :class="{ 'public-home__hero--text-only': !heroProject }">
+        <div class="public-home__intro">
+          <p class="public-home__eyebrow">Rooted in the East Bay</p>
+          <h1>Find your people.<br><em>Grow something</em> good.</h1>
+          <p class="public-home__welcome">A garden, a shared meal, a few new friends.<br>There's a place for you here.</p>
+          <router-link to="/events" class="public-home__join">Find your next gathering <span aria-hidden="true">↗</span></router-link>
+          <p class="public-home__aside">No green thumb required. Just you.</p>
         </div>
+        <figure v-if="heroProject" class="public-home__hero-photo">
+          <router-link :to="projectLink(heroProject)" :aria-label="`Explore ${heroProject.title}`">
+            <img :src="projectImage(heroProject)" :alt="`Photo for ${heroProject.title}`">
+          </router-link>
+          <span class="public-home__stamp" aria-hidden="true">Small acts.<br>Deep roots.</span>
+          <figcaption>{{ heroProject.title }}</figcaption>
+        </figure>
       </header>
-
-      <figure class="public-home__film">
-        <video controls playsinline preload="metadata" aria-label="Garden Steward garden footage">
-          <source src="https://storage.googleapis.com/steward-public/videos/homepage/leaf-herb-prep-dehydrate.mp4" type="video/mp4">
-        </video>
-        <figcaption>Garden Steward garden footage</figcaption>
-      </figure>
 
       <section class="public-home__section" aria-labelledby="home-projects">
         <div class="public-home__section-head">
-          <div><p class="public-home__eyebrow">Oakland, CA</p><h2 id="home-projects">Happening now</h2></div>
-          <router-link to="/projects">See all projects ↗</router-link>
-        </div>
-        <article v-for="project in featuredProjects" :key="project.id" class="public-home__row">
-          <router-link :to="projectLink(project)" class="public-home__photo">
-            <img v-if="projectImage(project)" :src="projectImage(project)" :alt="`Photo for ${project.title}`">
-          </router-link>
-          <div class="public-home__copy">
-            <h3><router-link :to="projectLink(project)">{{ project.title }}</router-link></h3>
-            <p v-if="project.garden?.title" class="public-home__context">{{ project.garden.title }}</p>
-            <p v-if="project.short_description">{{ project.short_description }}</p>
-            <router-link :to="projectLink(project)">View project ↗</router-link>
+          <div>
+            <p class="public-home__eyebrow">From the Garden Steward community</p>
+            <h2 id="home-projects">This is what growing together looks like.</h2>
           </div>
-        </article>
-        <p v-if="communityProjects.loading">Loading projects…</p>
-        <p v-else-if="communityProjects.error" role="alert">Couldn't load projects. Try again in a moment.</p>
-        <p v-else-if="!featuredProjects.length">No projects to show right now.</p>
+          <router-link to="/projects" class="public-home__text-link">See all projects ↗</router-link>
+        </div>
+        <p v-if="communityProjects.loading" class="public-home__state" role="status">Loading projects…</p>
+        <p v-else-if="communityProjects.error" class="public-home__state" role="alert">Couldn't load projects. Try again in a moment.</p>
+        <p v-else-if="!featuredProjects.length" class="public-home__state">No projects to show right now. <router-link to="/gardens">Find a garden near you ↗</router-link></p>
+        <div v-else class="public-home__stories" :class="{ 'public-home__stories--single': featuredProjects.length === 1 }">
+          <article v-for="project in featuredProjects" :key="project.id" class="project-story" :class="{ 'project-story--text-only': !projectImage(project) }">
+            <router-link v-if="projectImage(project)" :to="projectLink(project)" class="project-story__photo" :aria-label="`Explore ${project.title}`">
+              <img :src="projectImage(project)" :alt="`Photo for ${project.title}`" loading="lazy">
+            </router-link>
+            <div class="project-story__copy">
+              <p v-if="project.garden?.title" class="project-story__garden">{{ project.garden.title }}</p>
+              <h3><router-link :to="projectLink(project)">{{ project.title }}</router-link></h3>
+              <p v-if="project.short_description">{{ project.short_description }}</p>
+              <router-link :to="projectLink(project)" class="public-home__text-link">Explore the project ↗</router-link>
+            </div>
+          </article>
+        </div>
       </section>
 
-      <section class="public-home__section public-home__about" aria-labelledby="home-about">
-        <p class="public-home__eyebrow">About us</p>
+      <section class="public-home__first-visit public-home__section" aria-labelledby="home-first-visit">
         <div>
-          <h2 id="home-about">Community-grown tools for urban agriculture</h2>
-          <p>Garden Steward is a community-driven, open-source project developing SMS-first software for managing volunteer events, watering schedules, and harvest coordination. Since 2022, we've partnered with the Oakland Urban Farming Project (OUFP) to organize urban agricultural initiatives.</p>
-          <p>Each SMS phone number is its own cooperative of local gardening projects. If you're in Oakland, join our existing cooperative. Otherwise, partner with us and add to our cooperative network.</p>
-          <div class="public-home__actions">
-            <EmailLink subject="Garden Steward in my city">Bring Garden Steward to your city ↗</EmailLink>
-            <a href="https://github.com/Garden-Steward" target="_blank" rel="noopener noreferrer">Explore on GitHub ↗</a>
-          </div>
+          <p class="public-home__eyebrow">Your first time?</p>
+          <h2 id="home-first-visit">You don't have to<br>know a thing.<br>Or anyone.</h2>
         </div>
+        <ol class="public-home__steps">
+          <li><span aria-hidden="true">01</span><div><h3>Find something that feels like you.</h3><p>Find a garden or a project close to home.</p><router-link to="/gardens" class="public-home__text-link">Find your garden ↗</router-link></div></li>
+          <li><span aria-hidden="true">02</span><div><h3>Let us know you're coming.</h3><p>Choose an upcoming gathering and read the plan for the day.</p><router-link to="/events" class="public-home__text-link">See upcoming events ↗</router-link></div></li>
+          <li><span aria-hidden="true">03</span><div><h3>Show up. We'll start together.</h3><p>Meet the group, find your rhythm, and take part.</p></div></li>
+        </ol>
       </section>
 
-      <section class="public-home__section" aria-label="Newsletter signup"><NewsletterSignup /></section>
-      <section class="public-home__section public-home__manifesto" aria-labelledby="home-manifesto">
-        <p class="public-home__eyebrow">Our mission</p>
-        <h2 id="home-manifesto">We are life seeking fulfillment.</h2>
-        <router-link to="/manifesto">Read our full manifesto ↗</router-link>
+      <section class="public-home__about public-home__section" aria-labelledby="home-about">
+        <h2 id="home-about">A little care.<br>A lot of community.</h2>
+        <div>
+          <p>Garden Steward is a community-driven, open-source project helping communities organize around their land.</p>
+          <div class="public-home__about-links">
+            <router-link to="/about" class="public-home__text-link">About Garden Steward ↗</router-link>
+            <EmailLink subject="Garden Steward in my city" class="public-home__text-link">Bring Garden Steward to your city ↗</EmailLink>
+          </div>
+        </div>
       </section>
     </main>
   </ManageLayout>
@@ -103,33 +111,69 @@ function projectLink(project) {
 
 <style scoped>
 .public-home { background: var(--gs-paper); color: var(--gs-ink); font: 18px/1.55 var(--gs-body-font); }
-.public-home__eyebrow { font-size: 15px; color: var(--gs-muted); margin: 0 0 16px; }
+.public-home a { color: inherit; text-underline-offset: 4px; }
 .public-home h1, .public-home h2, .public-home h3 { font-family: var(--gs-heading-font); font-weight: 400; }
-.public-home__welcome { font: 400 clamp(26px, 2.5vw, 36px)/1.2 var(--gs-body-font); }
-.public-home h1 { font-size: clamp(44px, 4.8vw, 76px); line-height: 1.08; max-width: 900px; margin: 0 0 20px; }
-.public-home h2 { font-size: 36px; line-height: 1.16; margin: 0 0 20px; }
-.public-home h3 { font-size: clamp(34px, 3vw, 52px); line-height: 1.15; margin: 0 0 12px; }
-.public-home__intro { margin-bottom: 42px; }
-.public-home__intro > p:not(.public-home__eyebrow):not(.public-home__welcome) { max-width: 60ch; font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; }
-.public-home a { color: var(--gs-ink); text-underline-offset: 4px; }
-.public-home__actions { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 24px; }
-.public-home__film { margin: 0 0 50px; }
-.public-home__film video { display: block; width: 100%; max-height: 570px; background: var(--gs-ink); }
-.public-home__film figcaption { font-size: 15px; color: var(--gs-muted); margin-top: 10px; }
-.public-home__section { border-top: 1px solid var(--gs-rule); padding: 35px 0 45px; }
-.public-home__section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 20px; }
-.public-home__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px; border-top: 1px solid var(--gs-rule); padding: 34px 0; }
-.public-home__photo { display: block; min-height: 220px; background: var(--gs-sage); }
-.public-home__photo img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
-.public-home__copy p { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; margin: 0 0 16px; }
-.public-home__copy .public-home__context { font-size: 18px; color: var(--gs-muted); }
-.public-home__about { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 44px; }
-.public-home__about p { max-width: 70ch; }
+.public-home__eyebrow { margin: 0 0 18px; color: var(--gs-muted); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; }
+.public-home__eyebrow::before { content: ''; display: inline-block; width: 5px; height: 5px; margin-right: 9px; border-radius: 50%; background: #c1272d; vertical-align: middle; }
+.public-home__hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(28px, 4vw, 70px); padding: 14px 0 62px; }
+.public-home__hero--text-only { grid-template-columns: minmax(0, 1fr); }
+.public-home h1 { margin: 0 0 24px; font-size: clamp(44px, 4.4vw, 104px); line-height: 1.02; letter-spacing: -.055em; max-width: 14ch; }
+.public-home h1 em { color: #916625; font-weight: 400; }
+.public-home__welcome { margin: 0 0 24px; font-size: clamp(18px, 1.45vw, 23px); line-height: 1.5; }
+.public-home .public-home__join { display: inline-flex; justify-content: space-between; align-items: center; gap: 32px; padding: 13px 21px; border-radius: 28px; background: #c1272d; color: #fff9e8; text-decoration: none; font-size: 17px; }
+.public-home__join:hover { background: #a51f25; }
+.public-home__aside { margin: 15px 0 0; font-size: 14px; color: var(--gs-muted); }
+.public-home__hero-photo { position: relative; margin: 12px 14px 16px 0; min-width: 0; }
+.public-home__hero-photo > a { display: block; overflow: hidden; border-radius: 49% 49% 0 0; }
+.public-home__hero-photo img { display: block; width: 100%; height: clamp(300px, 34vw, 560px); object-fit: cover; }
+.public-home__hero-photo figcaption { position: absolute; left: -12px; bottom: -13px; max-width: 85%; padding: 8px 15px; transform: rotate(-4deg); border: 1px solid var(--gs-ink); background: var(--gs-paper); color: var(--gs-ink); font: 18px/1.25 var(--gs-heading-font); overflow-wrap: anywhere; }
+.public-home__stamp { position: absolute; top: 0; right: -12px; display: grid; place-content: center; width: 90px; height: 90px; transform: rotate(14deg); border: 1px solid var(--gs-ink); border-radius: 50%; background: #f2ab27; text-align: center; font: 17px/1.15 var(--gs-heading-font); }
+.public-home__section { padding: 40px 0 46px; border-top: 1px solid var(--gs-rule); }
+.public-home h2 { max-width: 25ch; margin: 0; font-size: clamp(31px, 2.8vw, 44px); line-height: 1.12; letter-spacing: -.035em; }
+.public-home__section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 30px; }
+.public-home__section-head .public-home__eyebrow { margin-bottom: 13px; }
+.public-home__text-link { font-size: 16px; white-space: normal; }
+.public-home__section-head > a { flex-shrink: 0; }
+.public-home__stories { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); align-items: start; gap: 24px; }
+.project-story { min-width: 0; padding: 8px; background: #e4e8cc; transform: rotate(-1deg); }
+.project-story:nth-child(2) { background: #ece0c2; transform: rotate(1deg); }
+.project-story:nth-child(3) { background: #e4e5bc; transform: rotate(-.5deg); }
+.project-story__photo { display: block; }
+.project-story__photo img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.project-story__copy { min-width: 0; padding: 18px 13px 13px; }
+.project-story h3 { margin: 0 0 12px; font-size: clamp(27px, 2.1vw, 36px); line-height: 1.12; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.project-story h3 a { text-decoration: none; }
+.project-story h3 a:hover { text-decoration: underline; }
+.project-story p { margin: 0 0 18px; font-size: 18px; }
+.project-story .project-story__garden { margin-bottom: 10px; color: var(--gs-muted); font-size: 15px; }
+.public-home__stories--single .project-story { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 25px; transform: none; background: transparent; padding: 0; }
+.public-home__stories--single .project-story__photo { padding: 8px; background: #e4e8cc; transform: rotate(-1deg); }
+.public-home__stories--single .project-story__copy { padding: 14px 0; }
+.public-home__stories--single .project-story--text-only { grid-template-columns: minmax(0, 1fr); }
+.public-home__state { margin: 20px 0 8px; color: var(--gs-muted); }
+.public-home__first-visit, .public-home__about { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 4vw, 70px); }
+.public-home__steps { margin: 0; padding: 0; list-style: none; }
+.public-home__steps li { display: grid; grid-template-columns: 35px minmax(0, 1fr); gap: 14px; padding: 17px 0; border-top: 1px solid var(--gs-rule); }
+.public-home__steps li:first-child { padding-top: 0; border-top: 0; }
+.public-home__steps li > span { color: #916625; font: 18px/1.3 var(--gs-heading-font); }
+.public-home__steps h3 { margin: 0 0 6px; font-family: var(--gs-body-font); font-size: 19px; font-weight: 400; line-height: 1.35; }
+.public-home__steps p { margin: 0 0 7px; color: var(--gs-muted); font-size: 16px; }
+.public-home__about p { margin: 0 0 20px; max-width: 55ch; font-size: 19px; }
+.public-home__about-links { display: flex; flex-wrap: wrap; gap: 15px 24px; }
 @media (max-width: 760px) {
-  .public-home h1 { font-size: 42px; }
-  .public-home h2 { font-size: 31px; }
-  .public-home h3 { font-size: 34px; }
-  .public-home__row, .public-home__about { grid-template-columns: minmax(0, 1fr); gap: 25px; }
-  .public-home__row { padding: 24px 0 30px; }
+  .public-home__hero { grid-template-columns: minmax(0, 1fr); padding-top: 0; padding-bottom: 36px; gap: 28px; }
+  .public-home h1 { font-size: clamp(43px, 10.5vw, 64px); }
+  .public-home__welcome { font-size: 19px; }
+  .public-home__hero-photo { margin: 0 12px 16px 4px; }
+  .public-home__hero-photo img { height: auto; aspect-ratio: 1.2 / 1; }
+  .public-home__stamp { width: 78px; height: 78px; font-size: 15px; }
+  .public-home__hero-photo figcaption { left: -4px; font-size: 17px; }
+  .public-home__section { padding: 30px 0 35px; }
+  .public-home__section-head { display: block; }
+  .public-home__section-head > a { display: inline-block; margin-top: 18px; }
+  .public-home__stories { grid-template-columns: minmax(0, 1fr); gap: 30px; }
+  .public-home__stories--single .project-story, .public-home__first-visit, .public-home__about { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .public-home__stories--single .project-story { gap: 7px; }
+  .project-story__copy { padding: 16px 11px 12px; }
 }
 </style>
