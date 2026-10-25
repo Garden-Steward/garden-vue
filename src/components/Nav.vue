@@ -193,7 +193,7 @@ const handleEscape = (e) => {
         class="gs-navbar navbar navbar-expand navbar-light w-full max-w-full overflow-x-hidden border-b border-gray-200 bg-custom-light dark:!bg-custom-light"
     >
         <router-link to="/" class="logo-image desktop-logo">
-                <img src="/public/gs-logo-name.png" alt="GS Logo" class="logo-img h-7 mt-1">
+                <img src="/brand/garden-steward-wordmark.svg" alt="Garden Steward" class="logo-img">
         </router-link>
 
         <div class="navbar-nav d-flex justify-content-center w-100 mb-1">
@@ -218,7 +218,7 @@ const handleEscape = (e) => {
                     v-show="authStore.user"
                     :class="{ 'mobile-nav-section-active': isManageNavActive }"
                     @click="toggleMobileMenu"
-                >Dashboard</router-link>
+                >Overview</router-link>
                 <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
                 <router-link to="/about" class="nav-item nav-link" @click="toggleMobileMenu">About</router-link>
                 <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
@@ -266,7 +266,7 @@ const handleEscape = (e) => {
                 <span class="bottom"></span>
             </button>
             <router-link to="/" class="nav-item image mobile-logo">
-                <img src="/public/gs-logo-name.png" alt="GS Logo" class="logo-img h-7">
+                <img src="/brand/garden-steward-wordmark.svg" alt="Garden Steward" class="logo-img">
             </router-link>
 
             <div class="web-nav">
@@ -276,8 +276,8 @@ const handleEscape = (e) => {
                         class="nav-item nav-link nav-home-link"
                         v-show="authStore.user"
                         :class="{ 'nav-link--section-active': isManageNavActive }"
-                        aria-label="Dashboard"
-                        title="Dashboard"
+                        aria-label="Overview"
+                        title="Overview"
                     >
                         <svg class="nav-home-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M11.3 2.7a1 1 0 0 1 1.4 0l8.6 8.1a1 1 0 0 1-.7 1.7H19v7.5a1.5 1.5 0 0 1-1.5 1.5H6.5A1.5 1.5 0 0 1 5 20v-7.5H3.4a1 1 0 0 1-.7-1.7zM10 21.5h4v-5a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1z" /></svg>
                     </router-link>
@@ -368,7 +368,6 @@ html.dark .gs-navbar.navbar.bg-custom-light {
     color: #2d4a2e !important;
     -webkit-text-fill-color: #2d4a2e !important;
 }
-/* Dashboard as a filled house: icon only, always the brand dark green. */
 .gs-navbar.navbar.bg-custom-light .web-nav .nav-item.nav-link.nav-home-link {
     display: inline-flex;
     align-items: center;
@@ -719,15 +718,15 @@ button.login-btn {
 .logo-image {
     position: absolute;
     left: 15px;
-    top: 4;
+    top: 50%;
+    transform: translateY(-50%);
     z-index: 1;
 }
 
 .logo-img {
+    display: block;
     height: auto;
-    max-height: 3rem;
-    width: auto;
-    max-width: 288px;
+    width: clamp(185px, 16vw, 265px);
     object-fit: contain;
 }
 
@@ -841,14 +840,15 @@ button.login-btn {
     }
 
     .mobile-logo .logo-img {
-        max-width: 216px;
-        max-height: 2.7rem;
+        width: 100%;
     }
 
     .mobile-logo {
         position: absolute;
         left: 50%;
-        transform: translateX(-50%);
+        top: 50%;
+        width: clamp(185px, 55vw, 225px);
+        transform: translate(-50%, -50%);
         z-index: 1;
     }
 

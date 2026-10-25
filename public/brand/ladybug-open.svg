@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 68" aria-hidden="true">
+  <defs>
+    <mask id="spots">
+      <rect width="100" height="68" fill="#fff"/>
+      <circle cx="22" cy="30" r="5.5" fill="#000"/>
+      <circle cx="36" cy="18" r="3.5" fill="#000"/>
+      <circle cx="31" cy="43" r="6" fill="#000"/>
+      <circle cx="78" cy="30" r="5.5" fill="#000"/>
+      <circle cx="64" cy="18" r="3.5" fill="#000"/>
+      <circle cx="69" cy="43" r="6" fill="#000"/>
+    </mask>
+  </defs>
+  <g fill="#C1272D" mask="url(#spots)">
+    <path d="M2 43C8 14 26 3 43 4c4 14 2 37-2 60z"/>
+    <path d="M98 43C92 14 74 3 57 4c-4 14-2 37 2 60z"/>
+  </g>
+</svg>

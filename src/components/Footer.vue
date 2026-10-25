@@ -6,9 +6,9 @@
     <div class="text-center mt-4">
       <p>
         <img 
-          src="https://storage.googleapis.com/steward_upload/uploads/garden_steward_logo_green_sq_350_75514db053/garden_steward_logo_green_sq_350_75514db053.jpg" 
-          class="navbar-brand mx-auto h-40" 
-          alt="Garden Steward Logo"
+          src="/brand/garden-steward-wordmark.svg"
+          class="navbar-brand footer-wordmark mx-auto"
+          alt="Garden Steward"
         >
         <br />
         <router-link
@@ -42,6 +42,12 @@
   text-decoration: none;
   transition: color 0.2s ease, opacity 0.2s ease;
   margin-top: 1rem;
+}
+
+.footer-wordmark {
+  display: block;
+  width: min(82vw, 340px);
+  height: auto;
 }
 
 .contribute-link:hover {

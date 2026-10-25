@@ -3,6 +3,7 @@ import { Nav, Alert } from '@/components';
 import { LoginModal } from '@/components/modals';
 import { useAuthStore } from '@/stores';
 import Footer from '@/components/Footer.vue';
+import LadybugCursor from '@/components/LadybugCursor.vue';
 import { RouterView, useRoute } from 'vue-router';
 import { computed } from 'vue';
 import '@fortawesome/fontawesome-free/css/all.css'
@@ -26,6 +27,7 @@ auth.refreshRole();
             <RouterView />
         </div>
         <Footer />
+        <LadybugCursor />
     </div>
 </template>
 
