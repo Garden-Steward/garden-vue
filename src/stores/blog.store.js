@@ -18,13 +18,19 @@ export const useBlogStore = defineStore({
         },
         async fetchAll() {
             this.blogs = { loading: true };
-            fetchWrapper.get(`${baseUrl}?populate=*&sort[0]=createdAt:desc`)
-                .then(res => this.blogs = res.data)
+            return fetchWrapper.get(`${baseUrl}?populate=*&sort[0]=createdAt:desc`)
+                .then(res => {
+                    if (!Array.isArray(res?.data)) {
+                        throw new Error('Invalid blog response');
+                    }
+                    this.blogs = res.data;
+                    return this.blogs;
+                })
                 .catch(error => {
                     this.blogs = { error };
                     this.handleError(error);
-                })
-                .finally(() => this.blogs.loading = false);
+                    return this.blogs;
+                });
         },
         async findSlug(slug) {
             // ?populate=*&filters[slug][$eq]=${slug}

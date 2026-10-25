@@ -1,16 +1,16 @@
 <script setup>
-import PageHeader from '@/components/PageHeader.vue';
+import ManageLayout from '@/components/ManageLayout.vue';
 import EmailLink from '@/components/EmailLink.vue';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore } from '@/stores';
 import ProjectAlertSignup from '@/components/ProjectAlertSignup.vue';
+import PhotoStack from '@/components/PhotoStack.vue';
+import { toPhotoSet } from '@/helpers/image-utils';
 import {
   projectStatusOptions,
   resolveProjectStatus,
-  isProjectVisibleTo,
-  getProjectStatusOverlayClasses,
-  getProjectCategoryOverlayClasses
+  isProjectVisibleTo
 } from '@/_config/GardenConfig';
 
 const projectsStore = useProjectsStore();
@@ -18,10 +18,8 @@ const authStore = useAuthStore();
 const { communityProjects } = storeToRefs(projectsStore);
 const { user } = storeToRefs(authStore);
 
-projectsStore.getAllProjects();
+Promise.allSettled([projectsStore.getAllProjects()]);
 
-// One row of status chips is the whole filter UI at this many projects.
-// Category, distance and skill filters can join the same scrolling row later.
 const statusFilters = ['All', ...projectStatusOptions.map(o => o.value)];
 const filter = ref('All');
 
@@ -44,11 +42,8 @@ const visibleProjects = computed(() => {
   return listedProjects.value.filter(p => resolveProjectStatus(p) === filter.value);
 });
 
-function projectImage(project) {
-  const img = project?.hero_image;
-  const url = img?.formats?.medium?.url || img?.formats?.small?.url || img?.url;
-  if (!url) return '';
-  return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
+function projectPhotos(project) {
+  return toPhotoSet([project.hero_image, ...(project.featured_gallery || [])], `Photo for ${project.title}`);
 }
 
 function gardenName(project) {
@@ -63,33 +58,43 @@ function projectLink(project) {
   return null;
 }
 
+function parseProjectDate(value) {
+  if (typeof value !== 'string') return null;
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (dateOnly) {
+    const year = Number(dateOnly[1]);
+    const month = Number(dateOnly[2]);
+    const day = Number(dateOnly[3]);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+    return date;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
 function formatWhen(value) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  const day = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
-  if (!hasTime) return day;
-  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }).toLowerCase().replace(' ', '');
+  const date = parseProjectDate(value);
+  if (!date) return null;
+  const day = date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return day;
+  if (date.getHours() === 0 && date.getMinutes() === 0) return day;
+  const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }).toLowerCase().replace(' ', '');
   return `${day}, ${time}`;
 }
 
-/**
- * Where and when the next work is — the line that decides whether someone
- * shows up, and the main thing this list adds over the homepage. Derived from
- * the next scheduled event on the project, falling back to its start date.
- */
 function nextWork(project) {
   const events = Array.isArray(project?.related_events) ? project.related_events : [];
   const now = Date.now();
   const upcoming = events
-    .filter(e => e?.startDatetime && new Date(e.startDatetime).getTime() >= now)
+    .filter(event => event?.startDatetime && new Date(event.startDatetime).getTime() >= now)
     .sort((a, b) => new Date(a.startDatetime) - new Date(b.startDatetime))[0];
+  if (upcoming) return `Next event · ${formatWhen(upcoming.startDatetime)}`;
 
-  const when = upcoming
-    ? formatWhen(upcoming.startDatetime)
-    : (project?.date_start ? formatWhen(project.date_start) : null);
-
-  return [gardenName(project), when].filter(Boolean).join(' · ') || null;
+  const start = parseProjectDate(project?.date_start);
+  if (start && start.getTime() > now) return `Project starts · ${formatWhen(project.date_start)}`;
+  return null;
 }
 
 function isInterested(project) {
@@ -132,486 +137,133 @@ async function toggleInterest(project) {
   }
 }
 
-// ── Sticky filter bar sits directly under the global nav ──
-const navOffset = ref(0);
-
-function measureNav() {
-  const nav = document.querySelector('.gs-navbar');
-  navOffset.value = nav ? Math.round(nav.getBoundingClientRect().height) : 0;
-}
-
-onMounted(() => {
-  measureNav();
-  window.addEventListener('resize', measureNav);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', measureNav);
-});
 </script>
 
 <template>
+  <ManageLayout v-slot="{ openPitch }">
   <div class="plist">
-    <PageHeader eyebrow="Projects" title="What neighbors are building" width="1080px">
-      Garden builds, plantings and restoration work underway near you. Find one to join.
-    </PageHeader>
+    <header class="plist-heading">
+      <h1>Projects</h1>
+      <p>Garden builds, plantings and restoration work underway near you. Find one to join.</p>
+    </header>
 
-    <!-- Filter bar (the logo + hamburger row above it is the app's global nav) -->
-    <div class="plist-bar" :style="{ top: `${navOffset}px` }">
-      <div class="chip-row">
-        <span class="chip chip--place">
-          Oakland <span class="chip-count">{{ listedProjects.length }}</span>
-        </span>
-        <EmailLink subject="Garden Steward in my city" class="chip chip--ghost">Your city?</EmailLink>
+    <div class="plist-toolbar">
+      <div class="plist-filters" role="group" aria-label="Project status">
+        <button v-for="status in statusFilters" :key="status" type="button" :class="{ 'is-selected': filter === status }" :aria-pressed="filter === status" @click="filter = status">{{ status }}</button>
       </div>
-
-      <div class="chip-row chip-row--status">
-        <button
-          v-for="f in statusFilters"
-          :key="f"
-          type="button"
-          class="chip chip--status"
-          :class="{ 'is-selected': filter === f }"
-          @click="filter = f"
-        >{{ f }}</button>
-      </div>
+      <button type="button" class="plist-add" @click="openPitch">+ Add project</button>
     </div>
+    <p class="plist-place">Oakland · {{ listedProjects.length }} <span v-if="listedProjects.length === 1">project</span><span v-else>projects</span></p>
+    <details class="plist-updates">
+      <summary>Get project updates</summary>
+      <ProjectAlertSignup />
+    </details>
 
-    <!-- Email alerts for new projects in a zip or city -->
-    <ProjectAlertSignup />
-
-    <!-- Cards -->
     <div class="plist-cards">
-      <article v-for="p in visibleProjects" :key="p.id" class="pcard">
-        <component
-          :is="projectLink(p) ? 'router-link' : 'div'"
-          :to="projectLink(p) || undefined"
-          class="pcard-photo"
-          :style="projectImage(p) ? { backgroundImage: `url(${projectImage(p)})` } : null"
-        >
-          <div class="pcard-badges">
-            <span :class="getProjectStatusOverlayClasses(resolveProjectStatus(p))">
-              {{ resolveProjectStatus(p) }}
-            </span>
-            <span v-if="p.category" :class="getProjectCategoryOverlayClasses(p.category)">
-              {{ p.category }}
-            </span>
-          </div>
-        </component>
-
+      <article v-for="p in visibleProjects" :key="p.id" class="pcard" :class="{ 'pcard--text-only': !projectPhotos(p).length }">
+        <PhotoStack v-if="projectPhotos(p).length" :photos="projectPhotos(p)" :label="p.title" :to="projectLink(p)" />
         <div class="pcard-body">
-          <h3 class="pcard-name">{{ p.title }}</h3>
-          <p class="pcard-line">{{ p.short_description }}</p>
+          <h2 class="pcard-name">
+            <router-link v-if="projectLink(p)" :to="projectLink(p)">{{ p.title }}</router-link>
+            <span v-else>{{ p.title }}</span>
+          </h2>
+          <p v-if="gardenName(p)" class="pcard-context">{{ gardenName(p) }}</p>
+          <p v-if="p.short_description" class="pcard-line">{{ p.short_description }}</p>
+          <div class="pcard-tags">
+            <span class="pcard-tag pcard-tag--status">{{ resolveProjectStatus(p) }}</span>
+            <span v-if="p.category" class="pcard-tag pcard-tag--category" :data-category="p.category">{{ p.category }}</span>
+          </div>
           <p v-if="nextWork(p)" class="pcard-meta">{{ nextWork(p) }}</p>
-
           <div class="pcard-actions">
-            <button
-              type="button"
-              class="pcard-btn"
-              :class="{ 'is-in': isInterested(p) }"
-              :disabled="togglingId === p.id"
-              @click="toggleInterest(p)"
-            >{{ isInterested(p) ? "You're in" : "I'm interested" }}</button>
+            <button type="button" class="pcard-btn" :class="{ 'is-in': isInterested(p) }" :disabled="togglingId === p.id" @click="toggleInterest(p)"><span v-if="isInterested(p)">You're in</span><span v-else>I'm interested</span></button>
             <span class="pcard-count">{{ interestedCount(p) }} interested</span>
           </div>
         </div>
       </article>
 
       <p v-if="communityProjects.loading" class="plist-state">Loading projects…</p>
-      <p v-else-if="!visibleProjects.length" class="plist-state">
-        No {{ filter === 'All' ? '' : filter.toLowerCase() + ' ' }}projects right now.
-      </p>
+      <p v-else-if="communityProjects.error" class="plist-state" role="alert">Couldn't load projects. Try again in a moment.</p>
+      <p v-else-if="!visibleProjects.length && filter === 'All'" class="plist-state">No projects right now.</p>
+      <p v-else-if="!visibleProjects.length" class="plist-state">No {{ filter.toLowerCase() }} projects right now.</p>
     </div>
 
-    <!-- Start in your city -->
     <div class="pcity">
       <p class="pcity-eyebrow">Outside Oakland</p>
       <h2 class="pcity-title">Start the first project in your city.</h2>
-      <p class="pcity-body">
-        Each SMS number is its own cooperative of local projects. Tell us about yours and
-        we'll help you stand it up.
-      </p>
+      <p class="pcity-body">Each SMS number is its own cooperative of local projects. Tell us about yours and we'll help you stand it up.</p>
       <EmailLink subject="Garden Steward in my city" class="pcity-btn">Email us about your city</EmailLink>
     </div>
-
   </div>
+  </ManageLayout>
 </template>
 
 <style scoped>
-.plist {
-  background: #f7f1e3;
-  min-height: 100vh;
-}
+.plist { min-height: 100vh; background: var(--gs-paper); color: var(--gs-ink); font-family: var(--gs-body-font); overflow-x: clip; }
+.plist-heading { padding: clamp(32px, 4vw, 70px) clamp(20px, 4vw, 80px) 20px; }
+.plist-heading h1 { font: 400 clamp(44px, 5vw, 84px)/1.05 var(--gs-heading-font); margin: 0 0 14px; }
+.plist-heading p { font-size: clamp(18px, 1.5vw, 23px); line-height: 1.45; margin: 0; color: var(--gs-muted); }
+.plist-toolbar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 14px 24px; border-bottom: 1px solid var(--gs-rule); }
+.plist-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+.plist-filters button, .plist-add { min-height: 42px; padding: 8px 2px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--gs-ink); font: 400 16px/1.4 var(--gs-body-font); cursor: pointer; }
+.plist-filters button.is-selected { border-bottom-color: var(--gs-ink); font-weight: 600; }
+.plist-filters button:hover, .plist-add:hover { text-decoration: underline; text-underline-offset: 4px; }
+.plist-add { text-decoration: underline; text-underline-offset: 4px; white-space: nowrap; }
+.plist-place { color: var(--gs-muted); font-size: 15px; margin: 12px 0; }
+.plist-updates { border-bottom: 1px solid var(--gs-rule); padding: 10px 0; }
+.plist-updates summary { display: list-item; width: fit-content; color: var(--gs-ink); font-size: 16px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.plist-updates :deep(.palert) { margin: 12px 0 0; max-width: none; padding: 20px 0 12px; border: 0; border-top: 1px solid var(--gs-rule); border-radius: 0; background: transparent; }
+.plist-updates :deep(.palert-title) { font: 400 28px/1.2 var(--gs-heading-font); color: var(--gs-ink); }
+.plist-updates :deep(.palert-body), .plist-updates :deep(.palert-note) { color: var(--gs-muted); font: 18px/1.55 var(--gs-body-font); }
+.plist-updates :deep(.palert-scope) { border: 0; border-bottom: 1px solid var(--gs-rule); border-radius: 0; padding: 0; }
+.plist-updates :deep(.palert-seg) { border-radius: 0; color: var(--gs-ink); font: 16px var(--gs-body-font); }
+.plist-updates :deep(.palert-seg.is-selected) { background: transparent; color: var(--gs-ink); text-decoration: underline; text-underline-offset: 4px; }
+.plist-updates :deep(.palert-input) { border-color: var(--gs-rule); border-radius: 0; background: var(--gs-paper); color: var(--gs-ink); font: 16px var(--gs-body-font); }
+.plist-updates :deep(.palert-btn) { border-radius: 0; background: var(--gs-ink); color: var(--gs-paper); font: 16px var(--gs-body-font); }
+.plist-cards { padding: 10px clamp(20px, 4vw, 80px) 40px; }
+.plist-state { margin: 24px 0; font-size: 18px; color: var(--gs-muted); }
+.pcard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 76px); min-width: 0; padding: clamp(30px, 4vw, 66px) 0; border-bottom: 1px solid var(--gs-rule); }
+.pcard--text-only { grid-template-columns: minmax(0, 1fr); }
+.pcard-body { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.pcard-name { font: 400 clamp(34px, 3.4vw, 62px)/1.08 var(--gs-heading-font); margin: 0 0 12px; }
+.pcard-name a { color: inherit; text-decoration: none; }
+.pcard-name a:hover { text-decoration: underline; }
+.pcard-context { font-size: 18px; margin: 0 0 20px; color: var(--gs-muted); }
+.pcard-line { font-size: clamp(18px, 1.45vw, 23px); line-height: 1.5; margin: 0 0 20px; }
+.pcard-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.pcard-tag { font-size: 16px; padding: 5px 10px; background: var(--gs-sage); color: var(--gs-ink); }
+.pcard-tag--status { background: #f4edcf; }
+.pcard-tag--category { background: #e3e8c9; }
+.pcard-tag--category[data-category="Infrastructure" i], .pcard-tag--category[data-category="Event" i] { background: #eee0ad; }
+.pcard-tag--category[data-category="Planting" i], .pcard-tag--category[data-category="Community" i] { background: #dbe8d4; }
+html.dark .pcard-tag--status { background: #4a432d; }
+html.dark .pcard-tag--category { background: #384a34; }
+html.dark .pcard-tag--category[data-category="Infrastructure" i], html.dark .pcard-tag--category[data-category="Event" i] { background: #594d2f; }
+html.dark .pcard-tag--category[data-category="Planting" i], html.dark .pcard-tag--category[data-category="Community" i] { background: #2b4a3b; }
+.pcard-meta { font-size: 18px; color: var(--gs-muted); margin: 0 0 22px; }
+.pcard-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: auto; }
+.pcard-btn { min-height: 44px; padding: 8px 20px; border: 1px solid var(--gs-ink); border-radius: 0; background: var(--gs-ink); color: var(--gs-paper); font: 600 17px var(--gs-body-font); cursor: pointer; }
+.pcard-btn.is-in { background: var(--gs-sage); color: var(--gs-ink); }
+.pcard-btn:disabled { opacity: .6; cursor: default; }
+.pcard-count { font-size: 16px; color: var(--gs-muted); }
+.pcity { margin: 20px clamp(20px, 4vw, 80px) 56px; padding: 28px; background: var(--gs-sage); }
+.pcity-eyebrow { margin: 0 0 6px; font-size: 15px; color: var(--gs-muted); }
+.pcity-title { margin: 0 0 12px; font: 400 clamp(28px, 3vw, 48px)/1.15 var(--gs-heading-font); }
+.pcity-body { margin: 0 0 20px; font-size: 18px; line-height: 1.5; }
+.pcity-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 16px; background: var(--gs-ink); color: var(--gs-paper); text-decoration: none; font-size: 17px; }
+@media (max-width: 760px) { .pcard { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
 
-html.dark .plist {
-  background: #121a12;
-}
-
-/* ── Filter bar ────────────────────────────────────── */
-.plist-bar {
-  position: sticky;
-  z-index: 5;
-  background: #f7f1e3;
-  border-bottom: 1px solid #e0d7c4;
-  padding-top: 10px;
-}
-
-html.dark .plist-bar {
-  background: #121a12;
-  border-bottom-color: #3d4d36;
-}
-
-.chip-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 16px 10px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.chip-row::-webkit-scrollbar {
-  display: none;
-}
-
-.chip-row--status {
-  padding-bottom: 12px;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 9999px;
-  font-weight: 700;
-  white-space: nowrap;
-  text-decoration: none;
-}
-
-.chip--place {
-  background: #064e3b;
-  color: #fff;
-  padding: 8px 14px;
-  font-size: 13px;
-}
-
-.chip-count {
-  opacity: 0.7;
-  font-size: 11px;
-}
-
-.chip--ghost {
-  background: transparent;
-  color: #064e3b;
-  border: 1px dashed #8aa37c;
-  padding: 8px 14px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.chip--ghost:hover {
-  text-decoration: none;
-  color: #064e3b;
-}
-
-html.dark .chip--place {
-  background: #8aa37c;
-  color: #14281a;
-}
-
-html.dark .chip--ghost {
-  color: #8aa37c;
-}
-
-.chip--status {
-  padding: 7px 13px;
-  font-size: 12.5px;
-  background: transparent;
-  color: #376451;
-  border: 1px solid #c3cdb8;
-  cursor: pointer;
-}
-
-.chip--status.is-selected {
-  background: #064e3b;
-  color: #fff;
-  border-color: #064e3b;
-}
-
-html.dark .chip--status {
-  color: #c8dbbf;
-  border-color: #3d4d36;
-}
-
-html.dark .chip--status.is-selected {
-  background: #8aa37c;
-  border-color: #8aa37c;
-  color: #14281a;
-}
-
-/* ── Cards ─────────────────────────────────────────── */
-.plist-cards {
-  padding: 16px 16px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.plist-state {
-  margin: 0;
-  font-size: 13px;
-  color: #4b5563;
-}
-
-html.dark .plist-state {
-  color: #cfd8c8;
-}
-
-.pcard {
-  background: #fff;
-  border: 1px solid #dcd3c0;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 1px 2px rgba(45, 62, 38, 0.06);
-}
-
-html.dark .pcard {
-  background: #1f2d1a;
-  border-color: #3d4d36;
-}
-
-/* The cream placeholder is the brightest block on the page until a photo loads. */
-html.dark .pcard-photo {
-  background-color: #2a3826;
-}
-
-.pcard-photo {
-  position: relative;
-  display: block;
-  height: 160px;
-  background-color: #e4dccb;
-  background-size: cover;
-  background-position: center;
-}
-
-.pcard-badges {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  display: flex;
-  gap: 6px;
-  pointer-events: none;
-}
-
-.pcard-body {
-  padding: 13px 14px 14px;
-}
-
-.pcard-name {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.25;
-  color: #064e3b;
-  margin: 0 0 5px;
-}
-
-html.dark .pcard-name {
-  color: #c8dbbf;
-}
-
-.pcard-line {
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: #4b5563;
-  margin: 0 0 8px;
-}
-
-html.dark .pcard-line {
-  color: #cfd8c8;
-}
-
-.pcard-meta {
-  font-size: 12.5px;
-  color: #6c8a6a;
-  margin: 0 0 12px;
-}
-
-.pcard-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.pcard-btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  border-radius: 9999px;
-  font-size: 14.5px;
-  font-weight: 700;
-  cursor: pointer;
-  background: #064e3b;
-  color: #fff;
-  border: 1px solid #064e3b;
-}
-
-.pcard-btn.is-in {
-  background: #f3ece0;
-  color: #064e3b;
-  border-color: #8aa37c;
-}
-
-.pcard-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.pcard-count {
-  font-size: 12.5px;
-  color: #4b5563;
-  white-space: nowrap;
-}
-
-html.dark .pcard-meta {
-  color: #8aa37c;
-}
-
-/*
- * Emerald reads as a button on cream but disappears into a dark card, so the
- * dark theme promotes sage to the primary action and inverts the "joined"
- * state to an outline.
- */
-html.dark .pcard-btn {
-  background: #8aa37c;
-  color: #14281a;
-  border-color: #8aa37c;
-}
-
-html.dark .pcard-btn.is-in {
-  background: transparent;
-  color: #c8dbbf;
-  border-color: #8aa37c;
-}
-
-html.dark .pcard-count {
-  color: #cfd8c8;
-}
-
-/* ── Wider screens ─────────────────────────────────── */
-/*
- * Mobile-first design: one column of cards stretches into letterboxes on a
- * wide viewport, so past 700px the list becomes a grid with the photo scaling
- * to its column and the action rows aligned along the bottom of each row.
- */
-@media (min-width: 700px) {
-  .chip-row {
-    max-width: 1080px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .plist-cards {
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 24px 24px 8px;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-  }
-
-  .plist-state {
-    grid-column: 1 / -1;
-  }
-
-  .pcard {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .pcard-photo {
-    height: auto;
-    aspect-ratio: 16 / 10;
-  }
-
-  .pcard-body {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-
-  .pcard-actions {
-    margin-top: auto;
-  }
-}
-
-@media (min-width: 1000px) {
-  .plist-cards {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* ── Start in your city ────────────────────────────── */
-.pcity {
-  margin: 12px 16px 46px;
-  background: #344a34;
-  border-radius: 14px;
-  padding: 22px 18px;
-  text-align: center;
-}
-
-.pcity-eyebrow {
-  margin: 0 0 6px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: #8aa37c;
-}
-
-.pcity-title {
-  margin: 0 0 8px;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 21px;
-  font-weight: 700;
-  color: #f7f1e3;
-}
-
-.pcity-body {
-  margin: 0 0 16px;
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: #cfd8c8;
-}
-
-.pcity-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #C2410C;
-  color: #fff;
-  border-radius: 9999px;
-  padding: 13px 24px;
-  font-size: 15px;
-  font-weight: 700;
-  min-height: 44px;
-  box-sizing: border-box;
-  text-decoration: none;
-}
-
-.pcity-btn:hover {
-  background: #9a330a;
-  color: #fff;
-  text-decoration: none;
-}
-
-@media (min-width: 700px) {
-  .pcity {
-    max-width: 1080px;
-    margin: 20px auto 56px;
-    padding: 30px 24px;
-  }
+.plist { min-height: 0; font-size: 18px; line-height: 1.55; }
+.plist-heading { padding: 0; margin-bottom: 30px; }
+.plist-heading h1 { font-size: clamp(44px, 4.8vw, 76px); line-height: 1.08; font-weight: 400; }
+.plist-heading p { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; max-width: 60ch; }
+.plist-cards { padding: 0; }
+.pcard { column-gap: 44px; padding: 34px 0; border-bottom: 0; border-top: 1px solid var(--gs-rule); }
+.pcard-name { font-size: clamp(34px, 3vw, 52px); line-height: 1.15; }
+.pcard-line { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; }
+@media (max-width: 760px) {
+  .plist-heading h1 { font-size: 42px; }
+  .pcard { grid-template-columns: minmax(0, 1fr); gap: 25px; padding: 24px 0 30px; }
+  .pcard-name { font-size: 34px; }
+  .pcard-line { font-size: 18px; }
 }
 </style>

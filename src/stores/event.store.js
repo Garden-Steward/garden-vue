@@ -73,7 +73,16 @@ export const useEventStore = defineStore({
                     }
                     return res;
                 })
-                .catch(this.handleError);
+                .catch(error => {
+                    this.events = { error };
+                    this.eventsPagination = {
+                        page,
+                        pageSize,
+                        pageCount: 0,
+                        total: 0
+                    };
+                    this.handleError(error);
+                });
         },
         async loadMoreEvents() {
             const nextPage = this.eventsPagination.page + 1;

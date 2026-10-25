@@ -10,13 +10,16 @@ const gardensStore = useGardensStore();
 const { gardens } = storeToRefs(gardensStore);
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
-gardensStore.getAll();
-
 const usageStore = useUsageStore();
 const { orgs: usageOrgs } = storeToRefs(usageStore);
-usageStore.loadOrgs();
+watch(user, (currentUser) => {
+  if (!currentUser) return;
+  gardensStore.getAll();
+  usageStore.loadOrgs();
+}, { immediate: true });
 
 const showPitch = ref(false);
+const pendingPitch = ref(false);
 let pitchTrigger = null;
 const sidebarOpen = ref(true);
 const isMobile = ref(false);
@@ -90,7 +93,13 @@ const updateMobile = () => {
   }
 };
 
-const openPitch = (event) => {
+const openPitch = async (event) => {
+  if (!user.value) {
+    pendingPitch.value = true;
+    if (isMobile.value && sidebarOpen.value) await closeSidebar(false);
+    authStore.openLoginModal(route.fullPath);
+    return;
+  }
   if (event?.currentTarget instanceof HTMLElement) {
     pitchTrigger = event.currentTarget;
   } else if (document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
@@ -101,6 +110,15 @@ const openPitch = (event) => {
   if (isMobile.value && sidebarOpen.value) closeSidebar(false);
   showPitch.value = true;
 };
+
+watch(() => authStore.loginModalOpen, async (open) => {
+  if (open || !pendingPitch.value) return;
+  pendingPitch.value = false;
+  if (user.value) {
+    await nextTick();
+    openPitch();
+  }
+});
 
 watch(showPitch, async (open) => {
   await nextTick();
@@ -177,21 +195,42 @@ const navIconPaths = {
   project: 'M4 7a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z',
   leaf: 'M12 20V10 M12 10c0-3-2-5-6-5 0 3 2 5 6 5z M12 10c0-3 2-5 6-5 0 3-2 5-6 5z',
   calendar: 'M8 7V3 M16 7V3 M4 11h16 M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z',
-  chart: 'M4 20V11 M10 20V4 M16 20v-6 M3 20h18'
+  chart: 'M4 20V11 M10 20V4 M16 20v-6 M3 20h18',
+  people: 'M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2 M9 11a4 4 0 100-8 4 4 0 000 8z M22 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75',
+  mail: 'M4 5h16v14H4z M4 6l8 7 8-7'
 };
 
 const navItems = computed(() => {
+  let overviewHref = '/';
+  let projectsHref = '/projects';
+  let plantsHref;
+  if (user.value) {
+    overviewHref = '/manage';
+    projectsHref = '/manage/projects';
+    plantsHref = '/manage/plants';
+  }
   const items = [
-    { label: 'Overview', icon: 'grid', href: '/manage', active: route.path === '/manage' },
-    { label: 'Projects', icon: 'project', href: '/manage/projects', active: route.path.startsWith('/manage/project') },
-    { label: 'Plants', icon: 'leaf', href: '/manage/plants', active: route.path.startsWith('/manage/plant') }
+    { label: 'Overview', icon: 'grid', href: overviewHref, active: route.path === '/manage' || route.path === '/' },
+    { label: 'Schedule', icon: 'calendar' },
+    { label: 'Projects', icon: 'project', href: projectsHref, active: route.path.startsWith('/manage/project') || route.path === '/projects' },
+    { label: 'People', icon: 'people' },
+    { label: 'Plants', icon: 'leaf', href: plantsHref, active: route.path.startsWith('/manage/plant') }
   ];
-  if (usageOrgs.value.length) {
+  if (user.value && usageOrgs.value.length) {
     items.push({ label: 'Usage', icon: 'chart', href: '/manage/usage', active: route.path.startsWith('/manage/usage') });
   }
-  items.push({ label: 'Events', icon: 'calendar', active: false, desktopOnly: true });
+  items.push({ label: 'Events', icon: 'calendar', href: '/events', active: route.path === '/events' });
+  items.push({ label: 'Newsletter', icon: 'mail' });
   return items;
 });
+
+const pageLabel = computed(() => {
+  const labels = { '/': 'Overview', '/manage': 'Overview', '/gardens': 'Gardens', '/projects': 'Projects', '/events': 'Events', '/blog': 'Blog', '/about': 'About' };
+  if (labels[route.path]) return labels[route.path];
+  if (route.path.startsWith('/manage/')) return route.path.split('/')[2].replace(/^./, letter => letter.toUpperCase());
+  return 'Overview';
+});
+
 </script>
 
 <template>
@@ -201,7 +240,7 @@ const navItems = computed(() => {
     </Teleport>
     <div class="manage-shell__grid">
       <Teleport to="body" :disabled="!isMobile">
-        <aside v-show="sidebarOpen" id="manage-sidebar" ref="sidebar" class="dash-sidebar" :role="sidebarRole" :aria-modal="isMobile && sidebarOpen" aria-label="Management menu">
+        <aside v-show="sidebarOpen" id="manage-sidebar" ref="sidebar" class="dash-sidebar" :role="sidebarRole" :aria-modal="isMobile && sidebarOpen" aria-label="Workspace menu">
           <div class="dash-sidebar__head">
             <span class="dash-sidebar__title">Your workspace</span>
             <button ref="closeButton" type="button" class="manage-shell__icon-button" aria-label="Close sidebar" aria-controls="manage-sidebar" :aria-expanded="sidebarOpen" @click="closeSidebar">
@@ -218,20 +257,24 @@ const navItems = computed(() => {
               <span>{{ item.label }}</span>
             </a>
           </nav>
-          <button type="button" class="dash-btn dash-btn--primary dash-sidebar__cta" @click="openPitch">+ Pitch a Project</button>
+          <div class="dash-sidebar__bottom">
+            <button type="button" class="dash-btn dash-sidebar__cta" @click="openPitch">+ Pitch a Project</button>
+            <p>East Bay<br>Permaculture Guild</p>
+            <span>A little care, close to home.</span>
+          </div>
         </aside>
       </Teleport>
       <div class="manage-shell__content">
-        <div v-if="!sidebarOpen" class="manage-shell__toolbar">
-          <button ref="openButton" type="button" class="manage-shell__icon-button" aria-label="Open sidebar" aria-controls="manage-sidebar" :aria-expanded="sidebarOpen" @click="openSidebar">
+        <div class="manage-shell__breadcrumb">
+          <button v-if="!sidebarOpen" ref="openButton" type="button" class="manage-shell__icon-button" aria-label="Open sidebar" aria-controls="manage-sidebar" :aria-expanded="sidebarOpen" @click="openSidebar">
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16M13 9l3 3-3 3" /></svg>
           </button>
-          <span>Your workspace</span>
+          <span>Your workspace</span><span aria-hidden="true"> / </span><span>{{ pageLabel }}</span>
         </div>
-        <slot :open-pitch="openPitch" />
+        <div class="manage-shell__main"><slot :open-pitch="openPitch" /></div>
       </div>
     </div>
-    <PitchProject v-model="showPitch" :gardens="pitchGardens" @created="onPitchCreated" />
+    <PitchProject v-if="user" v-model="showPitch" :gardens="pitchGardens" @created="onPitchCreated" />
   </div>
 </template>
 
@@ -246,10 +289,11 @@ const navItems = computed(() => {
   min-width: 0;
   min-height: 100%;
 }
-.manage-shell__grid { display: grid; grid-template-columns: 250px minmax(0, 1fr); align-items: start; min-width: 0; background: var(--manage-sage); color: var(--manage-ink); font-family: var(--gs-body-font); font-size: 18px; }
+.manage-shell__grid { display: grid; grid-template-columns: 218px minmax(0, 1fr); align-items: start; min-width: 0; background: var(--manage-sage); color: var(--manage-ink); font-family: var(--gs-body-font); font-size: 18px; line-height: 1.55; }
 .manage-shell--collapsed .manage-shell__grid { grid-template-columns: minmax(0, 1fr); }
-.manage-shell__content { min-width: 0; padding: clamp(16px, 2.3vw, 38px); background: var(--manage-paper); overflow-wrap: anywhere; }
-.manage-shell__toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; font-size: 16px; }
+.manage-shell__content { min-width: 0; min-height: 100vh; background: var(--manage-paper); overflow-wrap: anywhere; }
+.manage-shell__main { padding: 42px 45px 55px; }
+.manage-shell__breadcrumb { display: flex; align-items: center; gap: 12px; min-height: 61px; padding: 16px 38px; border-bottom: 1px solid var(--manage-rule); color: var(--manage-muted); font-size: 15px; }
 .manage-shell__icon-button { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 6px; color: var(--manage-ink); border: 1px solid var(--manage-rule); background: transparent; cursor: pointer; flex-shrink: 0; }
 .manage-shell__icon-button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
 .dash-sidebar {
@@ -268,7 +312,7 @@ const navItems = computed(() => {
   gap: 22px;
   padding: 24px 19px;
   background: var(--manage-sage);
-  border-right: 1px solid var(--manage-rule);
+  border-right: 1px solid #bdc7ad;
   min-width: 0;
   min-height: 100vh;
   overflow-wrap: anywhere;
@@ -282,12 +326,19 @@ const navItems = computed(() => {
 .dash-nav__icon { width: 21px; height: 21px; flex-shrink: 0; }
 .dash-btn { display: inline-flex; justify-content: center; align-items: center; padding: 10px 16px; border: 1px solid var(--manage-ink); font-size: 18px; cursor: pointer; }
 .dash-btn--primary { background: var(--manage-ink); color: var(--manage-paper); }
-.dash-sidebar__cta { width: 100%; margin-top: auto; }
+.dash-sidebar__cta { width: 100%; border-color: #869c77; background: transparent; color: var(--manage-ink); font: 400 16px/1.4 var(--gs-body-font); }
+.dash-sidebar__cta:hover { background: var(--manage-paper); }
+.dash-sidebar__bottom { margin-top: auto; color: var(--manage-muted); }
+.dash-sidebar__bottom p { margin: 24px 0 8px; font-size: 21px; line-height: 1.25; color: var(--manage-ink); }
+.dash-sidebar__bottom span { font-size: 15px; }
+@media (max-width: 1200px) { .manage-shell__main { padding: 35px 30px 50px; } .manage-shell__breadcrumb { padding-left: 30px; padding-right: 30px; } }
 .manage-shell__backdrop { display: none; }
 @media (max-width: 820px) {
   .manage-shell__grid, .manage-shell--collapsed .manage-shell__grid { grid-template-columns: minmax(0, 1fr); }
   .manage-shell__backdrop { display: block; position: fixed; inset: 0; z-index: 100000; background: rgba(0, 20, 10, .55); }
   .dash-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 100001; width: min(85vw, 350px); min-height: 0; overflow-y: auto; }
   .dash-nav__item--desktop-only { display: none; }
+  .manage-shell__breadcrumb { padding: 16px 21px; }
+  .manage-shell__main { padding: 30px 21px 40px; }
 }
 </style>

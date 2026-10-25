@@ -1,167 +1,58 @@
 <script setup>
-import PageHeader from '@/components/PageHeader.vue';
+import ManageLayout from '@/components/ManageLayout.vue';
 import EmailLink from '@/components/EmailLink.vue';
 </script>
 
 <template>
-  <div class="about-wrapper min-h-screen bg-[#f7f1e3] dark:bg-[#2d3e26]">
-
-    <PageHeader eyebrow="About" title="Garden Steward" width="640px">
-      Community-grown tools for urban agriculture
-    </PageHeader>
-
-    <!-- About content -->
-    <div class="content-section">
-      <p class="body-text">
-        Garden Steward is a community-driven, open-source project developing SMS-first software
-        for managing volunteer events, watering schedules, and harvest coordination. Since 2022,
-        we've partnered with the Oakland Urban Farming Project (OUFP) to organize urban
-        agricultural initiatives.
-      </p>
-      <p class="body-text">
-        We believe the best way to achieve the fastest change is a cooperative approach.
-        Each SMS phone number is its own cooperative of local gardening projects. If you're
-        in Oakland, join our existing cooperative — otherwise, partner with us and add to
-        our cooperative network!
-      </p>
-
-      <div class="cta-row">
-        <EmailLink subject="Garden Steward in my city" class="btn-about btn-about-primary">
-          Bring Garden Steward to your city
-        </EmailLink>
-        <a
-          href="https://github.com/Garden-Steward"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn-about btn-about-secondary"
-        >
-          <svg class="github-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.14 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.69.82.57C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/>
-          </svg>
-          Explore on GitHub
-        </a>
-      </div>
-    </div>
-
-  </div>
+  <ManageLayout>
+    <main class="about-page">
+      <header class="about-page__intro">
+        <p class="about-page__eyebrow">About Garden Steward</p>
+        <h1>Care for a place.<br>Get to know its people.</h1>
+        <p>Community-grown tools for urban agriculture.</p>
+      </header>
+      <figure class="about-page__film">
+        <video controls playsinline preload="metadata" aria-label="Garden Steward garden footage">
+          <source src="https://storage.googleapis.com/steward-public/videos/homepage/hole-water.mp4" type="video/mp4">
+        </video>
+        <figcaption>Garden Steward garden footage</figcaption>
+      </figure>
+      <section class="about-page__story">
+        <p class="about-page__eyebrow">What brings us together</p>
+        <div>
+          <h2>Learning happens when we take part.</h2>
+          <p>Garden Steward is a community-driven, open-source project developing SMS-first software for managing volunteer events, watering schedules, and harvest coordination. Since 2022, we've partnered with the Oakland Urban Farming Project (OUFP) to organize urban agricultural initiatives.</p>
+          <p>We believe the fastest change comes from a cooperative approach. Each SMS phone number is its own cooperative of local gardening projects. If you're in Oakland, join our existing cooperative. Otherwise, partner with us and add to our cooperative network.</p>
+          <div class="about-page__actions">
+            <router-link to="/events">Find an event ↗</router-link>
+            <router-link to="/gardens">Explore gardens ↗</router-link>
+            <EmailLink subject="Garden Steward in my city">Bring Garden Steward to your city ↗</EmailLink>
+            <a href="https://github.com/Garden-Steward" target="_blank" rel="noopener noreferrer">Explore on GitHub ↗</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </ManageLayout>
 </template>
 
 <style scoped>
-/* ── Page wrapper ── */
-.about-wrapper {
-  min-height: 100vh;
-}
-
-/* ── Content block ─────────────────────────────────── */
-.content-section {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-  text-align: center;
-}
-
-.body-text {
-  font-size: 1.05rem;
-  line-height: 1.75;
-  color: #3d3d3d;
-  margin-bottom: 1.25rem;
-  text-align: left;
-}
-
-.cta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.875rem;
-  justify-content: center;
-  margin-top: 2rem;
-}
-
-/* ── Buttons ───────────────────────────────────────── */
-.btn-about {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.8rem 1.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 8px;
-  text-decoration: none;
-  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.btn-about-primary {
-  background: #8aa37c;
-  color: #fff;
-  border: 2px solid #8aa37c;
-}
-
-.btn-about-primary:hover {
-  background: #6c8a6a;
-  border-color: #6c8a6a;
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
-  text-decoration: none;
-}
-
-.btn-about-secondary {
-  background: transparent;
-  color: #8aa37c;
-  border: 2px solid #8aa37c;
-}
-
-.btn-about-secondary:hover {
-  background: #8aa37c;
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
-  text-decoration: none;
-}
-
-.github-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-/* ── Mobile ────────────────────────────────────────── */
-@media (max-width: 480px) {
-  .cta-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btn-about {
-    justify-content: center;
-  }
-}
-</style>
-
-<!--
-  `:global()` with a trailing descendant selector does not survive scoped-style
-  compilation: ":global(.dark) .foo" becomes the bare rule ".dark { ... }",
-  which lands on <html class="dark"> and leaks inheritable declarations such as
-  color and -webkit-text-fill-color into every page. Dark-mode overrides live
-  here instead, in a plain (non-scoped) <style> block with a literal
-  "html.dark ..." selector — the same pattern ProjectsList.vue uses.
--->
-<style>
-/* ── Dark mode ─────────────────────────────────────── */
-html.dark .body-text {
-  color: #e8e8e8 !important;
-  -webkit-text-fill-color: #e8e8e8 !important;
-}
-
-html.dark .btn-about-secondary {
-  color: #c8dbbf;
-  -webkit-text-fill-color: #c8dbbf;
-  border-color: #8aa37c;
-}
-
-html.dark .btn-about-secondary:hover {
-  color: #fff;
-  -webkit-text-fill-color: #fff;
+.about-page { min-height: 70vh; background: var(--gs-paper); color: var(--gs-ink); font: 18px/1.55 var(--gs-body-font); }
+.about-page__eyebrow { color: var(--gs-muted); font-size: 15px; margin: 0 0 16px; }
+.about-page__intro { max-width: 850px; margin-bottom: 42px; }
+.about-page h1, .about-page h2 { font-family: var(--gs-heading-font); font-weight: 400; }
+.about-page h1 { font-size: clamp(44px, 4.8vw, 76px); line-height: 1.08; margin: 0 0 20px; }
+.about-page__intro > p:last-child { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; margin: 0; }
+.about-page__film { margin: 0; }
+.about-page__film video { display: block; width: 100%; max-height: 570px; background: var(--gs-ink); }
+.about-page__film figcaption { margin-top: 10px; color: var(--gs-muted); font-size: 15px; }
+.about-page__story { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 44px; border-top: 1px solid var(--gs-rule); margin-top: 48px; padding: 34px 0; }
+.about-page h2 { font-size: 36px; line-height: 1.16; margin: 0 0 24px; }
+.about-page__story p:not(.about-page__eyebrow) { max-width: 70ch; font-size: 18px; line-height: 1.65; margin: 0 0 20px; }
+.about-page__actions { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 24px; }
+.about-page__actions a { color: var(--gs-ink); text-underline-offset: 4px; }
+@media (max-width: 760px) {
+  .about-page h1 { font-size: 42px; }
+  .about-page h2 { font-size: 31px; }
+  .about-page__story { grid-template-columns: minmax(0, 1fr); gap: 25px; }
 }
 </style>

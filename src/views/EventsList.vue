@@ -1,13 +1,14 @@
 <script setup>
+import ManageLayout from '@/components/ManageLayout.vue';
 import { storeToRefs } from 'pinia';
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { useEventStore } from '@/stores';
-import { getImageOrDefault } from '@/helpers/image-utils';
+import { toPhotoSet } from '@/helpers/image-utils';
 import { titleWithoutDate } from '@/helpers/event-utils';
 import '@/assets/garden-public.css';
-import PageHeader from '@/components/PageHeader.vue';
+import PhotoStack from '@/components/PhotoStack.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -15,7 +16,7 @@ const eventStore = useEventStore();
 const { events, eventsPagination } = storeToRefs(eventStore);
 
 // The public feed is small, so take it in one page and filter here.
-eventStore.fetchPublic(1, 100);
+Promise.allSettled([eventStore.fetchPublic(1, 100)]);
 
 const isLoading = computed(() => !!events.value?.loading);
 const loadFailed = computed(() => !!events.value?.error);
@@ -123,22 +124,21 @@ const relativeDay = (s) => {
 const placeOf = (e) => e.garden?.title || e.location_name || '';
 const hostOf = (e) => e.garden?.organization?.title || '';
 
-const imageOf = (e, size = 'small') => {
-  const img = e?.hero_image || e?.garden?.hero_image;
-  const url = img?.formats?.[size]?.url || img?.formats?.small?.url || img?.formats?.thumbnail?.url || img?.url;
-  if (url && url.startsWith('/') && import.meta.env.VITE_API_URL) return `${import.meta.env.VITE_API_URL}${url}`;
-  return getImageOrDefault(url || null);
-};
+function eventPhotos(event) {
+  if (event.hero_image) return toPhotoSet([event.hero_image], `Photo for ${titleWithoutDate(event.title)}`);
+  return toPhotoSet([event.garden?.hero_image], `Photo of ${event.garden?.title || 'the garden'}`);
+}
 
 const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 </script>
 
 <template>
+  <ManageLayout>
   <div class="evl-page">
-    <PageHeader eyebrow="Events" title="Workdays & gatherings">
-      Harvests, build days and restoration in community gardens near you.
-      Everyone's welcome, no experience needed.
-    </PageHeader>
+    <header class="evl-heading">
+      <h1>Events</h1>
+      <p>Harvests, build days and restoration in community gardens near you. Everyone's welcome, no experience needed.</p>
+    </header>
 
     <div class="evl-wrap">
       <!-- Filters -->
@@ -195,54 +195,42 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
 
       <template v-else>
         <!-- Next up -->
-        <router-link v-if="featured" :to="`/d/${featured.id}`" class="evl-feature">
-          <img :src="imageOf(featured, 'medium')" :alt="placeOf(featured)" class="evl-feature-img" />
+        <article v-if="featured" class="evl-feature" :class="{ 'evl-feature--text-only': !eventPhotos(featured).length }">
+          <PhotoStack v-if="eventPhotos(featured).length" :photos="eventPhotos(featured)" :label="titleWithoutDate(featured.title)" :to="`/d/${featured.id}`" />
           <div class="evl-feature-body">
-            <p class="gp-label gp-label--accent">
-              Next up<template v-if="relativeDay(featured.startDatetime)"> · {{ relativeDay(featured.startDatetime) }}</template>
-            </p>
-            <h2 class="evl-feature-title">{{ titleWithoutDate(featured.title) }}</h2>
+            <p class="gp-label gp-label--accent">Next up<template v-if="relativeDay(featured.startDatetime)"> · {{ relativeDay(featured.startDatetime) }}
+</template></p>
+            <h2 class="evl-feature-title"><router-link :to="`/d/${featured.id}`">{{ titleWithoutDate(featured.title) }}</router-link></h2>
             <p class="evl-feature-when">{{ longWhen(featured.startDatetime) }}</p>
             <p v-if="placeOf(featured)" class="evl-feature-place">
               <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z" /><circle cx="12" cy="9" r="2.5" /></svg>
               {{ placeOf(featured) }}<template v-if="hostOf(featured)"> · {{ hostOf(featured) }}</template>
             </p>
             <p v-if="plainBlurb(featured)" class="evl-feature-blurb">{{ plainBlurb(featured) }}</p>
-            <span class="gp-btn gp-btn-primary gp-btn-sm evl-feature-cta">
+            <router-link :to="`/d/${featured.id}`" class="gp-btn gp-btn-primary gp-btn-sm evl-feature-cta">
               View &amp; RSVP
               <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </span>
+            </router-link>
           </div>
-        </router-link>
+        </article>
 
         <!-- Month groups -->
         <section v-for="group in monthGroups" :key="group.key" class="evl-month">
           <h2 class="evl-month-title">{{ group.label }}</h2>
           <div class="evl-list">
-            <router-link
-              v-for="e in group.events"
-              :key="e.id"
-              :to="`/d/${e.id}`"
-              class="evl-row"
-              :class="{ 'is-canceled': e.canceled, 'is-past': when === 'past' }"
-            >
-              <span class="gp-datechip">
-                <span class="gp-datechip-month">{{ chipMonth(e.startDatetime) }}</span>
-                <span class="gp-datechip-day">{{ chipDay(e.startDatetime) }}</span>
-              </span>
-              <span class="evl-row-body">
-                <span class="evl-row-meta">
-                  {{ weekdayTime(e.startDatetime) }}
-                  <template v-if="placeOf(e)"> · <span class="evl-row-place">{{ placeOf(e) }}</span></template>
+            <article v-for="e in group.events" :key="e.id" class="evl-row" :class="{ 'is-canceled': e.canceled, 'is-past': when === 'past', 'evl-row--text-only': !eventPhotos(e).length }">
+              <PhotoStack v-if="eventPhotos(e).length" :photos="eventPhotos(e)" :label="titleWithoutDate(e.title)" :to="`/d/${e.id}`" />
+              <div class="evl-row-body">
+                <span class="gp-datechip">
+                  <span class="gp-datechip-month">{{ chipMonth(e.startDatetime) }}</span>
+                  <span class="gp-datechip-day">{{ chipDay(e.startDatetime) }}</span>
                 </span>
-                <span class="evl-row-title">
-                  {{ titleWithoutDate(e.title) }}
-                  <span v-if="e.canceled" class="evl-pill">Canceled</span>
-                </span>
-                <span v-if="plainBlurb(e)" class="evl-row-blurb">{{ plainBlurb(e) }}</span>
-              </span>
-              <img :src="imageOf(e)" alt="" class="evl-row-img" loading="lazy" />
-            </router-link>
+                <span class="evl-row-meta">{{ weekdayTime(e.startDatetime) }}<template v-if="placeOf(e)"> · <span class="evl-row-place">{{ placeOf(e) }}</span></template></span>
+                <h3 class="evl-row-title"><router-link :to="`/d/${e.id}`">{{ titleWithoutDate(e.title) }}</router-link><span v-if="e.canceled" class="evl-pill">Canceled</span></h3>
+                <p v-if="plainBlurb(e)" class="evl-row-blurb">{{ plainBlurb(e) }}</p>
+                <router-link :to="`/d/${e.id}`" class="evl-row-action">View details</router-link>
+              </div>
+            </article>
           </div>
         </section>
 
@@ -260,6 +248,7 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
       </template>
     </div>
   </div>
+  </ManageLayout>
 </template>
 
 <style>
@@ -715,4 +704,65 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
     display: none;
   }
 }
+
+.evl-page { background: var(--gs-paper); color: var(--gs-ink); font-family: var(--gs-body-font); overflow-x: clip; }
+.dark .evl-page { background: var(--gs-paper); color: var(--gs-ink); }
+.evl-heading { padding: clamp(32px, 4vw, 70px) clamp(20px, 4vw, 80px) 0; }
+.evl-heading h1 { font: 400 clamp(44px, 5vw, 84px)/1.05 var(--gs-heading-font); margin: 0 0 14px; }
+.evl-heading p { font-size: clamp(18px, 1.5vw, 23px); color: var(--gs-muted); line-height: 1.45; margin: 0; }
+.evl-wrap { max-width: none; padding: 0 clamp(20px, 4vw, 80px); }
+.evl-filters { border-bottom: 1px solid var(--gs-rule); }
+.evl-seg, .dark .evl-seg { background: var(--gs-sage); }
+.evl-seg-btn, .dark .evl-seg-btn, .evl-chip, .dark .evl-chip { color: var(--gs-ink); font-family: var(--gs-body-font); font-size: 16px; }
+.evl-seg-btn.is-active, .dark .evl-seg-btn.is-active, .evl-chip.is-active, .dark .evl-chip.is-active { background: var(--gs-ink); border-color: var(--gs-ink); color: var(--gs-paper); }
+.evl-feature, .evl-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 76px); min-width: 0; border: 0; border-bottom: 1px solid var(--gs-rule); border-radius: 0; padding: clamp(30px, 4vw, 66px) 0; margin: 0; background: transparent; }
+.dark .evl-feature { background: transparent; border-color: var(--gs-rule); }
+.evl-feature--text-only, .evl-row--text-only { grid-template-columns: minmax(0, 1fr); }
+.evl-feature:hover, .evl-row:hover, .dark .evl-row:hover { box-shadow: none; transform: none; background: transparent; }
+.evl-feature-body, .evl-row-body { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; min-width: 0; padding: 0; }
+.evl-feature-title, .evl-row-title, .dark .evl-feature-title, .dark .evl-row-title { font: 400 clamp(34px, 3.4vw, 62px)/1.08 var(--gs-heading-font); color: var(--gs-ink); margin: 0; }
+.evl-feature-title a, .evl-row-title a { color: inherit; text-decoration: none; }
+.evl-feature-title a:hover, .evl-row-title a:hover { text-decoration: underline; }
+.evl-feature-when, .evl-feature-place, .evl-feature-blurb, .evl-row-meta, .evl-row-place, .evl-row-blurb, .dark .evl-feature-when, .dark .evl-feature-place, .dark .evl-feature-blurb, .dark .evl-row-meta, .dark .evl-row-place, .dark .evl-row-blurb { color: var(--gs-muted); font-size: clamp(17px, 1.35vw, 22px); line-height: 1.5; }
+.evl-feature-when, .evl-feature-place, .evl-feature-blurb, .evl-row-blurb { margin: 0; }
+.evl-feature .evl-feature-cta { margin-top: auto; }
+.evl-row-action { display: inline-block; color: var(--gs-ink); font-size: 18px; margin-top: auto; }
+.evl-month { margin-top: 0; }
+.evl-month-title, .dark .evl-month-title { font: 400 clamp(28px, 2.6vw, 44px)/1.15 var(--gs-heading-font); color: var(--gs-ink); border-color: var(--gs-rule); margin: 40px 0 0; }
+.evl-list { gap: 0; }
+.evl-row .gp-datechip { align-self: flex-start; border-color: var(--gs-rule); color: var(--gs-muted); }
+.evl-row .gp-datechip-day, .dark .evl-row .gp-datechip-day { color: var(--gs-ink); font-family: var(--gs-body-font); }
+.evl-row.is-canceled .evl-row-title { color: var(--gs-muted); }
+.evl-pill { margin-left: 12px; }
+.evl-feature:focus-within, .evl-row:focus-within { outline: none; }
+.evl-feature a:focus-visible, .evl-row a:focus-visible { outline: 3px solid var(--gs-ink); outline-offset: 3px; }
+@media (max-width: 760px) { .evl-feature, .evl-row { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
+
+.evl-page { font-size: 18px; line-height: 1.55; }
+.evl-heading { padding: 0; margin-bottom: 30px; }
+.evl-heading h1 { font-size: clamp(44px, 4.8vw, 76px); line-height: 1.08; }
+.evl-heading p { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; max-width: 60ch; }
+.evl-wrap { padding: 0; }
+.evl-feature, .evl-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px; padding: 34px 0; border-top: 1px solid var(--gs-rule); border-bottom: 0; }
+.evl-feature-title, .evl-row-title, .dark .evl-feature-title, .dark .evl-row-title { font-size: clamp(34px, 3vw, 52px); line-height: 1.15; }
+.evl-feature-blurb, .evl-row-blurb { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; }
+@media (max-width: 760px) {
+  .evl-heading h1 { font-size: 42px; }
+  .evl-feature, .evl-row { grid-template-columns: minmax(0, 1fr); gap: 25px; padding: 24px 0 30px; }
+  .evl-feature-title, .evl-row-title { font-size: 34px; }
+  .evl-feature-blurb, .evl-row-blurb { font-size: 18px; }
+}
+
+.evl-filters { gap: 14px 28px; padding: 0 0 12px; }
+.evl-seg, .dark .evl-seg { gap: 18px; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.evl-seg-btn, .dark .evl-seg-btn, .evl-chip, .dark .evl-chip { min-height: 42px; padding: 8px 2px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--gs-ink); font: 400 16px/1.4 var(--gs-body-font); box-shadow: none; }
+.evl-seg-btn.is-active, .dark .evl-seg-btn.is-active, .evl-chip.is-active, .dark .evl-chip.is-active { border-bottom-color: var(--gs-ink); background: transparent; color: var(--gs-ink); font-weight: 600; box-shadow: none; }
+.evl-seg-btn:hover, .evl-chip:hover { text-decoration: underline; text-underline-offset: 4px; }
+.evl-chips { gap: 18px; }
+.evl-count { font-size: 14px; font-weight: 400; opacity: .75; }
+.evl-row .gp-datechip { flex-direction: row-reverse; align-items: baseline; gap: 8px; width: auto; padding: 0; border: 0; border-radius: 0; }
+.evl-row .gp-datechip-day { font: 400 50px/1 var(--gs-heading-font); }
+.evl-row .gp-datechip-month { font: 400 15px/1.2 var(--gs-body-font); letter-spacing: 0; }
+.evl-feature .evl-feature-cta, .dark .evl-feature .evl-feature-cta, .evl-more { display: inline-flex; min-height: 0; padding: 0 0 2px; border: 0; border-bottom: 1px solid var(--gs-ink); border-radius: 0; background: transparent; color: var(--gs-ink); font: 400 18px/1.4 var(--gs-body-font); text-decoration: none; box-shadow: none; }
+.evl-feature .evl-feature-cta:hover, .evl-more:hover { background: transparent; color: var(--gs-ink); transform: none; }
 </style>

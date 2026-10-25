@@ -8,6 +8,7 @@ export const useGardensStore = defineStore({
     id: 'gardens',
     state: () => ({
         gardens: {},
+        publicGardens: {},
         garden: {}
     }),
     actions: {
@@ -20,7 +21,7 @@ export const useGardensStore = defineStore({
                 .catch(error => this.gardens = { error })
         },
         async getAllPublic() {
-            this.gardens = { loading: true };
+            this.publicGardens = { loading: true };
             // Relations are trimmed to the fields the list counts or filters on —
             // a bare `populate=volunteers` would ship whole user records.
             const populate = [
@@ -31,8 +32,8 @@ export const useGardensStore = defineStore({
                 'populate[projects][fields][2]=date_end'
             ].join('&');
             fetchWrapper.get(`${baseUrl}?${populate}&pagination[pageSize]=100`)
-                .then(res => this.gardens = res.data)
-                .catch(error => this.gardens = { error })
+                .then(res => this.publicGardens = res.data)
+                .catch(error => this.publicGardens = { error })
         },
         async getSlug(slug) {
             this.garden = { loading: true };

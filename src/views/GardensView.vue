@@ -18,6 +18,8 @@ import {
 } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
 import EmailLink from '@/components/EmailLink.vue';
+import PhotoStack from '@/components/PhotoStack.vue';
+import { toPhotoSet } from '@/helpers/image-utils';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
@@ -45,18 +47,6 @@ Promise.allSettled([
     projectsStore.getUserProjects()
 ]);
 
-const rowClick = (slug) => {
-    window.location = `/manage/gardens/${slug}`;
-};
-
-const viewEventClick = (id) => {
-    window.location = `/d/${id}`;
-};
-
-const viewProjectClick = (id) => {
-    window.location = `/manage/project/${id}`;
-};
-
 const formatDate = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -68,14 +58,10 @@ const formatDate = (dateString) => {
     });
 };
 
-// ── Image helper ───────────────────────────────────────
-const getImageUrl = (image) => {
-    if (!image) return '';
-    const url = image.formats?.medium?.url || image.formats?.small?.url || image.url;
-    if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `${import.meta.env.VITE_API_URL}${url}`;
-};
+const taskPhotos = (task) => toPhotoSet([task.primary_image], `Photo for ${task.title}`);
+const gardenPhotos = (garden) => toPhotoSet([garden.hero_image], `Photo of ${garden.title}`);
+const projectPhotos = (project) => toPhotoSet([project.hero_image, ...(project.featured_gallery || [])], `Photo for ${project.title}`);
+const projectHref = (project) => `/manage/project/${project.documentId || project.id}`;
 
 // State for how many events to show per section
 const latestEventsToShow = ref(3);
@@ -305,25 +291,18 @@ const rsvp = async (event) => {
             <p v-else-if="tasksState === 'error'" class="dash-empty" role="alert">Could not load tasks.</p>
             <p v-else-if="!userActiveTasks.length" class="dash-empty">No active tasks yet.</p>
             <div v-if="userActiveTasks.length" class="dash-grid dash-grid--tasks">
-                <a
-                    v-for="task in userActiveTasks"
-                    :key="task.id"
-                    class="task-card"
-                    :class="{ 'task-card--text-only': !getImageUrl(task.primary_image) }"
-                    :href="taskHref(task)"
-                >
-                    <div v-if="getImageUrl(task.primary_image)" class="task-card__media" :style="{ backgroundImage: `url(${getImageUrl(task.primary_image)})` }" role="img" :aria-label="`Photo for ${task.title}`"></div>
+                <article v-for="task in userActiveTasks" :key="task.id" class="task-card" :class="{ 'task-card--text-only': !taskPhotos(task).length }">
+                    <PhotoStack v-if="taskPhotos(task).length" :photos="taskPhotos(task)" :label="task.title" :to="taskHref(task) || null" />
                     <div class="task-card__body">
                         <div class="task-card__head">
-                            <span class="task-card__title">{{ task.title }}</span>
-                            <span v-if="task.type" :class="getRecurringTaskTypeBadgeClasses(task.type)">
-                                {{ getRecurringTaskTypeDisplayLabel(task.type) }}
-                            </span>
+                            <a v-if="taskHref(task)" class="task-card__title" :href="taskHref(task)">{{ task.title }}</a>
+                            <span v-else class="task-card__title">{{ task.title }}</span>
+                            <span v-if="task.type" class="dash-soft-tag" :class="getRecurringTaskTypeBadgeClasses(task.type)">{{ getRecurringTaskTypeDisplayLabel(task.type) }}</span>
                         </div>
                         <span class="task-card__status">{{ getTaskStatusOption(task.task_status).label }}</span>
                         <span v-if="taskGarden(task).title" class="task-card__garden">{{ taskGarden(task).title }}</span>
                     </div>
-                </a>
+                </article>
             </div>
         </section>
         <h3 class="gardens-section-heading">Gardens I manage</h3>
@@ -331,16 +310,10 @@ const rsvp = async (event) => {
         <p v-else-if="gardensState === 'error'" class="dash-empty" role="alert">Could not load gardens.</p>
         <p v-else-if="!managedGardens.length" class="dash-empty">You do not manage any gardens yet.</p>
         <div v-if="gardensState === 'ready'" class="dash-grid dash-grid--gardens">
-            <div
-                v-for="garden in managedGardens"
-                :key="garden.id"
-                class="garden-card"
-                :class="{ 'garden-card--text-only': !getImageUrl(garden.hero_image) }"
-                @click="rowClick(garden.slug)"
-            >
-                <div v-if="getImageUrl(garden.hero_image)" class="garden-card__media" :style="{ backgroundImage: `url(${getImageUrl(garden.hero_image)})` }" role="img" :aria-label="`Photo of ${garden.title}`"></div>
+            <article v-for="garden in managedGardens" :key="garden.id" class="garden-card" :class="{ 'garden-card--text-only': !gardenPhotos(garden).length }">
+                <PhotoStack v-if="gardenPhotos(garden).length" :photos="gardenPhotos(garden)" :label="garden.title" :to="`/manage/gardens/${garden.slug}`" />
                 <div class="garden-card__body">
-                    <h4 class="garden-card__title">{{ garden.title }}</h4>
+                    <h4 class="garden-card__title"><a :href="`/manage/gardens/${garden.slug}`">{{ garden.title }}</a></h4>
                     <p class="garden-card__blurb">{{ garden.blurb }}</p>
                     <div class="garden-card__badges">
                         <span class="dash-badge dash-badge--manager">Manager</span>
@@ -348,10 +321,10 @@ const rsvp = async (event) => {
                     </div>
                     <div class="garden-card__footer">
                         <span class="garden-card__counts">{{ managersCount(garden) }} Managers, {{ volunteersCount(garden) }} Volunteers</span>
-                        <a class="dash-link" :href="`/manage/gardens/${garden.slug}`" @click.stop>Edit</a>
+                        <a class="dash-link" :href="`/manage/gardens/${garden.slug}`">Edit</a>
                     </div>
                 </div>
-            </div>
+            </article>
 
             <EmailLink subject="Adding a garden to Garden Steward" class="garden-card garden-card--apply">
                 <span class="garden-card--apply__plus">+</span>
@@ -362,16 +335,10 @@ const rsvp = async (event) => {
         <p v-if="gardensState === 'loading'" class="dash-empty">Loading gardens…</p>
         <p v-else-if="gardensState === 'error'" class="dash-empty" role="alert">Could not load gardens.</p>
         <div v-else-if="memberGardens.length" class="dash-grid dash-grid--gardens">
-            <div
-                v-for="garden in memberGardens"
-                :key="garden.id"
-                class="garden-card"
-                :class="{ 'garden-card--text-only': !getImageUrl(garden.hero_image) }"
-                @click="rowClick(garden.slug)"
-            >
-                <div v-if="getImageUrl(garden.hero_image)" class="garden-card__media" :style="{ backgroundImage: `url(${getImageUrl(garden.hero_image)})` }" role="img" :aria-label="`Photo of ${garden.title}`"></div>
+            <article v-for="garden in memberGardens" :key="garden.id" class="garden-card" :class="{ 'garden-card--text-only': !gardenPhotos(garden).length }">
+                <PhotoStack v-if="gardenPhotos(garden).length" :photos="gardenPhotos(garden)" :label="garden.title" :to="`/manage/gardens/${garden.slug}`" />
                 <div class="garden-card__body">
-                    <h4 class="garden-card__title">{{ garden.title }}</h4>
+                    <h4 class="garden-card__title"><a :href="`/manage/gardens/${garden.slug}`">{{ garden.title }}</a></h4>
                     <p class="garden-card__blurb">{{ garden.blurb }}</p>
                     <div class="garden-card__badges">
                         <span class="dash-badge dash-badge--volunteer">Volunteer</span>
@@ -379,10 +346,10 @@ const rsvp = async (event) => {
                     </div>
                     <div class="garden-card__footer">
                         <span class="garden-card__counts">{{ managersCount(garden) }} Managers, {{ volunteersCount(garden) }} Volunteers</span>
-                        <button type="button" class="dash-link" @click.stop="requestToManage(garden)">Request to manage</button>
+                        <button type="button" class="dash-link" @click="requestToManage(garden)">Request to manage</button>
                     </div>
                 </div>
-            </div>
+            </article>
         </div>
         <p v-else class="dash-empty">You are not volunteering at any gardens yet.</p>
         <h3 class="gardens-section-heading mt-8">My projects</h3>
@@ -390,49 +357,24 @@ const rsvp = async (event) => {
         <p v-else-if="projectsState === 'error'" class="dash-empty" role="alert">Could not load projects.</p>
         <p v-else-if="!userProjectsList.length" class="dash-empty">You haven't pitched or been added to any projects yet.</p>
         <div v-if="projectsState === 'ready'" class="dash-grid dash-grid--projects">
-            <div
-                v-for="project in userProjectsList"
-                :key="project.id"
-                class="project-card project-card--clickable"
-                :class="{ 'project-card--text-only': !getImageUrl(project.hero_image) }"
-                @click="viewProjectClick(project.documentId || project.id)"
-            >
-                <div v-if="getImageUrl(project.hero_image)" class="project-card__media" :style="{ backgroundImage: `url(${getImageUrl(project.hero_image)})` }" role="img" :aria-label="`Photo for ${project.title}`"></div>
+            <article v-for="project in userProjectsList" :key="project.id" class="project-card" :class="{ 'project-card--text-only': !projectPhotos(project).length }">
+                <PhotoStack v-if="projectPhotos(project).length" :photos="projectPhotos(project)" :label="project.title" :to="projectHref(project)" />
                 <div class="project-card__body">
-                <div class="project-card__head">
-                    <span class="project-card__title">{{ project.title }}</span>
-                    <span v-if="project.category" :class="getProjectCategoryBadgeClasses(project.category)">
-                        {{ project.category }}
-                    </span>
+                    <div class="project-card__head">
+                        <a class="project-card__title" :href="projectHref(project)">{{ project.title }}</a>
+                        <span v-if="project.category" class="dash-soft-tag" :class="getProjectCategoryBadgeClasses(project.category)">{{ project.category }}</span>
+                    </div>
+                    <p v-if="projectGarden(project).title" class="project-card__garden">{{ projectGarden(project).title }}</p>
+                    <div class="project-card__footer">
+                        <span v-if="projectOwnership(project)" class="project-card__ownership">{{ projectOwnership(project) }}</span>
+                        <span class="project-card__actions">
+                            <a v-if="projectGarden(project).slug && project.slug" class="dash-link" :href="`/gardens/${projectGarden(project).slug}/p/${project.slug}`">View</a>
+                            <button v-if="canExpressInterest(project)" type="button" class="dash-link" :class="{ 'dash-link--active': isProjectInterested(project) }" :disabled="togglingInterestId === project.id" @click="toggleInterest(project)"><span v-if="isProjectInterested(project)">Interested ✓</span><span v-else>Interested</span></button>
+                            <a v-if="canManageProject(project)" class="dash-link" :href="projectHref(project)">Edit</a>
+                        </span>
+                    </div>
                 </div>
-                <p v-if="projectGarden(project).title" class="project-card__garden">{{ projectGarden(project).title }}</p>
-                <div class="project-card__footer">
-                    <span v-if="projectOwnership(project)" class="project-card__ownership">{{ projectOwnership(project) }}</span>
-                    <span class="project-card__actions">
-                        <a
-                            v-if="projectGarden(project).slug && project.slug"
-                            class="dash-link"
-                            :href="`/gardens/${projectGarden(project).slug}/p/${project.slug}`"
-                            @click.stop
-                        >View</a>
-                        <button
-                            v-if="canExpressInterest(project)"
-                            type="button"
-                            class="dash-link"
-                            :class="{ 'dash-link--active': isProjectInterested(project) }"
-                            :disabled="togglingInterestId === project.id"
-                            @click.stop="toggleInterest(project)"
-                        >{{ isProjectInterested(project) ? 'Interested ✓' : 'Interested' }}</button>
-                        <a
-                            v-if="canManageProject(project)"
-                            class="dash-link"
-                            :href="`/manage/project/${project.documentId || project.id}`"
-                            @click.stop
-                        >Edit</a>
-                    </span>
-                </div>
-                </div>
-            </div>
+            </article>
 
             <button type="button" class="project-card project-card--pitch" @click="openPitch">
                 <span class="project-card--pitch__plus">+</span>
@@ -450,15 +392,15 @@ const rsvp = async (event) => {
           <template v-else>
           <p class="dash-events-panel__label">Upcoming Events</p>
           <div v-if="upcomingEvents.length" class="events-stack">
-              <div v-for="event in displayedUpcomingEvents" :key="event.id" class="event-card" @click="viewEventClick(event.id)">
-                  <a class="event-card__title" :href="`/d/${event.id}`" @click.stop>{{ event.title }}</a>
+              <div v-for="event in displayedUpcomingEvents" :key="event.id" class="event-card">
+                  <a class="event-card__title" :href="`/d/${event.id}`">{{ event.title }}</a>
                   <dl class="event-card__meta">
                       <div><dt>Date:</dt><dd>{{ formatDate(event.startDatetime) }}</dd></div>
                       <div v-if="eventGarden(event)"><dt>Garden:</dt><dd>{{ eventGarden(event) }}</dd></div>
                       <div v-if="event.accessibility"><dt>Accessibility:</dt><dd>{{ event.accessibility }}</dd></div>
                   </dl>
-                  <button type="button" class="event-card__rsvp" @click.stop="rsvp(event)">RSVP</button>
-                  <a v-if="canEditEvent(event)" class="event-card__edit" :href="`/manage/events/${event.id}/edit`" @click.stop>Edit</a>
+                  <button type="button" class="event-card__rsvp" @click="rsvp(event)">RSVP</button>
+                  <a v-if="canEditEvent(event)" class="event-card__edit" :href="`/manage/events/${event.id}/edit`">Edit</a>
               </div>
               <button v-if="hasMoreUpcomingEvents" class="btn-load-more" @click="loadMoreUpcomingEvents">Load More</button>
           </div>
@@ -466,15 +408,15 @@ const rsvp = async (event) => {
 
           <p class="dash-events-panel__label">Latest Events</p>
           <div v-if="latestEvents.length" class="events-stack">
-              <div v-for="event in latestEvents" :key="event.id" class="event-card" @click="viewEventClick(event.id)">
-                  <a class="event-card__title" :href="`/d/${event.id}`" @click.stop>{{ event.title }}</a>
+              <div v-for="event in latestEvents" :key="event.id" class="event-card">
+                  <a class="event-card__title" :href="`/d/${event.id}`">{{ event.title }}</a>
                   <dl class="event-card__meta">
                       <div><dt>Date:</dt><dd>{{ formatDate(event.startDatetime) }}</dd></div>
                       <div v-if="eventGarden(event)"><dt>Garden:</dt><dd>{{ eventGarden(event) }}</dd></div>
                       <div v-if="event.accessibility"><dt>Accessibility:</dt><dd>{{ event.accessibility }}</dd></div>
                   </dl>
                   <span class="event-card__attended">Past event</span>
-                  <a v-if="canEditEvent(event)" class="event-card__edit" :href="`/manage/events/${event.id}/edit`" @click.stop>Edit</a>
+                  <a v-if="canEditEvent(event)" class="event-card__edit" :href="`/manage/events/${event.id}/edit`">Edit</a>
               </div>
               <button v-if="hasMoreLatestEvents" class="btn-load-more" @click="loadMoreLatestEvents">Load More</button>
           </div>
@@ -509,7 +451,7 @@ const rsvp = async (event) => {
 .task-card, .garden-card, .project-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: clamp(24px, 3vw, 50px); min-width: 0; padding: 32px 0; color: var(--manage-ink); }
 .garden-card, .project-card { border-bottom: 1px solid var(--manage-rule); }
 .task-card--text-only, .garden-card--text-only, .project-card--text-only { grid-template-columns: minmax(0, 1fr); }
-.task-card__media, .garden-card__media, .project-card__media { width: 100%; aspect-ratio: 4 / 3; background-color: var(--manage-sage); background-size: cover; background-position: center; }
+
 .task-card__body, .garden-card__body, .project-card__body { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .task-card__title, .garden-card__title, .project-card__title { font: 400 clamp(32px, 3vw, 52px)/1.15 var(--gs-heading-font); margin: 0; color: var(--manage-ink); }
 .garden-card__blurb { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.55; margin: 0; }
@@ -517,6 +459,7 @@ const rsvp = async (event) => {
 .dash-badge { display: inline-block; padding: 3px 9px; font-size: 15px; background: var(--manage-sage); color: var(--manage-ink); }
 .dash-badge--draft { background: #dedbce; color: #344a34; }
 .dash-badge, .event-card__attended, .task-card__head span, .project-card__head span { -webkit-text-fill-color: currentColor; }
+.task-card .dash-soft-tag, .project-card .dash-soft-tag { background: var(--manage-sage); border-color: var(--manage-rule); color: var(--manage-ink); font: 16px/1.3 var(--gs-body-font); padding: 5px 10px; }
 .garden-card__footer, .project-card__footer { align-items: flex-end; margin-top: auto; }
 .garden-card--apply, .project-card--pitch { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; text-align: center; background: var(--manage-sage); text-decoration: none; font-size: 18px; cursor: pointer; }
 .garden-card--apply__plus, .project-card--pitch__plus { font-size: 32px; }
@@ -525,7 +468,7 @@ const rsvp = async (event) => {
 .dash-events-panel__label { font-size: 18px; margin: 25px 0 12px; color: var(--manage-muted); }
 .dash-events-panel__empty { font-size: 18px; color: var(--manage-muted); }
 .events-stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
-.event-card { padding: 18px 0; border-top: 1px solid var(--manage-rule); min-width: 0; cursor: pointer; }
+.event-card { padding: 18px 0; border-top: 1px solid var(--manage-rule); min-width: 0; }
 .event-card__title { display: block; font: 400 clamp(25px, 2vw, 34px)/1.2 var(--gs-heading-font); color: var(--manage-ink); text-decoration: none; }
 .event-card__meta { margin: 12px 0; color: var(--manage-muted); font-size: 17px; }
 .event-card__meta div { display: flex; gap: 7px; flex-wrap: wrap; }
@@ -539,4 +482,7 @@ const rsvp = async (event) => {
     .task-card__title, .garden-card__title, .project-card__title { font-size: 34px; }
     .gardens-title { font-size: 42px; }
 }
+.task-card__title, .garden-card__title a, .project-card__title { color: var(--manage-ink); text-decoration: none; }
+.task-card__title:hover, .garden-card__title a:hover, .project-card__title:hover { text-decoration: underline; }
+.garden-card__title { margin: 0; }
 </style>

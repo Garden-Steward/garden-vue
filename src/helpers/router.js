@@ -21,9 +21,9 @@ export const router = createRouter({
     },
     routes: [
         // Public routes
-        { path: '/', component: PublicHomeView },
+        { path: '/', component: PublicHomeView, meta: { viewport: 'wide' } },
         { path: '/login', component: LoginView },
-        { path: '/about', component: AboutView },
+        { path: '/about', component: AboutView, meta: { viewport: 'wide' } },
         {
             path: '/oauth/google/callback',
             component: GoogleOAuth
@@ -42,7 +42,8 @@ export const router = createRouter({
         },
         {
             path: '/events',
-            component: EventsList
+            component: EventsList,
+            meta: { viewport: 'wide' }
         },
         {
             path: '/blog',
@@ -72,7 +73,8 @@ export const router = createRouter({
         {
             path: '/projects',
             component: ProjectsPublicView,
-            name: 'projects-public-list'
+            name: 'projects-public-list',
+            meta: { viewport: 'wide' }
         },
         {
             path: '/alerts/unsubscribe',
@@ -82,7 +84,8 @@ export const router = createRouter({
         {
             path: '/gardens',
             component: GardensPublicView,
-            name: 'gardens-public-list'
+            name: 'gardens-public-list',
+            meta: { viewport: 'wide' }
         },
         
         // Public garden and event pages

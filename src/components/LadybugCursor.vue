@@ -138,8 +138,8 @@ html.gs-ladybug-cursor [role="textbox"] * {
 .ladybug-cursor {
     position: fixed;
     z-index: 2147483647;
-    width: 38px;
-    height: 28px;
+    width: 36px;
+    height: 45px;
     transform: translate(-50%, -50%);
     pointer-events: none;
     user-select: none;
@@ -147,10 +147,9 @@ html.gs-ladybug-cursor [role="textbox"] * {
 
 .ladybug-cursor__closed {
     display: block;
-    width: 28px;
+    width: 100%;
     height: 100%;
     object-fit: contain;
-    margin: auto;
 }
 
 .ladybug-cursor__open {
