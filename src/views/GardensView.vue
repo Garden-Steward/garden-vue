@@ -20,6 +20,7 @@ import ManageLayout from '@/components/ManageLayout.vue';
 import EmailLink from '@/components/EmailLink.vue';
 import PhotoStack from '@/components/PhotoStack.vue';
 import { toPhotoSet } from '@/helpers/image-utils';
+import { privateGardenCards } from '@/helpers/private-garden-cards';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
@@ -79,15 +80,6 @@ const isManager = (garden) => {
     });
 };
 
-// Helper: check if user is a volunteer (member) of a garden
-const isVolunteer = (garden) => {
-    const volunteers = garden.volunteers || [];
-    return volunteers.some(volunteer => {
-        const volunteerId = volunteer.id || volunteer;
-        return volunteerId === user.value?.id;
-    });
-};
-
 const collectionState = (value) => {
     if (value?.error) return 'error';
     if (Array.isArray(value)) return 'ready';
@@ -102,11 +94,7 @@ const managedGardens = computed(() => {
     return gardens.value.filter(isManager);
 });
 
-// Gardens where the user is a volunteer but NOT a manager
-const memberGardens = computed(() => {
-    if (!gardens.value || !Array.isArray(gardens.value) || !user.value) return [];
-    return gardens.value.filter(g => isVolunteer(g) && !isManager(g));
-});
+const gardenCards = computed(() => privateGardenCards(gardens.value, user.value?.id));
 
 // Garden counts shown on each card
 const managersCount = (garden) => garden.managers?.length || 0;
@@ -275,7 +263,7 @@ const rsvp = async (event) => {
             <div class="dash-header__main">
                 <h1 class="gardens-title">Hi {{ user?.firstName }}!</h1>
                 <p v-if="gardensState === 'ready' && tasksState === 'ready'" class="dash-stats">
-                    {{ managedGardens.length }} Managed, {{ memberGardens.length }} Volunteer, {{ userActiveTasks.length }} Active Tasks
+                    {{ gardenCards.managed.length }} Managed, {{ gardenCards.joined.length }} Volunteer, {{ userActiveTasks.length }} Active Tasks
                 </p>
             </div>
             <div class="dash-header__actions">
@@ -307,9 +295,9 @@ const rsvp = async (event) => {
         <h3 class="gardens-section-heading">Gardens I manage</h3>
         <p v-if="gardensState === 'loading'" class="dash-empty">Loading gardens…</p>
         <p v-else-if="gardensState === 'error'" class="dash-empty" role="alert">Could not load gardens.</p>
-        <p v-else-if="!managedGardens.length" class="dash-empty">You do not manage any gardens yet.</p>
+        <p v-else-if="!gardenCards.managed.length" class="dash-empty">You do not manage any gardens yet.</p>
         <div v-if="gardensState === 'ready'" class="dash-grid dash-grid--gardens">
-            <article v-for="garden in managedGardens" :key="garden.id" class="garden-card" :class="{ 'garden-card--text-only': !gardenPhotos(garden).length }">
+            <article v-for="garden in gardenCards.managed" :key="garden.id" class="garden-card" :class="{ 'garden-card--text-only': !gardenPhotos(garden).length }">
                 <PhotoStack v-if="gardenPhotos(garden).length" :photos="gardenPhotos(garden)" :label="garden.title" :to="`/manage/gardens/${garden.slug}`" />
                 <div class="garden-card__body">
                     <h4 class="garden-card__title"><a :href="`/manage/gardens/${garden.slug}`">{{ garden.title }}</a></h4>
@@ -333,8 +321,8 @@ const rsvp = async (event) => {
         <h3 class="gardens-section-heading mt-8">Gardens I volunteer at</h3>
         <p v-if="gardensState === 'loading'" class="dash-empty">Loading gardens…</p>
         <p v-else-if="gardensState === 'error'" class="dash-empty" role="alert">Could not load gardens.</p>
-        <div v-else-if="memberGardens.length" class="dash-grid dash-grid--gardens">
-            <article v-for="garden in memberGardens" :key="garden.id" class="garden-card" :class="{ 'garden-card--text-only': !gardenPhotos(garden).length }">
+        <div v-else-if="gardenCards.joined.length" class="dash-grid dash-grid--gardens">
+            <article v-for="garden in gardenCards.joined" :key="garden.id" class="garden-card" :class="{ 'garden-card--text-only': !gardenPhotos(garden).length }">
                 <PhotoStack v-if="gardenPhotos(garden).length" :photos="gardenPhotos(garden)" :label="garden.title" :to="`/manage/gardens/${garden.slug}`" />
                 <div class="garden-card__body">
                     <h4 class="garden-card__title"><a :href="`/manage/gardens/${garden.slug}`">{{ garden.title }}</a></h4>

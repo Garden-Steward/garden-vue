@@ -1,5 +1,7 @@
 <script setup>
 import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { privateGardenCards } from '@/helpers/private-garden-cards';
 
 import { useAuthStore, useGardensStore } from '@/stores';
 import EmailLink from '@/components/EmailLink.vue';
@@ -10,7 +12,9 @@ const { user } = storeToRefs(authStore);
 const gardensStore = useGardensStore();
 const { gardens } = storeToRefs(gardensStore);
 
-gardensStore.getAll(user.value.id);
+const gardenCards = computed(() => privateGardenCards(gardens.value, user.value?.id));
+
+gardensStore.getAll();
 </script>
 
 <template>
@@ -52,7 +56,7 @@ gardensStore.getAll(user.value.id);
         <p class="profile-line">
           You're a member of
           <router-link to="/manage" class="profile-link">
-            {{ gardens.length }} gardens.
+            {{ gardenCards.membershipCount }} gardens.
           </router-link>
         </p>
       </div>
