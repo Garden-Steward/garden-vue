@@ -6,11 +6,11 @@ import { renderMarkdown } from '@/helpers/safe-html';
 
 import { useEventStore, useAuthStore } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
-import { titleWithoutDate } from '@/helpers/event-utils';
 import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
 import LeafletMap from '@/components/LeafletMap.vue';
 import Gallery from '@/components/Gallery.vue';
 import EventProjectCard from '@/components/EventProjectCard.vue';
+import CalendarExportButton from '@/components/CalendarExportButton.vue';
 import GardenContextBar from '@/components/GardenContextBar.vue';
 import { PrintDaySheetModal, RsvpPhoneModal } from '@/components/modals';
 import '@/assets/garden-public.css';
@@ -111,32 +111,6 @@ const whenLine = computed(() => {
 const locationText = computed(() => {
   if (hasGarden.value) return garden.value.title;
   return [event.value?.location_name, event.value?.location_address].filter(Boolean).join(', ');
-});
-
-// On a calendar grid only the title shows, so lead with the garden's name. The
-// calendar already places the event on its day, so the title's date goes.
-const calendarTitle = computed(() => {
-  const title = titleWithoutDate(event.value?.title) || 'Garden event';
-  const gardenName = hasGarden.value ? garden.value.title : '';
-  if (!gardenName || title.toLowerCase().includes(gardenName.toLowerCase())) return title;
-  return `${gardenName}: ${title}`;
-});
-
-// Calendars need an end; the event only has free text for that, so use the
-// brief's typical length when it's a plain number of hours, else 2 hours.
-const calendarUrl = computed(() => {
-  if (!start.value) return null;
-  const hours = parseFloat(String(brief.value?.duration_text || '').replace('½', '.5').match(/\d+(\.\d+)?/)?.[0]) || 2;
-  const end = new Date(start.value.getTime() + Math.min(hours, 12) * 3600 * 1000);
-  const fmt = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: calendarTitle.value,
-    dates: `${fmt(start.value)}/${fmt(end)}`,
-    details: `${event.value.blurb || ''}\n\n${window.location.href}`.trim(),
-    location: [visit.value?.meeting_spot, locationText.value].filter(Boolean).join(', '),
-  });
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 });
 
 /* ---------- Brief, visit info, tasks, series ---------- */
@@ -288,15 +262,12 @@ const rsvpEvent = async () => {
               <h1 id="event-title" class="gp-title">{{ event.title }}</h1>
               <p class="ev-when">{{ whenLine }}</p>
               <p v-if="event.blurb" class="gp-blurb">{{ event.blurb }}</p>
-              <div v-if="showRsvp || (calendarUrl && !isEventPast && !isEventCanceled)" class="gp-hero-actions">
+              <div v-if="showRsvp || (event.startDatetime && !isEventPast && !isEventCanceled)" class="gp-hero-actions">
                 <a v-if="partifulOpen" :href="event.partiful_link" target="_blank" rel="noopener noreferrer" class="gp-btn gp-btn-cta">RSVP on Partiful</a>
                 <button v-else-if="canRsvpHere" type="button" class="gp-btn gp-btn-cta" :disabled="isRSVPed" @click="rsvpEvent">
                   {{ isRSVPed ? "You're going" : 'RSVP' }}
                 </button>
-                <a v-if="calendarUrl && !isEventPast && !isEventCanceled" :href="calendarUrl" target="_blank" rel="noopener noreferrer" class="gp-btn gp-btn-ghost">
-                  <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
-                  Add to calendar
-                </a>
+                <CalendarExportButton v-if="event.startDatetime && !isEventPast && !isEventCanceled" :key="event.id" :event="event" />
               </div>
             </div>
             <div v-if="going.length && !isEventPast" class="ev-going">

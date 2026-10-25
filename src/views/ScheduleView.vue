@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import ManageLayout from '@/components/ManageLayout.vue';
+import CalendarExportButton from '@/components/CalendarExportButton.vue';
 import { useAuthStore } from '@/stores';
 import { fetchWrapper } from '@/helpers';
 import { calendarDays, civilDate, pacificDateKey, readConfirmedEventKeys, readScheduleEvents, scheduleTimeZone, shiftCalendar } from '@/helpers/schedule-calendar';
@@ -145,6 +146,7 @@ function onDialogClosed() {
     previousTrigger = null;
 }
 function closeOnBackdrop(event) {
+    if (event.target !== dialog.value) return;
     const bounds = dialog.value.getBoundingClientRect();
     if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeEvent();
 }
@@ -232,6 +234,7 @@ function closeOnBackdrop(event) {
                         <p>{{ eventDate(selected) }} · {{ eventTime(selected) }}<br>Pacific time · America/Los_Angeles</p>
                         <p v-if="place(selected)">{{ place(selected) }}</p>
                         <p v-if="description(selected)">{{ description(selected) }}</p>
+                        <CalendarExportButton :key="selected.id" :event="selected" />
                         <router-link class="schedule-action" :to="`/d/${selected.id}`" @click="closeEvent">Full event details &amp; RSVP ↗</router-link>
                     </template>
                 </dialog>
