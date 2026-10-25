@@ -9,7 +9,6 @@ import LeafletMap from '@/components/LeafletMap.vue';
 import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
 import { truncatePlainText } from '@/helpers/safe-html';
 import SunIcon from '@/components/icons/Sun.svg?raw';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import { RsvpPhoneModal } from '@/components/modals';
 import GardenMemberMenu from '@/components/GardenMemberMenu.vue';
 import '@/assets/garden-public.css';
@@ -265,12 +264,6 @@ const hasMoreLatestEvents = computed(() => {
 const loadMoreLatestEvents = () => {
   latestEventsToShow.value += 2;
 };
-
-// Truncate description to 200 characters
-const isManager = computed(() => {
-  if (!garden.value?.managers || !user.value) return false;
-  return garden.value.managers.some(manager => manager.id === user.value.id);
-});
 
 // Donation modal state
 const showDonationModal = ref(false);

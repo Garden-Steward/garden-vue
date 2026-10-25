@@ -16,9 +16,9 @@
           <a href="#" @click.prevent="toggleDrawer(locationTracking)">
             {{ locationTracking.label }}
           </a>
-          <div href="#" @click.prevent="centerMap(locationTracking.latitude, locationTracking.longitude)" class="text-xs text-gray-100 mt-2">
+          <span @click.prevent="centerMap(locationTracking.latitude, locationTracking.longitude)" class="block text-xs text-gray-100 mt-2">
             Center
-          </div>
+          </span>
         </p>
         <p class="text-xs text-gray-100">
           {{ locationTracking.last_verified ? new Date(locationTracking.last_verified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown' }}

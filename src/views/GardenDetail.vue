@@ -2,7 +2,7 @@
 import { onMounted, ref, computed, defineOptions, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore, useLocationTrackingStore, useInterestsStore, useProjectsStore } from '@/stores';
+import { useAuthStore, useGardensStore, useEventStore, useSMSCampaignStore, useUGInterestsStore, useAlertStore, useGardenTaskStore, useMessagesStore, useInterestsStore, useProjectsStore } from '@/stores';
 import { normalizeReviewStatus } from '@/_config/GardenConfig';
 import { inGarden } from '@/helpers/project-review';
 import VolunteerDayModal from '@/components/modals/VolunteerDayModal.vue';
@@ -681,11 +681,12 @@ const onRemoveInterest = async (interestId) => {
                                                         <!-- Collapsed: single line -->
                                                         <div v-if="!expandedManagers" class="flex items-center gap-2 flex-wrap">
                                                           <span class="text-sm gm-text-muted">Managers ({{ (garden.managers || []).length }}):</span>
-                                                          <span v-if="garden.managers?.length"
-                                                            v-for="manager in garden.managers"
-                                                            :key="manager.id || manager"
-                                                            class="inline-flex items-center rounded-full bg-[#8aa37c]/40 text-[#f5f5f5] px-3 py-1 text-sm"
-                                                          >{{ manager.firstName || getVolunteerName(manager.id || manager) }}</span>
+                                                          <template v-if="garden.managers?.length">
+                                                            <span v-for="manager in garden.managers"
+                                                              :key="manager.id || manager"
+                                                              class="inline-flex items-center rounded-full bg-[#8aa37c]/40 text-[#f5f5f5] px-3 py-1 text-sm"
+                                                            >{{ manager.firstName || getVolunteerName(manager.id || manager) }}</span>
+                                                          </template>
                                                           <span v-else class="gm-text-muted text-sm">None</span>
                                                           <button
                                                             v-if="editor"
@@ -768,11 +769,12 @@ const onRemoveInterest = async (interestId) => {
                                         <!-- Collapsed: single line -->
                                         <div v-if="!expandedInterests" class="flex items-center gap-2 flex-wrap">
                                           <span class="text-sm gm-text-muted">Interests ({{ displayInterests.length }}):</span>
-                                          <span v-if="displayInterests.length"
-                                            v-for="interest in displayInterests"
-                                            :key="interest.id"
-                                            class="inline-flex items-center rounded-full bg-[#3d4d36]/60 text-[#f5f5f5] px-3 py-1 text-sm"
-                                          >{{ interest.tag }}</span>
+                                          <template v-if="displayInterests.length">
+                                            <span v-for="interest in displayInterests"
+                                              :key="interest.id"
+                                              class="inline-flex items-center rounded-full bg-[#3d4d36]/60 text-[#f5f5f5] px-3 py-1 text-sm"
+                                            >{{ interest.tag }}</span>
+                                          </template>
                                           <span v-else class="gm-text-muted text-sm">None</span>
                                           <button
                                             v-if="editor"

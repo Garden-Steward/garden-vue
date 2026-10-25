@@ -1,7 +1,7 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
-import { useProjectsStore, useGardensStore, useAuthStore, useAlertStore } from '@/stores';
+import { useProjectsStore, useGardensStore, useAuthStore } from '@/stores';
 import { isProjectVisibleTo } from '@/_config/GardenConfig';
 import { computed, ref, onMounted } from 'vue';
 import { getImageOrDefault } from '@/helpers/image-utils';
@@ -14,7 +14,6 @@ const projectsStore = useProjectsStore();
 const gardensStore = useGardensStore();
 
 const authStore = useAuthStore();
-const alertStore = useAlertStore();
 
 const { project } = storeToRefs(projectsStore);
 const { garden } = storeToRefs(gardensStore);

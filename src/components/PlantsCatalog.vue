@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useLocationTrackingStore } from '@/stores';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
