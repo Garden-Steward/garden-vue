@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper, stripReadOnly } from '@/helpers';
+import { readPublicCollection } from '@/helpers/public-collection';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/gardens`;
 
@@ -8,6 +9,8 @@ export const useGardensStore = defineStore({
     id: 'gardens',
     state: () => ({
         gardens: {},
+        publicGardens: {},
+        publicRequest: 0,
         garden: {}
     }),
     actions: {
@@ -20,19 +23,16 @@ export const useGardensStore = defineStore({
                 .catch(error => this.gardens = { error })
         },
         async getAllPublic() {
-            this.gardens = { loading: true };
-            // Relations are trimmed to the fields the list counts or filters on —
-            // a bare `populate=volunteers` would ship whole user records.
-            const populate = [
-                'populate[hero_image]=true',
-                'populate[volunteers][fields][0]=id',
-                'populate[projects][fields][0]=review_status',
-                'populate[projects][fields][1]=date_start',
-                'populate[projects][fields][2]=date_end'
-            ].join('&');
-            fetchWrapper.get(`${baseUrl}?${populate}&pagination[pageSize]=100`)
-                .then(res => this.gardens = res.data)
-                .catch(error => this.gardens = { error })
+            const request = ++this.publicRequest;
+            this.publicGardens = { loading: true };
+            try {
+                const response = await readPublicCollection(`${import.meta.env.VITE_API_URL}/api/public/gardens`);
+                if (request === this.publicRequest) this.publicGardens = response.data;
+                return response.data;
+            } catch (error) {
+                if (request === this.publicRequest) this.publicGardens = { error };
+                return { error };
+            }
         },
         async getSlug(slug) {
             this.garden = { loading: true };

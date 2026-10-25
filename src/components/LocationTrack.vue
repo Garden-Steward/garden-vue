@@ -12,13 +12,11 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
-
-const props = defineProps({
+defineProps({
   location: Object
 });
 </script>
 
 <style scoped>
 /* Add any additional styles here */
-</style> 
+</style>

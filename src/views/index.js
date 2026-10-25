@@ -13,6 +13,8 @@ export { default as InstructionPublic } from './InstructionPublicView.vue';
 export { default as BlogList } from './BlogList.vue';
 export { default as BlogDetail } from './BlogDetail.vue';
 export { default as EventsList } from './EventsList.vue';
+export { default as ScheduleView } from './ScheduleView.vue';
+export { default as NewsletterView } from './NewsletterView.vue';
 export { default as PublicHomeView } from './PublicHomeView.vue';
 export { default as MapView } from './MapView.vue';
 export { default as ContributeView } from './ContributeView.vue';

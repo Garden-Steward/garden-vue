@@ -93,16 +93,23 @@ export function initPlantTooltips(plants, containerSelector = '.blog-content') {
 
   /** Show tooltip for a given plant */
   function showTooltip(plant, x, y) {
-    const clipartUrl = plant.clipart?.url
-      ? (plant.clipart.url.startsWith('http')
-          ? plant.clipart.url
-          : `${import.meta.env.VITE_API_URL || ''}${plant.clipart.url}`)
-      : null;
-
-    tooltip.innerHTML = clipartUrl
-      ? `<img src="${clipartUrl}" alt="${plant.title || ''}" style="width:100%;height:auto;display:block;aspect-ratio:1;object-fit:cover;">
-         <div style="padding:10px;font-weight:600;font-size:14px;color:#2d3748;">${plant.title || plant.latin || ''}</div>`
-      : `<div style="padding:16px;font-weight:600;font-size:14px;color:#2d3748;">${plant.title || plant.latin || ''}</div>`;
+    let clipartUrl = null;
+    if (plant.clipart?.url) {
+      clipartUrl = new URL(plant.clipart.url, import.meta.env.VITE_API_URL || window.location.origin).href;
+    }
+    tooltip.replaceChildren();
+    const title = document.createElement('div');
+    title.textContent = plant.title || plant.latin || '';
+    title.style.cssText = 'padding:16px;font-weight:600;font-size:14px;color:#2d3748;';
+    if (clipartUrl) {
+      const image = document.createElement('img');
+      image.src = clipartUrl;
+      image.alt = plant.title || '';
+      image.style.cssText = 'width:100%;height:auto;display:block;aspect-ratio:1;object-fit:cover;';
+      tooltip.appendChild(image);
+      title.style.padding = '10px';
+    }
+    tooltip.appendChild(title);
 
     // Position
     const cardW = 220;

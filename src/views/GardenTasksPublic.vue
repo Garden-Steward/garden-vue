@@ -2,8 +2,7 @@
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
 import { useGardensStore, useGardenTaskStore } from '@/stores';
-import { computed, ref, onMounted, watch } from 'vue';
-import SunIcon from '@/components/icons/Sun.svg?raw';
+import { computed, ref, watch } from 'vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const route = useRoute();
@@ -13,53 +12,7 @@ const gardenTaskStore = useGardenTaskStore();
 const { garden } = storeToRefs(gardensStore);
 const { gardenTasks } = storeToRefs(gardenTaskStore);
 
-// Dark mode state
-const getSystemPreference = () => {
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  return false;
-};
-
-const resolveInitialDarkMode = () => {
-  if (typeof window === 'undefined') return false;
-  const savedTheme = localStorage.getItem('garden-public-theme');
-  if (savedTheme === 'dark' || savedTheme === 'light') {
-    return savedTheme === 'dark';
-  }
-  return getSystemPreference();
-};
-
-const applyDarkMode = (dark) => {
-  if (typeof document === 'undefined') return;
-  if (dark) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-};
-
-// Resolve & apply synchronously during setup so the very first paint
-// matches the user's saved preference (avoids a dark→light flash on
-// reload when the user has explicitly chosen light).
-const initialDarkMode = resolveInitialDarkMode();
-applyDarkMode(initialDarkMode);
-const isDarkMode = ref(initialDarkMode);
-
-// Loading state
 const isLoading = ref(true);
-
-onMounted(() => {
-  // Re-apply on mount in case another view toggled the html class
-  // between setup and mount.
-  applyDarkMode(isDarkMode.value);
-});
-
-const toggleDarkMode = () => {
-  isDarkMode.value = !isDarkMode.value;
-  applyDarkMode(isDarkMode.value);
-  localStorage.setItem('garden-public-theme', isDarkMode.value ? 'dark' : 'light');
-};
 
 // Load garden and tasks data
 gardensStore.getSlug(route.params.slug);
@@ -180,16 +133,6 @@ const getTaskThumbnail = (task) => {
 
 <template>
   <div class="garden-tasks-container">
-    <!-- Dark Mode Toggle Button -->
-    <button
-      @click="toggleDarkMode"
-      class="dark-mode-toggle"
-      :aria-label="isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-    >
-      <span v-if="isDarkMode" class="sun-icon" v-html="SunIcon"></span>
-      <i v-else class="fas fa-moon"></i>
-    </button>
-
     <!-- Content -->
     <div class="tasks-content">
       <!-- Back Button -->
@@ -375,63 +318,6 @@ const getTaskThumbnail = (task) => {
 .dark .garden-tasks-container {
   background-color: #1f2d1a;
   color: #f5f5f5;
-}
-
-/* Dark mode toggle */
-.dark-mode-toggle {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  z-index: 100000;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 2px solid #8aa37c;
-  background-color: #ffffff;
-  color: #8aa37c;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dark-mode-toggle:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-  transform: scale(1.1);
-}
-
-.dark .dark-mode-toggle {
-  background-color: #1a1a1a;
-  border-color: #8aa37c;
-  color: #8aa37c;
-}
-
-.dark .dark-mode-toggle:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-}
-
-.sun-icon {
-  width: 24px;
-  height: 24px;
-  transition: all 0.3s ease;
-  color: #4a4a4a;
-}
-
-.dark-mode-toggle:hover .sun-icon {
-  color: #ffffff;
-}
-
-.dark .dark-mode-toggle .sun-icon {
-  color: #8aa37c;
-}
-
-.dark .dark-mode-toggle:hover .sun-icon {
-  color: #ffffff;
 }
 
 /* Content */
@@ -776,10 +662,6 @@ a.task-card--clickable {
 @media (max-width: 768px) {
   .tasks-content {
     padding: 60px 15px 30px;
-  }
-
-  .dark-mode-toggle {
-    display: none;
   }
 
   .tasks-title {

@@ -174,7 +174,8 @@ const startEdit = () => {
 watch([current, isLead], ([p, lead]) => {
   if (route.query.action !== 'edit' || !p?.id || !lead || editing.value) return;
   startEdit();
-  const { action, ...query } = route.query;
+  const query = { ...route.query };
+  delete query.action;
   router.replace({ query, hash: route.hash });
 }, { immediate: true });
 

@@ -302,6 +302,11 @@ const getTypeColor = (type) => {
 <style scoped>
 .plants-page {
   padding: 0;
+  min-width: 0;
+  font-family: var(--gs-body-font);
+  font-size: 18px;
+  color: var(--gs-ink);
+  overflow-wrap: anywhere;
 }
 
 /* ── Header ── */
@@ -313,10 +318,10 @@ const getTypeColor = (type) => {
 }
 
 .plants-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
-  font-weight: 800;
-  color: #376451;
+  font-family: var(--gs-heading-font);
+  font-size: clamp(42px, 4.8vw, 72px);
+  font-weight: 400;
+  color: var(--gs-ink);
   margin: 0;
   line-height: 1.15;
 }
@@ -327,7 +332,7 @@ html.dark .plants-title {
 
 .plants-count {
   font-size: 0.95rem;
-  color: #6b7280;
+  color: var(--gs-muted);
   margin: 0.25rem 0 0;
 }
 
@@ -351,25 +356,28 @@ html.dark .plants-count {
   left: 0.85rem;
   width: 1.1rem;
   height: 1.1rem;
-  color: #9ca3af;
+  color: var(--gs-muted);
   pointer-events: none;
 }
 
 .plants-search-input {
   width: 100%;
   padding: 0.65rem 2.5rem 0.65rem 2.5rem;
-  border: 1px solid #d4cfbf;
-  border-radius: 0.75rem;
-  background: #fff;
-  color: #1f2937;
+  border: 1px solid var(--gs-rule);
+  border-radius: 0;
+  background: var(--gs-paper);
+  color: var(--gs-ink);
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
 }
 
 .plants-search-input:focus {
-  border-color: #8aa37c;
-  box-shadow: 0 0 0 3px rgba(138, 163, 124, 0.2);
+  border-color: var(--gs-ink);
+  box-shadow: none;
+  outline: 2px solid var(--gs-ink);
+  outline-offset: 2px;
 }
 
 html.dark .plants-search-input {
@@ -393,15 +401,15 @@ html.dark .plants-search-input:focus {
   justify-content: center;
   border: none;
   border-radius: 50%;
-  background: #d4cfbf;
-  color: #4a5a45;
+  background: var(--gs-sage);
+  color: var(--gs-muted);
   font-size: 1.1rem;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .plants-search-clear:hover {
-  background: #c0baa7;
+  background: var(--gs-rule);
 }
 
 html.dark .plants-search-clear {
@@ -418,14 +426,17 @@ html.dark .plants-search-clear:hover {
   display: flex;
   gap: 0.4rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--gs-rule);
 }
 
 .plants-sort-btn {
   padding: 0.3rem 0.7rem;
-  border: 1px solid #d4cfbf;
-  border-radius: 999px;
+  border: 1px solid var(--gs-rule);
+  border-radius: 0;
   background: transparent;
-  color: #6b7280;
+  color: var(--gs-muted);
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -433,14 +444,14 @@ html.dark .plants-search-clear:hover {
 }
 
 .plants-sort-btn:hover {
-  border-color: #8aa37c;
-  color: #376451;
+  border-color: var(--gs-muted);
+  color: var(--gs-ink);
 }
 
 .plants-sort-btn--active {
-  background: #d7e8c8;
-  border-color: #8aa37c;
-  color: #2f5233;
+  background: var(--gs-ink);
+  border-color: var(--gs-muted);
+  color: var(--gs-paper);
   font-weight: 600;
 }
 
@@ -467,19 +478,20 @@ html.dark .plants-sort-btn--active {
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   margin-bottom: 1rem;
-  background: #d7e8c8;
-  border-radius: 0.75rem;
+  background: var(--gs-sage);
+  border-radius: 0;
   font-size: 0.9rem;
+  border-left: 3px solid var(--gs-ink);
 }
 
 .plants-tag-filter__label {
-  color: #2f5233;
+  color: var(--gs-ink);
   font-weight: 500;
 }
 
 .plants-tag-filter__tag {
   font-weight: 700;
-  color: #1e3a21;
+  color: var(--gs-ink);
   font-size: 0.95rem;
 }
 
@@ -487,7 +499,7 @@ html.dark .plants-sort-btn--active {
   margin-left: auto;
   border: none;
   background: rgba(0,0,0,0.1);
-  color: #2f5233;
+  color: var(--gs-ink);
   width: 1.4rem;
   height: 1.4rem;
   border-radius: 50%;
@@ -526,18 +538,20 @@ html.dark .plants-tag-filter__tag {
 .plant-card {
   display: flex;
   flex-direction: column;
-  border-radius: 0.85rem;
+  border-radius: 0;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #e2dccb;
+  background: var(--gs-paper);
+  border: 1px solid var(--gs-rule);
   text-decoration: none;
-  transition: box-shadow 0.2s, transform 0.15s;
+  transition: border-color 0.2s;
   cursor: pointer;
+  min-width: 0;
 }
 
 .plant-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  box-shadow: none;
+  transform: none;
+  border-color: var(--gs-ink);
 }
 
 html.dark .plant-card {
@@ -552,7 +566,7 @@ html.dark .plant-card:hover {
 .plant-card__media {
   position: relative;
   aspect-ratio: 1;
-  background: #f0efe8;
+  background: var(--gs-sage);
   overflow: hidden;
 }
 
@@ -584,10 +598,10 @@ html.dark .plant-card__media {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--gs-paper);
   border-radius: 50%;
   font-size: 0.8rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  box-shadow: none;
 }
 
 .plant-card__body {
@@ -598,11 +612,12 @@ html.dark .plant-card__media {
 }
 
 .plant-card__name {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #376451;
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--gs-ink);
   margin: 0;
   line-height: 1.2;
+  font-family: var(--gs-heading-font);
 }
 
 html.dark .plant-card__name {
@@ -612,7 +627,7 @@ html.dark .plant-card__name {
 .plant-card__latin {
   font-size: 0.8rem;
   font-style: italic;
-  color: #6b7280;
+  color: var(--gs-muted);
   margin: 0;
   line-height: 1.3;
 }
@@ -625,7 +640,7 @@ html.dark .plant-card__latin {
   align-self: flex-start;
   margin-top: 0.3rem;
   padding: 0.12rem 0.5rem;
-  border-radius: 999px;
+  border-radius: 0;
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: capitalize;
@@ -644,10 +659,10 @@ html.dark .plant-card__latin {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.65rem 2rem;
-  border: 2px solid #8aa37c;
-  border-radius: 999px;
-  background: #fff;
-  color: #2f5233;
+  border: 1px solid var(--gs-ink);
+  border-radius: 0;
+  background: var(--gs-ink);
+  color: var(--gs-paper);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -657,9 +672,9 @@ html.dark .plant-card__latin {
 }
 
 .plants-load-more__btn:hover:not(:disabled) {
-  background: #d7e8c8;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(138, 163, 124, 0.3);
+  background: var(--gs-muted);
+  transform: none;
+  box-shadow: none;
 }
 
 .plants-load-more__btn:disabled {
@@ -679,7 +694,7 @@ html.dark .plants-load-more__btn:hover:not(:disabled) {
 
 .plants-load-more__done {
   font-size: 0.9rem;
-  color: #6b7280;
+  color: var(--gs-muted);
   margin: 0;
 }
 
@@ -696,7 +711,7 @@ html.dark .plants-load-more__done {
 .plants-error {
   text-align: center;
   padding: 3rem 1rem;
-  color: #b91c1c;
+  color: #c1272d;
 }
 
 html.dark .plants-error {
@@ -716,7 +731,7 @@ html.dark .plants-error {
 
 .plants-empty-text {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--gs-muted);
   margin: 0 0 1rem;
 }
 
@@ -730,6 +745,12 @@ html.dark .plants-empty-text {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
   }
+}
+
+.plants-page button:focus-visible,
+.plant-card:focus-visible {
+  outline: 2px solid var(--gs-ink);
+  outline-offset: 3px;
 }
 </style>
 

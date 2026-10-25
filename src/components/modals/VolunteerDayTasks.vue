@@ -1,6 +1,4 @@
 <script setup>
-import GardenTask from '@/components/modals/GardenTask.vue'
-
 defineProps({
    title: String,
    blurb: String,

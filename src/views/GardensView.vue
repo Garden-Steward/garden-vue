@@ -18,6 +18,9 @@ import {
 } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
 import EmailLink from '@/components/EmailLink.vue';
+import PhotoStack from '@/components/PhotoStack.vue';
+import { toPhotoSet } from '@/helpers/image-utils';
+import { privateGardenCards } from '@/helpers/private-garden-cards';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
@@ -34,21 +37,16 @@ const alertStore = useAlertStore();
 
 // Gardens are fetched by ManageLayout (for the pitch dropdown); we read the
 // shared store ref here for the manage/volunteer sections.
-eventStore.getUserEvents();
-gardenTaskStore.getUserTasks();
-projectsStore.getUserProjects();
-
-const rowClick = (slug) => {
-    window.location = `/manage/gardens/${slug}`;
-};
-
-const viewEventClick = (id) => {
-    window.location = `/d/${id}`;
-};
-
-const viewProjectClick = (id) => {
-    window.location = `/manage/project/${id}`;
-};
+const eventsState = ref('loading');
+eventStore.getUserEvents().then(() => {
+    eventsState.value = 'ready';
+}).catch(() => {
+    eventsState.value = 'error';
+});
+Promise.allSettled([
+    gardenTaskStore.getUserTasks(),
+    projectsStore.getUserProjects()
+]);
 
 const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -61,14 +59,10 @@ const formatDate = (dateString) => {
     });
 };
 
-// ── Image helper ───────────────────────────────────────
-const getImageUrl = (image) => {
-    if (!image) return '';
-    const url = image.formats?.medium?.url || image.formats?.small?.url || image.url;
-    if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `${import.meta.env.VITE_API_URL}${url}`;
-};
+const taskPhotos = (task) => toPhotoSet([task.primary_image], `Photo for ${task.title}`);
+const gardenPhotos = (garden) => toPhotoSet([garden.hero_image], `Photo of ${garden.title}`);
+const projectPhotos = (project) => toPhotoSet([project.hero_image, ...(project.featured_gallery || [])], `Photo for ${project.title}`);
+const projectHref = (project) => `/manage/project/${project.documentId || project.id}`;
 
 // State for how many events to show per section
 const latestEventsToShow = ref(3);
@@ -86,26 +80,21 @@ const isManager = (garden) => {
     });
 };
 
-// Helper: check if user is a volunteer (member) of a garden
-const isVolunteer = (garden) => {
-    const volunteers = garden.volunteers || [];
-    return volunteers.some(volunteer => {
-        const volunteerId = volunteer.id || volunteer;
-        return volunteerId === user.value?.id;
-    });
+const collectionState = (value) => {
+    if (value?.error) return 'error';
+    if (Array.isArray(value)) return 'ready';
+    return 'loading';
 };
+const gardensState = computed(() => collectionState(gardens.value));
+const tasksState = computed(() => collectionState(userTasks.value));
+const projectsState = computed(() => collectionState(userProjects.value));
 
-// Gardens where the user is a manager
 const managedGardens = computed(() => {
     if (!gardens.value || !Array.isArray(gardens.value) || !user.value) return [];
     return gardens.value.filter(isManager);
 });
 
-// Gardens where the user is a volunteer but NOT a manager
-const memberGardens = computed(() => {
-    if (!gardens.value || !Array.isArray(gardens.value) || !user.value) return [];
-    return gardens.value.filter(g => isVolunteer(g) && !isManager(g));
-});
+const gardenCards = computed(() => privateGardenCards(gardens.value, user.value?.id));
 
 // Garden counts shown on each card
 const managersCount = (garden) => garden.managers?.length || 0;
@@ -127,6 +116,12 @@ const taskGarden = (task) => {
         title: g.title || '',
         slug: g.slug || ''
     };
+};
+
+const taskHref = (task) => {
+    const slug = taskGarden(task).slug;
+    if (!slug) return undefined;
+    return `/manage/gardens/${slug}#tasks`;
 };
 
 // ── Cross-garden projects ──────────────────────────────
@@ -160,7 +155,7 @@ const isProjectCreator = (project) => {
 const isProjectManager = (project) =>
     relationIds(project.managers).includes(user.value?.id);
 const isProjectInterested = (project) =>
-    relationIds(project.interested).includes(user.value?.id);
+    projectsStore.interestState(project).isInterested;
 
 // The Interested toggle only applies to projects the user neither manages nor created.
 const canExpressInterest = (project) => !isProjectManager(project) && !isProjectCreator(project);
@@ -180,7 +175,6 @@ const toggleInterest = async (project) => {
     togglingInterestId.value = project.id;
     try {
         await projectsStore.toggleInterest(project.id);
-        await projectsStore.getUserProjects();
     } catch (e) {
         // store surfaces its own error alert
     } finally {
@@ -265,12 +259,11 @@ const rsvp = async (event) => {
   <ManageLayout v-slot="{ openPitch }">
     <div class="dash-content">
       <main class="dash-main">
-        <!-- ── Header ── -->
         <header class="dash-header">
             <div class="dash-header__main">
                 <h1 class="gardens-title">Hi {{ user?.firstName }}!</h1>
-                <p class="dash-stats">
-                    {{ managedGardens.length }} Managed, {{ memberGardens.length }} Volunteer, {{ userActiveTasks.length }} Active Tasks
+                <p v-if="gardensState === 'ready' && tasksState === 'ready'" class="dash-stats">
+                    {{ gardenCards.managed.length }} Managed, {{ gardenCards.joined.length }} Volunteer, {{ userActiveTasks.length }} Active Tasks
                 </p>
             </div>
             <div class="dash-header__actions">
@@ -279,44 +272,35 @@ const rsvp = async (event) => {
             </div>
         </header>
 
-        <!-- ── My active tasks ── -->
-        <section v-if="userActiveTasks.length" class="dash-section">
+        <section class="dash-section">
             <h3 class="gardens-section-heading">My active tasks</h3>
-            <div class="dash-grid dash-grid--tasks">
-                <a
-                    v-for="task in userActiveTasks"
-                    :key="task.id"
-                    class="task-card"
-                    :href="taskGarden(task).slug ? `/manage/gardens/${taskGarden(task).slug}#tasks` : undefined"
-                >
-                    <div class="task-card__head">
-                        <span class="task-card__title">{{ task.title }}</span>
-                        <span v-if="task.type" :class="getRecurringTaskTypeBadgeClasses(task.type)">
-                            {{ getRecurringTaskTypeDisplayLabel(task.type) }}
-                        </span>
+            <p v-if="tasksState === 'loading'" class="dash-empty">Loading tasks…</p>
+            <p v-else-if="tasksState === 'error'" class="dash-empty" role="alert">Could not load tasks.</p>
+            <p v-else-if="!userActiveTasks.length" class="dash-empty">No active tasks yet.</p>
+            <div v-if="userActiveTasks.length" class="dash-grid dash-grid--tasks">
+                <article v-for="task in userActiveTasks" :key="task.id" class="task-card" :class="{ 'task-card--text-only': !taskPhotos(task).length }">
+                    <PhotoStack v-if="taskPhotos(task).length" :photos="taskPhotos(task)" :label="task.title" :to="taskHref(task) || null" />
+                    <div class="task-card__body">
+                        <div class="task-card__head">
+                            <a v-if="taskHref(task)" class="task-card__title" :href="taskHref(task)">{{ task.title }}</a>
+                            <span v-else class="task-card__title">{{ task.title }}</span>
+                            <span v-if="task.type" class="dash-soft-tag" :class="getRecurringTaskTypeBadgeClasses(task.type)">{{ getRecurringTaskTypeDisplayLabel(task.type) }}</span>
+                        </div>
+                        <span class="task-card__status">{{ getTaskStatusOption(task.task_status).label }}</span>
+                        <span v-if="taskGarden(task).title" class="task-card__garden">{{ taskGarden(task).title }}</span>
                     </div>
-                    <span class="task-card__status">{{ getTaskStatusOption(task.task_status).label }}</span>
-                    <span v-if="taskGarden(task).title" class="task-card__garden">{{ taskGarden(task).title }}</span>
-                </a>
+                </article>
             </div>
         </section>
-
-        <!-- ── Gardens I manage ── -->
         <h3 class="gardens-section-heading">Gardens I manage</h3>
-        <div class="dash-grid dash-grid--gardens">
-            <div
-                v-for="garden in managedGardens"
-                :key="garden.id"
-                class="garden-card"
-                @click="rowClick(garden.slug)"
-            >
-                <div
-                    class="garden-card__media"
-                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.hero_image) }"
-                    :style="getImageUrl(garden.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.hero_image)})` } : null"
-                ></div>
+        <p v-if="gardensState === 'loading'" class="dash-empty">Loading gardens…</p>
+        <p v-else-if="gardensState === 'error'" class="dash-empty" role="alert">Could not load gardens.</p>
+        <p v-else-if="!gardenCards.managed.length" class="dash-empty">You do not manage any gardens yet.</p>
+        <div v-if="gardensState === 'ready'" class="dash-grid dash-grid--gardens">
+            <article v-for="garden in gardenCards.managed" :key="garden.id" class="garden-card" :class="{ 'garden-card--text-only': !gardenPhotos(garden).length }">
+                <PhotoStack v-if="gardenPhotos(garden).length" :photos="gardenPhotos(garden)" :label="garden.title" :to="`/manage/gardens/${garden.slug}`" />
                 <div class="garden-card__body">
-                    <h4 class="garden-card__title">{{ garden.title }}</h4>
+                    <h4 class="garden-card__title"><a :href="`/manage/gardens/${garden.slug}`">{{ garden.title }}</a></h4>
                     <p class="garden-card__blurb">{{ garden.blurb }}</p>
                     <div class="garden-card__badges">
                         <span class="dash-badge dash-badge--manager">Manager</span>
@@ -324,33 +308,24 @@ const rsvp = async (event) => {
                     </div>
                     <div class="garden-card__footer">
                         <span class="garden-card__counts">{{ managersCount(garden) }} Managers, {{ volunteersCount(garden) }} Volunteers</span>
-                        <a class="dash-link" :href="`/manage/gardens/${garden.slug}`" @click.stop>Edit</a>
+                        <a class="dash-link" :href="`/manage/gardens/${garden.slug}`">Edit</a>
                     </div>
                 </div>
-            </div>
+            </article>
 
             <EmailLink subject="Adding a garden to Garden Steward" class="garden-card garden-card--apply">
                 <span class="garden-card--apply__plus">+</span>
                 <span>Request a new garden</span>
             </EmailLink>
         </div>
-
-        <!-- ── Gardens I volunteer at ── -->
         <h3 class="gardens-section-heading mt-8">Gardens I volunteer at</h3>
-        <div v-if="memberGardens.length" class="dash-grid dash-grid--gardens">
-            <div
-                v-for="garden in memberGardens"
-                :key="garden.id"
-                class="garden-card"
-                @click="rowClick(garden.slug)"
-            >
-                <div
-                    class="garden-card__media"
-                    :class="{ 'garden-card__media--empty': !getImageUrl(garden.hero_image) }"
-                    :style="getImageUrl(garden.hero_image) ? { backgroundImage: `url(${getImageUrl(garden.hero_image)})` } : null"
-                ></div>
+        <p v-if="gardensState === 'loading'" class="dash-empty">Loading gardens…</p>
+        <p v-else-if="gardensState === 'error'" class="dash-empty" role="alert">Could not load gardens.</p>
+        <div v-else-if="gardenCards.joined.length" class="dash-grid dash-grid--gardens">
+            <article v-for="garden in gardenCards.joined" :key="garden.id" class="garden-card" :class="{ 'garden-card--text-only': !gardenPhotos(garden).length }">
+                <PhotoStack v-if="gardenPhotos(garden).length" :photos="gardenPhotos(garden)" :label="garden.title" :to="`/manage/gardens/${garden.slug}`" />
                 <div class="garden-card__body">
-                    <h4 class="garden-card__title">{{ garden.title }}</h4>
+                    <h4 class="garden-card__title"><a :href="`/manage/gardens/${garden.slug}`">{{ garden.title }}</a></h4>
                     <p class="garden-card__blurb">{{ garden.blurb }}</p>
                     <div class="garden-card__badges">
                         <span class="dash-badge dash-badge--volunteer">Volunteer</span>
@@ -358,58 +333,35 @@ const rsvp = async (event) => {
                     </div>
                     <div class="garden-card__footer">
                         <span class="garden-card__counts">{{ managersCount(garden) }} Managers, {{ volunteersCount(garden) }} Volunteers</span>
-                        <button type="button" class="dash-link" @click.stop="requestToManage(garden)">Request to manage</button>
+                        <button type="button" class="dash-link" @click="requestToManage(garden)">Request to manage</button>
                     </div>
                 </div>
-            </div>
+            </article>
         </div>
-        <p v-else-if="!gardens.loading" class="dash-empty">You are not volunteering at any gardens yet.</p>
-
-        <!-- ── My projects ── -->
+        <p v-else class="dash-empty">You are not volunteering at any gardens yet.</p>
         <h3 class="gardens-section-heading mt-8">My projects</h3>
-        <p v-if="!userProjectsList.length && !userProjects.loading" class="dash-empty">
-            You haven't pitched or been added to any projects yet.
-        </p>
-        <div class="dash-grid dash-grid--projects">
-            <div
-                v-for="project in userProjectsList"
-                :key="project.id"
-                class="project-card project-card--clickable"
-                @click="viewProjectClick(project.documentId || project.id)"
-            >
-                <div class="project-card__head">
-                    <span class="project-card__title">{{ project.title }}</span>
-                    <span v-if="project.category" :class="getProjectCategoryBadgeClasses(project.category)">
-                        {{ project.category }}
-                    </span>
+        <p v-if="projectsState === 'loading'" class="dash-empty">Loading projects…</p>
+        <p v-else-if="projectsState === 'error'" class="dash-empty" role="alert">Could not load projects.</p>
+        <p v-else-if="!userProjectsList.length" class="dash-empty">You haven't pitched or been added to any projects yet.</p>
+        <div v-if="projectsState === 'ready'" class="dash-grid dash-grid--projects">
+            <article v-for="project in userProjectsList" :key="project.id" class="project-card" :class="{ 'project-card--text-only': !projectPhotos(project).length }">
+                <PhotoStack v-if="projectPhotos(project).length" :photos="projectPhotos(project)" :label="project.title" :to="projectHref(project)" />
+                <div class="project-card__body">
+                    <div class="project-card__head">
+                        <a class="project-card__title" :href="projectHref(project)">{{ project.title }}</a>
+                        <span v-if="project.category" class="dash-soft-tag" :class="getProjectCategoryBadgeClasses(project.category)">{{ project.category }}</span>
+                    </div>
+                    <p v-if="projectGarden(project).title" class="project-card__garden">{{ projectGarden(project).title }}</p>
+                    <div class="project-card__footer">
+                        <span v-if="projectOwnership(project)" class="project-card__ownership">{{ projectOwnership(project) }}</span>
+                        <span class="project-card__actions">
+                            <a v-if="projectGarden(project).slug && project.slug" class="dash-link" :href="`/gardens/${projectGarden(project).slug}/p/${project.slug}`">View</a>
+                            <button v-if="canExpressInterest(project)" type="button" class="dash-link" :class="{ 'dash-link--active': isProjectInterested(project) }" :disabled="togglingInterestId === project.id" @click="toggleInterest(project)"><span v-if="isProjectInterested(project)">Interested ✓</span><span v-else>Interested</span></button>
+                            <a v-if="canManageProject(project)" class="dash-link" :href="projectHref(project)">Edit</a>
+                        </span>
+                    </div>
                 </div>
-                <p v-if="projectGarden(project).title" class="project-card__garden">{{ projectGarden(project).title }}</p>
-                <div class="project-card__footer">
-                    <span v-if="projectOwnership(project)" class="project-card__ownership">{{ projectOwnership(project) }}</span>
-                    <span class="project-card__actions">
-                        <a
-                            v-if="projectGarden(project).slug && project.slug"
-                            class="dash-link"
-                            :href="`/gardens/${projectGarden(project).slug}/p/${project.slug}`"
-                            @click.stop
-                        >View</a>
-                        <button
-                            v-if="canExpressInterest(project)"
-                            type="button"
-                            class="dash-link"
-                            :class="{ 'dash-link--active': isProjectInterested(project) }"
-                            :disabled="togglingInterestId === project.id"
-                            @click.stop="toggleInterest(project)"
-                        >{{ isProjectInterested(project) ? 'Interested ✓' : 'Interested' }}</button>
-                        <a
-                            v-if="canManageProject(project)"
-                            class="dash-link"
-                            :href="`/manage/project/${project.documentId || project.id}`"
-                            @click.stop
-                        >Edit</a>
-                    </span>
-                </div>
-            </div>
+            </article>
 
             <button type="button" class="project-card project-card--pitch" @click="openPitch">
                 <span class="project-card--pitch__plus">+</span>
@@ -417,25 +369,25 @@ const rsvp = async (event) => {
             </button>
         </div>
 
-        <div v-if="gardens.loading" class="spinner-border spinner-border-sm"></div>
-        <div v-if="gardens.error" class="text-danger">Error loading gardens: {{ gardens.error }}</div>
       </main>
 
-      <!-- ── Right events panel ── -->
-      <aside class="dash-events-panel">
+      <section class="dash-events-panel" aria-label="Events">
           <h2 class="dash-events-panel__title">Events</h2>
 
+          <p v-if="eventsState === 'loading'" class="dash-events-panel__empty">Loading events…</p>
+          <p v-else-if="eventsState === 'error'" class="dash-events-panel__empty" role="alert">Could not load events.</p>
+          <template v-else>
           <p class="dash-events-panel__label">Upcoming Events</p>
           <div v-if="upcomingEvents.length" class="events-stack">
-              <div v-for="event in displayedUpcomingEvents" :key="event.id" class="event-card" @click="viewEventClick(event.id)">
-                  <a class="event-card__title" :href="`/d/${event.id}`" @click.stop>{{ event.title }}</a>
+              <div v-for="event in displayedUpcomingEvents" :key="event.id" class="event-card">
+                  <a class="event-card__title" :href="`/d/${event.id}`">{{ event.title }}</a>
                   <dl class="event-card__meta">
                       <div><dt>Date:</dt><dd>{{ formatDate(event.startDatetime) }}</dd></div>
                       <div v-if="eventGarden(event)"><dt>Garden:</dt><dd>{{ eventGarden(event) }}</dd></div>
                       <div v-if="event.accessibility"><dt>Accessibility:</dt><dd>{{ event.accessibility }}</dd></div>
                   </dl>
-                  <button type="button" class="event-card__rsvp" @click.stop="rsvp(event)">RSVP</button>
-                  <a v-if="canEditEvent(event)" class="event-card__edit" :href="`/manage/events/${event.id}/edit`" @click.stop>Edit</a>
+                  <button type="button" class="event-card__rsvp" @click="rsvp(event)">RSVP</button>
+                  <a v-if="canEditEvent(event)" class="event-card__edit" :href="`/manage/events/${event.id}/edit`">Edit</a>
               </div>
               <button v-if="hasMoreUpcomingEvents" class="btn-load-more" @click="loadMoreUpcomingEvents">Load More</button>
           </div>
@@ -443,717 +395,81 @@ const rsvp = async (event) => {
 
           <p class="dash-events-panel__label">Latest Events</p>
           <div v-if="latestEvents.length" class="events-stack">
-              <div v-for="event in latestEvents" :key="event.id" class="event-card" @click="viewEventClick(event.id)">
-                  <a class="event-card__title" :href="`/d/${event.id}`" @click.stop>{{ event.title }}</a>
+              <div v-for="event in latestEvents" :key="event.id" class="event-card">
+                  <a class="event-card__title" :href="`/d/${event.id}`">{{ event.title }}</a>
                   <dl class="event-card__meta">
                       <div><dt>Date:</dt><dd>{{ formatDate(event.startDatetime) }}</dd></div>
                       <div v-if="eventGarden(event)"><dt>Garden:</dt><dd>{{ eventGarden(event) }}</dd></div>
                       <div v-if="event.accessibility"><dt>Accessibility:</dt><dd>{{ event.accessibility }}</dd></div>
                   </dl>
-                  <span class="event-card__attended">Attended</span>
-                  <a v-if="canEditEvent(event)" class="event-card__edit" :href="`/manage/events/${event.id}/edit`" @click.stop>Edit</a>
+                  <span class="event-card__attended">Past event</span>
+                  <a v-if="canEditEvent(event)" class="event-card__edit" :href="`/manage/events/${event.id}/edit`">Edit</a>
               </div>
               <button v-if="hasMoreLatestEvents" class="btn-load-more" @click="loadMoreLatestEvents">Load More</button>
           </div>
           <p v-else class="dash-events-panel__empty">No past events yet.</p>
-      </aside>
+          </template>
+      </section>
     </div>
   </ManageLayout>
 </template>
 
 <style scoped>
-/* ── Content split: main | events ── */
-.dash-content {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 1.5rem;
-    align-items: start;
-}
-
-.dash-main {
-    min-width: 0;
-}
-
-@media (max-width: 1100px) {
-    .dash-content {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* ── Header ── */
-.dash-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.gardens-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 800;
-    color: #376451;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    margin: 0 0 0.35rem;
-}
-
-.dash-stats {
-    font-size: 1rem;
-    color: #6b7280;
-    margin: 0;
-}
-
-.dash-header__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-}
-
-.dash-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.55rem 1.1rem;
-    border-radius: 999px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    border: 1px solid transparent;
-}
-
-.dash-btn--primary {
-    background-color: #86b153;
-    color: #1f2a14;
-}
-
-.dash-btn--primary:hover {
-    background-color: #97c264;
-}
-
-.dash-btn--ghost {
-    background-color: transparent;
-    border-color: #8aa37c;
-    color: #376451;
-}
-
-.dash-btn--ghost:hover {
-    background-color: rgba(138, 163, 124, 0.15);
-}
-
-/* ── Section headings ── */
-.gardens-section-heading {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #344a34;
-    margin: 1.25rem 0 0.85rem;
-}
-
-.dash-section {
-    margin-bottom: 0.5rem;
-}
-
-.dash-empty {
-    color: #6b7280;
-    font-style: italic;
-    margin: 0.25rem 0 0.5rem;
-}
-
-/* ── Grids ── */
-.dash-grid {
-    display: grid;
-    gap: 1rem;
-}
-
-.dash-grid--tasks {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-}
-
-.dash-grid--gardens {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-}
-
-.dash-grid--projects {
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-}
-
-/* ── Task cards ── */
-.task-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    background-color: #ffffff;
-    border: 1px solid #e2dccb;
-    border-left: 4px solid #8aa37c;
-    text-decoration: none;
-    color: #344a34;
-    transition: all 0.2s ease;
-}
-
-.task-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(138, 163, 124, 0.2);
-}
-
-.task-card__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.5rem;
-}
-
-.task-card__title {
-    font-weight: 700;
-    font-size: 1.05rem;
-}
-
-.task-card__status {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #6b7280;
-}
-
-.task-card__garden {
-    font-size: 0.9rem;
-    color: #6b7280;
-}
-
-/* ── Garden cards ── */
-.garden-card {
-    display: flex;
-    flex-direction: column;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    background-color: #ffffff;
-    border: 1px solid #e2dccb;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.garden-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(138, 163, 124, 0.2);
-    border-color: #8aa37c;
-}
-
-.garden-card__media {
-    height: 140px;
-    background-size: cover;
-    background-position: center;
-}
-
-.garden-card__media--empty {
-    background: linear-gradient(135deg, #8aa37c, #376451);
-}
-
-.garden-card__body {
-    padding: 0.85rem 1rem 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-
-.garden-card__title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #344a34;
-    margin: 0;
-}
-
-.garden-card__blurb {
-    font-size: 0.9rem;
-    color: #6b7280;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.garden-card__badges {
-    display: flex;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-}
-
-.dash-badge {
-    display: inline-block;
-    padding: 0.15rem 0.65rem;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-/*
- * WebKit paints -webkit-text-fill-color over `color`, and the property is
- * inherited — re-anchor the fill so dark-on-light pills don't render white.
- */
-.dash-badge,
-.event-card__attended,
-.task-card__head span,
-.project-card__head span {
-    -webkit-text-fill-color: currentColor;
-}
-
-.dash-badge--manager {
-    background-color: #d7e8c8;
-    color: #2f5233;
-}
-
-.dash-badge--volunteer {
-    background-color: #cfe0f0;
-    color: #234e6e;
-}
-
-.dash-badge--draft {
-    background-color: #e5e7eb;
-    color: #6b7280;
-}
-
-.garden-card__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-top: 0.2rem;
-}
-
-.garden-card__counts {
-    font-size: 0.8rem;
-    color: #6b7280;
-}
-
-.dash-link {
-    background: none;
-    border: 1px solid #d1d5db;
-    border-radius: 0.4rem;
-    padding: 0.2rem 0.7rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #376451;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.2s ease;
-}
-
-.dash-link:hover {
-    background-color: #f3ece0;
-    border-color: #8aa37c;
-}
-
-.dash-link--active {
-    background-color: #d7e8c8;
-    border-color: #8aa37c;
-    color: #2f5233;
-}
-
-.dash-link:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.garden-card--apply {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: 200px;
-    border: 1px dashed #c7cdbb;
-    background-color: transparent;
-    color: #376451;
-    cursor: pointer;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.garden-card--apply:hover {
-    background-color: rgba(138, 163, 124, 0.1);
-    border-color: #8aa37c;
-}
-
-.garden-card--apply__plus {
-    font-size: 2.5rem;
-    line-height: 1;
-    font-weight: 300;
-}
-
-/* ── Project cards ── */
-.project-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    background-color: #ffffff;
-    border: 1px solid #e2dccb;
-}
-
-.project-card--clickable {
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.project-card--clickable:hover {
-    border-color: #8aa37c;
-    box-shadow: 0 4px 12px rgba(138, 163, 124, 0.2);
-}
-
-.project-card__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.5rem;
-}
-
-.project-card__title {
-    font-weight: 700;
-    font-size: 1.05rem;
-    color: #344a34;
-}
-
-.project-card__garden {
-    font-size: 0.9rem;
-    color: #6b7280;
-    margin: 0;
-}
-
-.project-card__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-top: auto;
-}
-
-.project-card__ownership {
-    font-size: 0.85rem;
-    color: #6b7280;
-}
-
-.project-card__actions {
-    display: flex;
-    gap: 0.4rem;
-}
-
-.project-card--pitch {
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 0.35rem;
-    min-height: 110px;
-    border: 1px dashed #c7cdbb;
-    background-color: transparent;
-    color: #376451;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.project-card--pitch:hover {
-    background-color: rgba(138, 163, 124, 0.1);
-    border-color: #8aa37c;
-}
-
-.project-card--pitch__plus {
-    font-size: 1.75rem;
-    line-height: 1;
-    font-weight: 300;
-}
-
-/* ── Events panel ── */
-.dash-events-panel {
-    position: sticky;
-    top: 1rem;
-    background-color: rgba(108, 138, 106, 0.1);
-    border: 1px solid #e2dccb;
-    border-radius: 14px;
-    padding: 1.25rem;
-}
-
-.dash-events-panel__title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #344a34;
-    margin: 0 0 1rem;
-}
-
-.dash-events-panel__label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #8aa37c;
-    margin: 1.25rem 0 0.6rem;
-}
-
-.dash-events-panel__label:first-of-type {
-    margin-top: 0;
-}
-
-.dash-events-panel__empty {
-    font-size: 0.85rem;
-    color: #6b7280;
-    font-style: italic;
-    margin: 0;
-}
-
-.events-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-}
-
-.event-card {
-    display: flex;
-    flex-direction: column;
-    background-color: #ffffff;
-    border: 1px solid #e2dccb;
-    border-left: 4px solid #8aa37c;
-    border-radius: 0.6rem;
-    padding: 0.85rem 1rem;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.event-card:hover {
-    border-color: #8aa37c;
-    box-shadow: 0 4px 12px rgba(138, 163, 124, 0.2);
-}
-
-.event-card__title {
-    display: inline-block;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #344a34;
-    margin: 0 0 0.5rem;
-    cursor: pointer;
-    text-decoration: none;
-    /* leave room for the absolutely-positioned RSVP / Attended pill */
-    padding-right: 4.5rem;
-}
-
-.event-card__title:hover {
-    color: #8aa37c;
-}
-
-.event-card__edit {
-    align-self: flex-end;
-    margin-top: 0.6rem;
-    background: none;
-    border: 1px solid #d1d5db;
-    border-radius: 0.4rem;
-    padding: 0.12rem 0.6rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #376451;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.event-card__edit:hover {
-    background-color: #f3ece0;
-    border-color: #8aa37c;
-}
-
-.event-card__meta {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #6b7280;
-}
-
-.event-card__meta div {
-    display: flex;
-    gap: 0.4rem;
-}
-
-.event-card__meta dt {
-    font-weight: 600;
-    min-width: 92px;
-}
-
-.event-card__meta dd {
-    margin: 0;
-}
-
-.event-card__rsvp {
-    position: absolute;
-    top: 0.85rem;
-    right: 1rem;
-    background-color: transparent;
-    border: 1px solid #8aa37c;
-    color: #376451;
-    border-radius: 0.4rem;
-    padding: 0.2rem 0.7rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.event-card__rsvp:hover {
-    background-color: #8aa37c;
-    color: #ffffff;
-}
-
-.event-card__attended {
-    position: absolute;
-    top: 0.85rem;
-    right: 1rem;
-    background-color: #d7e8c8;
-    color: #2f5233;
-    border-radius: 0.4rem;
-    padding: 0.2rem 0.7rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.btn-load-more {
-    display: inline-block;
-    margin-top: 1rem;
-    padding: 8px 16px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    border-radius: 6px;
-    background-color: transparent;
-    color: #8aa37c;
-    border: 1px solid #8aa37c;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-load-more:hover {
-    background-color: #8aa37c;
-    color: #ffffff;
-}
-</style>
-
-<!-- Dark-mode overrides (non-scoped for reliable specificity). -->
-<style>
-html.dark .gardens-title {
-    color: #c8dbbf;
-}
-
-html.dark .dash-stats {
-    color: #a0a8a0;
-}
-
-html.dark .gardens-section-heading {
-    color: #c8dbbf;
-}
-
-html.dark .dash-empty {
-    color: #a0a8a0;
-}
-
-html.dark .dash-btn--ghost {
-    border-color: #8aa37c;
-    color: #c8dbbf;
-}
-
-html.dark .dash-btn--ghost:hover {
-    background-color: rgba(138, 163, 124, 0.18);
-}
-
-html.dark .task-card,
-html.dark .garden-card,
-html.dark .project-card,
-html.dark .event-card {
-    background-color: #344a34;
-    border-color: #3d4d36;
-    color: #f5f5f5;
-}
-
-html.dark .task-card__title,
-html.dark .garden-card__title,
-html.dark .project-card__title,
-html.dark .event-card__title {
-    color: #f5f5f5;
-}
-
-html.dark .task-card__status,
-html.dark .task-card__garden,
-html.dark .garden-card__blurb,
-html.dark .garden-card__counts,
-html.dark .project-card__garden,
-html.dark .project-card__ownership,
-html.dark .event-card__meta {
-    color: #c2cbbb;
-}
-
-html.dark .task-card:hover,
-html.dark .garden-card:hover {
-    border-color: #8aa37c;
-}
-
-html.dark .garden-card--apply,
-html.dark .project-card--pitch {
-    border-color: #3d4d36;
-    color: #c8dbbf;
-}
-
-html.dark .garden-card--apply:hover,
-html.dark .project-card--pitch:hover {
-    background-color: rgba(138, 163, 124, 0.12);
-    border-color: #8aa37c;
-}
-
-html.dark .dash-link {
-    border-color: #3d4d36;
-    color: #c8dbbf;
-}
-
-html.dark .dash-link:hover {
-    background-color: #3d4d36;
-    border-color: #8aa37c;
-}
-
-html.dark .dash-link--active {
-    background-color: rgba(138, 163, 124, 0.3);
-    border-color: #8aa37c;
-    color: #e6f0db;
-}
-
-html.dark .dash-events-panel {
-    background-color: rgba(255, 255, 255, 0.04);
-    border-color: #3d4d36;
-}
-
-html.dark .dash-events-panel__title {
-    color: #c8dbbf;
-}
-
-html.dark .dash-events-panel__empty {
-    color: #a0a8a0;
-}
-
-html.dark .event-card__rsvp {
-    color: #c8dbbf;
-}
-
-html.dark .event-card__rsvp:hover {
-    background-color: #8aa37c;
-    color: #1a1a1a;
-}
-
-html.dark .event-card__edit {
-    border-color: #3d4d36;
-    color: #c8dbbf;
-}
-
-html.dark .event-card__edit:hover {
-    background-color: #3d4d36;
-    border-color: #8aa37c;
-}
+.dash-content { min-width: 0; overflow-wrap: anywhere; }
+.dash-main { min-width: 0; }
+.dash-header { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 14px 0 28px; border-bottom: 1px solid var(--manage-rule); }
+.gardens-title { font: 400 clamp(42px, 4.8vw, 76px)/1.08 var(--gs-heading-font); color: var(--manage-ink); margin: 0 0 8px; letter-spacing: -.025em; }
+.dash-stats, .dash-empty { color: var(--manage-muted); font-size: 18px; margin: 0; }
+.dash-header__actions, .project-card__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.dash-btn, .dash-link, .event-card__edit, .event-card__rsvp, .btn-load-more { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--manage-ink); background: transparent; color: var(--manage-ink); padding: 7px 13px; text-decoration: none; font-size: 17px; line-height: 1.3; cursor: pointer; }
+.dash-btn--primary { background: var(--manage-ink); color: var(--manage-paper); }
+.dash-link:hover, .dash-btn--ghost:hover, .event-card__edit:hover, .event-card__rsvp:hover, .btn-load-more:hover { background: var(--manage-sage); color: var(--manage-ink); }
+.dash-link:disabled { opacity: .55; cursor: not-allowed; }
+.dash-link--active { background: var(--manage-sage); }
+.gardens-section-heading, .dash-events-panel__title { font: 400 clamp(32px, 3vw, 52px)/1.15 var(--gs-heading-font); color: var(--manage-ink); margin: 0 0 18px; letter-spacing: -.02em; }
+.gardens-section-heading { padding-top: 38px; border-top: 1px solid var(--manage-rule); }
+.dash-section .gardens-section-heading { border-top: 0; }
+.dash-grid { display: grid; min-width: 0; }
+.dash-grid--tasks { display: block; }
+.task-card { border: 0; border-top: 1px solid var(--manage-rule); border-radius: 0; background: transparent; box-shadow: none; text-decoration: none; }
+.task-card__head, .project-card__head, .garden-card__footer, .project-card__footer { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.task-card__status, .task-card__garden, .garden-card__counts, .project-card__garden, .project-card__ownership { color: var(--manage-muted); font-size: 17px; }
+.dash-grid--gardens, .dash-grid--projects { display: block; }
+.task-card, .garden-card, .project-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: clamp(24px, 3vw, 50px); min-width: 0; padding: 32px 0; color: var(--manage-ink); }
+.garden-card, .project-card { border-bottom: 1px solid var(--manage-rule); }
+.task-card--text-only, .garden-card--text-only, .project-card--text-only { grid-template-columns: minmax(0, 1fr); }
+
+.task-card__body, .garden-card__body, .project-card__body { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.task-card__title, .garden-card__title, .project-card__title { font: 400 clamp(32px, 3vw, 52px)/1.15 var(--gs-heading-font); margin: 0; color: var(--manage-ink); }
+.garden-card__blurb { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.55; margin: 0; }
+.garden-card__badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.dash-badge { display: inline-block; padding: 3px 9px; font-size: 15px; background: var(--manage-sage); color: var(--manage-ink); }
+.dash-badge--draft { background: #dedbce; color: #344a34; }
+.dash-badge, .event-card__attended, .task-card__head span, .project-card__head span { -webkit-text-fill-color: currentColor; }
+.task-card .dash-soft-tag, .project-card .dash-soft-tag { background: var(--manage-sage); border-color: var(--manage-rule); color: var(--manage-ink); font: 16px/1.3 var(--gs-body-font); padding: 5px 10px; }
+.garden-card__footer, .project-card__footer { align-items: flex-end; margin-top: auto; }
+.garden-card--apply, .project-card--pitch { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; text-align: center; background: var(--manage-sage); text-decoration: none; font-size: 18px; cursor: pointer; }
+.garden-card--apply__plus, .project-card--pitch__plus { font-size: 32px; }
+.project-card--pitch { width: 100%; border: 0; border-bottom: 1px solid var(--manage-rule); }
+.dash-events-panel { margin-top: 54px; padding-top: 28px; border-top: 1px solid var(--manage-rule); }
+.dash-events-panel__label { font-size: 18px; margin: 25px 0 12px; color: var(--manage-muted); }
+.dash-events-panel__empty { font-size: 18px; color: var(--manage-muted); }
+.events-stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.event-card { padding: 18px 0; border-top: 1px solid var(--manage-rule); min-width: 0; }
+.event-card__title { display: block; font: 400 clamp(25px, 2vw, 34px)/1.2 var(--gs-heading-font); color: var(--manage-ink); text-decoration: none; }
+.event-card__meta { margin: 12px 0; color: var(--manage-muted); font-size: 17px; }
+.event-card__meta div { display: flex; gap: 7px; flex-wrap: wrap; }
+.event-card__meta dt { font-weight: 600; }
+.event-card__meta dd { margin: 0; }
+.event-card__edit, .event-card__rsvp, .event-card__attended { margin: 4px 8px 0 0; font-size: 16px; }
+.event-card__attended { display: inline-block; padding: 7px 13px; background: var(--manage-sage); color: var(--manage-ink); }
+.btn-load-more { align-self: start; }
+@media (max-width: 820px) {
+    .task-card, .garden-card, .project-card { grid-template-columns: minmax(0, 1fr); gap: 25px; padding: 24px 0 30px; }
+    .task-card__title, .garden-card__title, .project-card__title { font-size: 34px; }
+    .gardens-title { font-size: 42px; }
+}
+.task-card__title, .garden-card__title a, .project-card__title { color: var(--manage-ink); text-decoration: none; }
+.task-card__title:hover, .garden-card__title a:hover, .project-card__title:hover { text-decoration: underline; }
+.garden-card__title { margin: 0; }
 </style>

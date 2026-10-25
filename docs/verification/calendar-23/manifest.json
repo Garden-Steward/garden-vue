@@ -1,0 +1,23 @@
+{
+  "source": "3b4c672dbad4d4291cbd341ae6062b8f7c6d762b",
+  "backendRuntime": "b05393ff92933eb79b0bfbe5503b0fefea1cfbb8",
+  "scope": "Actual local public Schedule. Modal cursor flight/rest500ms, provider disclosure, Apple ICS download and Escape/outside dismissal. No credentials or calendar-account writes.",
+  "errors": [],
+  "failedResources": [],
+  "clips": [
+    {
+      "file": "desktop.mp4",
+      "width": 1440,
+      "height": 900,
+      "bytes": 158246,
+      "sha256": "302d96085a7240776f2cef33ba36def1a8a4fe88a15562703e6e697cb31efa05"
+    },
+    {
+      "file": "phone.mp4",
+      "width": 390,
+      "height": 900,
+      "bytes": 148354,
+      "sha256": "e5ece3eb958b88dea1b331c4d6aba8cb1301c926fe7cf9c090053fb1b2b1ad22"
+    }
+  ]
+}

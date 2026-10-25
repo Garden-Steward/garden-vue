@@ -63,12 +63,8 @@ const rejectProject = async (id) => {
   finally { approvingId.value = null; }
 };
 
-const relationIds = (rel) => {
-    const arr = rel?.data || rel || [];
-    return (Array.isArray(arr) ? arr : []).map(x => x.id ?? x);
-};
-const interestedCount = (project) => relationIds(project.interested).length;
-const isInterested = (project) => relationIds(project.interested).includes(user.value?.id);
+const interestedCount = (project) => projectsStore.interestState(project).count;
+const isInterested = (project) => projectsStore.interestState(project).isInterested;
 
 const pitchedBy = (project) => {
     const cb = project.created_by;
@@ -291,26 +287,30 @@ const handleInterest = (project) => {
 <style scoped>
 .cproj {
     min-width: 0;
+    font-family: var(--gs-body-font);
+    font-size: 18px;
+    color: var(--gs-ink);
+    overflow-wrap: anywhere;
 }
 
 .cproj__title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 800;
-    color: #376451;
+    font-family: var(--gs-heading-font);
+    font-size: clamp(42px, 4.8vw, 72px);
+    font-weight: 400;
+    color: var(--gs-ink);
     line-height: 1.1;
     margin: 0 0 0.5rem;
 }
 
 .cproj__intro {
-    max-width: 720px;
-    color: #6b7280;
+    max-width: none;
+    color: var(--gs-muted);
     margin: 0 0 1.5rem;
     line-height: 1.5;
 }
 
 .cproj__state {
-    color: #6b7280;
+    color: var(--gs-muted);
     font-style: italic;
 }
 
@@ -321,11 +321,13 @@ const handleInterest = (project) => {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    background-color: rgba(108, 138, 106, 0.1);
-    border: 1px solid #e2dccb;
-    border-radius: 12px;
+    background-color: var(--gs-sage);
+    border: none;
+    border-radius: 0;
     padding: 0.85rem 1rem;
     margin-bottom: 1.75rem;
+    border-top: 1px solid var(--gs-rule);
+    border-bottom: 1px solid var(--gs-rule);
 }
 
 .cproj-search {
@@ -333,17 +335,17 @@ const handleInterest = (project) => {
     align-items: center;
     gap: 0.6rem;
     flex: 1;
-    min-width: 220px;
-    background-color: #ffffff;
-    border: 1px solid #e2dccb;
-    border-radius: 999px;
+    min-width: min(220px, 100%);
+    background-color: var(--gs-paper);
+    border: 1px solid var(--gs-rule);
+    border-radius: 0;
     padding: 0.55rem 1rem;
 }
 
 .cproj-search svg {
     width: 1.1rem;
     height: 1.1rem;
-    color: #8aa37c;
+    color: var(--gs-muted);
     flex-shrink: 0;
 }
 
@@ -352,45 +354,49 @@ const handleInterest = (project) => {
     outline: none;
     background: transparent;
     width: 100%;
-    color: #344a34;
+    color: var(--gs-ink);
     font-size: 0.95rem;
+    min-width: 0;
+    font: inherit;
 }
 
 .cproj-sort {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
 .cproj-sort__label {
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: #6b7280;
+    color: var(--gs-muted);
 }
 
 .cproj-sort__toggle {
     display: inline-flex;
-    background-color: rgba(108, 138, 106, 0.15);
-    border-radius: 999px;
+    background-color: var(--gs-sage);
+    border-radius: 0;
     padding: 0.2rem;
+    border: 1px solid var(--gs-rule);
 }
 
 .cproj-sort__toggle button {
     border: none;
     background: transparent;
-    border-radius: 999px;
+    border-radius: 0;
     padding: 0.4rem 0.9rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #4a5a45;
+    color: var(--gs-muted);
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .cproj-sort__toggle button.is-active {
-    background-color: #d7e8c8;
-    color: #2f5233;
+    background-color: var(--gs-ink);
+    color: var(--gs-paper);
 }
 
 /* ── Status filter ── */
@@ -403,9 +409,9 @@ const handleInterest = (project) => {
 
 .cproj-filter__select {
     appearance: none;
-    border: none;
-    border-radius: 999px;
-    background-color: rgba(108, 138, 106, 0.15);
+    border: 1px solid var(--gs-rule);
+    border-radius: 0;
+    background-color: var(--gs-paper);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a5a45' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.7rem center;
@@ -413,19 +419,19 @@ const handleInterest = (project) => {
     padding: 0.5rem 2.1rem 0.5rem 1rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #2f5233;
+    color: var(--gs-ink);
     cursor: pointer;
 }
 
 .cproj-filter__select:focus-visible {
-    outline: 2px solid #86b153;
+    outline: 2px solid var(--gs-ink);
     outline-offset: 2px;
 }
 
 /* ── Grid + cards ── */
 .cproj-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
     gap: 1.5rem;
 }
 
@@ -434,18 +440,18 @@ const handleInterest = (project) => {
     cursor: pointer;
     display: flex;
     flex-direction: column;
-    background-color: #ffffff;
-    border: 1px solid #e2dccb;
-    border-radius: 14px;
+    background-color: var(--gs-paper);
+    border: 1px solid var(--gs-rule);
+    border-radius: 0;
     overflow: hidden;
     transition: all 0.2s ease;
 }
 
 /* Highlight the card on hover, except over the interest button. */
 .cproj-card:hover:not(:has(.cproj-card__btn:hover)) {
-    border-color: #8aa37c;
-    box-shadow: 0 6px 18px rgba(138, 163, 124, 0.22);
-    transform: translateY(-2px);
+    border-color: var(--gs-muted);
+    box-shadow: none;
+    transform: none;
 }
 
 .cproj-card:hover:not(:has(.cproj-card__btn:hover)) .cproj-card__title a {
@@ -460,9 +466,9 @@ const handleInterest = (project) => {
 }
 
 .cproj-card__title a:focus-visible {
-    outline: 2px solid #86b153;
+    outline: 2px solid var(--gs-ink);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 0;
 }
 
 .cproj-card__media {
@@ -473,25 +479,28 @@ const handleInterest = (project) => {
 }
 
 .cproj-card__media--empty {
-    background: linear-gradient(135deg, #8aa37c, #376451);
+    background: var(--gs-sage);
 }
 
 .cproj-card__flags {
     position: absolute;
     top: 0.85rem;
     left: 0.85rem;
+    right: 0.85rem;
     display: flex;
+    flex-wrap: wrap;
     gap: 0.4rem;
 }
 
 .cproj-card__flag {
     display: inline-block;
+    white-space: nowrap;
     padding: 0.15rem 0.65rem;
-    border-radius: 999px;
+    border-radius: 0;
     font-size: 0.75rem;
     font-weight: 600;
-    background-color: #f4f1e4;
-    color: #4a5a45;
+    background-color: var(--gs-paper);
+    color: var(--gs-muted);
     -webkit-text-fill-color: currentColor;
 }
 
@@ -516,11 +525,12 @@ const handleInterest = (project) => {
 }
 
 .cproj-card__title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #344a34;
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--gs-ink);
     margin: 0;
     line-height: 1.2;
+    font-family: var(--gs-heading-font);
 }
 
 .cproj-card__count {
@@ -530,7 +540,7 @@ const handleInterest = (project) => {
     flex-shrink: 0;
     font-size: 0.9rem;
     font-weight: 600;
-    color: #8aa37c;
+    color: var(--gs-muted);
 }
 
 .cproj-card__count svg {
@@ -540,7 +550,7 @@ const handleInterest = (project) => {
 
 .cproj-card__desc {
     font-size: 0.9rem;
-    color: #6b7280;
+    color: var(--gs-muted);
     margin: 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -550,7 +560,7 @@ const handleInterest = (project) => {
 
 .cproj-card__pitch {
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--gs-muted);
     margin: 0.2rem 0 0.4rem;
     display: flex;
     flex-wrap: wrap;
@@ -559,7 +569,7 @@ const handleInterest = (project) => {
 }
 
 .cproj-card__pitch strong {
-    color: #344a34;
+    color: var(--gs-ink);
     font-weight: 700;
 }
 
@@ -583,10 +593,10 @@ const handleInterest = (project) => {
     position: relative;
     margin-top: auto;
     width: 100%;
-    background-color: #cfeacd;
-    color: #1f3d22;
+    background-color: var(--gs-ink);
+    color: var(--gs-paper);
     border: none;
-    border-radius: 999px;
+    border-radius: 0;
     padding: 0.6rem 1rem;
     font-weight: 700;
     font-size: 0.95rem;
@@ -595,12 +605,13 @@ const handleInterest = (project) => {
 }
 
 .cproj-card__btn:hover:not(:disabled) {
-    background-color: #b9dfb6;
+    background-color: var(--gs-muted);
 }
 
 .cproj-card__btn.is-active {
-    background-color: #86b153;
-    color: #14250f;
+    background-color: var(--gs-sage);
+    color: var(--gs-ink);
+    outline: 1px solid var(--gs-ink);
 }
 
 .cproj-card__btn:disabled {
@@ -611,17 +622,19 @@ const handleInterest = (project) => {
 /* ── Pending review section ── */
 .cproj-pending {
   margin-bottom: 2rem;
-  background: #fffbe6;
-  border: 1px solid #e2d684;
-  border-radius: 12px;
+  background: var(--gs-sage);
+  border: 1px solid var(--gs-rule);
+  border-radius: 0;
   padding: 1.25rem;
+    border-left: 3px solid #F2AB27;
 }
 
 .cproj-pending__title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #735c0a;
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: var(--gs-ink);
   margin: 0 0 1rem;
+    font-family: var(--gs-heading-font);
 }
 
 .cproj-pending__list {
@@ -636,9 +649,10 @@ const handleInterest = (project) => {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.75rem;
-  background: #fff;
-  border: 1px solid #e8dc9e;
-  border-radius: 8px;
+  background: var(--gs-paper);
+  border: 1px solid var(--gs-rule);
+  border-radius: 0;
+    flex-wrap: wrap;
 }
 
 .cproj-pending__info {
@@ -650,17 +664,17 @@ const handleInterest = (project) => {
 }
 
 .cproj-pending__info strong {
-  color: #344a34;
+  color: var(--gs-ink);
 }
 
 .cproj-pending__meta {
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--gs-muted);
 }
 
 .cproj-pending__desc {
   font-size: 0.85rem;
-  color: #9ca3a5;
+  color: var(--gs-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -675,7 +689,7 @@ const handleInterest = (project) => {
 .cproj-pending__approve,
 .cproj-pending__reject {
   padding: 0.4rem 1rem;
-  border-radius: 6px;
+  border-radius: 0;
   border: none;
   font-weight: 600;
   font-size: 0.85rem;
@@ -683,21 +697,21 @@ const handleInterest = (project) => {
 }
 
 .cproj-pending__approve {
-  background: #86b153;
-  color: #14250f;
+  background: var(--gs-ink);
+  color: var(--gs-paper);
 }
 
 .cproj-pending__approve:hover:not(:disabled) {
-  background: #97c264;
+  background: var(--gs-muted);
 }
 
 .cproj-pending__reject {
-  background: #f87171;
-  color: #fff;
+  background: #c1272d;
+  color: var(--gs-paper);
 }
 
 .cproj-pending__reject:hover:not(:disabled) {
-  background: #ef4444;
+  background: #a92127;
 }
 
 .cproj-pending__approve:disabled,
@@ -717,15 +731,16 @@ const handleInterest = (project) => {
     min-height: 200px;
     padding: 1.5rem;
     border: 1px dashed #c7cdbb;
-    border-radius: 14px;
+    border-radius: 0;
     background-color: transparent;
     cursor: pointer;
     transition: all 0.2s ease;
+    border-color: var(--gs-rule);
 }
 
 .cproj-idea:hover {
-    background-color: rgba(138, 163, 124, 0.08);
-    border-color: #8aa37c;
+    background-color: var(--gs-sage);
+    border-color: var(--gs-muted);
 }
 
 .cproj-idea__plus {
@@ -734,31 +749,38 @@ const handleInterest = (project) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 999px;
-    background-color: #86b153;
-    color: #14250f;
+    border-radius: 0;
+    background-color: var(--gs-sage);
+    color: var(--gs-ink);
     font-size: 1.6rem;
     line-height: 1;
     margin-bottom: 0.25rem;
 }
 
 .cproj-idea__title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #344a34;
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--gs-ink);
+    font-family: var(--gs-heading-font);
 }
 
 .cproj-idea__text {
     font-size: 0.9rem;
-    color: #6b7280;
+    color: var(--gs-muted);
     max-width: 220px;
 }
 
 .cproj-idea__cta {
     font-weight: 700;
-    color: #376451;
+    color: var(--gs-ink);
     text-decoration: underline;
     margin-top: 0.4rem;
+}
+
+.cproj button:focus-visible,
+.cproj input:focus-visible {
+    outline: 2px solid var(--gs-ink);
+    outline-offset: 3px;
 }
 </style>
 

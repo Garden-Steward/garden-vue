@@ -1,3 +1,33 @@
+@font-face {
+    font-family: 'Fields Display';
+    src: local('Fields Display Regular'), local('FieldsDisplay-Regular'), local('Fields Display');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Gill Sans Local';
+    src: local('Gill Sans'), local('Gill Sans MT');
+    font-display: swap;
+}
+
+:root {
+    --gs-paper: #F1F2D5;
+    --gs-ink: #024023;
+    --gs-muted: #486047;
+    --gs-rule: #bac5a6;
+    --gs-sage: #e4e8cc;
+    --gs-body-font: 'Gill Sans Local', 'Gill Sans', 'Gill Sans MT', Arial, sans-serif;
+    --gs-heading-font: 'Fields Display', Georgia, serif;
+}
+
+html.dark {
+    --gs-paper: #253a2c;
+    --gs-ink: #e5eedb;
+    --gs-muted: #bfccb9;
+    --gs-rule: #657b65;
+    --gs-sage: #324a37;
+}
+
 a {
     cursor: pointer;
 }

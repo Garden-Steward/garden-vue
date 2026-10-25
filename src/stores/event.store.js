@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper, stripReadOnly } from '@/helpers';
+import { readPublicCollection } from '@/helpers/public-collection';
 import { useGardensStore, useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
@@ -21,6 +22,7 @@ export const useEventStore = defineStore({
         volunteerDay: {},
         event: {},
         events: {},
+        publicRequest: 0,
         eventsPagination: {
             page: 1,
             pageSize: 15,
@@ -50,62 +52,24 @@ export const useEventStore = defineStore({
                             .then(res => this.volunteerDays.days = res)
                 .catch(this.handleError);
         },
-        async fetchPublic(page = 1, pageSize = 15) {
+        async fetchPublic() {
+            const request = ++this.publicRequest;
             this.events = { loading: true };
-            const url = `${baseUrl}/public?pagination[page]=${page}&pagination[pageSize]=${pageSize}&populate[0]=hero_image&populate[1]=garden&populate[garden][populate][0]=hero_image&populate[garden][populate][1]=organization`;
-            return fetchWrapper.get(url)
-                .then(res => {
-                    // Handle Strapi pagination response format
-                    if (res.data && res.meta?.pagination) {
-                        this.events = res.data;
-                        this.eventsPagination = res.meta.pagination;
-                    } else if (Array.isArray(res)) {
-                        // Fallback for non-paginated response
-                        this.events = res;
-                        this.eventsPagination = {
-                            page: 1,
-                            pageSize: res.length,
-                            pageCount: 1,
-                            total: res.length
-                        };
-                    } else {
-                        this.events = res;
-                    }
-                    return res;
-                })
-                .catch(this.handleError);
-        },
-        async loadMoreEvents() {
-            const nextPage = this.eventsPagination.page + 1;
-            if (nextPage > this.eventsPagination.pageCount) {
-                return Promise.resolve([]);
+            try {
+                const response = await readPublicCollection(`${baseUrl}/public`);
+                if (request === this.publicRequest) {
+                    this.events = response.data;
+                    this.eventsPagination = response.meta.pagination;
+                }
+                return response;
+            } catch (error) {
+                if (request === this.publicRequest) {
+                    this.events = { error };
+                    this.eventsPagination = { page: 1, pageSize: 100, pageCount: 0, total: 0 };
+                    this.handleError(error);
+                }
+                throw error;
             }
-            
-            const url = `${baseUrl}/public?pagination[page]=${nextPage}&pagination[pageSize]=${this.eventsPagination.pageSize}&populate[0]=hero_image&populate[1]=garden&populate[garden][populate][0]=hero_image&populate[garden][populate][1]=organization`;
-            return fetchWrapper.get(url)
-                .then(res => {
-                    let newEvents = [];
-                    if (res.data && Array.isArray(res.data)) {
-                        newEvents = res.data;
-                    } else if (Array.isArray(res)) {
-                        newEvents = res;
-                    }
-                    
-                    // Append new events to existing ones
-                    if (Array.isArray(this.events)) {
-                        this.events = [...this.events, ...newEvents];
-                    } else {
-                        this.events = newEvents;
-                    }
-                    
-                    // Update pagination metadata
-                    if (res.meta?.pagination) {
-                        this.eventsPagination = res.meta.pagination;
-                    }
-                    
-                    return newEvents;
-                })
-                .catch(this.handleError);
         },
         async findById(id) {
             this.event = { loading: true };

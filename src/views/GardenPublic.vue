@@ -8,8 +8,6 @@ import VolunteerActivity from '@/components/VolunteerActivity.vue';
 import LeafletMap from '@/components/LeafletMap.vue';
 import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
 import { truncatePlainText } from '@/helpers/safe-html';
-import SunIcon from '@/components/icons/Sun.svg?raw';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import { RsvpPhoneModal } from '@/components/modals';
 import GardenMemberMenu from '@/components/GardenMemberMenu.vue';
 import '@/assets/garden-public.css';
@@ -25,33 +23,7 @@ const { volunteerDays } = storeToRefs(eventStore);
 const { user } = storeToRefs(authStore);
 const { projects } = storeToRefs(projectsStore);
 
-// Dark mode state - initialize from system preference
-const getSystemPreference = () => {
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  return false;
-};
-
-const isDarkMode = ref(false);
-
-// Initialize dark mode from localStorage, or fall back to system preference
 onMounted(() => {
-  const savedTheme = localStorage.getItem('garden-public-theme');
-  let shouldBeDark = false;
-  
-  if (savedTheme === 'dark' || savedTheme === 'light') {
-    // User has manually set a preference
-    shouldBeDark = savedTheme === 'dark';
-  } else {
-    // No saved preference, use system default
-    shouldBeDark = getSystemPreference();
-  }
-  
-  isDarkMode.value = shouldBeDark;
-  applyDarkMode(shouldBeDark);
-  
-  // Restore scroll position if returning from a project page
   restoreScrollPosition();
 });
 
@@ -84,23 +56,6 @@ watch(() => garden.value?.slug, async (slug) => {
     await restoreScrollPosition();
   }
 }, { immediate: false });
-
-// Apply dark mode class to html element (for Tailwind)
-const applyDarkMode = (dark) => {
-  if (dark) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-};
-
-// Toggle dark mode
-const toggleDarkMode = () => {
-  isDarkMode.value = !isDarkMode.value;
-  applyDarkMode(isDarkMode.value);
-  // Save preference when manually toggled
-  localStorage.setItem('garden-public-theme', isDarkMode.value ? 'dark' : 'light');
-};
 
 // Save scroll position before navigating to project
 const saveScrollPosition = () => {
@@ -265,12 +220,6 @@ const hasMoreLatestEvents = computed(() => {
 const loadMoreLatestEvents = () => {
   latestEventsToShow.value += 2;
 };
-
-// Truncate description to 200 characters
-const isManager = computed(() => {
-  if (!garden.value?.managers || !user.value) return false;
-  return garden.value.managers.some(manager => manager.id === user.value.id);
-});
 
 // Donation modal state
 const showDonationModal = ref(false);
@@ -524,16 +473,6 @@ watch(
 
 <template>
   <div class="garden-public-container">
-    <!-- Dark Mode Toggle Button -->
-    <button
-      @click="toggleDarkMode"
-      class="dark-mode-toggle"
-      :aria-label="isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-    >
-      <span v-if="isDarkMode" class="sun-icon" v-html="SunIcon"></span>
-      <i v-else class="fas fa-moon"></i>
-    </button>
-
     <div class="garden-public-content">
       <!-- Hero: title, blurb and the main action sit on the photo -->
       <section v-if="garden.id" class="gp-hero" aria-labelledby="garden-title">
@@ -952,64 +891,6 @@ watch(
   color: #f5f5f5;
 }
 
-/* Dark mode toggle button */
-.dark-mode-toggle {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  z-index: 100000;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 2px solid #8aa37c;
-  background-color: #ffffff;
-  color: #8aa37c;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dark-mode-toggle:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-  transform: scale(1.1);
-}
-
-.dark .dark-mode-toggle {
-  background-color: #1a1a1a;
-  border-color: #8aa37c;
-  color: #8aa37c;
-}
-
-.dark .dark-mode-toggle:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-}
-
-/* Sun icon SVG styling */
-.sun-icon {
-  width: 24px;
-  height: 24px;
-  transition: all 0.3s ease;
-  color: #4a4a4a;
-}
-
-.dark-mode-toggle:hover .sun-icon {
-  color: #ffffff;
-}
-
-.dark .dark-mode-toggle .sun-icon {
-  color: #8aa37c;
-}
-
-.dark .dark-mode-toggle:hover .sun-icon {
-  color: #ffffff;
-}
-
 /* Page wrapper */
 .garden-public-content {
   box-sizing: border-box;
@@ -1093,11 +974,6 @@ watch(
 }
 
 /* ---------- Small screens ---------- */
-@media (max-width: 768px) {
-  .dark-mode-toggle {
-    display: none;
-  }
-}
 
 @media (max-width: 640px) {
   .garden-public-content {
