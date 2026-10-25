@@ -374,6 +374,35 @@ const toggleDayEditMode = (taskId) => {
   dayEditMode.value[taskId] = !dayEditMode.value[taskId];
 };
 
+// Options for a day picker in edit mode: the current day plus any day the
+// task isn't already scheduled on, in week order.
+const getDayOptionsForTask = (recurringTask, currentDay) => {
+  const existingDays = getDaysForTask(recurringTask);
+  return availableDays.filter(day => day === currentDay || !existingDays.includes(day));
+};
+
+// Move a scheduled day to another day (e.g. Tuesday -> Wednesday). Updating
+// the scheduler's `day` in place keeps its volunteers, unlike remove + add.
+const changeDay = async (recurringTask, fromDay, event) => {
+  const select = event.target;
+  const toDay = select.value;
+  if (!toDay || toDay === fromDay) return;
+  const sched = getSchedulerForTaskAndDay(recurringTask, fromDay);
+  if (!sched?.id) return;
+
+  const updated = await weekSchedulerStore.update(sched.id, { day: toDay });
+  if (!updated) {
+    // Save failed (the store shows the alert); put the picker back.
+    select.value = fromDay;
+    return;
+  }
+
+  // Keep the volunteer panel pointed at the moved entry
+  if (selectedTaskId.value === recurringTask.id && selectedDay.value === fromDay) {
+    selectedDay.value = toDay;
+  }
+};
+
 // Remove a day from the schedule
 const removeDay = (recurringTask, day) => {
   const sched = getSchedulerForTaskAndDay(recurringTask, day);
@@ -605,32 +634,59 @@ const openRecurringEditModal = (taskId) => {
               </div>
               <!-- Day badges -->
               <div class="flex flex-wrap gap-2 items-center mt-3" @click.stop>
-                <button
-                  v-for="day in getDaysForTask(recurringTask)"
-                  :key="day"
-                  @click="!dayEditMode[recurringTask.id] && handleDayClick(recurringTask, day)"
-                  :class="[
-                    'px-3 py-1 rounded-full text-sm font-medium transition-colors flex items-center gap-1',
-                    selectedTaskId === recurringTask.id && selectedDay === day
-                      ? 'bg-[rgba(138,163,124,0.5)] text-white'
-                      : dayHasVolunteers(recurringTask, day)
-                        ? 'bg-[rgba(138,163,124,0.3)] text-[#8aa37c] hover:bg-[rgba(138,163,124,0.4)]'
-                        : 'bg-[rgba(26,26,26,0.8)] text-[#d0d0d0] hover:bg-[rgba(26,26,26,1)] border border-[#3d4d36]/50',
-                    dayEditMode[recurringTask.id] ? 'cursor-default' : 'cursor-pointer'
-                  ]"
-                >
-                  {{ day }}
-                  <button
-                    v-if="dayEditMode[recurringTask.id] && editor"
-                    @click.stop="removeDay(recurringTask, day)"
-                    class="ml-1 text-red-400 hover:text-red-300"
-                    title="Remove day"
+                <!-- Edit mode: each day is a picker (move to another day) plus a remove button.
+                     Kept as siblings rather than nesting buttons, which mobile browsers mishandle. -->
+                <template v-if="dayEditMode[recurringTask.id] && editor">
+                  <div
+                    v-for="day in getDaysForTask(recurringTask)"
+                    :key="day"
+                    class="flex items-center gap-1 pl-1 pr-2 py-1 rounded-full bg-[rgba(26,26,26,0.8)] border border-[#3d4d36]/50"
                   >
-                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                    </svg>
+                    <select
+                      :value="day"
+                      @change="changeDay(recurringTask, day, $event)"
+                      :aria-label="`Change ${day} to another day`"
+                      class="bg-transparent text-[#f5f5f5] text-sm font-medium rounded-full pl-2 pr-1 py-0.5 focus:outline-none focus:ring-2 focus:ring-custom-green cursor-pointer"
+                    >
+                      <option
+                        v-for="option in getDayOptionsForTask(recurringTask, day)"
+                        :key="option"
+                        :value="option"
+                        class="bg-[rgba(26,26,26,0.95)]"
+                      >
+                        {{ option }}
+                      </option>
+                    </select>
+                    <button
+                      type="button"
+                      @click.stop="removeDay(recurringTask, day)"
+                      class="text-red-400 hover:text-red-300 p-1"
+                      :title="`Remove ${day}`"
+                      :aria-label="`Remove ${day}`"
+                    >
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                      </svg>
+                    </button>
+                  </div>
+                </template>
+                <template v-else>
+                  <button
+                    v-for="day in getDaysForTask(recurringTask)"
+                    :key="day"
+                    @click="handleDayClick(recurringTask, day)"
+                    :class="[
+                      'px-3 py-1 rounded-full text-sm font-medium transition-colors flex items-center gap-1 cursor-pointer',
+                      selectedTaskId === recurringTask.id && selectedDay === day
+                        ? 'bg-[rgba(138,163,124,0.5)] text-white'
+                        : dayHasVolunteers(recurringTask, day)
+                          ? 'bg-[rgba(138,163,124,0.3)] text-[#8aa37c] hover:bg-[rgba(138,163,124,0.4)]'
+                          : 'bg-[rgba(26,26,26,0.8)] text-[#d0d0d0] hover:bg-[rgba(26,26,26,1)] border border-[#3d4d36]/50'
+                    ]"
+                  >
+                    {{ day }}
                   </button>
-                </button>
+                </template>
                 <button
                   v-if="editor && !dayEditMode[recurringTask.id]"
                   @click.stop="toggleAddDayForm(recurringTask.id)"

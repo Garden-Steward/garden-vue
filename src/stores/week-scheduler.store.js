@@ -42,8 +42,15 @@ export const useWeekSchedulerStore = defineStore({
                 // v5 returns a flat entry (fields + id directly on res.data).
                 const sched = res.data;
                 const day = sched?.day;
-                const entries = day ? this.weekscheduler[day] : null;
-                if (!Array.isArray(entries)) return sched;
+                if (!day) return sched;
+                // A `day` change moves the entry, so drop it from any other day.
+                for (const otherDay in this.weekscheduler) {
+                    if (otherDay === day || !Array.isArray(this.weekscheduler[otherDay])) continue;
+                    const oldIdx = this.weekscheduler[otherDay].findIndex(ws => ws.id == sched.id);
+                    if (oldIdx !== -1) this.weekscheduler[otherDay].splice(oldIdx, 1);
+                }
+                if (!Array.isArray(this.weekscheduler[day])) this.weekscheduler[day] = [];
+                const entries = this.weekscheduler[day];
                 const idx = entries.findIndex(ws => ws.id == sched.id);
                 if (idx === -1) entries.push(sched);
                 else entries[idx] = sched;
