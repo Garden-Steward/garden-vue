@@ -116,7 +116,7 @@ function weekday(day) {
     return day.date.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
 }
 function eventTime(event) {
-    return new Date(event.startDatetime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: scheduleTimeZone, timeZoneName: 'short' });
+    return new Date(event.startDatetime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: scheduleTimeZone });
 }
 function eventDate(event) {
     return new Date(event.startDatetime).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: scheduleTimeZone });
@@ -157,7 +157,7 @@ function closeOnBackdrop(event) {
         <main class="schedule-page">
             <header class="schedule-heading">
                 <h1>Schedule</h1>
-                <p>Plan your next visit. All event times are shown in Pacific time.</p>
+                <p>Plan your next visit.</p>
             </header>
 
             <div class="schedule-toolbar">
@@ -188,7 +188,7 @@ function closeOnBackdrop(event) {
             </div>
             <template v-else>
                 <p v-if="confirmation.phase === 'error'" class="schedule-confirmation-error" role="status">Your confirmation status couldn't be loaded. <button type="button" @click="loadConfirmations(user)">Try again</button></p>
-                <div class="schedule-grid" :class="{ 'schedule-grid--week': view === 'week' }" role="table" :aria-label="`${view} calendar, ${rangeLabel}, Pacific time`">
+                <div class="schedule-grid" :class="{ 'schedule-grid--week': view === 'week' }" role="table" :aria-label="`${view} calendar, ${rangeLabel}`">
                     <div class="schedule-weekdays" role="row">
                         <div v-for="name in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="name" role="columnheader">{{ name }}</div>
                     </div>
@@ -231,7 +231,7 @@ function closeOnBackdrop(event) {
                         <p class="schedule-dialog-eyebrow">Event details</p>
                         <h2 id="schedule-event-title">{{ selected.title }}</h2>
                         <span v-if="isConfirmed(selected)" class="schedule-confirmed">✓ Confirmed</span>
-                        <p>{{ eventDate(selected) }} · {{ eventTime(selected) }}<br>Pacific time · America/Los_Angeles</p>
+                        <p>{{ eventDate(selected) }} · {{ eventTime(selected) }}</p>
                         <p v-if="place(selected)">{{ place(selected) }}</p>
                         <p v-if="description(selected)">{{ description(selected) }}</p>
                         <CalendarExportButton :key="selected.id" :event="selected" />

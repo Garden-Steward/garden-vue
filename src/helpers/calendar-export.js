@@ -1,5 +1,4 @@
 const encoder = new TextEncoder();
-const startOnlyNote = 'Start time only. See event details for end information.';
 
 function calendarText(value, required = false) {
     if (value == null && !required) return '';
@@ -57,7 +56,7 @@ function timestamp(date) {
     return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
 
-export function buildCalendarFile(event, { origin, generatedAt }) {
+function calendarSnapshot(event, origin) {
     if (!Number.isSafeInteger(event?.id) || event.id < 1) throw new Error('Invalid calendar event.');
     const identity = calendarText(event.documentId, true);
     const title = calendarText(event.title, true);
@@ -72,16 +71,21 @@ export function buildCalendarFile(event, { origin, generatedAt }) {
         throw new Error('Invalid calendar origin.');
     }
     const eventUrl = new URL(`/d/${event.id}`, site.origin).href;
-    let description = startOnlyNote + '\n\n' + eventUrl;
+    let description = eventUrl;
     if (blurb) description = blurb + '\n\n' + description;
     let location = locationName;
     if (garden.trim()) location = garden;
+    return { identity, title, description, location, start, eventUrl, siteOrigin: site.origin };
+}
+
+export function buildCalendarFile(event, { origin, generatedAt }) {
+    const { identity, title, description, location, start, eventUrl, siteOrigin } = calendarSnapshot(event, origin);
     const lines = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
         'PRODID:-//Garden Steward//Events//EN',
         'BEGIN:VEVENT',
-        `UID:garden-steward-${encodeURIComponent(identity)}@${encodeURIComponent(site.origin)}`,
+        `UID:garden-steward-${encodeURIComponent(identity)}@${encodeURIComponent(siteOrigin)}`,
         `DTSTAMP:${timestamp(generatedAt)}`,
         `DTSTART:${timestamp(start)}`,
         `SUMMARY:${escapeText(title)}`,
@@ -95,4 +99,27 @@ export function buildCalendarFile(event, { origin, generatedAt }) {
         calendarText: lines.map(foldLine).join('\r\n') + '\r\n',
         startOnly: true
     };
+}
+
+export function buildCalendarLinks(event, { origin }) {
+    const { title, description, location, start } = calendarSnapshot(event, origin);
+    const google = new URL('https://calendar.google.com/calendar/r/eventedit');
+    google.searchParams.set('action', 'TEMPLATE');
+    google.searchParams.set('text', title);
+    google.searchParams.set('dates', timestamp(start) + '/' + timestamp(start));
+    google.searchParams.set('details', description);
+    const outlook = new URL('https://outlook.office.com/calendar/0/deeplink/compose');
+    outlook.searchParams.set('path', '/calendar/action/compose');
+    outlook.searchParams.set('rru', 'addevent');
+    outlook.searchParams.set('subject', title);
+    outlook.searchParams.set('startdt', start.toISOString());
+    outlook.searchParams.set('body', description);
+    if (location) {
+        google.searchParams.set('location', location);
+        outlook.searchParams.set('location', location);
+    }
+    const googleEntry = new URL('https://accounts.google.com/ServiceLogin');
+    googleEntry.searchParams.set('service', 'cl');
+    googleEntry.searchParams.set('continue', google.href);
+    return { google: googleEntry.href, outlook: outlook.href };
 }

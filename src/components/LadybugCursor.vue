@@ -1,11 +1,13 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, shallowRef } from 'vue';
 
 const mode = ref('hidden');
+const cursorHost = shallowRef('body');
 const position = ref({ x: 0, y: 0 });
 let finePointer;
 let reducedMotion;
 let settleTimer;
+let hostObserver;
 
 function hide() {
     window.clearTimeout(settleTimer);
@@ -35,6 +37,28 @@ function isNativeCursorTarget(target) {
     return editable !== null && editable.getAttribute('contenteditable') !== 'false';
 }
 
+function syncHost(target) {
+    if (!(target instanceof Element)) {
+        hide();
+        cursorHost.value = 'body';
+        return;
+    }
+    if (isNativeCursorTarget(target)) hide();
+    const host = target.closest('dialog:modal') || 'body';
+    if (cursorHost.value !== host) cursorHost.value = host;
+}
+
+function repairHost(records = []) {
+    const host = cursorHost.value;
+    const changedDialog = records.some(record => record.type === 'attributes');
+    if (!changedDialog && (host === 'body' || (host.isConnected && host.matches('dialog:modal')))) return;
+    syncHost(document.elementFromPoint(position.value.x, position.value.y));
+}
+
+function modalClosed() {
+    syncHost(document.elementFromPoint(position.value.x, position.value.y));
+}
+
 function move(event) {
     if (!finePointer.matches || reducedMotion.matches || event.pointerType === 'touch') {
         hide();
@@ -47,6 +71,7 @@ function move(event) {
     }
 
     position.value = { x: event.clientX, y: event.clientY };
+    syncHost(event.target);
     mode.value = 'moving';
     document.documentElement.classList.add('gs-ladybug-cursor');
     window.clearTimeout(settleTimer);
@@ -85,9 +110,16 @@ onMounted(() => {
     document.addEventListener('visibilitychange', visibilityChange);
     window.addEventListener('blur', hide);
     updateEligibility();
+    document.addEventListener('close', modalClosed, true);
+    document.addEventListener('toggle', modalClosed, true);
+    hostObserver = new MutationObserver(repairHost);
+    hostObserver.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['open'] });
 });
 
 onUnmounted(() => {
+    hostObserver.disconnect();
+    document.removeEventListener('close', modalClosed, true);
+    document.removeEventListener('toggle', modalClosed, true);
     hide();
     finePointer.removeEventListener('change', updateEligibility);
     reducedMotion.removeEventListener('change', updateEligibility);
@@ -102,7 +134,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Teleport to="body">
+    <Teleport :to="cursorHost">
         <div
             v-show="mode !== 'hidden'"
             class="ladybug-cursor"

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { test } from 'node:test';
-import { buildCalendarFile } from '../src/helpers/calendar-export.js';
+import { buildCalendarFile, buildCalendarLinks } from '../src/helpers/calendar-export.js';
 
 const options = { origin: 'https://steward.garden', generatedAt: new Date('2026-10-25T09:00:01.123Z') };
 const event = {
@@ -22,7 +22,8 @@ test('calendar snapshot has one start-only event, exact public fields and canoni
     assert.equal(property(content, 'SUMMARY'), 'SUMMARY:A garden gathering');
     assert.equal(property(content, 'LOCATION'), 'LOCATION:Oakland garden');
     assert.equal(property(content, 'URL'), 'URL:https://steward.garden/d/17');
-    assert.match(property(content, 'DESCRIPTION'), /Start time only\. See event details for end information\./);
+    assert.equal(property(content, 'DESCRIPTION'), 'DESCRIPTION:Come garden with us.\\n\\nhttps://steward.garden/d/17');
+    assert.ok(!content.includes('Start time only'));
     assert.equal(content.split('BEGIN:VEVENT').length, 2);
     assert.equal(content.split('END:VEVENT').length, 2);
     assert.ok(content.startsWith('BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:'));
@@ -92,7 +93,7 @@ test('location name is a public fallback and empty optional fields do not fabric
     assert.equal(property(file.calendarText, 'LOCATION'), 'LOCATION: Community hall ');
     const empty = buildCalendarFile({ ...event, garden: null, blurb: null, location_name: null }, options);
     assert.equal(property(empty.calendarText, 'LOCATION'), undefined);
-    assert.ok(property(empty.calendarText, 'DESCRIPTION').startsWith('DESCRIPTION:Start time only.'));
+    assert.equal(property(empty.calendarText, 'DESCRIPTION'), 'DESCRIPTION:https://steward.garden/d/17');
 });
 
 test('invalid identity, text, civil dates, offsets and generation time cannot create a file', () => {
@@ -115,4 +116,33 @@ test('origins cannot smuggle a capability, credentials, path, query or nonweb sc
     for (const origin of ['javascript:alert(1)', 'file:///tmp/', 'https://user:secret@example.test', 'https://example.test/private', 'https://example.test/?secret=token', 'https://example.test/#private', 'https://example.test\n']) {
         assert.throws(() => buildCalendarFile(event, { ...options, origin }));
     }
+});
+
+test('provider links preserve actual UTC start and public text without private fields or an invented ending', () => {
+    const input = { ...event, title: 'Garden & friends', blurb: 'Meet, plant; share\nTogether.', garden: { title: 'Garden', address: 'Private address', managers: [{ email: 'private@example.com' }] } };
+    const links = buildCalendarLinks(input, options);
+    const entry = new URL(links.google);
+    assert.equal(entry.origin + entry.pathname, 'https://accounts.google.com/ServiceLogin');
+    assert.equal(entry.searchParams.get('service'), 'cl');
+    const google = new URL(entry.searchParams.get('continue'));
+    assert.equal(google.origin + google.pathname, 'https://calendar.google.com/calendar/r/eventedit');
+    assert.equal(google.searchParams.get('action'), 'TEMPLATE');
+    assert.equal(google.searchParams.get('dates'), '20261101T083000Z/20261101T083000Z');
+    assert.equal(google.searchParams.get('text'), input.title);
+    assert.equal(google.searchParams.get('details'), input.blurb + '\n\nhttps://steward.garden/d/17');
+    assert.equal(google.searchParams.get('location'), 'Garden');
+    const outlook = new URL(links.outlook);
+    assert.equal(outlook.origin + outlook.pathname, 'https://outlook.office.com/calendar/0/deeplink/compose');
+    assert.equal(outlook.searchParams.get('startdt'), '2026-11-01T08:30:00.000Z');
+    assert.equal(outlook.searchParams.get('subject'), input.title);
+    assert.equal(outlook.searchParams.has('enddt'), false);
+    assert.equal(outlook.searchParams.get('body'), input.blurb + '\n\nhttps://steward.garden/d/17');
+    assert.ok(!JSON.stringify(links).includes('Private'));
+    assert.ok(!JSON.stringify(links).includes('private%40'));
+});
+
+test('provider links reject missing identity, invalid starts and non-origin sites before navigation', () => {
+    assert.throws(() => buildCalendarLinks({ ...event, documentId: '' }, options));
+    assert.throws(() => buildCalendarLinks({ ...event, startDatetime: '2026-02-30T10:00:00Z' }, options));
+    assert.throws(() => buildCalendarLinks(event, { origin: 'https://steward.garden/account?token=private' }));
 });
