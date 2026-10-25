@@ -533,14 +533,13 @@ const onRemoveInterest = async (interestId) => {
 <template>
   <div class="gm-page min-h-screen w-full max-w-none overflow-x-hidden md:-mx-4 md:w-[calc(100%+2rem)]">
     <!-- Garden Title Header -->
-    <div class="bg-gradient-to-r from-forest-hero to-forest-hero-end text-white py-6 px-0 sm:px-6 lg:px-8 shadow-md relative" id="garden-header">
+    <div class="gm-header py-6 px-0 sm:px-6 lg:px-8 relative" id="garden-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-0">
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          <!-- Right padding below lg keeps the title clear of the sidebar hamburger -->
-          <div class="flex-1 pr-16 lg:pr-0">
+          <div class="flex-1">
             <h1
               v-if="garden.title"
-              class="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight cursor-pointer hover:opacity-90 transition-opacity"
+              class="gm-title leading-tight cursor-pointer hover:opacity-90 transition-opacity"
               role="button"
               tabindex="0"
               @click="setActiveSection('general')"
@@ -548,14 +547,14 @@ const onRemoveInterest = async (interestId) => {
               @keydown.space.prevent="setActiveSection('general')"
             >{{ garden.title }}</h1>
             <div v-else class="h-12 bg-white/20 rounded animate-pulse"></div>
-            <p v-if="garden.blurb" class="text-white/90 text-lg mt-2">{{ garden.blurb.length > 150 ? garden.blurb.substring(0, 150) + '...' : garden.blurb }}</p>
+            <p v-if="garden.blurb" class="gm-text-muted text-lg mt-2">{{ garden.blurb.length > 150 ? garden.blurb.substring(0, 150) + '...' : garden.blurb }}</p>
             <div v-else-if="garden.loading || (!garden.id && !garden.error)" class="h-6 bg-white/20 rounded mt-2 animate-pulse"></div>
           </div>
           <router-link
             v-if="garden.slug"
             :to="`/gardens/${garden.slug}`"
             target="_blank"
-            class="shrink-0 self-start inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium text-white bg-white/15 hover:bg-white/25 border border-white/30 transition-colors whitespace-nowrap"
+            class="gm-secondary-btn shrink-0 self-start inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap"
           >
             <i class="fas fa-external-link-alt text-xs opacity-80"></i>
             Public Page
@@ -1141,84 +1140,188 @@ export default {
     mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
 
-  /* ── Light mode (default, homepage palette) ──────── */
   .gm-page {
-    background-color: #f7f1e3;
-    color: #344a34;
+    background-color: var(--gs-paper);
+    color: var(--gs-ink);
+    font-family: var(--gs-body-font);
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+
+  .gm-header {
+    background: var(--gs-paper);
+    color: var(--gs-ink);
+    border-bottom: 1px solid var(--gs-rule);
+  }
+
+  .gm-title {
+    font-family: var(--gs-heading-font);
+    font-size: clamp(42px, 4.8vw, 72px);
+    font-weight: 400;
   }
 
   .gm-panel {
-    background-color: #ffffff;
-    color: #344a34;
-    border: 1px solid #e2dccb;
+    background-color: var(--gs-paper);
+    color: var(--gs-ink);
+    border: 1px solid var(--gs-rule);
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 
   .sms-campaigns-inner {
-    background-color: #edf3e8;
-    border: 1px solid #d4e0cc;
+    background-color: var(--gs-sage);
+    border: 1px solid var(--gs-rule);
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 
-  .gm-heading {
-    color: #376451;
+  .gm-heading,
+  .gm-page :deep(h2),
+  .gm-page :deep(h3) {
+    font-family: var(--gs-heading-font);
+    font-weight: 400;
+    color: var(--gs-ink);
   }
 
   .gm-text {
-    color: #344a34;
+    color: var(--gs-ink);
   }
 
   .gm-text-muted {
-    color: #6b7280;
+    color: var(--gs-muted);
   }
 
   .gm-border-b-strong {
-    border-bottom-color: #e2dccb;
+    border-bottom-color: var(--gs-rule);
+  }
+
+  .gm-secondary-btn,
+  .gm-primary-btn {
+    border: 1px solid var(--gs-ink);
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 
   .gm-secondary-btn {
-    background-color: #ffffff;
-    color: #376451;
-    border: 1px solid #c7d4bf;
+    background-color: var(--gs-paper);
+    color: var(--gs-ink);
   }
+
   .gm-secondary-btn:hover {
-    background-color: #f3ece0;
-    border-color: #8aa37c;
+    background-color: var(--gs-sage);
   }
 
   .gm-primary-btn {
-    background-color: #8aa37c;
-    color: #ffffff;
-    border: 1px solid #8aa37c;
+    background-color: var(--gs-ink);
+    color: var(--gs-paper);
   }
+
   .gm-primary-btn:hover,
   .gm-primary-btn:focus {
-    background-color: #6c8a6a;
-    border-color: #6c8a6a;
+    background-color: var(--gs-muted);
   }
+
   .gm-primary-btn:active {
-    background-color: #376451;
-    border-color: #376451;
+    background-color: var(--gs-ink);
+  }
+
+  .gm-page :deep(button:focus-visible),
+  .gm-page :deep(a:focus-visible),
+  .gm-title:focus-visible {
+    outline: 2px solid var(--gs-ink);
+    outline-offset: 3px;
   }
 
   .gm-event-row {
-    border-color: #e2dccb;
-  }
-  .gm-event-row-upcoming {
-    background-color: #ffffff;
-    color: #344a34;
-  }
-  .gm-event-row-upcoming:hover {
-    background-color: #f3ece0;
-  }
-  .gm-event-row-past {
-    background-color: #f7f1e3;
-    color: #6b7280;
-  }
-  .gm-event-row-past:hover {
-    background-color: #ece6d4;
+    border-color: var(--gs-rule);
   }
 
-  .gm-thumb-placeholder {
-    background-color: rgba(138, 163, 124, 0.2);
+  .gm-event-row-upcoming {
+    background-color: var(--gs-paper);
+    color: var(--gs-ink);
+  }
+
+  .gm-event-row-upcoming:hover,
+  .gm-event-row-past:hover {
+    background-color: var(--gs-sage);
+  }
+
+  .gm-event-row-past {
+    background-color: var(--gs-sage);
+    color: var(--gs-muted);
+  }
+
+  .gm-thumb-placeholder,
+  .gm-msg-group {
+    background-color: var(--gs-sage);
+  }
+
+  .gm-msg-group,
+  .gm-msg-item {
+    border-color: var(--gs-rule);
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .gm-msg-item {
+    background-color: var(--gs-paper);
+  }
+
+  .gm-msg-item:hover {
+    background-color: var(--gs-sage);
+  }
+
+  .gm-page :deep(.garden-sidebar-column) {
+    background: var(--gs-sage);
+  }
+
+  .gm-page :deep(.garden-sidebar-desktop nav) {
+    background: transparent;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .gm-page :deep(.garden-sidebar-desktop .sidebar-nav-link) {
+    background: transparent;
+    color: var(--gs-ink);
+    border-radius: 0;
+  }
+
+  .gm-page :deep(.garden-sidebar-desktop .sidebar-nav-link:hover) {
+    background: var(--gs-rule);
+  }
+
+  .gm-page :deep(.garden-sidebar-desktop .sidebar-nav-link.active) {
+    background: var(--gs-ink);
+    color: var(--gs-paper);
+  }
+
+  .gm-page :deep(.sidebar-nav-icon svg) {
+    stroke: currentColor;
+    fill: currentColor;
+  }
+
+  .gm-page :deep(.sidebar-nav-badge) {
+    background: var(--gs-paper);
+    color: var(--gs-ink);
+  }
+
+  .gm-page :deep(.hamburger-line) {
+    background: var(--gs-ink);
+  }
+
+  @media (max-width: 1023px) {
+    .gm-header {
+      padding-top: 4.75rem;
+    }
+  }
+
+  .gm-page :deep(.hamburger-button) {
+    background: var(--gs-sage);
+    color: var(--gs-ink);
+    border: 1px solid var(--gs-rule);
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 </style>
 
@@ -1376,52 +1479,86 @@ html.dark .gm-page .gm-event-row .recurring-preview {
   mask-image: linear-gradient(to right, black 82%, transparent 100%);
 }
 
+html:not(.dark):has(.gm-page) .mobile-menu-container {
+  background: var(--gs-sage);
+  color: var(--gs-ink);
+  font-family: var(--gs-body-font);
+}
+html:not(.dark):has(.gm-page) .mobile-menu-container .sidebar-nav-link {
+  background: transparent;
+  color: var(--gs-ink);
+  border-radius: 0;
+}
+html:not(.dark):has(.gm-page) .mobile-menu-container .sidebar-nav-link:hover {
+  background: var(--gs-rule);
+}
+html:not(.dark):has(.gm-page) .mobile-menu-container .sidebar-nav-link.active {
+  background: var(--gs-ink);
+  color: var(--gs-paper);
+}
+html:not(.dark):has(.gm-page) .mobile-menu-container .sidebar-nav-link .sidebar-nav-icon svg {
+  stroke: currentColor;
+  fill: currentColor;
+}
+html:not(.dark):has(.gm-page) .mobile-menu-container button:focus-visible {
+  outline: 2px solid var(--gs-ink);
+  outline-offset: 3px;
+}
+html:not(.dark):has(.gm-page) .mobile-menu-container .sidebar-nav-badge {
+  background: var(--gs-paper);
+  color: var(--gs-ink);
+}
+
 html:not(.dark) .gm-page .bg-\[\#2d3e26\] {
-  background-color: #ffffff !important;
-  color: #344a34 !important;
+  background-color: var(--gs-paper) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--gs-ink) !important;
 }
 html:not(.dark) .gm-page .bg-\[\#344a34\] {
-  background-color: #f7f1e3 !important;
-  color: #344a34 !important;
+  background-color: var(--gs-paper) !important;
+  color: var(--gs-ink) !important;
 }
 html:not(.dark) .gm-page .bg-\[\#1a1a1a\] {
-  background-color: #ffffff !important;
+  background-color: var(--gs-paper) !important;
 }
 
 html:not(.dark) .gm-page .text-\[\#f5f5f5\] {
-  color: #344a34 !important;
+  color: var(--gs-ink) !important;
 }
 html:not(.dark) .gm-page .text-\[\#d0d0d0\] {
-  color: #6b7280 !important;
+  color: var(--gs-muted) !important;
 }
 html:not(.dark) .gm-page .text-\[\#8aa37c\] {
-  color: #6c8a6a !important;
+  color: var(--gs-muted) !important;
 }
 
 html:not(.dark) .gm-page .border-\[\#3d4d36\],
 html:not(.dark) .gm-page [class*="border-[#3d4d36]"] {
-  border-color: #e2dccb !important;
+  border-color: var(--gs-rule) !important;
 }
 
 /* Translucent dark backgrounds → soft sage tints */
 html:not(.dark) .gm-page [class*="bg-[rgba(26,26,26"] {
-  background-color: rgba(138, 163, 124, 0.08) !important;
+  background-color: var(--gs-sage) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 html:not(.dark) .gm-page [class*="bg-[rgba(26,26,26,0.6)]"]:hover,
 html:not(.dark) .gm-page [class*="hover:bg-[rgba(26,26,26,0.8)]"]:hover {
-  background-color: rgba(138, 163, 124, 0.18) !important;
+  background-color: var(--gs-rule) !important;
 }
 
 /* Inputs / form controls that hardcode dark backgrounds */
 html:not(.dark) .gm-page input[class*="bg-[rgba(26,26,26"],
 html:not(.dark) .gm-page select[class*="bg-[rgba(26,26,26"],
 html:not(.dark) .gm-page textarea[class*="bg-[rgba(26,26,26"] {
-  background-color: #ffffff !important;
-  color: #344a34 !important;
-  border-color: #d6cfb8 !important;
+  background-color: var(--gs-paper) !important;
+  color: var(--gs-ink) !important;
+  border-color: var(--gs-rule) !important;
 }
 html:not(.dark) .gm-page input[class*="bg-[rgba(26,26,26"]::placeholder,
 html:not(.dark) .gm-page textarea[class*="bg-[rgba(26,26,26"]::placeholder {
-  color: #9ca3af !important;
+  color: var(--gs-muted) !important;
 }
 </style>

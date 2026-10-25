@@ -182,7 +182,10 @@ const categoryRows = computed(() => {
 
 <style scoped>
 .usage-page {
-    max-width: 48rem;
+    max-width: 64rem;
+    color: var(--gs-ink);
+    font: 18px/1.55 var(--gs-body-font);
+    overflow-wrap: anywhere;
 }
 
 .usage-header {
@@ -191,29 +194,29 @@ const categoryRows = computed(() => {
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .usage-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 800;
-    color: #376451;
-    line-height: 1.15;
+    font-family: var(--gs-heading-font);
+    font-size: clamp(42px, 4.8vw, 72px);
+    font-weight: 400;
+    color: var(--gs-ink);
+    line-height: 1.08;
     letter-spacing: -0.02em;
     margin: 0 0 0.35rem;
 }
 
 .usage-heading {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #344a34;
+    font-family: var(--gs-heading-font);
+    font-size: 2rem;
+    font-weight: 400;
+    color: var(--gs-ink);
     margin: 1.75rem 0 0.85rem;
 }
 
 .usage-muted {
-    color: #6b7280;
+    color: var(--gs-muted);
     margin: 0;
 }
 
@@ -227,15 +230,15 @@ const categoryRows = computed(() => {
 }
 
 .usage-link {
-    color: #376451;
+    color: var(--gs-ink);
     text-decoration: underline;
 }
 
 .usage-card {
-    background-color: #fffaf0;
-    border: 1px solid #e2dccb;
-    border-radius: 0.75rem;
-    padding: 1.25rem;
+    background: var(--gs-sage);
+    border: 1px solid var(--gs-rule);
+    border-radius: 0;
+    padding: clamp(18px, 2vw, 26px);
 }
 
 .usage-empty {
@@ -244,10 +247,12 @@ const categoryRows = computed(() => {
 
 .usage-select {
     padding: 0.5rem 0.9rem;
-    border-radius: 999px;
-    border: 1px solid #8aa37c;
-    background-color: #fffaf0;
-    color: #344a34;
+    max-width: 100%;
+    border-radius: 0;
+    border: 1px solid var(--gs-rule);
+    background: var(--gs-paper);
+    color: var(--gs-ink);
+    font-family: var(--gs-body-font);
     font-weight: 600;
 }
 
@@ -263,36 +268,36 @@ const categoryRows = computed(() => {
 .usage-big {
     font-size: 1.15rem;
     font-weight: 700;
-    color: #344a34;
+    color: var(--gs-ink);
 }
 
 .usage-over-tag {
     font-size: 0.85rem;
     font-weight: 700;
-    color: #b45309;
+    color: #c1272d;
 }
 
 .usage-meter {
     height: 0.85rem;
-    border-radius: 999px;
-    background-color: #e2dccb;
+    border-radius: 0;
+    background: var(--gs-paper);
     overflow: hidden;
 }
 
 .usage-meter__fill {
     height: 100%;
-    border-radius: 999px;
-    background-color: #5f8a5a;
+    border-radius: 0;
+    background: var(--gs-ink);
     transition: width 0.3s ease;
 }
 
 .usage-meter__fill.usage-meter--over {
-    background-color: #d97706;
+    background: #F2AB27;
 }
 
 .usage-notice {
     margin: 0.85rem 0 0.35rem;
-    color: #344a34;
+    color: var(--gs-ink);
     font-size: 0.95rem;
 }
 
@@ -306,7 +311,7 @@ const categoryRows = computed(() => {
     display: flex;
     justify-content: space-between;
     padding: 0.5rem 0;
-    border-bottom: 1px solid #e2dccb;
+    border-bottom: 1px solid var(--gs-rule);
 }
 
 .usage-row:last-child {
@@ -315,6 +320,7 @@ const categoryRows = computed(() => {
 
 .usage-num {
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 .usage-table {
@@ -327,14 +333,14 @@ const categoryRows = computed(() => {
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #6b7280;
+    color: var(--gs-muted);
     padding: 0.35rem 0;
-    border-bottom: 1px solid #e2dccb;
+    border-bottom: 1px solid var(--gs-rule);
 }
 
 .usage-table td {
     padding: 0.5rem 0;
-    border-bottom: 1px solid #efe9d8;
+    border-bottom: 1px solid var(--gs-rule);
 }
 
 .usage-table tr:last-child td {
@@ -343,17 +349,29 @@ const categoryRows = computed(() => {
 
 .usage-right {
     text-align: right !important;
+    white-space: nowrap;
+}
+
+.usage-table .usage-right {
+    width: 1%;
+    padding-left: 1rem;
 }
 
 .usage-tag {
     display: inline-block;
     margin-left: 0.5rem;
     padding: 0.1rem 0.55rem;
-    border-radius: 999px;
-    background-color: #e8efe2;
-    color: #376451;
+    border-radius: 0;
+    background: var(--gs-paper);
+    color: var(--gs-ink);
     font-size: 0.75rem;
     font-weight: 600;
+}
+
+.usage-select:focus-visible,
+.usage-link:focus-visible {
+    outline: 2px solid var(--gs-ink);
+    outline-offset: 4px;
 }
 </style>
 

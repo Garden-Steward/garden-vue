@@ -15,7 +15,7 @@ gardensStore.getAll(user.value.id);
 
 <template>
   <div
-    class="manage-home-wrapper min-h-screen bg-[#f7f1e3] dark:bg-[#2d3e26]"
+    class="manage-home-wrapper min-h-screen"
   >
     <div class="manage-home-card">
       <p class="manage-eyebrow">Welcome back</p>
@@ -67,81 +67,77 @@ gardensStore.getAll(user.value.id);
 </template>
 
 <style scoped>
-/* Page wrapper — light bg / dark bg via Tailwind on element */
 .manage-home-wrapper {
   min-height: 100vh;
-  padding: 2rem 1rem;
+  padding: clamp(28px, 4vw, 64px) 20px;
+  background: var(--gs-paper);
+  color: var(--gs-ink);
+  font: 18px/1.55 var(--gs-body-font);
 }
 
 .manage-home-card {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
-  background-color: #ffffff;
-  border: 1px solid #e2dccb;
-  border-radius: 16px;
-  padding: 2.5rem 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  background: var(--gs-paper);
+  border-top: 1px solid var(--gs-rule);
+  border-bottom: 1px solid var(--gs-rule);
+  padding: clamp(28px, 4vw, 56px) 0;
+  overflow-wrap: anywhere;
 }
 
-/* ── Hero / heading ────────────────────────────────── */
 .manage-eyebrow {
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #8aa37c;
-  margin: 0 0 0.4rem;
-  text-align: center;
+  color: var(--gs-muted);
+  margin: 0 0 12px;
 }
 
 .manage-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(1.85rem, 5vw, 2.75rem);
-  font-weight: 800;
-  color: #376451;
-  line-height: 1.15;
+  font-family: var(--gs-heading-font);
+  font-size: clamp(42px, 4.8vw, 72px);
+  font-weight: 400;
+  color: var(--gs-ink);
+  line-height: 1.08;
   letter-spacing: -0.02em;
-  margin: 0 0 0.5rem;
-  text-align: center;
+  margin: 0 0 20px;
 }
 
 .manage-tagline {
-  font-size: 1rem;
-  color: #6b7280;
-  margin: 0 0 1.75rem;
-  text-align: center;
+  font-size: 1.25rem;
+  color: var(--gs-muted);
+  margin: 0 0 32px;
 }
 
-/* ── Content ───────────────────────────────────────── */
 .content-section {
   margin-bottom: 1.5rem;
 }
 
 .body-text {
-  font-size: 1rem;
-  line-height: 1.75;
-  color: #3d3d3d;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--gs-ink);
   margin-bottom: 1rem;
 }
 
 .body-link {
-  color: #8aa37c;
+  color: var(--gs-ink);
   text-decoration: underline;
 }
 .body-link:hover {
-  color: #6c8a6a;
+  color: var(--gs-muted);
 }
 
-/* ── Profile lines ─────────────────────────────────── */
 .profile-section {
-  border-top: 1px solid #e2dccb;
+  border-top: 1px solid var(--gs-rule);
   padding-top: 1.25rem;
   margin-bottom: 1.5rem;
 }
 
 .profile-line {
-  font-size: 1rem;
-  color: #344a34;
+  font-size: 1.125rem;
+  color: var(--gs-ink);
   margin-bottom: 0.5rem;
 }
 
@@ -151,19 +147,17 @@ gardensStore.getAll(user.value.id);
 
 .profile-link {
   font-weight: 700;
-  color: #376451;
+  color: var(--gs-ink);
   text-decoration: underline;
 }
 .profile-link:hover {
-  color: #8aa37c;
+  color: var(--gs-muted);
 }
 
-/* ── CTA buttons (homepage palette) ────────────────── */
 .cta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.875rem;
-  justify-content: center;
 }
 
 .btn-manage {
@@ -173,25 +167,28 @@ gardensStore.getAll(user.value.id);
   padding: 0.8rem 1.75rem;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 0;
   text-decoration: none;
-  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  transition: background 0.2s ease;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .btn-manage-primary {
-  background: #8aa37c;
-  color: #fff;
-  border: 2px solid #8aa37c;
+  background: var(--gs-ink);
+  color: var(--gs-paper);
+  border: 1px solid var(--gs-ink);
 }
 .btn-manage-primary:hover {
-  background: #6c8a6a;
-  border-color: #6c8a6a;
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 163, 124, 0.4);
+  background: var(--gs-muted);
+  border-color: var(--gs-muted);
+  color: var(--gs-paper);
   text-decoration: none;
+}
+
+.btn-manage:focus-visible {
+  outline: 2px solid var(--gs-ink);
+  outline-offset: 4px;
 }
 </style>
 
