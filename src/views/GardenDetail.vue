@@ -38,6 +38,15 @@ const { smsCampaigns } = storeToRefs(campaignStore);
 const { recurringTasks, gardenTasks } = storeToRefs(gardenTaskStore);
 const { taskMessages, loading: messagesLoading } = storeToRefs(messagesStore);
 
+const campaignRows = computed(() => {
+  if (Array.isArray(smsCampaigns.value)) return smsCampaigns.value;
+  return [];
+});
+const taskRows = computed(() => {
+  if (Array.isArray(gardenTasks.value)) return gardenTasks.value;
+  return [];
+});
+
 const eventsPage = ref(1);
 const eventsPageSize = ref(15);
 const isLoadingMoreEvents = ref(false);
@@ -587,9 +596,9 @@ const onRemoveInterest = async (interestId) => {
             :garden="garden"
             :editor="editor"
             :volunteer-days="volunteerDays"
-            :sms-campaigns="smsCampaigns"
+            :sms-campaigns="campaignRows"
             :recurring-tasks="recurringTasks"
-            :garden-tasks="gardenTasks"
+            :garden-tasks="taskRows"
           />
 
         <!-- Task Messages Section -->
