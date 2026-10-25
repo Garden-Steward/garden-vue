@@ -1,20 +1,22 @@
 <script setup>
-import { computed } from 'vue';
-import { storeToRefs } from 'pinia';
-import { isProjectPubliclyVisible, isProjectVisibleTo } from '@/_config/GardenConfig';
-import { useProjectsStore, useAuthStore } from '@/stores';
+import { computed, onBeforeUnmount, ref } from 'vue';
+import { isProjectPubliclyVisible } from '@/_config/GardenConfig';
+import { useProjectsStore } from '@/stores';
 import ManageLayout from '@/components/ManageLayout.vue';
 import EmailLink from '@/components/EmailLink.vue';
 
 const projectsStore = useProjectsStore();
-const { communityProjects } = storeToRefs(projectsStore);
-const { user } = storeToRefs(useAuthStore());
-Promise.allSettled([projectsStore.getAllProjects()]);
+const featured = ref({ loading: true });
+let active = true;
+onBeforeUnmount(() => { active = false; });
+projectsStore.getPublicProjectPage(1, 3)
+  .then(response => { if (active) featured.value = response.data; })
+  .catch(error => { if (active) featured.value = { error }; });
 
 const featuredProjects = computed(() => {
-  const list = Array.isArray(communityProjects.value) ? communityProjects.value : [];
+  const list = Array.isArray(featured.value) ? featured.value : [];
   return list
-    .filter(project => isProjectVisibleTo(project, user.value))
+    .filter(isProjectPubliclyVisible)
     .sort((a, b) => Number(isProjectPubliclyVisible(b)) - Number(isProjectPubliclyVisible(a)))
     .slice(0, 3);
 });
@@ -24,7 +26,7 @@ function projectImage(project) {
   const image = project?.hero_image;
   const url = image?.formats?.medium?.url || image?.formats?.small?.url || image?.url;
   if (!url) return '';
-  if (url.startsWith('http')) return url;
+  if (/^https?:\/\//i.test(url)) return url;
   return `${import.meta.env.VITE_API_URL}${url}`;
 }
 
@@ -65,8 +67,8 @@ function projectLink(project) {
           </div>
           <router-link to="/projects" class="public-home__text-link">See all projects ↗</router-link>
         </div>
-        <p v-if="communityProjects.loading" class="public-home__state" role="status">Loading projects…</p>
-        <p v-else-if="communityProjects.error" class="public-home__state" role="alert">Couldn't load projects. Try again in a moment.</p>
+        <p v-if="featured.loading" class="public-home__state" role="status">Loading projects…</p>
+        <p v-else-if="featured.error" class="public-home__state" role="alert">Couldn't load projects. Try again in a moment.</p>
         <p v-else-if="!featuredProjects.length" class="public-home__state">No projects to show right now. <router-link to="/gardens">Find a garden near you ↗</router-link></p>
         <div v-else class="public-home__stories" :class="{ 'public-home__stories--single': featuredProjects.length === 1 }">
           <article v-for="project in featuredProjects" :key="project.id" class="project-story" :class="{ 'project-story--text-only': !projectImage(project) }">

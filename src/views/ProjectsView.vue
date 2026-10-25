@@ -63,12 +63,8 @@ const rejectProject = async (id) => {
   finally { approvingId.value = null; }
 };
 
-const relationIds = (rel) => {
-    const arr = rel?.data || rel || [];
-    return (Array.isArray(arr) ? arr : []).map(x => x.id ?? x);
-};
-const interestedCount = (project) => relationIds(project.interested).length;
-const isInterested = (project) => relationIds(project.interested).includes(user.value?.id);
+const interestedCount = (project) => projectsStore.interestState(project).count;
+const isInterested = (project) => projectsStore.interestState(project).isInterested;
 
 const pitchedBy = (project) => {
     const cb = project.created_by;

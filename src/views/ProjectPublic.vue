@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useProjectsStore, useGardensStore, useAuthStore } from '@/stores';
 import { isProjectVisibleTo } from '@/_config/GardenConfig';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref } from 'vue';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
 import { renderMarkdown } from '@/helpers/safe-html';
@@ -21,47 +21,6 @@ const { user } = storeToRefs(authStore);
 
 // Signed-in stewards can still follow a link to a pending pitch.
 const viewerMaySee = computed(() => isProjectVisibleTo(project.value, user.value));
-
-// Dark mode state - initialize from system preference
-const getSystemPreference = () => {
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  return false;
-};
-
-const isDarkMode = ref(false);
-
-// Initialize dark mode from localStorage, or fall back to system preference
-onMounted(() => {
-  const savedTheme = localStorage.getItem('garden-public-theme');
-  let shouldBeDark = false;
-  
-  if (savedTheme === 'dark' || savedTheme === 'light') {
-    shouldBeDark = savedTheme === 'dark';
-  } else {
-    shouldBeDark = getSystemPreference();
-  }
-  
-  isDarkMode.value = shouldBeDark;
-  applyDarkMode(shouldBeDark);
-});
-
-// Apply dark mode class to html element (for Tailwind)
-const applyDarkMode = (dark) => {
-  if (dark) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-};
-
-// Toggle dark mode
-const toggleDarkMode = () => {
-  isDarkMode.value = !isDarkMode.value;
-  applyDarkMode(isDarkMode.value);
-  localStorage.setItem('garden-public-theme', isDarkMode.value ? 'dark' : 'light');
-};
 
 // Load project data
 projectsStore.getSlug(route.params.projectSlug);
@@ -214,15 +173,10 @@ const getEventImage = (event) => {
 const showInterestModal = ref(false);
 const togglingInterest = ref(false);
 
-const relationIds = (rel) => {
-  const arr = rel?.data || rel || [];
-  return (Array.isArray(arr) ? arr : []).map((x) => x?.id ?? x);
-};
-
-const interestedCount = computed(() => relationIds(project.value?.interested).length);
+const interestedCount = computed(() => projectsStore.interestState(project.value).count);
 
 const isInterested = computed(() =>
-  relationIds(project.value?.interested).includes(user.value?.id)
+  projectsStore.interestState(project.value).isInterested
 );
 
 const handleInterest = () => {
@@ -249,15 +203,6 @@ const toggleInterest = async () => {
 
 <template>
   <div class="project-public-container">
-    <!-- Dark Mode Toggle Button -->
-    <button 
-      @click="toggleDarkMode"
-      class="dark-mode-toggle"
-      :aria-label="isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-    >
-      <i v-if="isDarkMode" class="fas fa-sun"></i>
-      <i v-else class="fas fa-moon"></i>
-    </button>
 
     <!-- Full Screen Content -->
     <div class="project-public-content">
@@ -428,44 +373,6 @@ const toggleInterest = async () => {
 .dark .project-public-container {
   background-color: #2d3e26;
   color: #f5f5f5;
-}
-
-/* Dark mode toggle button */
-.dark-mode-toggle {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  z-index: 100000;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 2px solid #8aa37c;
-  background-color: #ffffff;
-  color: #8aa37c;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dark-mode-toggle:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-  transform: scale(1.1);
-}
-
-.dark .dark-mode-toggle {
-  background-color: #1a1a1a;
-  border-color: #8aa37c;
-  color: #8aa37c;
-}
-
-.dark .dark-mode-toggle:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
 }
 
 /* Full screen content wrapper */

@@ -5,7 +5,7 @@ import { useBlogStore } from '@/stores';
 import ManageLayout from '@/components/ManageLayout.vue';
 
 const blogStore = useBlogStore();
-const { blogs } = storeToRefs(blogStore);
+const { blogs, blogsPagination, loadingMore, moreError } = storeToRefs(blogStore);
 Promise.allSettled([blogStore.fetchAll()]);
 
 const articles = computed(() => {
@@ -18,7 +18,7 @@ const loadFailed = computed(() => !!blogs.value?.error);
 function heroImage(blog) {
   const url = blog.hero?.url;
   if (!url) return '';
-  if (url.startsWith('http')) return url;
+  if (/^https?:\/\//i.test(url)) return url;
   return `${import.meta.env.VITE_API_URL}${url}`;
 }
 
@@ -47,9 +47,9 @@ function formatBlogDate(blog) {
       <p v-else-if="loadFailed" role="alert">Couldn't load stories. Try again in a moment.</p>
       <p v-else-if="!articles.length">No stories published yet.</p>
       <div v-else class="blog-list__articles">
-        <article v-for="blog in articles" :key="blog.id" class="blog-list__row">
-          <router-link :to="`/blog/${blog.slug}`" class="blog-list__photo" :aria-label="`Read ${blog.title}`">
-            <img v-if="heroImage(blog)" :src="heroImage(blog)" :alt="`Photo for ${blog.title}`">
+        <article v-for="blog in articles" :key="blog.id" class="blog-list__row" :class="{ 'blog-list__row--text-only': !heroImage(blog) }">
+          <router-link v-if="heroImage(blog)" :to="`/blog/${blog.slug}`" class="blog-list__photo" :aria-label="`Read ${blog.title}`">
+            <img :src="heroImage(blog)" :alt="blog.hero.alternativeText ?? `Photo for ${blog.title}`">
           </router-link>
           <div class="blog-list__copy">
             <p v-if="blog.category?.title" class="blog-list__eyebrow">{{ blog.category.title }}</p>
@@ -60,18 +60,22 @@ function formatBlogDate(blog) {
           </div>
         </article>
       </div>
+      <p v-if="moreError" role="alert">Couldn't load more stories. Please try again.</p>
+      <button v-if="articles.length && blogsPagination.page < blogsPagination.pageCount" type="button" class="blog-list__more" :disabled="loadingMore" @click="blogStore.loadMore()"><span v-if="loadingMore">Loading stories…</span><span v-else>Load more stories</span></button>
     </main>
   </ManageLayout>
 </template>
 
 <style scoped>
 .blog-list { min-height: 50vh; color: var(--gs-ink); background: var(--gs-paper); font: 18px/1.55 var(--gs-body-font); }
+.blog-list__more { border: 1px solid var(--gs-ink); background: transparent; color: var(--gs-ink); font: inherit; padding: 10px 18px; margin-top: 24px; cursor: pointer; }
 .blog-list a { color: inherit; text-underline-offset: 4px; }
 .blog-list__heading { margin-bottom: 30px; }
 .blog-list__eyebrow { font-size: 15px; color: var(--gs-muted); margin: 0 0 14px; }
 .blog-list__heading h1 { font: 400 clamp(44px, 4.8vw, 76px)/1.08 var(--gs-heading-font); margin: 0 0 15px; }
 .blog-list__heading > p:last-child { max-width: 60ch; font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; margin: 0; }
 .blog-list__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px; border-top: 1px solid var(--gs-rule); padding: 34px 0; }
+.blog-list__row--text-only { grid-template-columns: minmax(0, 1fr); }
 .blog-list__photo { display: block; min-height: 230px; background: var(--gs-sage); }
 .blog-list__photo img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
 .blog-list__copy h2 { font: 400 clamp(34px, 3vw, 52px)/1.15 var(--gs-heading-font); margin: 0 0 12px; }

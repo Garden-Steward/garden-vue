@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper, stripReadOnly } from '@/helpers';
+import { readPublicPage, readPublicCollection } from '@/helpers/public-collection';
 import { useAlertStore, useAuthStore } from '@/stores';
 import { normalizeReviewStatus } from '@/_config/GardenConfig';
 
@@ -51,14 +52,17 @@ export const useProjectsStore = defineStore({
         projects: {},
         project: {},
         userProjects: {},
-        communityProjects: {}
+        communityProjects: {},
+        publicProjects: {},
+        publicRequest: 0,
+        interestStates: new WeakMap()
     }),
     actions: {
         /** The cached copy of a project, from whichever list holds it. */
         // Accepts either a numeric id or a documentId.
         findCached(id) {
             const matches = (p) => p && (p.id === id || p.documentId === id);
-            for (const list of [this.projects, this.communityProjects, this.userProjects]) {
+            for (const list of [this.projects, this.communityProjects, this.userProjects, this.publicProjects]) {
                 if (Array.isArray(list)) {
                     const found = list.find(matches);
                     if (found) return found;
@@ -146,6 +150,35 @@ export const useProjectsStore = defineStore({
                     this.project = { error };
                     throw error;
                 });
+        },
+        async getPublicProjectPage(page = 1, pageSize = 3) {
+            return readPublicPage(`${import.meta.env.VITE_API_URL}/api/public/projects`, page, pageSize);
+        },
+        async getPublicProjects() {
+            const request = ++this.publicRequest;
+            this.publicProjects = { loading: true };
+            try {
+                const response = await readPublicCollection(`${import.meta.env.VITE_API_URL}/api/public/projects`);
+                if (request === this.publicRequest) this.publicProjects = response.data;
+                return response.data;
+            } catch (error) {
+                if (request === this.publicRequest) this.publicProjects = { error };
+                return { error };
+            }
+        },
+        interestState(project) {
+            const userId = useAuthStore().user?.id;
+            const relation = project?.interested || [];
+            const state = {
+                count: relation.length,
+                isInterested: userId != null && relation.some(person => (person?.id ?? person) === userId)
+            };
+            const saved = this.interestStates.get(project);
+            if (saved) {
+                state.count = saved.count;
+                if (saved.userId === userId) state.isInterested = saved.isInterested;
+            }
+            return state;
         },
         async getAllProjects() {
             this.communityProjects = { loading: true };
@@ -341,10 +374,11 @@ export const useProjectsStore = defineStore({
         // Patches the cache in place. Do not follow with a list refetch —
         // getAllProjects() blanks the state first and the grid flashes.
         async toggleInterest(id) {
+            const userId = useAuthStore().user?.id;
             return fetchWrapper.post(`${baseUrl}/${id}/interest`, {})
                 .then(response => {
                     const updated = response?.data ?? response;
-                    this.patchInterest(id, updated);
+                    if (useAuthStore().user?.id === userId) this.patchInterest(id, updated);
                     return updated;
                 })
                 .catch(error => {
@@ -352,28 +386,43 @@ export const useProjectsStore = defineStore({
                     throw error;
                 });
         },
-        /** Sync cached copies with the server's interest relation, or toggle locally. */
         patchInterest(id, updated) {
-            const authStore = useAuthStore();
-            const userId = authStore.user?.id;
-            const fromServer = Array.isArray(updated?.interested) ? updated.interested : null;
-
-            const nextFor = (project) => {
-                if (fromServer) return fromServer;
-                if (userId == null) return project.interested;
-                const current = Array.isArray(project.interested) ? project.interested : [];
-                const has = current.some(u => (u?.id ?? u) === userId);
-                return has
-                    ? current.filter(u => (u?.id ?? u) !== userId)
-                    : [...current, authStore.user];
+            const userId = useAuthStore().user?.id;
+            let count;
+            let isInterested;
+            let fromServer;
+            if (Array.isArray(updated?.interested)) {
+                fromServer = updated.interested;
+                count = fromServer.length;
+                isInterested = userId != null && fromServer.some(person => (person?.id ?? person) === userId);
+            } else if (Number.isSafeInteger(updated?.count) && updated.count >= 0 && typeof updated.isInterested === 'boolean' && (!updated.isInterested || updated.count > 0)) {
+                count = updated.count;
+                isInterested = updated.isInterested;
+            } else {
+                throw new Error('Invalid project interest response');
+            }
+            const patch = (project, isPublic = false) => {
+                if (!project || project.id !== id) return;
+                let relation = project.interested || [];
+                if (fromServer) {
+                    relation = fromServer;
+                } else if (userId != null) {
+                    const existing = relation.find(person => (person?.id ?? person) === userId);
+                    relation = relation.filter(person => (person?.id ?? person) !== userId);
+                    if (isInterested) relation = [...relation, existing || { id: userId }];
+                }
+                if (isPublic) relation = relation.map(person => ({ id: person?.id ?? person }));
+                project.interested = relation;
+                this.interestStates.set(project, { count, isInterested, userId });
             };
-
             for (const list of [this.projects, this.communityProjects, this.userProjects]) {
                 if (!Array.isArray(list)) continue;
-                const found = list.find(p => p && p.id === id);
-                if (found) found.interested = nextFor(found);
+                for (const project of list) patch(project);
             }
-            if (this.project?.id === id) this.project.interested = nextFor(this.project);
+            if (Array.isArray(this.publicProjects)) {
+                for (const project of this.publicProjects) patch(project, true);
+            }
+            patch(this.project);
         },
         async updateManagers(id, managers) {
             const managerIds = (managers || []).map(m => (typeof m === 'object' ? m.id : m));

@@ -167,7 +167,7 @@ const isProjectCreator = (project) => {
 const isProjectManager = (project) =>
     relationIds(project.managers).includes(user.value?.id);
 const isProjectInterested = (project) =>
-    relationIds(project.interested).includes(user.value?.id);
+    projectsStore.interestState(project).isInterested;
 
 // The Interested toggle only applies to projects the user neither manages nor created.
 const canExpressInterest = (project) => !isProjectManager(project) && !isProjectCreator(project);
@@ -187,7 +187,6 @@ const toggleInterest = async (project) => {
     togglingInterestId.value = project.id;
     try {
         await projectsStore.toggleInterest(project.id);
-        await projectsStore.getUserProjects();
     } catch (e) {
         // store surfaces its own error alert
     } finally {

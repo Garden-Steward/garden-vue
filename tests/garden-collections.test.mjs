@@ -12,6 +12,7 @@ const original = readFileSync(storePath, 'utf8');
 const source = original
   .replace("import { defineStore } from 'pinia';", '')
   .replace("import { fetchWrapper, stripReadOnly } from '@/helpers';", '')
+  .replace("import { readPublicCollection } from '@/helpers/public-collection';", '')
   .replaceAll('import.meta.env.VITE_API_URL', "'http://example.test'")
   .replace('export const useGardensStore', 'const useGardensStore');
 
@@ -24,7 +25,12 @@ const fetchWrapper = {
     return promise;
   }
 };
-const context = { defineStore, fetchWrapper, stripReadOnly: value => value };
+const helperContext = { fetchWrapper };
+const helperSource = readFileSync(new URL('../src/helpers/public-collection.js', import.meta.url), 'utf8')
+  .replace("import { fetchWrapper } from '@/helpers/fetch-wrapper';", '')
+  .replaceAll('export async function', 'async function');
+vm.runInNewContext(`${helperSource}\nthis.readPublicCollection = readPublicCollection;`, helperContext);
+const context = { defineStore, fetchWrapper, stripReadOnly: value => value, readPublicCollection: helperContext.readPublicCollection };
 vm.runInNewContext(`${source}\nthis.useGardensStore = useGardensStore;`, context, { filename: storePath });
 
 async function checkCompletionOrder(first) {
@@ -43,7 +49,9 @@ async function checkCompletionOrder(first) {
   const finish = index => {
     let id = 'public';
     if (index === 0) id = 'private';
-    pending[index].resolve({ data: [{ id }] });
+    const response = { data: [{ id, documentId: id }] };
+    if (index === 1) response.meta = { pagination: { page: 1, pageSize: 100, pageCount: 1, total: 1 } };
+    pending[index].resolve(response);
   };
   finish(first);
   await new Promise(setImmediate);

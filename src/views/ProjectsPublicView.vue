@@ -10,31 +10,25 @@ import { toPhotoSet } from '@/helpers/image-utils';
 import {
   projectStatusOptions,
   resolveProjectStatus,
-  isProjectVisibleTo
+  isProjectPubliclyVisible
 } from '@/_config/GardenConfig';
 
 const projectsStore = useProjectsStore();
 const authStore = useAuthStore();
-const { communityProjects } = storeToRefs(projectsStore);
+const { publicProjects } = storeToRefs(projectsStore);
 const { user } = storeToRefs(authStore);
 
-Promise.allSettled([projectsStore.getAllProjects()]);
+Promise.allSettled([projectsStore.getPublicProjects()]);
 
 const statusFilters = ['All', ...projectStatusOptions.map(o => o.value)];
 const filter = ref('All');
 
-/** Optimistic overrides for the interest toggle, keyed by project id. */
-const joined = ref({});
-const togglingId = ref(null);
-
-const relationIds = (rel) => {
-  const arr = rel?.data || rel || [];
-  return (Array.isArray(arr) ? arr : []).map(x => x.id ?? x);
-};
+const pendingInterest = ref(null);
+const togglingId = computed(() => pendingInterest.value?.id);
 
 const listedProjects = computed(() => {
-  const list = Array.isArray(communityProjects.value) ? communityProjects.value : [];
-  return list.filter(p => isProjectVisibleTo(p, user.value));
+  const list = Array.isArray(publicProjects.value) ? publicProjects.value : [];
+  return list.filter(isProjectPubliclyVisible);
 });
 
 const visibleProjects = computed(() => {
@@ -97,43 +91,35 @@ function nextWork(project) {
   return null;
 }
 
+function displayedInterest(project) {
+  if (pendingInterest.value?.id === project.id) return pendingInterest.value.state;
+  return projectsStore.interestState(project);
+}
+
 function isInterested(project) {
-  if (project.id in joined.value) return joined.value[project.id];
-  return relationIds(project.interested).includes(user.value?.id);
+  return displayedInterest(project).isInterested;
 }
 
 function interestedCount(project) {
-  const base = relationIds(project.interested).length;
-  if (!(project.id in joined.value)) return base;
-  const wasIn = relationIds(project.interested).includes(user.value?.id);
-  const isIn = joined.value[project.id];
-  if (isIn === wasIn) return base;
-  return base + (isIn ? 1 : -1);
+  return displayedInterest(project).count;
 }
 
 async function toggleInterest(project) {
-  // Interest is attached to a user account, so signed-out visitors sign in first.
   if (!user.value?.id) {
     authStore.openLoginModal('/projects');
     return;
   }
-  if (togglingId.value) return;
-  togglingId.value = project.id;
-
-  const wasIn = relationIds(project.interested).includes(user.value.id);
-  joined.value = { ...joined.value, [project.id]: !wasIn };
-
+  if (pendingInterest.value) return;
+  const previous = projectsStore.interestState(project);
+  let count = previous.count - 1;
+  if (!previous.isInterested) count = previous.count + 1;
+  pendingInterest.value = { id: project.id, state: { count, isInterested: !previous.isInterested } };
   try {
-    // The store patches the cache; refetching here would flash the list.
     await projectsStore.toggleInterest(project.id);
-    const rest = { ...joined.value };
-    delete rest[project.id];
-    joined.value = rest;
-  } catch (e) {
-    // Roll the optimistic toggle back; the store surfaces its own alert.
-    joined.value = { ...joined.value, [project.id]: wasIn };
+  } catch {
+    return;
   } finally {
-    togglingId.value = null;
+    pendingInterest.value = null;
   }
 }
 
@@ -149,11 +135,11 @@ async function toggleInterest(project) {
 
     <div class="plist-toolbar">
       <div class="plist-filters" role="group" aria-label="Project status">
-        <button v-for="status in statusFilters" :key="status" type="button" :class="{ 'is-selected': filter === status }" :aria-pressed="filter === status" @click="filter = status">{{ status }}</button>
+        <button v-for="status in statusFilters" :key="status" type="button" :class="{ 'is-selected': filter === status }" :aria-pressed="filter === status" :disabled="!Array.isArray(publicProjects)" @click="filter = status">{{ status }}</button>
       </div>
       <button type="button" class="plist-add" @click="openPitch">+ Add project</button>
     </div>
-    <p class="plist-place">Oakland · {{ listedProjects.length }} <span v-if="listedProjects.length === 1">project</span><span v-else>projects</span></p>
+    <p v-if="Array.isArray(publicProjects)" class="plist-place">Oakland · {{ listedProjects.length }} <span v-if="listedProjects.length === 1">project</span><span v-else>projects</span></p>
     <details class="plist-updates">
       <summary>Get project updates</summary>
       <ProjectAlertSignup />
@@ -181,8 +167,8 @@ async function toggleInterest(project) {
         </div>
       </article>
 
-      <p v-if="communityProjects.loading" class="plist-state">Loading projects…</p>
-      <p v-else-if="communityProjects.error" class="plist-state" role="alert">Couldn't load projects. Try again in a moment.</p>
+      <p v-if="publicProjects.loading" class="plist-state">Loading projects…</p>
+      <p v-else-if="publicProjects.error" class="plist-state" role="alert">Couldn't load projects. Try again in a moment.</p>
       <p v-else-if="!visibleProjects.length && filter === 'All'" class="plist-state">No projects right now.</p>
       <p v-else-if="!visibleProjects.length" class="plist-state">No {{ filter.toLowerCase() }} projects right now.</p>
     </div>

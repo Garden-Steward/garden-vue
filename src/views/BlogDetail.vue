@@ -1,9 +1,8 @@
 <script setup>
 import { storeToRefs } from 'pinia';
-import { watch, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useRoute, RouterLink } from "vue-router";
+import { computed, nextTick, onBeforeUnmount, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { StrapiBlocks } from 'vue-strapi-blocks-renderer';
-
 import { useBlogStore } from '@/stores';
 import { ArticleUtils } from '@/helpers/article-utils';
 import { initPlantTooltips } from '@/components/PlantTooltips';
@@ -11,470 +10,127 @@ import { initPlantTooltips } from '@/components/PlantTooltips';
 const blogStore = useBlogStore();
 const route = useRoute();
 const { blog } = storeToRefs(blogStore);
-const baseUrl = `${import.meta.env.VITE_API_URL}`;
+let cleanup = null;
+let contentVersion = 0;
+let active = true;
 
-let plantTooltipsCleanup = null;
-
-let heroImage = function(blog) {
-  console.log('hero', blog.hero)
-  if (!blog.hero?.url) return '';
-  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.hero.url.includes('googleapis.com')) {
-    return `${baseUrl}${blog.hero.url}`;
-  } else {
-    return blog.hero.url;
-  }
+function clearTooltips() {
+  contentVersion += 1;
+  if (cleanup) cleanup();
+  cleanup = null;
 }
 
-let authorImage = function(blog) {
-  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && blog.author?.profilePhoto?.url && !blog.author.profilePhoto.url.includes('googleapis.com')) {
-    return `${baseUrl}${blog.author?.profilePhoto?.formats?.medium?.url}`;
-  } else if (blog.author?.profilePhoto?.formats?.medium?.url) {
-    return blog.author?.profilePhoto?.formats?.medium?.url;
-  } else {
-    // No personal defaults for open source - use Rowan's turtle image if author is missing
-    return 'https://storage.googleapis.com/steward_upload/uploads/rowan_turtle_f1c21b843f/rowan_turtle_f1c21b843f.jpg';
-  }
-}
+watch(() => route.params.slug, slug => {
+  clearTooltips();
+  blogStore.findSlug(slug);
+}, { immediate: true });
 
-let coAuthorImage = function(coAuthor) {
-  if (!coAuthor) return '';
-  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && coAuthor?.profilePhoto?.url && !coAuthor.profilePhoto.url.includes('googleapis.com')) {
-    return `${baseUrl}${coAuthor.profilePhoto.formats?.medium?.url}`;
-  } else if (coAuthor?.profilePhoto?.formats?.medium?.url) {
-    return coAuthor.profilePhoto.formats.medium.url;
-  } else if (coAuthor?.profilePhoto?.url) {
-    return coAuthor.profilePhoto.url;
-  } else {
-    // Default to turtle image for Rowan
-    return 'https://storage.googleapis.com/steward_upload/uploads/rowan_turtle_f1c21b843f/rowan_turtle_f1c21b843f.jpg';
-  }
-}
-
-// Watch for changes in the route parameters
-watch(() => route.params.slug, (newSlug) => {
-  if (plantTooltipsCleanup) {
-    plantTooltipsCleanup();
-    plantTooltipsCleanup = null;
-  }
-  blogStore.findSlug(newSlug);
-  window.scrollTo(0, 0);
-});
-
-// Initial call to load the blog post
-blogStore.findSlug(route.params.slug);
-
-// Reactive properties for button links
-let latestBlogId = blog?._id;
-
-// Computed property to format the date - uses article_date if available, falls back to publishedAt
-const formattedDate = computed(() => {
-  const dateToUse = blog.value?.article_date || blog.value?.publishedAt;
-  if (!dateToUse) return '';
-  console.log(blog)
-  const options = { year: 'numeric', month: 'long', day: 'numeric' };
-  return new Date(dateToUse).toLocaleDateString(undefined, options);
-});
-
-// Watch for changes in the blog content and process images
-watch(blog, async (newBlog) => {
-  if (newBlog?.content) {
-    await ArticleUtils.processImages();
-  }
-  latestBlogId = newBlog?.id || null;
-
-  // Initialize plant tooltips after content renders
-  if (newBlog?.plants && newBlog.plants.length) {
-    // Use nextTick to ensure DOM is updated
-    await new Promise(resolve => setTimeout(resolve, 100));
-    if (plantTooltipsCleanup) plantTooltipsCleanup();
-    plantTooltipsCleanup = initPlantTooltips(newBlog.plants);
-  }
-}, { deep: true });
-
-onMounted(async () => {
+watch(blog, async article => {
+  clearTooltips();
+  if (!Array.isArray(article?.content)) return;
+  const version = contentVersion;
+  await nextTick();
+  if (!active || version !== contentVersion) return;
   await ArticleUtils.processImages();
+  if (!active || version !== contentVersion) return;
+  if (article.plants?.length) cleanup = initPlantTooltips(article.plants);
 });
 
 onBeforeUnmount(() => {
-  if (plantTooltipsCleanup) {
-    plantTooltipsCleanup();
-    plantTooltipsCleanup = null;
-  }
+  active = false;
+  clearTooltips();
 });
 
-/** v5 relations are flat objects; tolerate a legacy { data } wrapper just in case. */
-function unwrapRelation(rel) {
-  if (rel == null) return null;
-  if (Object.prototype.hasOwnProperty.call(rel, 'data')) {
-    return rel.data ?? null;
-  }
-  return rel;
+function mediaUrl(media) {
+  const url = media?.formats?.medium?.url || media?.url;
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${import.meta.env.VITE_API_URL}${url}`;
 }
 
-const authorEntity = computed(() => unwrapRelation(blog.value?.author));
-const coAuthorEntity = computed(() => unwrapRelation(blog.value?.co_author));
+function authorName(author) {
+  return [author.firstName, author.lastName].filter(Boolean).join(' ');
+}
 
+const authors = computed(() => [blog.value?.author, blog.value?.co_author].filter(author => author && authorName(author)));
+const formattedDate = computed(() => {
+  const value = blog.value?.article_date || blog.value?.publishedAt;
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+});
+
+function resolveImages(nodes) {
+  return nodes.map(node => {
+    if (node.type === 'image') return { ...node, image: { ...node.image, url: mediaUrl(node.image) } };
+    if (Array.isArray(node.children)) return { ...node, children: resolveImages(node.children) };
+    return node;
+  });
+}
+
+const content = computed(() => resolveImages(blog.value?.content || []));
 </script>
 
 <template>
-    <div class="max-w-4xl mx-auto px-6 py-12 bg-custom-light dark:bg-[#344a34] rounded-lg font-roboto min-h-screen">
-
-      <div class="back-to-blog">
-        <RouterLink to="/blog" class="text-gray-600 dark:text-[#d0d0d0] hover:text-gray-900 dark:hover:text-[#f5f5f5]">
-          <span class="arrow">&#8592;</span> Back to Blog
-        </RouterLink>
-      </div>
-
-      <div v-if="!blog.loading">
-        <div class="category-wrapper">
-          <div class="category-container">
-            <div class="bg-white dark:!bg-[#1a1a1a] text-gray-800 dark:text-[#f5f5f5] px-2 py-2 inline-block rounded border border-gray-800 dark:border-[#3d4d36] position-relative" style="z-index: 2;">
-              <div>
-                {{ blog?.category?.title }}
-              </div>
-            </div>
-            <div class="decorative-div bg-custom-green border border-custom-green border border-custom-green -bottom-2 -left-2"></div>
-          </div>
-        </div>
-
-        <div class="flex-1 flex flex-col items-center justify-center my-3">
-          <h1 class="text-3xl sm:text-4xl font-bold text-black dark:text-[#f5f5f5]">{{ blog?.title }}</h1>
-          <h2 class="text-xl text-gray-600 dark:text-[#d0d0d0] mt-2">
-            {{ blog?.subtitle }}
-          </h2>
-        </div>
-
-        <div v-if="blog.hero_display && blog.hero" class="flex-1 flex bg-cover bg-center h-96 bg-cover rounded-lg" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }">
-          <div class="flex-1"></div>
-        </div>
-        <div class="flex-1 max-w-4xl mx-auto px-0 sm:px-6 rounded-lg" :class="{ 'sm:py-12 py-2': blog.hero_display, 'sm:py-6 py-4': !blog.hero_display }">
-          <div class="blog-content text-gray-800 dark:text-[#d0d0d0]">
-              <StrapiBlocks :content="blog?.content" :modifiers="modifiers" :blocks="blocks" />
-          </div>
-          <div v-if="blog?.video" class="w-full h-full">
-            <div v-html="blog.iframe" class="w-full min-h-[300px]"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Display the length of the content and the formatted date -->
-      <div class="text-center text-gray-600 dark:text-[#d0d0d0] mt-5">
-        <hr class="border-gray-800 dark:border-[#3d4d36]">
-        <div class="text-left mb-3">
-          {{ formattedDate }}
-        </div>
-      </div>
-      <!-- Single Author (only show if author exists and no co-author) -->
-      <div v-if="authorEntity && !coAuthorEntity" class="about-the-author mt-6 mb-3 ml-auto author-sink"> 
-        <img :src="authorImage(blog)" alt="Author Image" class="author-image w-20 h-20 rounded-full mr-4">
-        <div>
-            <h3 class="author-title">Garden Steward Author</h3>
-            <h4 class="author-name">{{ authorEntity.firstName }} {{ authorEntity.lastName }}</h4>
-            <p class="author-bio">{{ authorEntity.bio }}</p>
-        </div>
-      </div>
-
-      <!-- Co-Author Only (Rowan) - Centered -->
-      <div v-else-if="coAuthorEntity && !authorEntity" class="about-the-author mt-6 mb-3 author-sink single-coauthor-centered">
-        <img :src="coAuthorImage(coAuthorEntity)" alt="Rowan" class="author-image-centered w-20 h-20 rounded-full">
-        <div class="centered-text">
-            <h4 class="author-name">{{ coAuthorEntity.firstName || 'Rowan' }}</h4>
-            <h3 class="author-title">Research & Writing</h3>
-            <p class="author-bio">{{ coAuthorEntity.bio || 'AI-assisted research and documentation.' }}</p>
-        </div>
-      </div>
-
-      <!-- Dual Authors (Cameron + Rowan) -->
-      <div v-else-if="authorEntity && coAuthorEntity" class="about-the-authors mt-6 mb-3 ml-auto author-sink dual-authors">
-        <div class="collaboration-header">
-          <h3 class="collaboration-title">✨ A Joint Collaboration</h3>
-          <p class="collaboration-description">Written by Cameron with Rowan, a solar-powered AI assistant trained to help advance Garden Steward's mission.</p>
-        </div>
-        
-        <div class="authors-grid">
-          <!-- Cameron -->
-          <div class="author-block">
-            <img :src="authorImage(blog)" alt="Cameron Preston" class="author-image w-24 h-24 rounded-full">
-            <div class="author-info">
-              <h4 class="author-name">{{ authorEntity.firstName }} {{ authorEntity.lastName }}</h4>
-              <h3 class="author-title">Garden Steward Creator</h3>
-              <p class="author-bio">{{ authorEntity.bio }}</p>
-            </div>
-          </div>
-          
-          <!-- Rowan -->
-          <div class="author-block">
-            <img :src="coAuthorImage(coAuthorEntity)" alt="Rowan" class="author-image w-24 h-24 rounded-full">
-            <div class="author-info">
-              <h4 class="author-name">{{ coAuthorEntity.firstName || 'Rowan' }}</h4>
-              <h3 class="author-title">Research & Writing</h3>
-              <p class="author-bio">{{ coAuthorEntity.bio || 'AI-assisted research and documentation.' }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex justify-between mt-6">
-        <a v-if="blog?.prev_blog_post" :href="blog?.prev_blog_post" :key="latestBlogId" class="btn btn-primary bg-custom-green border border-custom-green text-white">
-          Previous
-        </a>
-        <div v-else class="btn btn-primary bg-custom-green border border-custom-green invisible">
-          Previous
-        </div>
-        <a v-if="blog?.random_post" :href="blog?.random_post" :key="latestBlogId" class="btn btn-secondary bg-custom-green border border-custom-green text-white">
-          Random
-        </a>
-        <div v-else class="btn btn-secondary bg-custom-green border border-custom-green invisible">
-          Random
-        </div>
-        <a v-if="blog?.next_blog_post" :href="blog?.next_blog_post" :key="latestBlogId" class="btn btn-primary bg-custom-green border border-custom-green text-white">
-          Next
-        </a>
-        <div v-else class="btn btn-primary bg-custom-green border border-custom-green invisible">
-          Next
-        </div>
-      </div>
-      <div v-if="blog.loading" class="flex justify-center items-center">
-        <div class="spinner-border spinner-border-lg" style="width: 3rem; height: 3rem;"></div>
-      </div>
-      <div v-if="blog.error" class="text-danger">Error loading blog: {{blog.error}}</div>
+  <main class="story-page">
+    <router-link to="/blog" class="story-back">← Back to stories</router-link>
+    <p v-if="blog.loading" role="status">Loading story…</p>
+    <div v-else-if="blog.error" role="alert" class="story-error">
+      <h1 v-if="blog.error.status === 404">This story could not be found.</h1>
+      <h1 v-else>Couldn't load this story.</h1>
+      <p>Please try another story or try again.</p>
+      <button type="button" @click="blogStore.findSlug(route.params.slug)">Try again</button>
     </div>
+    <article v-else-if="blog.documentId">
+      <header class="story-heading">
+        <p v-if="blog.category?.title" class="story-eyebrow">{{ blog.category.title }}</p>
+        <h1>{{ blog.title }}</h1>
+        <p v-if="blog.subtitle" class="story-subtitle">{{ blog.subtitle }}</p>
+        <p v-if="formattedDate" class="story-date">{{ formattedDate }}</p>
+      </header>
+      <img v-if="blog.hero_display && mediaUrl(blog.hero)" class="story-hero" :src="mediaUrl(blog.hero)" :alt="blog.hero.alternativeText ?? ''">
+      <div class="blog-content"><StrapiBlocks :content="content" /></div>
+      <div v-if="authors.length" class="story-authors">
+        <div v-for="(author, index) in authors" :key="index" class="story-author">
+          <img v-if="mediaUrl(author.profilePhoto)" :src="mediaUrl(author.profilePhoto)" :alt="`Portrait of ${authorName(author)}`">
+          <p>By {{ authorName(author) }}</p>
+        </div>
+      </div>
+      <nav v-if="blog.prev_blog_post || blog.next_blog_post || blog.random_post" class="story-navigation" aria-label="More stories">
+        <router-link v-if="blog.prev_blog_post" :to="blog.prev_blog_post">← Previous story</router-link>
+        <router-link v-if="blog.random_post" :to="blog.random_post">Another story</router-link>
+        <router-link v-if="blog.next_blog_post" :to="blog.next_blog_post">Next story →</router-link>
+      </nav>
+    </article>
+  </main>
 </template>
 
-<style>
-.blog-content p {
-    margin-top: 8px;
-    font-size: 1.1rem;
-    line-height: 1.7;
-}
-.blog-content a {
-  text-decoration: underline;
-}
-.blog-content::after {
-    content: "";
-    display: table;
-    clear: both;
-}
-.decorative-line-center {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 8px auto 25px;
-    height: 50px;
-    color: white;
-}
-.category-wrapper {
-    display: flex;
-    justify-content: center;
-}
-
-.category-container {
-    position: relative;
-    display: inline-block;
-}
-
-.decorative-div {
-    position: absolute;
-    width: calc(100% + 4px);
-    height: calc(100% + 4px);
-    border-radius: 5px;
-    z-index: 1;
-}
-iframe {
-  width: 100%;
-  height: 100%;
-  min-height: 300px;
-}
-.back-to-blog {
-    margin: 20px 0;
-    padding-left: 10px;
-}
-
-.back-to-blog .arrow {
-    margin-right: 5px;
-}
-
-.back-to-blog a {
-    display: inline-flex;
-    align-items: center;
-    font-size: 1rem;
-    text-decoration: none;
-}
-
-.back-to-blog a:hover {
-    text-decoration: underline;
-}
-
-.author-sink {
-  margin-top: -20px;
-  padding: 20px;
-  background-color: #FFDAB9;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.dark .author-sink {
-  background-color: #2d3e26;
-}
-
-.author-image {
-  float: left;
-  margin-right: 15px;
-}
-
-/* Single Co-Author Centered Layout */
-.single-coauthor-centered {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 30px 20px;
-}
-
-.author-image-centered {
-  display: block;
-  margin: 0 auto 15px;
-  border: 3px solid #6b7d5c;
-}
-
-.centered-text {
-  width: 100%;
-}
-
-.author-title {
-  font-size: 0.875rem;
-  line-height: 1.2;
-  color: #4a5568;
-}
-
-.dark .author-title {
-  color: #d0d0d0;
-}
-
-.author-name {
-  font-size: 1rem;
-  line-height: 1.2;
-  color: #2d3748;
-  margin-bottom: 0.5rem;
-}
-
-.dark .author-name {
-  color: #f5f5f5;
-}
-
-.author-bio {
-  font-size: 0.875rem;
-  line-height: 1.4;
-  color: #4a5568;
-}
-
-.dark .author-bio {
-  color: #d0d0d0;
-}
-
-/* Dual Authors Styles */
-.dual-authors {
-  padding: 0;
-  background: transparent;
-  box-shadow: none;
-  border: none;
-}
-
-.collaboration-header {
-  text-align: center;
-  padding: 20px;
-  background-color: #FFDAB9;
-  border-radius: 8px 8px 0 0;
-}
-
-.dark .collaboration-header {
-  background-color: #2d3e26;
-}
-
-.collaboration-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #2d3748;
-  margin-bottom: 8px;
-}
-
-.dark .collaboration-title {
-  color: #f5f5f5;
-}
-
-.collaboration-description {
-  font-size: 0.95rem;
-  color: #4a5568;
-  line-height: 1.5;
-}
-
-.dark .collaboration-description {
-  color: #d0d0d0;
-}
-
-.authors-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  padding: 20px;
-  background-color: #FFDAB9;
-  border-radius: 0 0 8px 8px;
-}
-
-.dark .authors-grid {
-  background-color: #2d3e26;
-}
-
-@media (max-width: 640px) {
-  .authors-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-}
-
-.author-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.author-block .author-image {
-  margin-bottom: 12px;
-  border: 3px solid #6b7d5c;
-}
-
-.author-block .author-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 4px;
-}
-
-.dark .author-block .author-name {
-  color: #f5f5f5;
-}
-
-.author-block .author-title {
-  font-size: 0.85rem;
-  color: #6b7d5c;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.dark .author-block .author-title {
-  color: #a8d5a8;
-}
-
-.author-block .author-bio {
-  font-size: 0.8rem;
-  line-height: 1.4;
-  color: #4a5568;
-}
-
-.dark .author-block .author-bio {
-  color: #d0d0d0;
-}
+<style scoped>
+.story-page { color: var(--gs-ink); background: var(--gs-paper); font: 18px/1.65 var(--gs-body-font); padding: 30px 20px 50px; overflow-wrap: anywhere; }
+.story-page a { color: inherit; text-underline-offset: 4px; }
+.story-back { display: inline-block; margin-bottom: 32px; }
+.story-heading { margin-bottom: 30px; }
+.story-heading h1, .story-error h1 { font: 400 clamp(38px, 4.8vw, 70px)/1.12 var(--gs-heading-font); margin: 0 0 20px; }
+.story-eyebrow, .story-date { color: var(--gs-muted); margin: 0 0 16px; }
+.story-subtitle { font-size: clamp(20px, 2vw, 26px); line-height: 1.45; margin: 0 0 20px; }
+.story-hero { width: 100%; max-height: 600px; object-fit: cover; display: block; margin-bottom: 32px; }
+.blog-content { max-width: 76ch; margin: 0 auto; }
+.blog-content :deep(p) { margin: 0 0 20px; }
+.blog-content :deep(img) { max-width: 100%; height: auto; }
+.blog-content :deep(h1), .blog-content :deep(h2), .blog-content :deep(h3) { font-family: var(--gs-heading-font); font-weight: 400; line-height: 1.2; margin: 30px 0 20px; }
+.blog-content :deep(h1) { font-size: 40px; }
+.blog-content :deep(h2) { font-size: 34px; }
+.blog-content :deep(h3) { font-size: 28px; }
+.blog-content :deep(a) { text-decoration: underline; text-underline-offset: 4px; }
+.blog-content :deep(ul), .blog-content :deep(ol) { padding-left: 26px; margin-bottom: 20px; }
+.blog-content :deep(blockquote) { border-left: 3px solid var(--gs-rule); padding-left: 20px; margin: 24px 0; }
+.blog-content :deep(pre) { overflow-x: auto; padding: 16px; background: var(--gs-sage); }
+.story-authors, .story-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; border-top: 1px solid var(--gs-rule); margin-top: 32px; padding-top: 24px; }
+.story-author { display: flex; align-items: center; gap: 14px; }
+.story-author img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+.story-author p { margin: 0; }
+.story-navigation { justify-content: space-between; }
+.story-error button { border: 1px solid var(--gs-ink); background: transparent; color: inherit; font: inherit; padding: 8px 18px; cursor: pointer; }
+@media (max-width: 480px) { .story-page { padding: 24px 8px 40px; } .story-navigation { align-items: flex-start; flex-direction: column; } }
 </style>
-

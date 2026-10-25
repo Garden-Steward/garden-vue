@@ -1,13 +1,11 @@
 <script setup>
 import ManageLayout from '@/components/ManageLayout.vue';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useGardensStore, useAuthStore } from '@/stores';
-import { fetchWrapper } from '@/helpers';
 import { toPhotoSet } from '@/helpers/image-utils';
 import PhotoStack from '@/components/PhotoStack.vue';
 import EmailLink from '@/components/EmailLink.vue';
-import { isProjectPubliclyVisible } from '@/_config/GardenConfig';
 
 const gardensStore = useGardensStore();
 const authStore = useAuthStore();
@@ -16,8 +14,6 @@ const { user } = storeToRefs(authStore);
 
 gardensStore.getAllPublic();
 
-// Same chip vocabulary as the Projects list, framed around what gets someone
-// through the gate: is there a workday soon, and is anything being built.
 const filters = ['All', 'Workday this week', 'Active projects'];
 const filter = ref('All');
 
@@ -28,32 +24,6 @@ const relationIds = (rel) => {
   return (Array.isArray(arr) ? arr : []).map(x => x.id ?? x);
 };
 
-// ── Next workday per garden ──
-// The public workday feed is the only place events and gardens meet without
-// auth, so one fetch covers the whole list.
-const nextWorkdayBySlug = ref({});
-
-async function loadWorkdays() {
-  try {
-    const res = await fetchWrapper.get(
-      `${import.meta.env.VITE_API_URL}/api/volunteer-days/public?populate[0]=garden&pagination[pageSize]=100`
-    );
-    const events = Array.isArray(res) ? res : (res?.data || []);
-    const now = Date.now();
-    const next = {};
-    for (const e of events) {
-      const slug = e?.garden?.slug;
-      const t = e?.startDatetime ? new Date(e.startDatetime).getTime() : NaN;
-      if (!slug || Number.isNaN(t) || t < now) continue;
-      if (!next[slug] || t < next[slug].time) next[slug] = { time: t, id: e.id };
-    }
-    nextWorkdayBySlug.value = next;
-  } catch (e) {
-    // Cards still render without the workday line.
-  }
-}
-
-// ── Near me ──
 const here = ref(null);
 const locating = ref(false);
 
@@ -89,18 +59,14 @@ function formatMiles(mi) {
   return mi < 10 ? `${mi.toFixed(1)} mi` : `${Math.round(mi)} mi`;
 }
 
-// ── Derived per-garden facts ──
 function activeProjectCount(garden) {
-  const list = Array.isArray(garden?.projects) ? garden.projects : [];
-  const now = Date.now();
-  return list.filter(p => {
-    if (!isProjectPubliclyVisible(p)) return false;
-    return !(p.date_end && new Date(p.date_end).getTime() < now);
-  }).length;
+  return garden.activeProjectCount;
 }
 
 function nextWorkday(garden) {
-  return nextWorkdayBySlug.value[garden?.slug] || null;
+  const event = garden.nextWorkday;
+  if (!event) return null;
+  return { id: event.id, time: new Date(event.startDatetime).getTime() };
 }
 
 function workdaySoon(garden) {
@@ -144,7 +110,6 @@ const visibleGardens = computed(() => {
   return [...list].sort((a, b) => (nextWorkday(a)?.time ?? Infinity) - (nextWorkday(b)?.time ?? Infinity));
 });
 
-onMounted(loadWorkdays);
 </script>
 
 <template>
@@ -156,17 +121,17 @@ onMounted(loadWorkdays);
     </header>
 
     <div class="glist-filters" role="group" aria-label="Garden filters">
-      <button v-for="option in filters" :key="option" type="button" :class="{ 'is-selected': filter === option }" :aria-pressed="filter === option" @click="filter = option">{{ option }}</button>
-      <button type="button" :class="{ 'is-selected': here }" :disabled="locating" :aria-pressed="!!here" @click="toggleNearMe"><span v-if="locating">Locating…</span><span v-else>Near me</span></button>
+      <button v-for="option in filters" :key="option" type="button" :class="{ 'is-selected': filter === option }" :aria-pressed="filter === option" :disabled="!Array.isArray(gardens)" @click="filter = option">{{ option }}</button>
+      <button type="button" :class="{ 'is-selected': here }" :disabled="locating || !Array.isArray(gardens)" :aria-pressed="!!here" @click="toggleNearMe"><span v-if="locating">Locating…</span><span v-else>Near me</span></button>
     </div>
-    <p class="glist-place">Oakland · {{ listedGardens.length }} <span v-if="listedGardens.length === 1">garden</span><span v-else>gardens</span></p>
+    <p v-if="Array.isArray(gardens)" class="glist-place">Oakland · {{ listedGardens.length }} <span v-if="listedGardens.length === 1">garden</span><span v-else>gardens</span></p>
 
     <div class="glist-cards">
-      <article v-for="g in visibleGardens" :key="g.id" class="gcard" :class="{ 'gcard--text-only': !gardenPhotos(g).length }">
+      <article v-for="g in visibleGardens" :key="g.documentId" class="gcard" :class="{ 'gcard--text-only': !gardenPhotos(g).length }">
         <PhotoStack v-if="gardenPhotos(g).length" :photos="gardenPhotos(g)" :label="g.title" :to="`/gardens/${g.slug}`" />
         <div class="gcard-body">
           <h2 class="gcard-name"><router-link :to="`/gardens/${g.slug}`">{{ g.title }}</router-link></h2>
-          <p v-if="milesTo(g) != null" class="gcard-context">{{ formatMiles(milesTo(g)) }} away</p>
+          <p v-if="milesTo(g) != null" class="gcard-context">About {{ formatMiles(milesTo(g)) }} away</p>
           <p v-if="g.blurb" class="gcard-line">{{ g.blurb }}</p>
           <div class="gcard-tags">
             <span v-if="workdaySoon(g)" class="gcard-tag gcard-tag--workday">{{ workdayBadge(g) }}</span>
@@ -241,7 +206,7 @@ html.dark .gcard-tag--workday { background: #4a432d; }
 .glist { min-height: 0; font-size: 18px; line-height: 1.55; }
 .glist-heading { padding: 0; margin-bottom: 30px; }
 .glist-heading h1 { font-size: clamp(44px, 4.8vw, 76px); line-height: 1.08; font-weight: 400; }
-.glist-heading p { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; max-width: 60ch; }
+.glist-heading p { font-size: clamp(18px, 1.4vw, 23px); line-height: 1.65; max-width: none; }
 .glist-cards { padding: 0; }
 .gcard { column-gap: 44px; padding: 34px 0; border-bottom: 0; border-top: 1px solid var(--gs-rule); }
 .gcard-name { font-size: clamp(34px, 3vw, 52px); line-height: 1.15; }

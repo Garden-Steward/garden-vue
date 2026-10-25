@@ -1,7 +1,7 @@
 <script setup>
 import ManageLayout from '@/components/ManageLayout.vue';
 import { storeToRefs } from 'pinia';
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { useEventStore } from '@/stores';
@@ -13,27 +13,13 @@ import PhotoStack from '@/components/PhotoStack.vue';
 const route = useRoute();
 const router = useRouter();
 const eventStore = useEventStore();
-const { events, eventsPagination } = storeToRefs(eventStore);
+const { events } = storeToRefs(eventStore);
 
-// The public feed is small, so take it in one page and filter here.
-Promise.allSettled([eventStore.fetchPublic(1, 100)]);
+Promise.allSettled([eventStore.fetchPublic()]);
 
 const isLoading = computed(() => !!events.value?.loading);
 const loadFailed = computed(() => !!events.value?.error);
 const allEvents = computed(() => (Array.isArray(events.value) ? events.value : []));
-
-const isLoadingMore = ref(false);
-const hasMore = computed(() => eventsPagination.value?.page < eventsPagination.value?.pageCount);
-const loadMore = async () => {
-  isLoadingMore.value = true;
-  try {
-    await eventStore.loadMoreEvents();
-  } finally {
-    isLoadingMore.value = false;
-  }
-};
-
-/* ---------- Filters (kept in the URL so a filtered view can be shared) ---------- */
 
 const when = computed(() => (route.query.when === 'past' ? 'past' : 'upcoming'));
 const gardenSlug = computed(() => (typeof route.query.garden === 'string' ? route.query.garden : ''));
@@ -150,9 +136,10 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
             class="evl-seg-btn"
             :class="{ 'is-active': when === 'upcoming' }"
             :aria-selected="when === 'upcoming'"
+            :disabled="isLoading || loadFailed"
             @click="setFilter({ when: 'upcoming', garden: '' })"
           >
-            Upcoming<span v-if="!isLoading" class="evl-count">{{ upcomingCount }}</span>
+            Upcoming<span v-if="!isLoading && !loadFailed" class="evl-count">{{ upcomingCount }}</span>
           </button>
           <button
             type="button"
@@ -160,9 +147,10 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
             class="evl-seg-btn"
             :class="{ 'is-active': when === 'past' }"
             :aria-selected="when === 'past'"
+            :disabled="isLoading || loadFailed"
             @click="setFilter({ when: 'past', garden: '' })"
           >
-            Past<span v-if="!isLoading" class="evl-count">{{ pastCount }}</span>
+            Past<span v-if="!isLoading && !loadFailed" class="evl-count">{{ pastCount }}</span>
           </button>
         </div>
 
@@ -242,9 +230,6 @@ const plainBlurb = (e) => (e.blurb || '').replace(/<[^>]+>/g, ' ').replace(/\s+/
           <template v-else>No past events<template v-if="activeGardenTitle"> at {{ activeGardenTitle }}</template>.</template>
         </div>
 
-        <button v-if="hasMore" type="button" class="gp-btn gp-btn-outline evl-more" :disabled="isLoadingMore" @click="loadMore">
-          {{ isLoadingMore ? 'Loading…' : 'Load more events' }}
-        </button>
       </template>
     </div>
   </div>

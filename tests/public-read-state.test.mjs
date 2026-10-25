@@ -15,15 +15,21 @@ async function loadModule(path, imports, globals = {}) {
             meta.env = { VITE_API_URL: apiUrl };
         }
     });
-    await module.link(specifier => {
-        const exports = imports[specifier];
+    const link = async specifier => {
+        let exports = imports[specifier];
+        if (specifier === '@/helpers/fetch-wrapper') exports = imports['@/helpers'];
+        if (specifier === '@/helpers/public-collection') {
+            const helperSource = await readFile(new URL('helpers/public-collection.js', root), 'utf8');
+            const helper = new SourceTextModule(helperSource, { context });
+            await helper.link(link);
+            return helper;
+        }
         assert.ok(exports, `Unexpected import ${specifier}`);
         return new SyntheticModule(Object.keys(exports), function () {
-            for (const [key, value] of Object.entries(exports)) {
-                this.setExport(key, value);
-            }
+            for (const [key, value] of Object.entries(exports)) this.setExport(key, value);
         }, { context });
-    });
+    };
+    await module.link(link);
     await module.evaluate();
     return module.namespace;
 }
@@ -117,14 +123,14 @@ test('public Events failure clears loading, stores the error, and rejects', asyn
 });
 
 test('public Events empty response settles as an empty array', async () => {
-    const response = { data: [], meta: { pagination: { page: 1, pageSize: 20, pageCount: 0, total: 0 } } };
+    const response = { data: [], meta: { pagination: { page: 1, pageSize: 100, pageCount: 0, total: 0 } } };
     const { useEventStore } = await loadModule('stores/event.store.js', {
         pinia: { defineStore: options => storeFactory(options) },
         '@/helpers': { fetchWrapper: { get: async () => response }, stripReadOnly: value => value },
         '@/stores': { useAlertStore: () => ({ error() {} }), useGardensStore: () => ({}) }
     });
     const store = useEventStore();
-    assert.equal(await store.fetchPublic(1, 20), response);
+    assert.equal((await store.fetchPublic()).data.length, 0);
     assert.ok(Array.isArray(store.events));
     assert.equal(store.events.length, 0);
     assert.equal(store.eventsPagination.total, 0);
@@ -141,7 +147,7 @@ test('Blog fetchAll returns the pending request and settles empty data', async (
     const store = useBlogStore();
     const pending = store.fetchAll();
     assert.equal(store.blogs.loading, true);
-    release({ data: [] });
+    release({ data: [], meta: { pagination: { page: 1, pageSize: 24, pageCount: 0, total: 0 } } });
     assert.deepEqual(await pending, []);
     assert.ok(Array.isArray(store.blogs));
     assert.equal(store.blogs.length, 0);
