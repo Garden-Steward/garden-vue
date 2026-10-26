@@ -3,9 +3,10 @@ import ManageLayout from '@/components/ManageLayout.vue';
 import EmailLink from '@/components/EmailLink.vue';
 import { ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useProjectsStore, useAuthStore } from '@/stores';
+import { useProjectsStore } from '@/stores';
 import ProjectAlertSignup from '@/components/ProjectAlertSignup.vue';
 import PhotoStack from '@/components/PhotoStack.vue';
+import ExpressInterest from '@/components/modals/ExpressInterest.vue';
 import { toPhotoSet } from '@/helpers/image-utils';
 import {
   projectStatusOptions,
@@ -14,17 +15,14 @@ import {
 } from '@/_config/GardenConfig';
 
 const projectsStore = useProjectsStore();
-const authStore = useAuthStore();
 const { publicProjects } = storeToRefs(projectsStore);
-const { user } = storeToRefs(authStore);
 
 Promise.allSettled([projectsStore.getPublicProjects()]);
 
 const statusFilters = ['All', ...projectStatusOptions.map(o => o.value)];
 const filter = ref('All');
 
-const pendingInterest = ref(null);
-const togglingId = computed(() => pendingInterest.value?.id);
+const interestProject = ref(null);
 
 const listedProjects = computed(() => {
   const list = Array.isArray(publicProjects.value) ? publicProjects.value : [];
@@ -92,7 +90,6 @@ function nextWork(project) {
 }
 
 function displayedInterest(project) {
-  if (pendingInterest.value?.id === project.id) return pendingInterest.value.state;
   return projectsStore.interestState(project);
 }
 
@@ -104,23 +101,9 @@ function interestedCount(project) {
   return displayedInterest(project).count;
 }
 
-async function toggleInterest(project) {
-  if (!user.value?.id) {
-    authStore.openLoginModal('/projects');
-    return;
-  }
-  if (pendingInterest.value) return;
-  const previous = projectsStore.interestState(project);
-  let count = previous.count - 1;
-  if (!previous.isInterested) count = previous.count + 1;
-  pendingInterest.value = { id: project.id, state: { count, isInterested: !previous.isInterested } };
-  try {
-    await projectsStore.toggleInterest(project.id);
-  } catch {
-    return;
-  } finally {
-    pendingInterest.value = null;
-  }
+function expressInterest(project) {
+  if (isInterested(project)) return;
+  interestProject.value = project;
 }
 
 </script>
@@ -161,7 +144,7 @@ async function toggleInterest(project) {
           </div>
           <p v-if="nextWork(p)" class="pcard-meta">{{ nextWork(p) }}</p>
           <div class="pcard-actions">
-            <button type="button" class="pcard-btn" :class="{ 'is-in': isInterested(p) }" :disabled="togglingId === p.id" @click="toggleInterest(p)"><span v-if="isInterested(p)">You're in</span><span v-else>I'm interested</span></button>
+            <button type="button" class="pcard-btn" :class="{ 'is-in': isInterested(p) }" :disabled="isInterested(p)" @click="expressInterest(p)"><span v-if="isInterested(p)">You're in</span><span v-else>I'm interested</span></button>
             <span class="pcard-count">{{ interestedCount(p) }} interested</span>
           </div>
         </div>
@@ -181,6 +164,7 @@ async function toggleInterest(project) {
     </div>
   </div>
   </ManageLayout>
+  <ExpressInterest v-if="interestProject" :model-value="true" :project-id="interestProject.id" :project-title="interestProject.title" @update:model-value="interestProject = null" />
 </template>
 
 <style scoped>

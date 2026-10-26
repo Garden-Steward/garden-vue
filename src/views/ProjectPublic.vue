@@ -171,7 +171,6 @@ const getEventImage = (event) => {
 
 // ── Interest ──
 const showInterestModal = ref(false);
-const togglingInterest = ref(false);
 
 const interestedCount = computed(() => projectsStore.interestState(project.value).count);
 
@@ -180,25 +179,10 @@ const isInterested = computed(() =>
 );
 
 const handleInterest = () => {
-  if (isInterested.value) return; // already in — no-op (button becomes "You're in")
-  if (user.value) {
-    toggleInterest();
-  } else {
-    showInterestModal.value = true;
-  }
+  if (isInterested.value) return;
+  showInterestModal.value = true;
 };
 
-const toggleInterest = async () => {
-  if (togglingInterest.value) return;
-  togglingInterest.value = true;
-  try {
-    await projectsStore.toggleInterest(project.value.id);
-  } catch (e) {
-    // store surfaces its own error alert
-  } finally {
-    togglingInterest.value = false;
-  }
-};
 </script>
 
 <template>
@@ -238,7 +222,7 @@ const toggleInterest = async () => {
                 type="button"
                 class="project-interest-btn"
                 :class="{ 'is-in': isInterested }"
-                :disabled="togglingInterest"
+                :disabled="isInterested"
                 @click="handleInterest"
               >
                 {{ isInterested ? "You're in" : "I'm interested" }}
@@ -316,13 +300,13 @@ const toggleInterest = async () => {
             <!-- Bottom interest CTA -->
             <section v-if="project?.id" class="project-section project-bottom-cta">
               <p class="project-bottom-cta__text">
-                Interested in getting involved? Sound the call and we'll keep you posted when a workday is announced.
+                Interested in getting involved? Let the project organizers know you’d like to take part.
               </p>
               <button
                 type="button"
                 class="project-interest-btn project-interest-btn--lg"
                 :class="{ 'is-in': isInterested }"
-                :disabled="togglingInterest"
+                :disabled="isInterested"
                 @click="handleInterest"
               >
                 {{ isInterested ? "You're in" : "I'm interested" }}
