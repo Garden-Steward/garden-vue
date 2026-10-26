@@ -86,10 +86,10 @@ function closeRegisterModal() {
                 <div class="invalid-feedback">{{errors.password}}</div>
             </div>            
             <div class="form-group">
-                <button class="hover:underline text-slate-50 btn btn-primary bg-custom-green hover:bg-custom-green border-white" :disabled="isSubmitting">
-                    <span v-show="isSubmitting" class="spinner-border spinner-border-sm mr-1"></span>
-                    Login
-                </button>
+                <button type="submit" class="login-submit-btn" :disabled="isSubmitting">
+                                    <span v-show="isSubmitting" class="spinner-border spinner-border-sm mr-1"></span>
+                                    Login
+                                </button>
             </div>
             <div v-if="errors.apiError" class="alert alert-danger mt-3 mb-0 login-api-error">{{errors.apiError}}</div>
         </Form>
@@ -177,26 +177,45 @@ function closeRegisterModal() {
   .color-green {
       color:#f7f1e3;
     }
-    .login-phone-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      width: 100%;
-      padding: 0.9rem 1.25rem;
-      border-radius: 0.6rem;
-      border: none;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: #14250f;
-      background: linear-gradient(135deg, #6bb57a 0%, #47965f 55%, #2f7a4b 100%);
-      transition: filter 0.15s ease, transform 0.1s ease;
-    }
-    .login-phone-btn:hover {
-      filter: brightness(1.05);
-      transform: translateY(-1px);
-    }
+    .login-phone-btn,
+        .login-submit-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.6rem;
+          width: 100%;
+          padding: 0.8rem 1.25rem;
+          border-radius: 0.6rem;
+          border: none;
+          cursor: pointer;
+          font-weight: 700;
+          font-size: 1.05rem;
+          line-height: 1.2;
+          color: #ffffff;
+          background-color: #15803d;
+          text-decoration: none;
+          transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+        .login-phone-btn:hover:not(:disabled),
+        .login-submit-btn:hover:not(:disabled) {
+          background-color: #166534;
+          color: #ffffff;
+          transform: translateY(-1px);
+        }
+        .login-phone-btn:disabled,
+        .login-submit-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        html.dark .login-phone-btn,
+        html.dark .login-submit-btn {
+          background-color: #8aa37c;
+          color: #14281a;
+        }
+        html.dark .login-phone-btn:hover:not(:disabled),
+        html.dark .login-submit-btn:hover:not(:disabled) {
+          background-color: #9db48f;
+        }
     .login-phone-icon {
       width: 1.3rem;
       height: 1.3rem;
