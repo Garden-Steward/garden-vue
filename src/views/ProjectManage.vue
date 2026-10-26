@@ -522,9 +522,9 @@ const eventWhen = (e) => {
   const time = e.start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
   return [day, e.endText ? `${time} – ${e.endText}` : time, garden.value?.title].filter(Boolean).join(' · ');
 };
-const eventGoing = (e) => {
-  const n = Array.isArray(e.confirmed) ? e.confirmed.length : 0;
-  return n ? `${n} going` : '';
+const eventGoing = (event) => {
+  if (!Number.isSafeInteger(event.confirmedCount) || event.confirmedCount < 1) return '';
+  return `${event.confirmedCount} going`;
 };
 
 // Linking a day needs a garden: the days come from it. Saves right away.

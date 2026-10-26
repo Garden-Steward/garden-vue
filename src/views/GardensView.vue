@@ -17,6 +17,7 @@ import {
     getProjectCategoryBadgeClasses
 } from '@/_config/GardenConfig';
 import ManageLayout from '@/components/ManageLayout.vue';
+import { JoinEventModal } from '@/components/modals';
 import EmailLink from '@/components/EmailLink.vue';
 import PhotoStack from '@/components/PhotoStack.vue';
 import { toPhotoSet } from '@/helpers/image-utils';
@@ -245,14 +246,9 @@ const requestToManage = (garden) => {
     alertStore.success(`Request to manage "${garden.title}" is coming soon.`);
 };
 
-const rsvp = async (event) => {
-    try {
-        await eventStore.rsvpEvent({ id: event.id });
-        alertStore.success('RSVP recorded.');
-    } catch (e) {
-        // store surfaces its own error alert
-    }
-};
+const joiningEvent = ref(null);
+const rsvp = (event) => { joiningEvent.value = event; };
+
 </script>
 
 <template>
@@ -412,6 +408,7 @@ const rsvp = async (event) => {
       </section>
     </div>
   </ManageLayout>
+  <JoinEventModal :model-value="!!joiningEvent" :event-id="joiningEvent?.documentId || joiningEvent?.id" :event-title="joiningEvent?.title" @update:model-value="joiningEvent = null" @rsvped="eventStore.getUserEvents()" />
 </template>
 
 <style scoped>

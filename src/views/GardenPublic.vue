@@ -8,7 +8,7 @@ import VolunteerActivity from '@/components/VolunteerActivity.vue';
 import LeafletMap from '@/components/LeafletMap.vue';
 import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
 import { truncatePlainText } from '@/helpers/safe-html';
-import { RsvpPhoneModal } from '@/components/modals';
+import { JoinEventModal } from '@/components/modals';
 import GardenMemberMenu from '@/components/GardenMemberMenu.vue';
 import '@/assets/garden-public.css';
 
@@ -392,29 +392,13 @@ const projectLinkProps = (project) => {
 const nextEvent = computed(() => upcomingEvents.value.find(e => !e.canceled) || null);
 const laterEvents = computed(() => upcomingEvents.value.filter(e => e !== nextEvent.value));
 
-// RSVP to the next workday right here rather than sending people to the event
-// page. Signed-in stewards RSVP directly; everyone else gives a phone number.
 const showRsvpModal = ref(false);
 const rsvpedIds = ref(new Set());
-const rsvpBusy = ref(false);
 const nextEventRsvped = computed(() => !!nextEvent.value && rsvpedIds.value.has(nextEvent.value.id));
 const markRsvped = (id) => { rsvpedIds.value = new Set(rsvpedIds.value).add(id); };
-
-const rsvpNextEvent = async () => {
-  if (!nextEvent.value || nextEventRsvped.value || rsvpBusy.value) return;
-  if (!user.value) {
-    showRsvpModal.value = true;
-    return;
-  }
-  rsvpBusy.value = true;
-  try {
-    await eventStore.rsvpEvent({ userId: user.value.id, id: nextEvent.value.id });
-    markRsvped(nextEvent.value.id);
-  } catch {
-    // The store's error handler already raises an alert.
-  } finally {
-    rsvpBusy.value = false;
-  }
+const rsvpNextEvent = () => {
+  if (!nextEvent.value || nextEventRsvped.value) return;
+  showRsvpModal.value = true;
 };
 
 const formatShortDay = (dateString) => {
@@ -494,7 +478,7 @@ watch(
               v-else
               type="button"
               class="gp-btn gp-btn-cta"
-              :disabled="nextEventRsvped || rsvpBusy"
+              :disabled="nextEventRsvped"
               @click="rsvpNextEvent"
             >{{ nextEventRsvped ? "You're going" : 'RSVP to next event' }}</button>
             <router-link :to="`/d/${nextEvent.id}`" class="gp-btn gp-btn-ghost">
@@ -665,7 +649,7 @@ watch(
                   v-else
                   type="button"
                   class="gp-btn gp-btn-primary gp-btn-sm"
-                  :disabled="nextEventRsvped || rsvpBusy"
+                  :disabled="nextEventRsvped"
                   @click="rsvpNextEvent"
                 >
                   {{ nextEventRsvped ? "You're going" : 'RSVP' }}
@@ -860,11 +844,12 @@ watch(
     </div>
   </Teleport>
 
-  <RsvpPhoneModal
+  <JoinEventModal
     v-model="showRsvpModal"
-    :event-id="nextEvent?.id"
+    :event-id="nextEvent?.documentId || nextEvent?.id"
+    :event-title="nextEvent?.title"
     :garden-title="garden?.title"
-    @rsvped="markRsvped"
+    @rsvped="markRsvped(nextEvent.id)"
   />
 </template>
 

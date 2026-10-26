@@ -10,7 +10,7 @@ const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
 // (populate[0]) with nested object keys, and silently drops a bare
 // `populate=field` when other array keys are present — so use the object form
 // throughout, with nested populate for garden.managers.
-const eventPopulate = 'populate[recurring_template]=true&populate[confirmed]=true&populate[hero_image]=true&populate[featured_gallery]=true&populate[garden][populate][managers]=true';
+const eventPopulate = 'populate[recurring_template]=true&populate[hero_image]=true&populate[featured_gallery]=true&populate[garden][populate][managers]=true';
 // Only requested when the loaded event carried `projects` (i.e. the backend
 // has the relation) — an older backend 400s on the unknown populate key.
 const projectsPopulate = '&populate[projects][populate][hero_image]=true&populate[projects][populate][garden]=true';
@@ -206,6 +206,8 @@ export const useEventStore = defineStore({
             // Drop Strapi system keys (id/documentId/timestamps) in case the
             // caller passed a spread entity.
             data = stripReadOnly(data);
+            delete data.confirmed;
+            delete data.confirmedCount;
             // Reduce hero_image to its id for the write payload (v5 flat object,
             // or legacy { data: { id } }).
             const heroId = data.hero_image?.id ?? data.hero_image?.data?.id;
@@ -245,17 +247,6 @@ export const useEventStore = defineStore({
         async cancel(id) {
             return this.update(id, { canceled: true });
         },
-        async rsvpEvent(data) {
-            return fetchWrapper.post(`${baseUrl}/rsvp/${data.id}`,{data: data})
-                .then(res => {
-                    // The RSVP response only populates `confirmed`. Merge that in
-                    // rather than replacing the event, which would drop the
-                    // garden, brief, tasks and series the event page renders.
-                    const confirmed = res?.data?.confirmed;
-                    this.event = { ...this.event, ...(Array.isArray(confirmed) ? { confirmed } : {}) };
-                })
-                .catch(this.handleError);
-        },
         async closeUpdate() {
             // const idx = this.volunteerDays.days.findIndex(v=> v.id == id);
             // this.volunteerDays.days[idx].title = this.volunteerDay.title;
@@ -263,6 +254,8 @@ export const useEventStore = defineStore({
         },
         async register(data) {
             data = stripReadOnly(data);
+            delete data.confirmed;
+            delete data.confirmedCount;
             return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
                 .then(res => {
                     // v5 returns a flat entry (fields + id directly on res.data).

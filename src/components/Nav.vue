@@ -50,8 +50,8 @@ onUnmounted(() => {
         <div class="gs-navbar__top">
             <router-link to="/" class="gs-navbar__logo"><img src="/brand/garden-steward-stacked-whole.svg" alt="Garden Steward"></router-link>
             <div class="gs-navbar__actions">
-                <button v-if="!authStore.user" type="button" class="gs-navbar__cta" @click="openPhoneLogin">Get involved ↗</button>
-                <router-link v-else to="/gardens" class="gs-navbar__cta gs-navbar__cta--signed-in">Get involved ↗</router-link>
+                <button v-if="!authStore.user" type="button" class="gs-navbar__signin" @click="openPhoneLogin">Sign in</button>
+                <router-link to="/schedule" class="gs-navbar__cta">Get involved ↗</router-link>
                 <div v-if="authStore.user" ref="profileButton" class="profile-menu-button" role="button" tabindex="0" aria-label="Account options" aria-controls="account-options" :aria-expanded="showProfileOptions" @click="showProfileOptions = !showProfileOptions" @keydown.enter.prevent="showProfileOptions = !showProfileOptions" @keydown.space.prevent="showProfileOptions = !showProfileOptions"><UserProfileDisplay :volunteer="authStore.user" :show-email="false" :disable-tooltip="true" /></div>
                 <transition name="fade">
                     <div v-if="authStore.user && showProfileOptions" id="account-options" class="profile-menu" role="group" aria-label="Account options">

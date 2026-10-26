@@ -5,9 +5,11 @@ import ManageLayout from '@/components/ManageLayout.vue';
 import CalendarExportButton from '@/components/CalendarExportButton.vue';
 import { useAuthStore } from '@/stores';
 import { fetchWrapper } from '@/helpers';
-import { calendarDays, civilDate, pacificDateKey, readConfirmedEventKeys, readScheduleEvents, scheduleTimeZone, shiftCalendar } from '@/helpers/schedule-calendar';
+import { calendarDays, civilDate, pacificDateKey, readScheduleEvents, scheduleTimeZone, shiftCalendar } from '@/helpers/schedule-calendar';
+import { participationRequest, readOwnConfirmedKeys } from '@/helpers/participation';
 
-const { user } = storeToRefs(useAuthStore());
+const auth = useAuthStore();
+const { user } = storeToRefs(auth);
 const state = ref({ phase: 'loading', events: [] });
 const confirmation = ref({ phase: 'idle', keys: new Set() });
 const view = ref('month');
@@ -43,8 +45,8 @@ async function loadConfirmations(currentUser) {
     if (!currentUser?.id) return;
     confirmation.value = { phase: 'loading', keys: new Set() };
     try {
-        const keys = await readConfirmedEventKeys(
-            (page, pageSize) => fetchWrapper.get(`${import.meta.env.VITE_API_URL}/api/volunteer-days?filters[confirmed][id][$eq]=${encodeURIComponent(currentUser.id)}&fields[0]=id&fields[1]=documentId&status=published&pagination[page]=${page}&pagination[pageSize]=${pageSize}`),
+        const keys = await readOwnConfirmedKeys(
+            (page, pageSize) => participationRequest(import.meta.env.VITE_API_URL, `/participation/me?page=${page}&pageSize=${pageSize}`, { token: auth.auth.accessToken }),
             () => generation === confirmationGeneration
         );
         if (generation !== confirmationGeneration) return;

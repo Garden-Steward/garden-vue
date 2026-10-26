@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useAuthStore } from '@/stores';
+import { browserSecret, participationRequest } from '@/helpers/participation';
 
 const RESEND_SECONDS = 60;
 const GENERIC_SEND_ERROR = "Couldn't send a code. Try again or use email & password.";
@@ -8,7 +9,13 @@ const INVALID_CODE_ERROR = 'That code is invalid or expired.';
 
 const auth = useAuthStore();
 
-const step = ref('phone'); // 'phone' | 'code' | 'email'
+const step = ref('email_login');
+const loginTitle = computed(() => ({ phone: 'Sign in with your phone', code: 'Enter your code', email: 'Sign in with email', email_login: 'Welcome back.', email_verify: 'Check your email.' })[step.value]);
+const emailCode = ref('');
+const emailProofId = ref(null);
+const emailBrowserSecret = browserSecret();
+const emailInputRequest = ref(null);
+const emailVerifyRequest = ref(null);
 const phoneDisplay = ref('');
 const digits = ref(['', '', '', '', '', '']);
 const digitRefs = [];
@@ -197,6 +204,33 @@ const submitEmail = async () => {
     }
 };
 
+const requestEmailCode = async () => {
+    if (isSubmitting.value) return;
+    if (!emailInputRequest.value || emailInputRequest.value.emailRaw !== email.value) emailInputRequest.value = { requestId: crypto.randomUUID(), emailRaw: email.value, browserSecret: emailBrowserSecret };
+    isSubmitting.value = true; error.value = '';
+    try {
+        const result = await participationRequest(import.meta.env.VITE_API_URL, '/auth/email-login/request', { method: 'POST', body: emailInputRequest.value });
+        emailProofId.value = result.data.proofId; emailCode.value = ''; emailVerifyRequest.value = null;
+        step.value = 'email_verify'; startCountdown();
+    } catch (failure) { error.value = failure.message; }
+    finally { isSubmitting.value = false; }
+};
+const submitEmailCode = async () => {
+    if (isSubmitting.value || !/^\d{8}$/.test(emailCode.value)) return;
+    const prior = emailVerifyRequest.value;
+    if (!prior || prior.code !== emailCode.value || prior.proofId !== emailProofId.value) emailVerifyRequest.value = { requestId: crypto.randomUUID(), proofId: emailProofId.value, browserSecret: emailBrowserSecret, code: emailCode.value };
+    isSubmitting.value = true; error.value = '';
+    try {
+        const result = await participationRequest(import.meta.env.VITE_API_URL, '/auth/email-login/verify', { method: 'POST', body: emailVerifyRequest.value });
+        auth.setSession(result.data.session.jwt, result.data.session.user); auth.finishModalLogin();
+    } catch (failure) { error.value = failure.message; }
+    finally { isSubmitting.value = false; }
+};
+const resendEmailCode = () => {
+    if (resendRemaining.value || isSubmitting.value) return;
+    emailInputRequest.value = null; requestEmailCode();
+};
+
 const close = () => {
     auth.closeLoginModal();
 };
@@ -259,10 +293,28 @@ onBeforeUnmount(() => {
                     </button>
 
                     <h2 id="login-modal-title" class="login-modal-title">
-                                            {{ step === 'code' ? 'Enter your code' : step === 'email' ? 'Sign in with email' : 'Sign in with your phone' }}
+                                            {{ loginTitle }}
                                         </h2>
 
-                                        <form v-if="step === 'phone'" @submit.prevent="submitPhone">
+                    <form v-if="step === 'email_login'" @submit.prevent="requestEmailCode">
+                        <p class="login-modal-subtitle">Use the email you verified with Garden Steward.</p>
+                        <label for="login-code-email" class="login-modal-label">Email</label>
+                        <input id="login-code-email" ref="emailInput" v-model="email" type="text" inputmode="email" autocomplete="email" maxlength="320" class="login-modal-input">
+                        <p v-if="error" class="login-modal-error" role="alert">{{ error }}</p>
+                        <button type="submit" class="login-modal-btn" :disabled="isSubmitting">Email me a code</button>
+                        <button type="button" class="login-modal-link" @click="usePhone">Use phone instead</button>
+                        <button type="button" class="login-modal-link" @click="useEmail">Use email &amp; password instead</button>
+                    </form>
+                    <form v-else-if="step === 'email_verify'" @submit.prevent="submitEmailCode">
+                        <p class="login-modal-subtitle">If this address has a verified account, use the 8-digit code from your email.</p>
+                        <label for="login-email-code" class="login-modal-label">Email code</label>
+                        <input id="login-email-code" ref="emailInput" v-model="emailCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" class="login-modal-input">
+                        <p v-if="error" class="login-modal-error" role="alert">{{ error }}</p>
+                        <button type="submit" class="login-modal-btn" :disabled="isSubmitting || !/^\d{8}$/.test(emailCode)">Sign in</button>
+                        <button type="button" class="login-modal-link" :disabled="resendRemaining > 0 || isSubmitting" @click="resendEmailCode">Resend code<span v-if="resendRemaining"> ({{ resendRemaining }}s)</span></button>
+                        <button type="button" class="login-modal-link" @click="step = 'email_login'; error = ''">Use another email</button>
+                    </form>
+                                        <form v-else-if="step === 'phone'" @submit.prevent="submitPhone">
                                             <p class="login-modal-subtitle login-modal-subtitle--lead">
                                                 We'll text you a 6-digit code to sign you in. No password needed.
                                             </p>

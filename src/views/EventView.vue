@@ -12,7 +12,7 @@ import Gallery from '@/components/Gallery.vue';
 import EventProjectCard from '@/components/EventProjectCard.vue';
 import CalendarExportButton from '@/components/CalendarExportButton.vue';
 import GardenContextBar from '@/components/GardenContextBar.vue';
-import { PrintDaySheetModal, RsvpPhoneModal } from '@/components/modals';
+import { PrintDaySheetModal, JoinEventModal } from '@/components/modals';
 import '@/assets/garden-public.css';
 
 const route = useRoute();
@@ -145,8 +145,10 @@ const hostName = (u) => [u.firstName, u.lastName ? `${u.lastName[0]}.` : ''].fil
 const initials = (u) => ((u.firstName?.[0] || u.username?.[0] || '') + (u.lastName?.[0] || '')).toUpperCase();
 const avatarStyle = (u) => (u.color ? { backgroundColor: u.color } : {});
 
-const going = computed(() => (Array.isArray(event.value?.confirmed) ? event.value.confirmed : []));
-const goingFaces = computed(() => going.value.slice(0, 3));
+const goingCount = computed(() => {
+  if (Number.isSafeInteger(event.value?.confirmedCount) && event.value.confirmedCount >= 0) return event.value.confirmedCount;
+  return 0;
+});
 
 const facts = computed(() => {
   const out = [];
@@ -155,7 +157,11 @@ const facts = computed(() => {
   else if (!hasGarden.value && event.value?.location_name) out.push({ key: 'where', label: 'Where', value: event.value.location_name, icon: 'pin' });
   if (brief.value?.good_for) out.push({ key: 'for', label: 'Good for', value: brief.value.good_for, icon: 'leaf' });
   if (brief.value?.food) out.push({ key: 'food', label: 'Food', value: brief.value.food, icon: 'bowl' });
-  if (going.value.length && !isEventPast.value) out.push({ key: 'going', label: 'Going', value: `${going.value.length} ${going.value.length === 1 ? 'neighbor' : 'neighbors'}`, icon: 'people' });
+  if (goingCount.value && !isEventPast.value) {
+    let label = 'neighbors';
+    if (goingCount.value === 1) label = 'neighbor';
+    out.push({ key: 'going', label: 'Going', value: `${goingCount.value} ${label}`, icon: 'people' });
+  }
   return out;
 });
 
@@ -204,19 +210,17 @@ const mapsUrl = computed(() => {
 
 /* ---------- RSVP ---------- */
 
-// The RSVP endpoint signs people up for the garden's SMS list, so it needs a
-// garden. Events without one can still link out to Partiful.
 const canRsvpHere = computed(() => hasGarden.value && !isEventPast.value && !isEventCanceled.value);
 const partifulOpen = computed(() => !!event.value?.partiful_link && !isEventPast.value && !isEventCanceled.value);
 const showRsvp = computed(() => partifulOpen.value || canRsvpHere.value);
 
-const rsvpEvent = async () => {
+const rsvpEvent = () => {
   if (isEventPast.value || isRSVPed.value) return;
-  if (user.value) {
-    await eventStore.rsvpEvent({ userId: user.value.id, id: route.params.id });
-  } else {
-    showModal.value = true;
-  }
+  showModal.value = true;
+};
+const joinedEvent = async () => {
+  isRSVPed.value = true;
+  await eventStore.findById(event.value.documentId);
 };
 
 </script>
@@ -270,12 +274,8 @@ const rsvpEvent = async () => {
                 <CalendarExportButton v-if="event.startDatetime && !isEventPast && !isEventCanceled" :key="event.id" :event="event" />
               </div>
             </div>
-            <div v-if="going.length && !isEventPast" class="ev-going">
-              <span class="ev-faces">
-                <span v-for="u in goingFaces" :key="u.id" class="ev-face" :style="avatarStyle(u)">{{ initials(u) }}</span>
-                <span v-if="going.length > goingFaces.length" class="ev-face ev-face--more">+{{ going.length - goingFaces.length }}</span>
-              </span>
-              <span class="ev-going-text">{{ going.length }} going</span>
+            <div v-if="goingCount && !isEventPast" class="ev-going">
+              <span class="ev-going-text">{{ goingCount }} going</span>
             </div>
           </div>
         </section>
@@ -423,10 +423,7 @@ const rsvpEvent = async () => {
                 <button type="button" class="gp-btn gp-btn-primary gp-btn-block" :disabled="isRSVPed" @click="rsvpEvent">
                   {{ isRSVPed ? "You're going" : 'RSVP' }}
                 </button>
-                <p class="ev-fine">
-                  <template v-if="isRSVPed">Thanks{{ user?.firstName ? `, ${user.firstName}` : '' }}. We'll text you a reminder the day before.</template>
-                  <template v-else>We'll text you a reminder the day before. Reply STOP anytime.</template>
-                </p>
+                <p class="ev-fine">Your place is confirmed only after registration. Text updates are a separate choice.</p>
               </template>
               <p v-else-if="isEventPast" class="ev-fine">RSVP is closed for this one.<template v-if="upcoming.length"> The next one is below.</template></p>
               <p v-else-if="isEventCanceled" class="ev-fine">Nothing to RSVP to.<template v-if="upcoming.length"> See the next one below.</template></p>
@@ -506,11 +503,12 @@ const rsvpEvent = async () => {
     </section>
   </div>
 
-  <RsvpPhoneModal
+  <JoinEventModal
     v-model="showModal"
-    :event-id="route.params.id"
+    :event-id="event?.documentId || route.params.id"
+    :event-title="event?.title"
     :garden-title="garden?.title"
-    @rsvped="isRSVPed = true"
+    @rsvped="joinedEvent"
   />
 
   <PrintDaySheetModal v-model="showPrintDaySheet" :event-id="event?.id" :is-manager="isManager" />
