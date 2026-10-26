@@ -6,13 +6,13 @@ import { renderMarkdown } from '@/helpers/safe-html';
 
 import { useEventStore, useAuthStore } from '@/stores';
 import { getImageOrDefault } from '@/helpers/image-utils';
-import { titleWithoutDate } from '@/helpers/event-utils';
 import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
 import LeafletMap from '@/components/LeafletMap.vue';
 import Gallery from '@/components/Gallery.vue';
 import EventProjectCard from '@/components/EventProjectCard.vue';
+import CalendarExportButton from '@/components/CalendarExportButton.vue';
 import GardenContextBar from '@/components/GardenContextBar.vue';
-import { PrintDaySheetModal, RsvpPhoneModal } from '@/components/modals';
+import { PrintDaySheetModal, JoinEventModal } from '@/components/modals';
 import '@/assets/garden-public.css';
 
 const route = useRoute();
@@ -113,32 +113,6 @@ const locationText = computed(() => {
   return [event.value?.location_name, event.value?.location_address].filter(Boolean).join(', ');
 });
 
-// On a calendar grid only the title shows, so lead with the garden's name. The
-// calendar already places the event on its day, so the title's date goes.
-const calendarTitle = computed(() => {
-  const title = titleWithoutDate(event.value?.title) || 'Garden event';
-  const gardenName = hasGarden.value ? garden.value.title : '';
-  if (!gardenName || title.toLowerCase().includes(gardenName.toLowerCase())) return title;
-  return `${gardenName}: ${title}`;
-});
-
-// Calendars need an end; the event only has free text for that, so use the
-// brief's typical length when it's a plain number of hours, else 2 hours.
-const calendarUrl = computed(() => {
-  if (!start.value) return null;
-  const hours = parseFloat(String(brief.value?.duration_text || '').replace('½', '.5').match(/\d+(\.\d+)?/)?.[0]) || 2;
-  const end = new Date(start.value.getTime() + Math.min(hours, 12) * 3600 * 1000);
-  const fmt = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: calendarTitle.value,
-    dates: `${fmt(start.value)}/${fmt(end)}`,
-    details: `${event.value.blurb || ''}\n\n${window.location.href}`.trim(),
-    location: [visit.value?.meeting_spot, locationText.value].filter(Boolean).join(', '),
-  });
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
-});
-
 /* ---------- Brief, visit info, tasks, series ---------- */
 
 const brief = computed(() => event.value?.resolved_brief || null);
@@ -171,8 +145,10 @@ const hostName = (u) => [u.firstName, u.lastName ? `${u.lastName[0]}.` : ''].fil
 const initials = (u) => ((u.firstName?.[0] || u.username?.[0] || '') + (u.lastName?.[0] || '')).toUpperCase();
 const avatarStyle = (u) => (u.color ? { backgroundColor: u.color } : {});
 
-const going = computed(() => (Array.isArray(event.value?.confirmed) ? event.value.confirmed : []));
-const goingFaces = computed(() => going.value.slice(0, 3));
+const goingCount = computed(() => {
+  if (Number.isSafeInteger(event.value?.confirmedCount) && event.value.confirmedCount >= 0) return event.value.confirmedCount;
+  return 0;
+});
 
 const facts = computed(() => {
   const out = [];
@@ -181,7 +157,11 @@ const facts = computed(() => {
   else if (!hasGarden.value && event.value?.location_name) out.push({ key: 'where', label: 'Where', value: event.value.location_name, icon: 'pin' });
   if (brief.value?.good_for) out.push({ key: 'for', label: 'Good for', value: brief.value.good_for, icon: 'leaf' });
   if (brief.value?.food) out.push({ key: 'food', label: 'Food', value: brief.value.food, icon: 'bowl' });
-  if (going.value.length && !isEventPast.value) out.push({ key: 'going', label: 'Going', value: `${going.value.length} ${going.value.length === 1 ? 'neighbor' : 'neighbors'}`, icon: 'people' });
+  if (goingCount.value && !isEventPast.value) {
+    let label = 'neighbors';
+    if (goingCount.value === 1) label = 'neighbor';
+    out.push({ key: 'going', label: 'Going', value: `${goingCount.value} ${label}`, icon: 'people' });
+  }
   return out;
 });
 
@@ -230,19 +210,18 @@ const mapsUrl = computed(() => {
 
 /* ---------- RSVP ---------- */
 
-// The RSVP endpoint signs people up for the garden's SMS list, so it needs a
-// garden. Events without one can still link out to Partiful.
 const canRsvpHere = computed(() => hasGarden.value && !isEventPast.value && !isEventCanceled.value);
 const partifulOpen = computed(() => !!event.value?.partiful_link && !isEventPast.value && !isEventCanceled.value);
 const showRsvp = computed(() => partifulOpen.value || canRsvpHere.value);
 
-const rsvpEvent = async () => {
+const rsvpEvent = () => {
   if (isEventPast.value || isRSVPed.value) return;
-  if (user.value) {
-    await eventStore.rsvpEvent({ userId: user.value.id, id: route.params.id });
-  } else {
-    showModal.value = true;
-  }
+  showModal.value = true;
+};
+const joinedEvent = async (id, receipt) => {
+  if (receipt?.eventDocumentId !== event.value?.documentId) return;
+  isRSVPed.value = true;
+  await eventStore.findById(receipt.eventDocumentId);
 };
 
 </script>
@@ -288,23 +267,16 @@ const rsvpEvent = async () => {
               <h1 id="event-title" class="gp-title">{{ event.title }}</h1>
               <p class="ev-when">{{ whenLine }}</p>
               <p v-if="event.blurb" class="gp-blurb">{{ event.blurb }}</p>
-              <div v-if="showRsvp || (calendarUrl && !isEventPast && !isEventCanceled)" class="gp-hero-actions">
+              <div v-if="showRsvp || (event.startDatetime && !isEventPast && !isEventCanceled)" class="gp-hero-actions">
                 <a v-if="partifulOpen" :href="event.partiful_link" target="_blank" rel="noopener noreferrer" class="gp-btn gp-btn-cta">RSVP on Partiful</a>
                 <button v-else-if="canRsvpHere" type="button" class="gp-btn gp-btn-cta" :disabled="isRSVPed" @click="rsvpEvent">
                   {{ isRSVPed ? "You're going" : 'RSVP' }}
                 </button>
-                <a v-if="calendarUrl && !isEventPast && !isEventCanceled" :href="calendarUrl" target="_blank" rel="noopener noreferrer" class="gp-btn gp-btn-ghost">
-                  <svg class="gp-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
-                  Add to calendar
-                </a>
+                <CalendarExportButton v-if="event.startDatetime && !isEventPast && !isEventCanceled" :key="event.id" :event="event" />
               </div>
             </div>
-            <div v-if="going.length && !isEventPast" class="ev-going">
-              <span class="ev-faces">
-                <span v-for="u in goingFaces" :key="u.id" class="ev-face" :style="avatarStyle(u)">{{ initials(u) }}</span>
-                <span v-if="going.length > goingFaces.length" class="ev-face ev-face--more">+{{ going.length - goingFaces.length }}</span>
-              </span>
-              <span class="ev-going-text">{{ going.length }} going</span>
+            <div v-if="goingCount && !isEventPast" class="ev-going">
+              <span class="ev-going-text">{{ goingCount }} going</span>
             </div>
           </div>
         </section>
@@ -452,10 +424,7 @@ const rsvpEvent = async () => {
                 <button type="button" class="gp-btn gp-btn-primary gp-btn-block" :disabled="isRSVPed" @click="rsvpEvent">
                   {{ isRSVPed ? "You're going" : 'RSVP' }}
                 </button>
-                <p class="ev-fine">
-                  <template v-if="isRSVPed">Thanks{{ user?.firstName ? `, ${user.firstName}` : '' }}. We'll text you a reminder the day before.</template>
-                  <template v-else>We'll text you a reminder the day before. Reply STOP anytime.</template>
-                </p>
+                <p class="ev-fine">Your place is confirmed only after registration. Text updates are a separate choice.</p>
               </template>
               <p v-else-if="isEventPast" class="ev-fine">RSVP is closed for this one.<template v-if="upcoming.length"> The next one is below.</template></p>
               <p v-else-if="isEventCanceled" class="ev-fine">Nothing to RSVP to.<template v-if="upcoming.length"> See the next one below.</template></p>
@@ -535,11 +504,12 @@ const rsvpEvent = async () => {
     </section>
   </div>
 
-  <RsvpPhoneModal
+  <JoinEventModal
     v-model="showModal"
-    :event-id="route.params.id"
+    :event-id="event?.documentId || route.params.id"
+    :event-title="event?.title"
     :garden-title="garden?.title"
-    @rsvped="isRSVPed = true"
+    @rsvped="joinedEvent"
   />
 
   <PrintDaySheetModal v-model="showPrintDaySheet" :event-id="event?.id" :is-manager="isManager" />

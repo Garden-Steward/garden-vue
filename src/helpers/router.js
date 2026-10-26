@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, GardensPublicView, SetPassword,
     InstructionPublic, HelpView,
-    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, ProjectManage, ProjectsView, ProjectsPublicView, ProjectAlertUnsubscribe, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView, VerifyEmail, PlantsDirectory, PlantsDetail, AboutView, UsageView } from '@/views';
+    BlogList, BlogDetail, EventView, EventsList, ScheduleView, NewsletterView, MapView, ContributeView, PrivacyView, ProjectPublic, ProjectManage, ProjectsView, ProjectsPublicView, ProjectAlertUnsubscribe, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView, VerifyEmail, PlantsDirectory, PlantsDetail, AboutView, UsageView } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
@@ -21,9 +21,11 @@ export const router = createRouter({
     },
     routes: [
         // Public routes
-        { path: '/', component: PublicHomeView },
+        { path: '/', component: PublicHomeView, meta: { viewport: 'wide' } },
         { path: '/login', component: LoginView },
-        { path: '/about', component: AboutView },
+        { path: '/about', component: AboutView, meta: { viewport: 'wide' } },
+        { path: '/schedule', component: ScheduleView, meta: { viewport: 'wide' } },
+        { path: '/newsletter', component: NewsletterView, meta: { viewport: 'wide' } },
         {
             path: '/oauth/google/callback',
             component: GoogleOAuth
@@ -42,11 +44,13 @@ export const router = createRouter({
         },
         {
             path: '/events',
-            component: EventsList
+            component: EventsList,
+            meta: { viewport: 'wide' }
         },
         {
             path: '/blog',
-            component: BlogList
+            component: BlogList,
+            meta: { viewport: 'wide' }
         },
         {
             path: '/blog/:slug',
@@ -72,7 +76,8 @@ export const router = createRouter({
         {
             path: '/projects',
             component: ProjectsPublicView,
-            name: 'projects-public-list'
+            name: 'projects-public-list',
+            meta: { viewport: 'wide' }
         },
         {
             path: '/alerts/unsubscribe',
@@ -82,7 +87,8 @@ export const router = createRouter({
         {
             path: '/gardens',
             component: GardensPublicView,
-            name: 'gardens-public-list'
+            name: 'gardens-public-list',
+            meta: { viewport: 'wide' }
         },
         
         // Public garden and event pages
@@ -134,7 +140,7 @@ export const router = createRouter({
             path: '/manage',
             component: GardensView,
             name: 'manage-gardens-list',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/home',
@@ -152,31 +158,31 @@ export const router = createRouter({
             path: '/manage/projects',
             component: ProjectsView,
             name: 'manage-projects',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/usage',
             component: UsageView,
             name: 'manage-usage',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/plants',
             component: PlantsDirectory,
             name: 'manage-plants',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/plant/:slug',
             component: PlantsDetail,
             name: 'manage-plant-detail',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/project/:documentId',
             component: ProjectManage,
             name: 'manage-project',
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true, viewport: 'wide' }
         },
         {
             path: '/manage/gardens/:slug/event-templates',
@@ -206,32 +212,6 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to, from) => {
-    const publicPages = [
-        '/login', 
-        '/oauth/google/callback', 
-        '/set-password',
-        '/verify-email',
-        '/', 
-        '/about',
-        '/help', 
-        '/blog', 
-        '/events', 
-        '/contribute',
-        '/manifesto',
-        '/map',
-        '/privacy',
-        '/gardens',
-        '/projects',
-        '/alerts/unsubscribe'
-    ];
-    
-    // Check if route starts with public patterns
-    const isPublicRoute = publicPages.includes(to.path) || 
-                         to.path.startsWith('/i/') ||
-                         to.path.startsWith('/blog/') ||
-                         to.path.startsWith('/d/') ||
-                         to.path.startsWith('/gardens/'); // Public garden pages (includes nested project pages)
-    
     const authRequired = to.meta.requiresAuth || to.path.startsWith('/manage/');
     const auth = useAuthStore();
     

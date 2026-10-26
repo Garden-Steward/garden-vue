@@ -1,0 +1,31 @@
+{
+  "frontendCommit": "6ae07291773826c04bfde62576e9596a1da44336",
+  "backendRuntimeCommit": "b05393ff92933eb79b0bfbe5503b0fefea1cfbb8",
+  "backendReviewedCommit": "c3dd97a1bb9c62d6115a151b80c19c0a49cff476",
+  "source": "Cloned local review data. Reference photograph replacements are local fixtures.",
+  "scope": "Anonymous public pages, real Home cards, branded account dialog and saved calendar download on cloned local data. No signup, RSVP, QR, subscription, publication or delivery.",
+  "pageErrors": [],
+  "failedResources": [],
+  "media": [
+    {
+      "file": "desktop.mp4",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "sha256": "e3c6e3bc5931781723a4c420bf326761a4269eb74ef561480b1021b568aca993",
+      "durationSeconds": 24.52,
+      "bytes": 1011827
+    },
+    {
+      "file": "phone.mp4",
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "sha256": "efc958ce0241d49e038cd165c099d93486098073a83bdbcce31feff888c2b86e",
+      "durationSeconds": 24.48,
+      "bytes": 635799
+    }
+  ]
+}

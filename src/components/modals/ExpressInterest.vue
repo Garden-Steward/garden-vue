@@ -1,142 +1,83 @@
 <script setup>
-import { ref, watch } from 'vue';
-import { useProjectsStore, useAlertStore } from '@/stores';
-import { fetchWrapper } from '@/helpers';
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { useAuthStore, useProjectsStore } from '@/stores';
+import { participationRequest } from '@/helpers/participation';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   projectId: { type: [String, Number], required: true },
-  projectTitle: { type: String, default: '' }
+  projectTitle: { type: String, default: '' },
 });
-
 const emit = defineEmits(['update:modelValue', 'done']);
-
-const projectsStore = useProjectsStore();
-const alertStore = useAlertStore();
-
-const name = ref('');
-const email = ref('');
-const phone = ref('');
-const isSubmitting = ref(false);
-const isDone = ref(false);
-
-const close = () => {
-  emit('update:modelValue', false);
-};
-
-watch(() => props.modelValue, (open) => {
-  if (open) {
-    name.value = '';
-    email.value = '';
-    phone.value = '';
-    isDone.value = false;
-  }
+const auth = useAuthStore();
+const projects = useProjectsStore();
+const dialog = ref(null);
+const heading = ref(null);
+const busy = ref(false);
+const done = ref(false);
+const error = ref('');
+let generation = 0;
+let opener;
+const close = () => emit('update:modelValue', false);
+async function show() {
+  await nextTick();
+  if (!dialog.value || !props.modelValue || auth.loginModalOpen) return;
+  if (!dialog.value.open) dialog.value.showModal();
+  heading.value?.focus();
+}
+watch([() => props.modelValue, () => props.projectId, () => auth.user?.id], ([open], previous) => {
+  generation++; busy.value = false; done.value = false; error.value = '';
+  if (!open) { dialog.value?.close(); opener?.focus(); return; }
+  if (!previous?.[0]) opener = document.activeElement;
+  show();
+}, { immediate: true });
+watch(() => auth.loginModalOpen, open => {
+  if (open) { generation++; busy.value = false; dialog.value?.close(); }
+  else if (props.modelValue) show();
 });
-
-const submit = async () => {
-  if (!email.value.trim()) return;
-  isSubmitting.value = true;
+async function submit() {
+  if (busy.value || !auth.user) return;
+  const current = generation;
+  const projectId = props.projectId;
+  const token = auth.auth.accessToken;
+  busy.value = true; error.value = '';
   try {
-    await fetchWrapper.post(
-      `${import.meta.env.VITE_API_URL}/api/projects/${props.projectId}/express-interest`,
-      {
-        name: name.value.trim() || null,
-        email: email.value.trim(),
-        phone: phone.value.trim() || null
-      }
-    );
-    isDone.value = true;
-    await projectsStore.getAllProjects(); // refresh counts
-    setTimeout(() => close(), 2000);
-  } catch (err) {
-    alertStore.error(err?.message || 'Something went wrong. Please try again.');
-  } finally {
-    isSubmitting.value = false;
-  }
-};
+    const result = await participationRequest(import.meta.env.VITE_API_URL, `/projects/${projectId}/express-interest`, { method: 'POST', token, body: {} });
+    if (current !== generation || !props.modelValue || props.projectId !== projectId || auth.auth.accessToken !== token) return;
+    if (!Number.isSafeInteger(result.count) || result.count < 1 || result.isInterested !== true) throw new Error('Your interest has not been saved yet. Please try again.');
+    projects.patchInterest(projectId, result);
+    done.value = true; emit('done', projectId);
+    await nextTick(); heading.value?.focus();
+  } catch (failure) { if (current === generation) error.value = failure.message; }
+  finally { if (current === generation) busy.value = false; }
+}
+onBeforeUnmount(() => { generation++; dialog.value?.close(); });
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="modelValue">
-      <div class="fixed inset-0 bg-black/70 z-[99998]" @click="close"></div>
-      <div class="fixed inset-0 flex items-center justify-center z-[99999]" @click="close">
-        <div
-          class="int-modal relative w-[95%] max-w-[420px] rounded-2xl p-6 bg-white dark:!bg-[#2d3e26] text-gray-900 dark:text-[#f5f5f5] shadow-2xl"
-          @click.stop
-        >
-          <button class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-white" @click="close">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          <div v-if="isDone" class="text-center py-8">
-            <div class="text-4xl mb-3">🌱</div>
-            <h2 class="text-xl font-bold mb-2">You're in!</h2>
-            <p class="text-sm opacity-80">We'll keep you posted on {{ projectTitle || 'this project' }}.</p>
-          </div>
-
-          <form v-else @submit.prevent="submit">
-            <h2 class="text-lg font-bold mb-1">I'm interested</h2>
-            <p class="text-sm opacity-70 mb-4">{{ projectTitle }}</p>
-
-            <div class="space-y-3">
-              <input v-model="name" type="text" placeholder="Your name" class="int-input" />
-              <input v-model="email" type="email" placeholder="Email *" required class="int-input" />
-              <input v-model="phone" type="tel" placeholder="Phone (optional, for SMS updates)" class="int-input" />
-            </div>
-
-            <button type="submit" :disabled="!email.trim() || isSubmitting" class="int-btn mt-5">
-              {{ isSubmitting ? 'Submitting…' : 'Stay in the loop' }}
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+    <dialog ref="dialog" class="interest-dialog" aria-labelledby="interest-heading" @cancel.prevent="close">
+      <button type="button" class="interest-close" aria-label="Close project interest" @click="close">×</button>
+      <p class="interest-caption">{{ projectTitle }}</p>
+      <h2 id="interest-heading" ref="heading" tabindex="-1"><span v-if="done">You’re interested.</span><span v-else>Find your place in this project.</span></h2>
+      <template v-if="done"><p>Your interest is saved. Visit the project to see what’s happening next.</p><button type="button" class="interest-primary" @click="close">Done</button></template>
+      <template v-else-if="!auth.user"><p>Sign in to let the project organizers know you’re interested.</p><div class="interest-actions"><button type="button" class="interest-primary" @click="auth.openLoginModal()">Sign in</button><router-link to="/schedule" @click="close">New here? Find an event to join ↗</router-link></div></template>
+      <template v-else><p>Let the project organizers know you’d like to take part.</p><button type="button" class="interest-primary" :disabled="busy" @click="submit">I’m interested</button></template>
+      <p v-if="error" class="interest-error" role="alert">{{ error }}</p>
+    </dialog>
   </Teleport>
 </template>
 
 <style scoped>
-.int-modal {
-  animation: intFadeIn 0.25s ease;
-}
-@keyframes intFadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0);   }
-}
-
-.int-input {
-  width: 100%;
-  padding: 0.65rem 0.85rem;
-  border-radius: 0.6rem;
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
-  color: #111827;
-  outline: none;
-  font-size: 0.95rem;
-}
-.dark .int-input {
-  border-color: #4d5e44;
-  background: rgba(26,26,26,0.6);
-  color: #f5f5f5;
-}
-.int-input:focus {
-  border-color: #8aa37c;
-}
-
-.int-btn {
-  width: 100%;
-  padding: 0.7rem;
-  border-radius: 0.6rem;
-  border: none;
-  background: #86b153;
-  color: #1f2a14;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.int-btn:hover:not(:disabled) { background: #97c264; }
-.int-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.interest-dialog { box-sizing: border-box; width: min(540px, calc(100% - 28px)); max-height: calc(100dvh - 28px); padding: clamp(24px, 5vw, 42px); margin: auto; overflow: auto; border: 1px solid #a4b08c; background: #f1f2d5; color: #024023; font: 20px/1.5 'Gill Sans Local', 'Gill Sans', sans-serif; }
+.interest-dialog::backdrop { background: rgb(18 36 22 / 55%); }
+.interest-dialog h2 { margin: 22px 0; font: 400 40px/1.12 Georgia, serif; outline: none; }
+.interest-caption { color: #53664c; margin: 0; padding-right: 40px; }
+.interest-dialog button { padding: 12px 18px; border: 1px solid #024023; font: inherit; cursor: pointer; }
+.interest-dialog .interest-close { float: right; min-width: 44px; min-height: 44px; padding: 0; background: transparent; font-size: 28px; }
+.interest-dialog .interest-primary { background: #024023; color: #f1f2d5; }
+.interest-dialog button:disabled { opacity: .55; cursor: wait; }
+.interest-actions { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+.interest-actions a { color: inherit; text-underline-offset: 4px; }
+.interest-error { color: #962f28; }
 </style>

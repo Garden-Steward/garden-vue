@@ -6,4 +6,4 @@ export { default as GardenTask } from './GardenTask.vue';
 export { default as PitchProject } from './PitchProject.vue';
 export { default as PrintDaySheetModal } from './PrintDaySheetModal.vue';
 export { default as LoginModal } from './LoginModal.vue';
-export { default as RsvpPhoneModal } from './RsvpPhoneModal.vue';
+export { default as JoinEventModal } from './JoinEventModal.vue';

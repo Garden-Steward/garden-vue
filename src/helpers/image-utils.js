@@ -30,3 +30,35 @@ export default {
   DEFAULT_GARDEN_IMAGES
 };
 
+export function toPhotoSet(media, fallbackAlt) {
+  const photos = [];
+  const seenIds = new Set();
+  const seenOriginals = new Set();
+  const seenSources = new Set();
+  const base = import.meta.env.VITE_API_URL;
+
+  function resolve(raw) {
+    if (typeof raw !== 'string' || !raw.trim()) return null;
+    try {
+      const url = new URL(raw, base || undefined);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+      return url.href;
+    } catch {
+      return null;
+    }
+  }
+
+  for (const item of media) {
+    if (!item || typeof item !== 'object') continue;
+    const source = resolve(item.formats?.medium?.url || item.formats?.large?.url || item.formats?.small?.url || item.formats?.original?.url || item.url);
+    if (!source) continue;
+    const original = resolve(item.url);
+    const id = item.documentId || item.id;
+    if ((id != null && seenIds.has(id)) || (original && seenOriginals.has(original)) || seenSources.has(source)) continue;
+    if (id != null) seenIds.add(id);
+    if (original) seenOriginals.add(original);
+    seenSources.add(source);
+    photos.push({ src: source, alt: item.alternativeText ?? fallbackAlt });
+  }
+  return photos;
+}

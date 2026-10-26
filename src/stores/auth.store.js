@@ -91,30 +91,27 @@ export const useAuthStore = defineStore({
             this.auth.accessToken = null
             this.auth.status = 'logged_out',
             localStorage.removeItem('user');
+            localStorage.removeItem(localStorageTokenKey);
             router.push('/login');
         },
         async requestSmsCode(phone) {
             const phoneNumber = String(phone ?? '').replace(/\D/g, '');
             return fetchWrapper.post(`${baseUrl}/api/auth/sms-login/request`, { phoneNumber });
         },
-        async verifySmsCode(phone, code) {
-            const phoneNumber = String(phone ?? '').replace(/\D/g, '');
-            const { jwt, user } = await fetchWrapper.post(`${baseUrl}/api/auth/sms-login/verify`, { phoneNumber, code: String(code ?? '').trim() });
-            this.setSession(jwt, user);
-            return user;
-        },
         // The stored user is a snapshot from login, so a role changed in Strapi
         // (e.g. promoted to Administrator) wouldn't show until the next login.
         // Plain fetch, not fetchWrapper: a 401/403 here shouldn't log anyone out.
         async refreshRole() {
             if (!this.user || !this.auth.accessToken) return;
+            const token = this.auth.accessToken;
+            const actorId = this.user.id;
             try {
                 const res = await fetch(`${baseUrl}/api/users/me?populate=role`, {
-                    headers: { Authorization: `Bearer ${this.auth.accessToken}` }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
                 if (!res.ok) return;
                 const me = await res.json();
-                if (!me?.role) return;
+                if (!me?.role || me.id !== actorId || this.user?.id !== actorId || this.auth.accessToken !== token) return;
                 this.user = { ...this.user, role: me.role };
                 localStorage.setItem('user', JSON.stringify(this.user));
             } catch {

@@ -123,7 +123,7 @@ export default {
       if (!this.token || !this.userId || !this.isAuthenticated) return;
 
       try {
-        const response = await fetch(`${process.env.VUE_APP_API_URL}/auth/verify-email`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify-email`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -169,7 +169,7 @@ export default {
       this.isLoading = true;
 
       try {
-        const response = await fetch(`${process.env.VUE_APP_API_URL}/auth/set-password`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/set-password`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

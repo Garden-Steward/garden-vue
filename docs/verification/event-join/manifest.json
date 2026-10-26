@@ -1,0 +1,27 @@
+{
+  "backendSource": "e9fdd65ee68a68683112d18305bbf9ac4d703394",
+  "recordedWith": "Real Firefox and dry-run backend email capture on an owned cloned database",
+  "liveDelivery": false,
+  "files": [
+    {
+      "file": "desktop.mp4",
+      "width": 1440,
+      "sha256": "f80b3b49f926eda7125346ae0aefde07dc117702840a5dd4f930dcb09d8ebb88",
+      "bytes": 358266
+    },
+    {
+      "file": "phone.mp4",
+      "width": 390,
+      "sha256": "811d0edc9345488fd56109787e87dc6a6b4ffa234419b08a3676dccd987dc921",
+      "bytes": 190275
+    },
+    {
+      "file": "project-interest.mp4",
+      "width": 390,
+      "sha256": "4fe577366cad85e99e0d3de99fec78d294f409b700d4370d60327affa2fe90a1",
+      "bytes": 100594
+    }
+  ],
+  "joinFrontendAppSource": "d6b3d6073d525587be590eac8f7cc930e4da42ae",
+  "projectFrontendAppSource": "21ae67df74df309c562877968d1be34e353168cc"
+}

@@ -96,7 +96,8 @@ const inputClasses = computed(() => {
 })
 
 const inputAttrs = computed(() => {
-  const { class: _c, ...rest } = { ...attrs };
+  const rest = { ...attrs };
+  delete rest.class;
   return rest;
 })
 </script>

@@ -5,7 +5,6 @@ import { useRoute, useRouter } from "vue-router";
 import { useEventStore, useAlertStore, useProjectsStore, useGardenTaskStore } from '@/stores';
 import { relationKey } from '@/helpers';
 import Tiptap from '@/components/Tiptap.vue'
-import UserProfileDisplay from '@/components/UserProfileDisplay.vue'
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css'
 import { format } from 'date-fns';
@@ -938,22 +937,12 @@ onBeforeUnmount(() => {
                   Save Event
                 </button>
                 
-                <h2 class="text-xl font-bold mb-3 text-[#1a2617] dark:text-[#f5f5f5]">
-                  Volunteers RSVP'd 
-                  <span class="text-lg font-normal text-[#6b7280] dark:text-white/80">({{ event.confirmed?.length || 0 }})</span>
+                <h2 class="text-xl font-bold mb-3 text-[#1a2617]">
+                  Registered volunteers
                 </h2>
-                
-                <div>
-                  <div v-if="!event.confirmed?.length" class="text-[#6b7280] dark:text-[#d0d0d0]">
-                    No one has RSVP'd to this event yet
-                  </div>
-                  <ul v-else class="space-y-3">
-                    <li v-for="volunteer in event.confirmed" :key="volunteer.id">
-                      <UserProfileDisplay :volunteer="volunteer" :showName="true" />
-                    </li>
-                  </ul>
-                </div>
-                
+                <p v-if="Number.isSafeInteger(event.confirmedCount)">{{ event.confirmedCount }} registered</p>
+                <p v-else>Registration count is unavailable.</p>
+
                 <!-- Public Event Page Link -->
                 <button
                   @click="$router.push(`/d/${event.id}`)"

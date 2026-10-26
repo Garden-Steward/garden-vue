@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper, stripReadOnly } from '@/helpers';
+import { readPublicCollection } from '@/helpers/public-collection';
 import { useGardensStore, useAlertStore } from '@/stores';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
@@ -9,7 +10,7 @@ const baseUrl = `${import.meta.env.VITE_API_URL}/api/volunteer-days`;
 // (populate[0]) with nested object keys, and silently drops a bare
 // `populate=field` when other array keys are present — so use the object form
 // throughout, with nested populate for garden.managers.
-const eventPopulate = 'populate[recurring_template]=true&populate[confirmed]=true&populate[hero_image]=true&populate[featured_gallery]=true&populate[garden][populate][managers]=true';
+const eventPopulate = 'populate[recurring_template]=true&populate[hero_image]=true&populate[featured_gallery]=true&populate[garden][populate][managers]=true';
 // Only requested when the loaded event carried `projects` (i.e. the backend
 // has the relation) — an older backend 400s on the unknown populate key.
 const projectsPopulate = '&populate[projects][populate][hero_image]=true&populate[projects][populate][garden]=true';
@@ -20,7 +21,9 @@ export const useEventStore = defineStore({
         volunteerDays: {},
         volunteerDay: {},
         event: {},
+        eventRequest: 0,
         events: {},
+        publicRequest: 0,
         eventsPagination: {
             page: 1,
             pageSize: 15,
@@ -50,71 +53,34 @@ export const useEventStore = defineStore({
                             .then(res => this.volunteerDays.days = res)
                 .catch(this.handleError);
         },
-        async fetchPublic(page = 1, pageSize = 15) {
+        async fetchPublic() {
+            const request = ++this.publicRequest;
             this.events = { loading: true };
-            const url = `${baseUrl}/public?pagination[page]=${page}&pagination[pageSize]=${pageSize}&populate[0]=hero_image&populate[1]=garden&populate[garden][populate][0]=hero_image&populate[garden][populate][1]=organization`;
-            return fetchWrapper.get(url)
-                .then(res => {
-                    // Handle Strapi pagination response format
-                    if (res.data && res.meta?.pagination) {
-                        this.events = res.data;
-                        this.eventsPagination = res.meta.pagination;
-                    } else if (Array.isArray(res)) {
-                        // Fallback for non-paginated response
-                        this.events = res;
-                        this.eventsPagination = {
-                            page: 1,
-                            pageSize: res.length,
-                            pageCount: 1,
-                            total: res.length
-                        };
-                    } else {
-                        this.events = res;
-                    }
-                    return res;
-                })
-                .catch(this.handleError);
-        },
-        async loadMoreEvents() {
-            const nextPage = this.eventsPagination.page + 1;
-            if (nextPage > this.eventsPagination.pageCount) {
-                return Promise.resolve([]);
+            try {
+                const response = await readPublicCollection(`${baseUrl}/public`);
+                if (request === this.publicRequest) {
+                    this.events = response.data;
+                    this.eventsPagination = response.meta.pagination;
+                }
+                return response;
+            } catch (error) {
+                if (request === this.publicRequest) {
+                    this.events = { error };
+                    this.eventsPagination = { page: 1, pageSize: 100, pageCount: 0, total: 0 };
+                    this.handleError(error);
+                }
+                throw error;
             }
-            
-            const url = `${baseUrl}/public?pagination[page]=${nextPage}&pagination[pageSize]=${this.eventsPagination.pageSize}&populate[0]=hero_image&populate[1]=garden&populate[garden][populate][0]=hero_image&populate[garden][populate][1]=organization`;
-            return fetchWrapper.get(url)
-                .then(res => {
-                    let newEvents = [];
-                    if (res.data && Array.isArray(res.data)) {
-                        newEvents = res.data;
-                    } else if (Array.isArray(res)) {
-                        newEvents = res;
-                    }
-                    
-                    // Append new events to existing ones
-                    if (Array.isArray(this.events)) {
-                        this.events = [...this.events, ...newEvents];
-                    } else {
-                        this.events = newEvents;
-                    }
-                    
-                    // Update pagination metadata
-                    if (res.meta?.pagination) {
-                        this.eventsPagination = res.meta.pagination;
-                    }
-                    
-                    return newEvents;
-                })
-                .catch(this.handleError);
         },
         async findById(id) {
+            const request = ++this.eventRequest;
             this.event = { loading: true };
             // v5 core findOne keys on documentId, but our /d/:id routes (and SMS
             // links) use the numeric id — resolve via the custom by-id route,
             // which populates server-side and returns a flat { data } entry.
             return fetchWrapper.get(`${baseUrl}/by-id/${id}`)
                 .then(res => {
-                    this.event = res.data;
+                    if (request === this.eventRequest) this.event = res.data;
                     return res.data;
                 })
                 .catch(this.handleError);
@@ -242,6 +208,8 @@ export const useEventStore = defineStore({
             // Drop Strapi system keys (id/documentId/timestamps) in case the
             // caller passed a spread entity.
             data = stripReadOnly(data);
+            delete data.confirmed;
+            delete data.confirmedCount;
             // Reduce hero_image to its id for the write payload (v5 flat object,
             // or legacy { data: { id } }).
             const heroId = data.hero_image?.id ?? data.hero_image?.data?.id;
@@ -281,17 +249,6 @@ export const useEventStore = defineStore({
         async cancel(id) {
             return this.update(id, { canceled: true });
         },
-        async rsvpEvent(data) {
-            return fetchWrapper.post(`${baseUrl}/rsvp/${data.id}`,{data: data})
-                .then(res => {
-                    // The RSVP response only populates `confirmed`. Merge that in
-                    // rather than replacing the event, which would drop the
-                    // garden, brief, tasks and series the event page renders.
-                    const confirmed = res?.data?.confirmed;
-                    this.event = { ...this.event, ...(Array.isArray(confirmed) ? { confirmed } : {}) };
-                })
-                .catch(this.handleError);
-        },
         async closeUpdate() {
             // const idx = this.volunteerDays.days.findIndex(v=> v.id == id);
             // this.volunteerDays.days[idx].title = this.volunteerDay.title;
@@ -299,6 +256,8 @@ export const useEventStore = defineStore({
         },
         async register(data) {
             data = stripReadOnly(data);
+            delete data.confirmed;
+            delete data.confirmedCount;
             return fetchWrapper.post(`${baseUrl}?populate=*`,{data:data})
                 .then(res => {
                     // v5 returns a flat entry (fields + id directly on res.data).

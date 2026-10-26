@@ -3,14 +3,13 @@ import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useGardensStore, useEventStore, useAuthStore, useProjectsStore } from '@/stores';
 import { computed, ref, onMounted, watch, nextTick } from 'vue';
+import { participationRequest } from '@/helpers/participation';
 import { getRandomDefaultImage, getImageOrDefault } from '@/helpers/image-utils';
 import VolunteerActivity from '@/components/VolunteerActivity.vue';
 import LeafletMap from '@/components/LeafletMap.vue';
 import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
 import { truncatePlainText } from '@/helpers/safe-html';
-import SunIcon from '@/components/icons/Sun.svg?raw';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
-import { RsvpPhoneModal } from '@/components/modals';
+import { JoinEventModal } from '@/components/modals';
 import GardenMemberMenu from '@/components/GardenMemberMenu.vue';
 import '@/assets/garden-public.css';
 
@@ -25,33 +24,7 @@ const { volunteerDays } = storeToRefs(eventStore);
 const { user } = storeToRefs(authStore);
 const { projects } = storeToRefs(projectsStore);
 
-// Dark mode state - initialize from system preference
-const getSystemPreference = () => {
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  return false;
-};
-
-const isDarkMode = ref(false);
-
-// Initialize dark mode from localStorage, or fall back to system preference
 onMounted(() => {
-  const savedTheme = localStorage.getItem('garden-public-theme');
-  let shouldBeDark = false;
-  
-  if (savedTheme === 'dark' || savedTheme === 'light') {
-    // User has manually set a preference
-    shouldBeDark = savedTheme === 'dark';
-  } else {
-    // No saved preference, use system default
-    shouldBeDark = getSystemPreference();
-  }
-  
-  isDarkMode.value = shouldBeDark;
-  applyDarkMode(shouldBeDark);
-  
-  // Restore scroll position if returning from a project page
   restoreScrollPosition();
 });
 
@@ -84,23 +57,6 @@ watch(() => garden.value?.slug, async (slug) => {
     await restoreScrollPosition();
   }
 }, { immediate: false });
-
-// Apply dark mode class to html element (for Tailwind)
-const applyDarkMode = (dark) => {
-  if (dark) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-};
-
-// Toggle dark mode
-const toggleDarkMode = () => {
-  isDarkMode.value = !isDarkMode.value;
-  applyDarkMode(isDarkMode.value);
-  // Save preference when manually toggled
-  localStorage.setItem('garden-public-theme', isDarkMode.value ? 'dark' : 'light');
-};
 
 // Save scroll position before navigating to project
 const saveScrollPosition = () => {
@@ -265,12 +221,6 @@ const hasMoreLatestEvents = computed(() => {
 const loadMoreLatestEvents = () => {
   latestEventsToShow.value += 2;
 };
-
-// Truncate description to 200 characters
-const isManager = computed(() => {
-  if (!garden.value?.managers || !user.value) return false;
-  return garden.value.managers.some(manager => manager.id === user.value.id);
-});
 
 // Donation modal state
 const showDonationModal = ref(false);
@@ -443,29 +393,26 @@ const projectLinkProps = (project) => {
 const nextEvent = computed(() => upcomingEvents.value.find(e => !e.canceled) || null);
 const laterEvents = computed(() => upcomingEvents.value.filter(e => e !== nextEvent.value));
 
-// RSVP to the next workday right here rather than sending people to the event
-// page. Signed-in stewards RSVP directly; everyone else gives a phone number.
 const showRsvpModal = ref(false);
-const rsvpedIds = ref(new Set());
-const rsvpBusy = ref(false);
-const nextEventRsvped = computed(() => !!nextEvent.value && rsvpedIds.value.has(nextEvent.value.id));
-const markRsvped = (id) => { rsvpedIds.value = new Set(rsvpedIds.value).add(id); };
-
-const rsvpNextEvent = async () => {
-  if (!nextEvent.value || nextEventRsvped.value || rsvpBusy.value) return;
-  if (!user.value) {
-    showRsvpModal.value = true;
-    return;
-  }
-  rsvpBusy.value = true;
+const nextParticipation = ref(null);
+let participationGeneration = 0;
+const nextEventRsvped = computed(() => nextParticipation.value?.eventDocumentId === nextEvent.value?.documentId && nextParticipation.value?.actorId === user.value?.id && nextParticipation.value?.rsvp === 'confirmed');
+const markRsvped = (id, receipt) => {
+  if (receipt?.eventDocumentId !== nextEvent.value?.documentId) return;
+  nextParticipation.value = { ...receipt, actorId: user.value?.id };
+};
+watch([() => nextEvent.value?.documentId, () => user.value?.id], async ([documentId, actorId]) => {
+  const current = ++participationGeneration;
+  nextParticipation.value = null;
+  if (!documentId || !actorId) return;
   try {
-    await eventStore.rsvpEvent({ userId: user.value.id, id: nextEvent.value.id });
-    markRsvped(nextEvent.value.id);
-  } catch {
-    // The store's error handler already raises an alert.
-  } finally {
-    rsvpBusy.value = false;
-  }
+    const result = await participationRequest(import.meta.env.VITE_API_URL, `/volunteer-days/${documentId}/joins/me`, { token: authStore.auth.accessToken });
+    if (current === participationGeneration && result.data) nextParticipation.value = { ...result.data, actorId };
+  } catch { if (current === participationGeneration) nextParticipation.value = null; }
+}, { immediate: true });
+const rsvpNextEvent = () => {
+  if (!nextEvent.value || nextEventRsvped.value) return;
+  showRsvpModal.value = true;
 };
 
 const formatShortDay = (dateString) => {
@@ -524,16 +471,6 @@ watch(
 
 <template>
   <div class="garden-public-container">
-    <!-- Dark Mode Toggle Button -->
-    <button
-      @click="toggleDarkMode"
-      class="dark-mode-toggle"
-      :aria-label="isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-    >
-      <span v-if="isDarkMode" class="sun-icon" v-html="SunIcon"></span>
-      <i v-else class="fas fa-moon"></i>
-    </button>
-
     <div class="garden-public-content">
       <!-- Hero: title, blurb and the main action sit on the photo -->
       <section v-if="garden.id" class="gp-hero" aria-labelledby="garden-title">
@@ -555,7 +492,7 @@ watch(
               v-else
               type="button"
               class="gp-btn gp-btn-cta"
-              :disabled="nextEventRsvped || rsvpBusy"
+              :disabled="nextEventRsvped"
               @click="rsvpNextEvent"
             >{{ nextEventRsvped ? "You're going" : 'RSVP to next event' }}</button>
             <router-link :to="`/d/${nextEvent.id}`" class="gp-btn gp-btn-ghost">
@@ -726,7 +663,7 @@ watch(
                   v-else
                   type="button"
                   class="gp-btn gp-btn-primary gp-btn-sm"
-                  :disabled="nextEventRsvped || rsvpBusy"
+                  :disabled="nextEventRsvped"
                   @click="rsvpNextEvent"
                 >
                   {{ nextEventRsvped ? "You're going" : 'RSVP' }}
@@ -921,9 +858,10 @@ watch(
     </div>
   </Teleport>
 
-  <RsvpPhoneModal
+  <JoinEventModal
     v-model="showRsvpModal"
-    :event-id="nextEvent?.id"
+    :event-id="nextEvent?.documentId || nextEvent?.id"
+    :event-title="nextEvent?.title"
     :garden-title="garden?.title"
     @rsvped="markRsvped"
   />
@@ -950,64 +888,6 @@ watch(
 .dark .garden-public-container {
   background-color: #2d3e26;
   color: #f5f5f5;
-}
-
-/* Dark mode toggle button */
-.dark-mode-toggle {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  z-index: 100000;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 2px solid #8aa37c;
-  background-color: #ffffff;
-  color: #8aa37c;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dark-mode-toggle:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-  transform: scale(1.1);
-}
-
-.dark .dark-mode-toggle {
-  background-color: #1a1a1a;
-  border-color: #8aa37c;
-  color: #8aa37c;
-}
-
-.dark .dark-mode-toggle:hover {
-  background-color: #8aa37c;
-  color: #ffffff;
-}
-
-/* Sun icon SVG styling */
-.sun-icon {
-  width: 24px;
-  height: 24px;
-  transition: all 0.3s ease;
-  color: #4a4a4a;
-}
-
-.dark-mode-toggle:hover .sun-icon {
-  color: #ffffff;
-}
-
-.dark .dark-mode-toggle .sun-icon {
-  color: #8aa37c;
-}
-
-.dark .dark-mode-toggle:hover .sun-icon {
-  color: #ffffff;
 }
 
 /* Page wrapper */
@@ -1093,11 +973,6 @@ watch(
 }
 
 /* ---------- Small screens ---------- */
-@media (max-width: 768px) {
-  .dark-mode-toggle {
-    display: none;
-  }
-}
 
 @media (max-width: 640px) {
   .garden-public-content {

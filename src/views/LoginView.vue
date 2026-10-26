@@ -40,7 +40,7 @@ function closeRegisterModal() {
     <!-- Dark: single canvas green (#2d3e26 via body); panel uses ring + border only (second color = structure, not another fill). -->
     <div class="max-w-md w-full mx-auto mt-8 stew bg-custom-light dark:bg-transparent rounded-md p-5 border border-transparent dark:border-[#3d4d36]/90 dark:ring-1 dark:ring-white/10 dark:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.45)]">
         <div class="stew-logo-wrapper">
-            <img class="stew-logo mx-auto" src="https://storage.googleapis.com/steward_upload/uploads/garden_steward_logo_green_sq_350_75514db053/garden_steward_logo_green_sq_350_75514db053.jpg" alt="Steward Logo">
+            <img class="stew-logo mx-auto" src="/brand/garden-steward-wordmark.svg" alt="Garden Steward">
         </div>
 
         <div class="text-lg mt-8 max-w-md w-full mx-auto mb-4 text-gray-800 dark:text-[#d0d0d0]">
@@ -169,10 +169,14 @@ function closeRegisterModal() {
   }
   .stew-logo-wrapper {
     flex-shrink: 0;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: #F1F2D5;
   }
   .stew-logo {
-    height: 15rem;
-    width: 15rem;
+    display: block;
+    height: auto;
+    width: min(100%, 27rem);
   }
   .color-green {
       color:#f7f1e3;

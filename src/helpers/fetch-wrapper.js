@@ -60,7 +60,7 @@ function handleResponse(response) {
         
         if (!response.ok) {
             const { user, logout } = useAuthStore();
-            if ([401, 403].includes(response.status) && user) {
+            if (response.status === 401 && user) {
                 logout();
             }
 
