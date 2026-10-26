@@ -91,6 +91,7 @@ export const useAuthStore = defineStore({
             this.auth.accessToken = null
             this.auth.status = 'logged_out',
             localStorage.removeItem('user');
+            localStorage.removeItem(localStorageTokenKey);
             router.push('/login');
         },
         async requestSmsCode(phone) {

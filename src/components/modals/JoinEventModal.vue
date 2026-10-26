@@ -138,11 +138,11 @@ const resume = () => act(async current => {
 const requestLogin = () => act(async current => {
     const body = { requestId: operation('email-login', loginEmail.value), emailRaw: loginEmail.value, browserSecret: secret };
     const result = await request('/auth/email-login/request', body);
-    if (current === generation) { loginProof.value = result.data; flow.value = { ...flow.value, kind: 'email_code' }; code.value = ''; resendAt.value = Date.now() + 60000; focusHeading(); }
+    if (current === generation) { operations.delete('email-login'); loginProof.value = result.data; flow.value = { ...flow.value, kind: 'email_code' }; code.value = ''; resendAt.value = Date.now() + 60000; focusHeading(); }
 });
 const resendLogin = () => {
     if (remaining.value || busy.value) return;
-    operations.delete('email-login'); requestLogin();
+    requestLogin();
 };
 const verifyLogin = () => act(async current => {
     const eventDocumentId = event.value.documentId;

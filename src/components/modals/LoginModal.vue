@@ -230,6 +230,7 @@ const requestEmailCode = async () => {
         const result = await participationRequest(import.meta.env.VITE_API_URL, '/auth/email-login/request', { method: 'POST', body: emailInputRequest.value });
         if (!isCurrentLogin(epoch)) return;
         emailProofId.value = result.data.proofId; emailCode.value = ''; emailVerifyRequest.value = null;
+        emailInputRequest.value = null;
         step.value = 'email_verify'; startCountdown();
     } catch (failure) { if (isCurrentLogin(epoch)) error.value = failure.message; }
     finally { if (isCurrentLogin(epoch)) isSubmitting.value = false; }
@@ -249,7 +250,7 @@ const submitEmailCode = async () => {
 };
 const resendEmailCode = () => {
     if (resendRemaining.value || isSubmitting.value) return;
-    emailInputRequest.value = null; requestEmailCode();
+    requestEmailCode();
 };
 
 const close = () => {
