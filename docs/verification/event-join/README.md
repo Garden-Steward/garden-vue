@@ -4,9 +4,9 @@ Watch the actual [desktop registration](desktop.mp4), [phone registration](phone
 
 The registration clips use frontend application source `d6b3d60`. The project clip uses `21ae67d`, which adds the project caller closure. Both use backend `e9fdd65`, reviewed in [backend PR10](https://github.com/Garden-Steward/steward-bank-hack/pull/10). The [manifest](manifest.json) records exact commits and video hashes. The subsequent evidence commit changes documentation and recordings only.
 
-The required clean-source gate passed the build, lint and52 tests at21ae67d. Independent source and comments reviews passed for registration and the project caller closure. Real browser checks covered required phone, exact raw contact round trips, all three pages, wrong-code refusal, verified account creation and saved Schedule confirmation at1440px and390px. Separate checks covered explicit saved-profile reuse, email recovery, Escape focus, canceling a delayed successful login, retrying a lost resend response with the same command, and clearing the token on logout/reload.
+The required clean-source gate passed the build, lint and 52 tests at `21ae67d`. Independent source and comments reviews passed for registration and the project caller closure. Real browser checks covered required phone, exact raw contact round trips, all three pages, wrong-code refusal, verified account creation and saved Schedule confirmation at 1440px and 390px. Separate checks covered explicit saved-profile reuse, email recovery, Escape focus, canceling a delayed successful login, retrying a lost resend response with the same command, and clearing the token on logout/reload.
 
-Backend verification separately passed the build and1,042 tests. Actual PostgreSQL checks covered50 simultaneous completions, native COMMIT rollback, profile conflict handling, the final eligibility fence, restart persistence and the legacy-authority rollback guard. These are database and source checks, not a claim of live delivery.
+Backend verification separately passed the build and 1,042 tests. Actual PostgreSQL checks covered 50 simultaneous completions, native COMMIT rollback, profile conflict handling, the final eligibility fence, restart persistence and the legacy-authority rollback guard. These are database and source checks, not a claim of live delivery.
 
 The mapped flows are:
 
