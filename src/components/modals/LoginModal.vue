@@ -30,6 +30,9 @@ const phoneInput = ref(null);
 const emailInput = ref(null);
 const dialogElement = ref(null);
 let opener = null;
+let generation = 0;
+const loginEpoch = () => ({ generation, token: auth.auth.accessToken });
+const isCurrentLogin = epoch => epoch.generation === generation && epoch.token === auth.auth.accessToken;
 
 const codeDigits = computed(() => digits.value.join(''));
 const isCodeComplete = computed(() => /^\d{6}$/.test(codeDigits.value));
@@ -80,7 +83,8 @@ const focusStep = async () => {
     }
 };
 
-watch(step, focusStep);
+watch(step, () => { generation++; isSubmitting.value = false; focusStep(); });
+watch(() => auth.auth.accessToken, () => { generation++; isSubmitting.value = false; });
 
 const sendErrorMessage = (err) => (err && err.status === 400 && err.message ? err.message : GENERIC_SEND_ERROR);
 
@@ -88,43 +92,52 @@ const submitPhone = async () => {
     if (!isValidPhone.value) return;
     isSubmitting.value = true;
     error.value = '';
+    const epoch = loginEpoch();
     try {
             await auth.requestSmsCode(phoneDigits.value);
+            if (!isCurrentLogin(epoch)) return;
             step.value = 'code';
             clearDigits();
             startCountdown();
         } catch (err) {
-            error.value = sendErrorMessage(err);
+            if (isCurrentLogin(epoch)) error.value = sendErrorMessage(err);
         } finally {
-            isSubmitting.value = false;
+            if (isCurrentLogin(epoch)) isSubmitting.value = false;
         }
     };
 
 const resend = async () => {
     if (resendRemaining.value > 0 || isSubmitting.value) return;
+    const epoch = loginEpoch();
+    isSubmitting.value = true;
     try {
         await auth.requestSmsCode(phoneDigits.value);
+        if (!isCurrentLogin(epoch)) return;
         info.value = 'New code sent.';
         error.value = '';
         startCountdown();
     } catch (err) {
-        error.value = sendErrorMessage(err);
-    }
+        if (isCurrentLogin(epoch)) error.value = sendErrorMessage(err);
+    } finally { if (isCurrentLogin(epoch)) isSubmitting.value = false; }
 };
 
 const submitCode = async () => {
     if (!isCodeComplete.value) return;
     isSubmitting.value = true;
     error.value = '';
+    const epoch = loginEpoch();
     try {
-        await auth.verifySmsCode(phoneDigits.value, codeDigits.value);
+        const result = await participationRequest(import.meta.env.VITE_API_URL, '/auth/sms-login/verify', { method: 'POST', body: { phoneNumber: phoneDigits.value, code: codeDigits.value } });
+        if (!isCurrentLogin(epoch)) return;
+        auth.setSession(result.jwt, result.user);
         auth.finishModalLogin();
     } catch {
+        if (!isCurrentLogin(epoch)) return;
         error.value = INVALID_CODE_ERROR;
         clearDigits();
         digitRefs[0]?.focus();
     } finally {
-        isSubmitting.value = false;
+        if (isCurrentLogin(epoch)) isSubmitting.value = false;
     }
 };
 
@@ -194,13 +207,17 @@ const submitEmail = async () => {
     if (!email.value || !password.value) return;
     isSubmitting.value = true;
     error.value = '';
+    const epoch = loginEpoch();
     try {
-        await auth.login(email.value, password.value, { redirect: false });
+        const result = await participationRequest(import.meta.env.VITE_API_URL, '/auth/local?populate=role', { method: 'POST', body: { identifier: email.value, password: password.value } });
+        if (!isCurrentLogin(epoch)) return;
+        auth.setSession(result.jwt, result.user);
         auth.finishModalLogin();
     } catch (err) {
+        if (!isCurrentLogin(epoch)) return;
         error.value = (err && err.message) || (typeof err === 'string' ? err : 'Login failed. Check your email and password.');
     } finally {
-        isSubmitting.value = false;
+        if (isCurrentLogin(epoch)) isSubmitting.value = false;
     }
 };
 
@@ -208,23 +225,27 @@ const requestEmailCode = async () => {
     if (isSubmitting.value) return;
     if (!emailInputRequest.value || emailInputRequest.value.emailRaw !== email.value) emailInputRequest.value = { requestId: crypto.randomUUID(), emailRaw: email.value, browserSecret: emailBrowserSecret };
     isSubmitting.value = true; error.value = '';
+    const epoch = loginEpoch();
     try {
         const result = await participationRequest(import.meta.env.VITE_API_URL, '/auth/email-login/request', { method: 'POST', body: emailInputRequest.value });
+        if (!isCurrentLogin(epoch)) return;
         emailProofId.value = result.data.proofId; emailCode.value = ''; emailVerifyRequest.value = null;
         step.value = 'email_verify'; startCountdown();
-    } catch (failure) { error.value = failure.message; }
-    finally { isSubmitting.value = false; }
+    } catch (failure) { if (isCurrentLogin(epoch)) error.value = failure.message; }
+    finally { if (isCurrentLogin(epoch)) isSubmitting.value = false; }
 };
 const submitEmailCode = async () => {
     if (isSubmitting.value || !/^\d{8}$/.test(emailCode.value)) return;
     const prior = emailVerifyRequest.value;
     if (!prior || prior.code !== emailCode.value || prior.proofId !== emailProofId.value) emailVerifyRequest.value = { requestId: crypto.randomUUID(), proofId: emailProofId.value, browserSecret: emailBrowserSecret, code: emailCode.value };
     isSubmitting.value = true; error.value = '';
+    const epoch = loginEpoch();
     try {
         const result = await participationRequest(import.meta.env.VITE_API_URL, '/auth/email-login/verify', { method: 'POST', body: emailVerifyRequest.value });
+        if (!isCurrentLogin(epoch)) return;
         auth.setSession(result.data.session.jwt, result.data.session.user); auth.finishModalLogin();
-    } catch (failure) { error.value = failure.message; }
-    finally { isSubmitting.value = false; }
+    } catch (failure) { if (isCurrentLogin(epoch)) error.value = failure.message; }
+    finally { if (isCurrentLogin(epoch)) isSubmitting.value = false; }
 };
 const resendEmailCode = () => {
     if (resendRemaining.value || isSubmitting.value) return;
@@ -232,6 +253,7 @@ const resendEmailCode = () => {
 };
 
 const close = () => {
+    generation++;
     auth.closeLoginModal();
 };
 
@@ -263,6 +285,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+    generation++;
     if (timer) {
         clearInterval(timer);
         timer = null;

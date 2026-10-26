@@ -218,9 +218,10 @@ const rsvpEvent = () => {
   if (isEventPast.value || isRSVPed.value) return;
   showModal.value = true;
 };
-const joinedEvent = async () => {
+const joinedEvent = async (id, receipt) => {
+  if (receipt?.eventDocumentId !== event.value?.documentId) return;
   isRSVPed.value = true;
-  await eventStore.findById(event.value.documentId);
+  await eventStore.findById(receipt.eventDocumentId);
 };
 
 </script>

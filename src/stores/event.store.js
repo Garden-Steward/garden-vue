@@ -21,6 +21,7 @@ export const useEventStore = defineStore({
         volunteerDays: {},
         volunteerDay: {},
         event: {},
+        eventRequest: 0,
         events: {},
         publicRequest: 0,
         eventsPagination: {
@@ -72,13 +73,14 @@ export const useEventStore = defineStore({
             }
         },
         async findById(id) {
+            const request = ++this.eventRequest;
             this.event = { loading: true };
             // v5 core findOne keys on documentId, but our /d/:id routes (and SMS
             // links) use the numeric id — resolve via the custom by-id route,
             // which populates server-side and returns a flat { data } entry.
             return fetchWrapper.get(`${baseUrl}/by-id/${id}`)
                 .then(res => {
-                    this.event = res.data;
+                    if (request === this.eventRequest) this.event = res.data;
                     return res.data;
                 })
                 .catch(this.handleError);

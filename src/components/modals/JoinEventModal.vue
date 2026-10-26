@@ -138,17 +138,29 @@ const resume = () => act(async current => {
 const requestLogin = () => act(async current => {
     const body = { requestId: operation('email-login', loginEmail.value), emailRaw: loginEmail.value, browserSecret: secret };
     const result = await request('/auth/email-login/request', body);
-    if (current === generation) { loginProof.value = result.data; flow.value = { ...flow.value, kind: 'email_code' }; code.value = ''; focusHeading(); }
+    if (current === generation) { loginProof.value = result.data; flow.value = { ...flow.value, kind: 'email_code' }; code.value = ''; resendAt.value = Date.now() + 60000; focusHeading(); }
 });
+const resendLogin = () => {
+    if (remaining.value || busy.value) return;
+    operations.delete('email-login'); requestLogin();
+};
 const verifyLogin = () => act(async current => {
+    const eventDocumentId = event.value.documentId;
+    const intentId = flow.value.intentId;
     const body = { requestId: operation('email-login-verify', { proofId: loginProof.value.proofId, code: code.value }), proofId: loginProof.value.proofId, code: code.value, browserSecret: secret };
     const result = await request('/auth/email-login/verify', body);
     if (current !== generation) return;
     const session = result.data.session;
-    const intentId = flow.value.intentId;
+    let receipt;
+    try { receipt = await participationRequest(baseUrl, `/volunteer-days/${eventDocumentId}/joins/me`, { token: session.jwt }); }
+    catch {
+        if (current !== generation || !props.modelValue || event.value.documentId !== eventDocumentId) return;
+        auth.setSession(session.jwt, session.user); flow.value = { kind: 'details' };
+        notice.value = 'You’re signed in. Open this event again to check your registration.';
+        return;
+    }
+    if (current !== generation || !props.modelValue || event.value.documentId !== eventDocumentId) return;
     auth.setSession(session.jwt, session.user);
-    const receipt = await request(`/volunteer-days/${event.value.documentId}/joins/me`, undefined, 'GET');
-    if (auth.auth.accessToken !== session.jwt) return;
     if (receipt.data?.rsvp === 'confirmed') {
         accept({ kind: 'already_confirmed', receipt: receipt.data });
     } else if (intentId) flow.value = { kind: 'legacy', intentId };
@@ -179,10 +191,11 @@ watch(() => auth.loginModalOpen, async open => {
 });
 watch([() => props.modelValue, () => props.eventId], async ([open]) => {
     if (!open) { generation++; busy.value = false; dialog.value?.close(); opener?.focus(); return; }
+    const current = ++generation;
     opener = document.activeElement;
     await nextTick();
+    if (current !== generation || !props.modelValue) return;
     if (!dialog.value?.open) dialog.value?.showModal();
-    const current = ++generation;
     busy.value = true; error.value = ''; notice.value = ''; options.value = null;
     Object.assign(draft, blankJoinDraft()); flow.value = { kind: 'details' }; operations = new Map(); code.value = ''; secret = browserSecret();
     try {
@@ -216,7 +229,7 @@ onBeforeUnmount(() => { generation++; clearInterval(timer); dialog.value?.close(
       <h1 id="join-heading" ref="heading" tabindex="-1">{{ title }}</h1>
       <p v-if="busy && !options" role="status">Getting the garden ready…</p>
       <p v-if="notice" class="join-note" role="status">{{ notice }}</p>
-      <form v-if="options" novalidate @submit.prevent="submitPage">
+      <form v-if="options" novalidate @submit.prevent="submitPage"><fieldset class="join-fields" :disabled="busy">
         <section v-if="flow.kind === 'details'">
           <p>Your name, email and phone are required. You can add interests on the next page.</p>
           <div class="join-returning"><span>Coming back?</span><button v-if="savedProfile" type="button" @click="reuseProfile">Use my saved details</button><button v-else-if="!auth.user" type="button" @click="flow = { kind: 'email' }; focusHeading()">Sign in to reuse my details</button></div>
@@ -237,6 +250,7 @@ onBeforeUnmount(() => { generation++; clearInterval(timer); dialog.value?.close(
         <section v-else-if="flow.kind === 'review'">
           <p>Check your details before joining.</p>
           <dl class="join-review"><div v-for="(label, key) in { preferredNameRaw: 'Preferred name', emailRaw: 'Email', phoneRaw: 'Phone' }" :key="key"><dt>{{ label }}</dt><dd>{{ draft[key] }}</dd></div><template v-for="(label, key) in groupLabels" :key="key"><div v-if="draft.preferences[key].length"><dt>{{ label }}</dt><dd>{{ options.preferences[key].filter(choice => draft.preferences[key].includes(choice.id)).map(choice => choice.label).join(', ') }}</dd></div></template><div v-if="draft.accessRequestRaw"><dt>Private access request</dt><dd>{{ draft.accessRequestRaw }}</dd></div></dl>
+          <dl v-if="draft.preferences.experience" class="join-review"><div><dt>Garden experience</dt><dd>{{ options.preferences.experience.find(choice => choice.id === draft.preferences.experience)?.label }}</dd></div></dl>
           <div class="join-actions"><button type="button" @click="flow = { kind: 'details' }; focusHeading()">Edit details</button><button type="button" @click="flow = { kind: 'garden' }; focusHeading()">Edit interests & preferences</button></div>
           <h2>A little garden news.</h2><p>{{ options.newsletter.text }} Existing opt-outs stay in place.</p>
           <label class="join-check"><input v-model="draft.saveReusableProfile" type="checkbox">Save these details for next time</label>
@@ -258,12 +272,12 @@ onBeforeUnmount(() => { generation++; clearInterval(timer); dialog.value?.close(
           <p>We’ll send a code if this email belongs to a verified Garden Steward account.</p><label>Email<input v-model="loginEmail" type="text" inputmode="email" autocomplete="email" maxlength="320"></label><div class="join-actions"><button type="button" class="join-primary" :disabled="busy" @click="requestLogin">Email me a code</button><button type="button" @click="startAgain">Back to registration</button></div>
         </section>
         <section v-else-if="flow.kind === 'email_code'">
-          <p>If this address has a verified account, use the 8-digit code from your email.</p><label>Email code<input v-model="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8"></label><div class="join-actions"><button type="button" class="join-primary" :disabled="busy" @click="verifyLogin">Sign in</button><button type="button" @click="flow = { ...flow, kind: 'email' }; focusHeading()">Change email</button></div>
+          <p>If this address has a verified account, use the 8-digit code from your email.</p><label>Email code<input v-model="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8"></label><div class="join-actions"><button type="button" class="join-primary" :disabled="busy" @click="verifyLogin">Sign in</button><button type="button" :disabled="busy || remaining > 0" @click="resendLogin">Resend code<span v-if="remaining"> ({{ remaining }}s)</span></button><button type="button" @click="operations.delete('email-login'); flow = { ...flow, kind: 'email' }; focusHeading()">Change email</button></div>
         </section>
         <section v-else-if="flow.kind === 'confirmed'">
           <p>Your place is confirmed. We’re glad you’ll be there.</p><p v-if="flow.join.profileSave === 'conflict'" class="join-note">Your event registration is saved. Your reusable details changed elsewhere, so those were kept.</p><p v-if="!auth.user">To see this RSVP on another visit, sign in with your verified email.</p><div class="join-actions"><button type="button" class="join-primary" @click="close">Done</button><button v-if="!auth.user" type="button" @click="flow = { kind: 'email' }; focusHeading()">Sign in with email</button></div>
         </section>
-      </form>
+      </fieldset></form>
       <p v-if="error" class="join-error" role="alert">{{ error }}</p>
     </dialog>
   </Teleport>
@@ -292,6 +306,7 @@ onBeforeUnmount(() => { generation++; clearInterval(timer); dialog.value?.close(
 .join-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
 .join-returning { border-block: 1px solid #b9c3a0; padding: 14px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 17px; }
 .join-dialog fieldset { border: 0; padding: 12px 0; margin: 12px 0; min-width: 0; }
+.join-dialog fieldset.join-fields { padding: 0; margin: 0; }
 .join-dialog legend { font-weight: 600; }
 .join-choices { display: flex; flex-wrap: wrap; gap: 10px; }
 .join-choices label { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #a9b594; margin: 0; font-size: 18px; }

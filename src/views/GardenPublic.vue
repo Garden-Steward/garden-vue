@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useGardensStore, useEventStore, useAuthStore, useProjectsStore } from '@/stores';
 import { computed, ref, onMounted, watch, nextTick } from 'vue';
+import { participationRequest } from '@/helpers/participation';
 import { getRandomDefaultImage, getImageOrDefault } from '@/helpers/image-utils';
 import VolunteerActivity from '@/components/VolunteerActivity.vue';
 import LeafletMap from '@/components/LeafletMap.vue';
@@ -393,9 +394,22 @@ const nextEvent = computed(() => upcomingEvents.value.find(e => !e.canceled) || 
 const laterEvents = computed(() => upcomingEvents.value.filter(e => e !== nextEvent.value));
 
 const showRsvpModal = ref(false);
-const rsvpedIds = ref(new Set());
-const nextEventRsvped = computed(() => !!nextEvent.value && rsvpedIds.value.has(nextEvent.value.id));
-const markRsvped = (id) => { rsvpedIds.value = new Set(rsvpedIds.value).add(id); };
+const nextParticipation = ref(null);
+let participationGeneration = 0;
+const nextEventRsvped = computed(() => nextParticipation.value?.eventDocumentId === nextEvent.value?.documentId && nextParticipation.value?.actorId === user.value?.id && nextParticipation.value?.rsvp === 'confirmed');
+const markRsvped = (id, receipt) => {
+  if (receipt?.eventDocumentId !== nextEvent.value?.documentId) return;
+  nextParticipation.value = { ...receipt, actorId: user.value?.id };
+};
+watch([() => nextEvent.value?.documentId, () => user.value?.id], async ([documentId, actorId]) => {
+  const current = ++participationGeneration;
+  nextParticipation.value = null;
+  if (!documentId || !actorId) return;
+  try {
+    const result = await participationRequest(import.meta.env.VITE_API_URL, `/volunteer-days/${documentId}/joins/me`, { token: authStore.auth.accessToken });
+    if (current === participationGeneration && result.data) nextParticipation.value = { ...result.data, actorId };
+  } catch { if (current === participationGeneration) nextParticipation.value = null; }
+}, { immediate: true });
 const rsvpNextEvent = () => {
   if (!nextEvent.value || nextEventRsvped.value) return;
   showRsvpModal.value = true;
@@ -849,7 +863,7 @@ watch(
     :event-id="nextEvent?.documentId || nextEvent?.id"
     :event-title="nextEvent?.title"
     :garden-title="garden?.title"
-    @rsvped="markRsvped(nextEvent.id)"
+    @rsvped="markRsvped"
   />
 </template>
 
