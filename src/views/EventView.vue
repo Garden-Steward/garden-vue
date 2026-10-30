@@ -1172,9 +1172,15 @@ a.ev-task:hover {
   }
 
   .ev-step {
-    grid-template-columns: 58px 20px minmax(0, 1fr);
-    column-gap: 10px;
-  }
+      grid-template-columns: 58px 20px minmax(0, 1fr);
+      column-gap: 10px;
+    }
+
+    /* Untimed steps render only rail + body, so they must stay a 2-column grid;
+       the 3-column rule above would otherwise slot the text into the 20px rail track. */
+    .ev-step--untimed {
+      grid-template-columns: 20px minmax(0, 1fr);
+    }
 
   .ev-recap {
     grid-template-columns: repeat(2, minmax(0, 1fr));
