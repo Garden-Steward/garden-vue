@@ -25,6 +25,15 @@ let heroImage = function(blog) {
   }
 }
 
+let audioUrl = function(blog) {
+  if (!blog.audio?.url) return '';
+  if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && !blog.audio.url.includes('googleapis.com')) {
+    return `${baseUrl}${blog.audio.url}`;
+  } else {
+    return blog.audio.url;
+  }
+}
+
 let authorImage = function(blog) {
   if (import.meta.env.VITE_API_URL == 'http://localhost:1337' && blog.author?.profilePhoto?.url && !blog.author.profilePhoto.url.includes('googleapis.com')) {
     return `${baseUrl}${blog.author?.profilePhoto?.formats?.medium?.url}`;
@@ -138,11 +147,18 @@ const coAuthorEntity = computed(() => unwrapRelation(blog.value?.co_author));
         </div>
 
         <div class="flex-1 flex flex-col items-center justify-center my-3">
-          <h1 class="text-3xl sm:text-4xl font-bold text-black dark:text-[#f5f5f5]">{{ blog?.title }}</h1>
-          <h2 class="text-xl text-gray-600 dark:text-[#d0d0d0] mt-2">
-            {{ blog?.subtitle }}
-          </h2>
-        </div>
+                  <h1 class="text-3xl sm:text-4xl font-bold text-black dark:text-[#f5f5f5]">{{ blog?.title }}</h1>
+                  <h2 class="text-xl text-gray-600 dark:text-[#d0d0d0] mt-2">
+                    {{ blog?.subtitle }}
+                  </h2>
+                </div>
+
+                <div v-if="blog?.audio?.url" class="flex justify-center my-4">
+                  <audio controls class="w-full max-w-md">
+                    <source :src="audioUrl(blog)" :type="blog.audio.mime || 'audio/mpeg'">
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
 
         <div v-if="blog.hero_display && blog.hero" class="flex-1 flex bg-cover bg-center h-96 bg-cover rounded-lg" :style="{ backgroundImage: 'url(' + heroImage(blog) + ')' }">
           <div class="flex-1"></div>
