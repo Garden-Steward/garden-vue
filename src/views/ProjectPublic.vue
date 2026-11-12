@@ -300,6 +300,12 @@ const toggleInterest = async () => {
                 {{ isInterested ? "You're in" : "I'm interested" }}
                 <span v-if="interestedCount" class="project-interest-count">{{ interestedCount }}</span>
               </button>
+              <div class="interest-info-wrap">
+                <i class="fas fa-circle-info interest-info-icon" tabindex="0" aria-label="What does I'm interested mean?"></i>
+                <div class="interest-info-tip">
+                  Saying you're interested means you'll hear about future volunteer days for this project. If it's still in early planning, you may get invited to a WhatsApp group to coordinate.
+                </div>
+              </div>
             </div>
 
       <!-- Description -->
@@ -659,6 +665,74 @@ const toggleInterest = async () => {
 .project-interest-btn--lg {
   padding: 0.9rem 2.4rem;
   font-size: 1.15rem;
+}
+
+/* Interest info tooltip */
+.interest-info-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+}
+.interest-info-icon {
+  font-size: 1.1rem;
+  color: #8aa37c;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.interest-info-icon:hover,
+.interest-info-icon:focus {
+  color: #5c7a50;
+}
+.dark .interest-info-icon {
+  color: #8aa37c;
+}
+.dark .interest-info-icon:hover,
+.dark .interest-info-icon:focus {
+  color: #b8d4a8;
+}
+.interest-info-tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background-color: #1a1a1a;
+  color: #f5f5f5;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  font-weight: 400;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+.interest-info-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1a1a1a;
+}
+.interest-info-icon:hover + .interest-info-tip,
+.interest-info-icon:focus + .interest-info-tip {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.dark .interest-info-tip {
+  background-color: #f7f1e3;
+  color: #1a1a1a;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.dark .interest-info-tip::after {
+  border-top-color: #f7f1e3;
 }
 
 /* Bottom CTA */
