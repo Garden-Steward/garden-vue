@@ -623,17 +623,8 @@ const toggleInterest = async () => {
   background-color: #d7e8c8;
   color: #2f5233;
 }
-
-/* Dark mode: make the interest button pop against #2d3e26 bg */
-.dark .project-interest-btn {
-  background-color: #8aa37c;
-  color: #14250f;
-}
-.dark .project-interest-btn:hover:not(:disabled) {
-  background-color: #9bb88d;
-}
 .dark .project-interest-btn.is-in {
-  background-color: #b8d4a8;
+  background-color: #86b153;
   color: #14250f;
 }
 .project-interest-count {
@@ -647,9 +638,6 @@ const toggleInterest = async () => {
   background-color: rgba(20, 37, 15, 0.18);
   font-size: 0.85rem;
   font-weight: 700;
-}
-.dark .project-interest-count {
-  background-color: rgba(20, 37, 15, 0.35);
 }
 .project-interest-btn--lg {
   padding: 0.9rem 2.4rem;
