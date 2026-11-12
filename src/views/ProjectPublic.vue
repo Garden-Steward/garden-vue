@@ -423,7 +423,7 @@ const toggleInterest = async () => {
   width: 100vw;
   height: 100vh;
   overflow-y: auto;
-  background-color: #f7f1e3;
+  background-color: #ffffff;
   color: #1a1a1a;
   transition: background-color 0.3s ease, color 0.3s ease;
   z-index: 10000;
@@ -487,8 +487,10 @@ const toggleInterest = async () => {
 /* Garden Header Section */
 .garden-header-section {
   margin-bottom: 40px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid rgba(138, 163, 124, 0.3);
+  padding: 16px 20px;
+  background-color: #f7f1e3;
+  border-radius: 12px;
+  border-bottom: 1px solid rgba(138, 163, 124, 0.2);
   position: relative;
 }
 
@@ -544,7 +546,8 @@ const toggleInterest = async () => {
 }
 
 .dark .garden-header-section {
-  border-bottom-color: rgba(138, 163, 124, 0.5);
+  background-color: rgba(0, 0, 0, 0.25);
+  border-bottom-color: rgba(138, 163, 124, 0.3);
 }
 
 /* Hero Image Strip - horizontal, cropped from top/bottom, centered */
@@ -765,7 +768,7 @@ const toggleInterest = async () => {
 
 /* Sections */
 .project-section {
-  background-color: rgba(255, 255, 255, 0.55);
+  background-color: #f7f1e3;
   border-radius: 16px;
   padding: 40px 50px;
   margin-bottom: 30px;
