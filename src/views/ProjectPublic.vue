@@ -603,16 +603,17 @@ const toggleInterest = async () => {
   margin-top: 24px;
   padding: 0.7rem 1.8rem;
   border-radius: 999px;
-  border: none;
+  border: 2px solid #86b153;
   background-color: #86b153;
   color: #14250f;
   font-weight: 700;
   font-size: 1.05rem;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
 }
 .project-interest-btn:hover:not(:disabled) {
   background-color: #97c264;
+  border-color: #97c264;
   transform: translateY(-1px);
 }
 .project-interest-btn:disabled {
@@ -621,19 +622,23 @@ const toggleInterest = async () => {
 }
 .project-interest-btn.is-in {
   background-color: #d7e8c8;
+  border-color: #8aa37c;
   color: #2f5233;
 }
 
 /* Dark mode: make the interest button pop against #2d3e26 bg */
 .dark .project-interest-btn {
   background-color: #8aa37c;
+  border-color: #8aa37c;
   color: #14250f;
 }
 .dark .project-interest-btn:hover:not(:disabled) {
   background-color: #9bb88d;
+  border-color: #9bb88d;
 }
 .dark .project-interest-btn.is-in {
   background-color: #b8d4a8;
+  border-color: #8aa37c;
   color: #14250f;
 }
 .project-interest-count {
