@@ -221,7 +221,7 @@ const handleEscape = (e) => {
                 >Dashboard</router-link>
                 <router-link to="/events" class="nav-item nav-link" @click="toggleMobileMenu">Events</router-link>
                 <router-link to="/about" class="nav-item nav-link" @click="toggleMobileMenu">About</router-link>
-                <router-link to="/blog" class="nav-item nav-link" @click="toggleMobileMenu">Blog</router-link>
+                <a href="https://journal.steward.garden" class="nav-item nav-link" @click="toggleMobileMenu">Blog</a>
                 <router-link to="/manifesto" class="nav-item nav-link" @click="toggleMobileMenu">Manifesto</router-link>
                 <router-link to="/help" class="nav-item nav-link" @click="toggleMobileMenu">Help</router-link>
                 <button
@@ -296,7 +296,7 @@ const handleEscape = (e) => {
                         <svg class="dropdown-chevron" width="10" height="6" viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
                       </router-link>
                       <div class="nav-about-menu" v-show="showAboutDropdown">
-                        <router-link to="/blog" class="nav-item nav-link nav-dropdown-item">Blog</router-link>
+                        <a href="https://journal.steward.garden" class="nav-item nav-link nav-dropdown-item">Blog</a>
                         <router-link to="/manifesto" class="nav-item nav-link nav-dropdown-item">Manifesto</router-link>
                       </div>
                     </div>
