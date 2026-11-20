@@ -1,3 +1,34 @@
+<script setup>
+import { ref } from 'vue';
+
+// The newsletter Worker (newsletter-engine/tracking-worker) sends a thank-you email with a confirm button.
+const endpoint = import.meta.env.VITE_NEWSLETTER_URL
+  || 'https://garden-steward-newsletter-tracking.cameron-a78.workers.dev';
+
+const email = ref('');
+const website = ref('');
+const state = ref('idle'); // idle | sending | sent | error
+const message = ref('');
+
+async function submit() {
+  state.value = 'sending';
+  message.value = '';
+  try {
+    const res = await fetch(`${endpoint}/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, source: 'steward', website: website.value }),
+    });
+    const body = await res.json().catch(() => ({}));
+    state.value = res.ok && body.ok ? 'sent' : 'error';
+    message.value = body.message || 'Something went wrong. Please try again.';
+  } catch (e) {
+    state.value = 'error';
+    message.value = "We couldn't reach the newsletter just now. Please try again.";
+  }
+}
+</script>
+
 <template>
   <section class="newsletter-section">
     <div class="newsletter-card">
@@ -7,16 +38,31 @@
         Seasonal updates, nature inspirations, and project updates — straight to your inbox.
       </p>
 
-      <a
-        href="https://garden-steward.beehiiv.com/subscribe"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="subscribe-btn"
-      >
-        Join the Newsletter
-      </a>
+      <form v-if="state !== 'sent'" class="subscribe-form" @submit.prevent="submit">
+        <label for="newsletter-email" class="sr-only">Email address</label>
+        <input
+          id="newsletter-email"
+          v-model="email"
+          type="email"
+          required
+          autocomplete="email"
+          placeholder="you@example.com"
+          class="subscribe-input"
+          :disabled="state === 'sending'"
+        />
+        <!-- Hidden from people; bots fill it in and are quietly ignored -->
+        <input v-model="website" type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <button type="submit" class="subscribe-btn" :disabled="state === 'sending'">
+          {{ state === 'sending' ? 'Joining…' : 'Join the Newsletter' }}
+        </button>
+      </form>
 
-      <p class="newsletter-fine">No spam. Unsubscribe any time.</p>
+      <p v-if="message" class="newsletter-message" :class="{ error: state === 'error' }" role="status">{{ message }}</p>
+      <p v-if="state === 'sent'" class="newsletter-fine">
+        Meanwhile, wander into the <a href="https://journal.steward.garden">journal</a>.
+      </p>
+
+      <p v-if="state !== 'sent'" class="newsletter-fine">We'll email you a link to confirm. No spam. Unsubscribe any time.</p>
     </div>
   </section>
 </template>
@@ -102,9 +148,58 @@
   -webkit-text-fill-color: currentColor;
 }
 
+
+.subscribe-form {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.subscribe-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  color: #1a3d2e;
+  -webkit-text-fill-color: currentColor;
+  background: #fff;
+  border: 1px solid rgba(138, 163, 124, 0.6);
+  border-radius: 8px;
+}
+
+.subscribe-input:focus {
+  outline: 2px solid #8aa37c;
+  outline-offset: 1px;
+}
+
+.subscribe-btn {
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.subscribe-btn:disabled { opacity: 0.7; cursor: default; transform: none; }
+
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+
+.newsletter-message {
+  margin: 1rem auto 0;
+  max-width: 400px;
+  font-weight: 600;
+  color: #1a3d2e;
+  -webkit-text-fill-color: currentColor;
+}
+
+.newsletter-message.error { color: #9b2c2c; }
+
+.newsletter-fine a { color: #1a3d2e; font-weight: 600; }
+
 @media (max-width: 480px) {
   .newsletter-card { padding: 2rem 1.25rem; }
-  .subscribe-btn { display: block; }
+  .subscribe-form { flex-direction: column; }
 }
 </style>
 
@@ -135,6 +230,12 @@ html.dark .newsletter-heading {
 html.dark .newsletter-sub {
   color: #3d5c3d !important;
   -webkit-text-fill-color: #3d5c3d !important;
+}
+
+html.dark .newsletter-message:not(.error),
+html.dark .subscribe-input {
+  color: #1a3d2e !important;
+  -webkit-text-fill-color: #1a3d2e !important;
 }
 
 html.dark .newsletter-fine {
