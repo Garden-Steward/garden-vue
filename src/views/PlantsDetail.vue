@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { usePlantsStore } from '@/stores';
@@ -14,9 +14,26 @@ const { plant, plantLoading, plantError } = storeToRefs(plantsStore);
 
 const slug = route.params.slug;
 
+// ── Sticky mini-header (appears after the hero scrolls out of view) ──
+const heroEl = ref(null);
+const showSticky = ref(false);
+const updateSticky = () => {
+  if (!heroEl.value) return;
+  showSticky.value = heroEl.value.getBoundingClientRect().bottom < 0;
+};
+
 onMounted(() => {
   plantsStore.fetchBySlug(slug);
+  window.addEventListener('scroll', updateSticky, { passive: true });
+  window.addEventListener('resize', updateSticky);
 });
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateSticky);
+  window.removeEventListener('resize', updateSticky);
+});
+
+watch(plant, () => nextTick(updateSticky));
 
 // ── Image helpers (v5 flat) ──
 const getClipUrl = () => {
@@ -112,9 +129,20 @@ const getPotency = (potency) => {
         <router-link to="/manage/plants" class="plant-detail__back-link">&larr; Plants Directory</router-link>
       </div>
 
+      <!-- ── Sticky mini-header (fixed; shows once the hero is scrolled past) ── -->
+      <div v-if="showSticky" class="plant-detail__sticky">
+        <img
+          v-if="getClipUrl()"
+          :src="getClipUrl()"
+          :alt="plant.title || 'Plant illustration'"
+          class="plant-detail__sticky-img"
+        />
+        <span class="plant-detail__sticky-name">{{ plant.title }}</span>
+      </div>
+
       <div class="plant-detail__card">
         <!-- ── Hero: clipart + basic info side by side ── -->
-        <div class="plant-detail__hero">
+        <div ref="heroEl" class="plant-detail__hero">
           <div class="plant-detail__clipart-wrap">
             <img
               v-if="getClipUrl()"
@@ -268,6 +296,58 @@ const getPotency = (potency) => {
 .plant-detail {
   max-width: 1000px;
   margin: 0 auto;
+}
+
+/* ── Sticky mini-header ── */
+.plant-detail__sticky {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  max-height: 150px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 1.5rem;
+  background: #f7f1e3;
+  border-bottom: 1px solid #ddd6c4;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  z-index: 500;
+}
+
+.plant-detail__sticky-img {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #ddd6c4;
+}
+
+.plant-detail__sticky-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #2d4a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.dark .plant-detail__sticky {
+  background: #2d3e26;
+  border-bottom-color: #3d4d36;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .plant-detail__sticky-img {
+  background: #1a1a1a;
+  border-color: #3d4d36;
+}
+
+html.dark .plant-detail__sticky-name {
+  color: #c8dbbf;
 }
 
 /* ── Back link ── */
