@@ -48,6 +48,7 @@ jobs:
         cd ..
 
     - name: Deploy Cloud Functions
+      continue-on-error: true
       run: |
         set +e
         output=$(firebase deploy --only functions --project garden-steward 2>&1)

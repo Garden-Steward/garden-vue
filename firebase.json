@@ -7,13 +7,6 @@
     "public": "dist",
     "rewrites": [
       {
-        "source": "/plants/**",
-        "function": {
-          "functionId": "plantOg",
-          "region": "us-central1"
-        }
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
