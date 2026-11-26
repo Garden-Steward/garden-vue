@@ -17,23 +17,39 @@ const slug = route.params.slug;
 // ── Sticky mini-header (appears after the hero scrolls out of view) ──
 const heroEl = ref(null);
 const showSticky = ref(false);
+const stickyTop = ref(0);
+
 const updateSticky = () => {
   if (!heroEl.value) return;
   showSticky.value = heroEl.value.getBoundingClientRect().bottom < 0;
 };
 
+const measureNav = () => {
+  const nav = document.querySelector('.gs-navbar');
+  if (nav) stickyTop.value = nav.getBoundingClientRect().height;
+};
+
+const scrollToHero = () => {
+  if (!heroEl.value) return;
+  const y = heroEl.value.getBoundingClientRect().top + window.scrollY - stickyTop.value - 8;
+  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+};
+
+const onResize = () => { measureNav(); updateSticky(); };
+
 onMounted(() => {
   plantsStore.fetchBySlug(slug);
+  measureNav();
   window.addEventListener('scroll', updateSticky, { passive: true });
-  window.addEventListener('resize', updateSticky);
+  window.addEventListener('resize', onResize);
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', updateSticky);
-  window.removeEventListener('resize', updateSticky);
+  window.removeEventListener('resize', onResize);
 });
 
-watch(plant, () => nextTick(updateSticky));
+watch(plant, () => nextTick(() => { measureNav(); updateSticky(); }));
 
 // ── Image helpers (v5 flat) ──
 const getClipUrl = () => {
@@ -130,12 +146,14 @@ const getPotency = (potency) => {
       </div>
 
       <!-- ── Sticky mini-header (fixed; shows once the hero is scrolled past) ── -->
-      <div v-if="showSticky" class="plant-detail__sticky">
+      <div v-if="showSticky" class="plant-detail__sticky" :style="{ top: stickyTop + 'px' }">
         <img
           v-if="getClipUrl()"
           :src="getClipUrl()"
           :alt="plant.title || 'Plant illustration'"
           class="plant-detail__sticky-img"
+          @click="scrollToHero"
+          title="Back to top"
         />
         <span class="plant-detail__sticky-name">{{ plant.title }}</span>
       </div>
@@ -323,6 +341,7 @@ const getPotency = (potency) => {
   border-radius: 0.5rem;
   background: #ffffff;
   border: 1px solid #ddd6c4;
+  cursor: pointer;
 }
 
 .plant-detail__sticky-name {
