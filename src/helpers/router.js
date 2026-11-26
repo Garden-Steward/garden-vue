@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores';
 import { PublicHomeView, HomeView, LoginView, GardenManage, GardenPublic, GardensView, GardensPublicView, SetPassword,
     InstructionPublic, HelpView,
-    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, ProjectManage, ProjectsView, ProjectsPublicView, ProjectAlertUnsubscribe, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView, VerifyEmail, PlantsDirectory, PlantsDetail, AboutView, UsageView } from '@/views';
+    BlogList, BlogDetail, EventView, EventsList, MapView, ContributeView, PrivacyView, ProjectPublic, ProjectManage, ProjectsView, ProjectsPublicView, ProjectAlertUnsubscribe, EventTemplatesView, GardenTasksPublic, TaskDetailPublic, ManifestoView, VerifyEmail, PlantsDirectory, PlantsDetail, PlantPublic, AboutView, UsageView } from '@/views';
 import { EventEditor, TaskMessages } from '@/views/admin';
 import GoogleOAuth from './oauth-google-callback/oauth-google-callback.vue'
 
@@ -118,6 +118,13 @@ export const router = createRouter({
             name: 'instruction-public'
         },
         
+        // Public plant page (linked from the newsletter Plant Highlight)
+        {
+            path: '/plants/:slug',
+            component: PlantPublic,
+            name: 'plant-public'
+        },
+        
         // Legacy route redirects
         {
             path: '/home',
@@ -230,6 +237,7 @@ router.beforeEach(async (to, from) => {
                          to.path.startsWith('/i/') ||
                          to.path.startsWith('/blog/') ||
                          to.path.startsWith('/d/') ||
+                         to.path.startsWith('/plants/') ||
                          to.path.startsWith('/gardens/'); // Public garden pages (includes nested project pages)
     
     const authRequired = to.meta.requiresAuth || to.path.startsWith('/manage/');
