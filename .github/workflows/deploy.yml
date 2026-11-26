@@ -41,13 +41,19 @@ jobs:
     - name: Install Firebase CLI
       run: npm install -g firebase-tools
 
-    - name: Deploy to Firebase Hosting
+    - name: Install functions dependencies
+      run: |
+        cd functions
+        npm install --no-audit --no-fund
+        cd ..
+
+    - name: Deploy to Firebase (functions + hosting)
       run: |
         # GitHub runs this with `bash -e`; without disabling errexit the step
         # aborts the instant `firebase deploy` returns non-zero, before the
         # no-op guard below can run.
         set +e
-        output=$(firebase deploy --only hosting:garden-steward --project garden-steward 2>&1)
+        output=$(firebase deploy --only functions:plantOg,hosting:garden-steward --project garden-steward 2>&1)
         status=$?
         echo "$output"
         if [ $status -ne 0 ] && echo "$output" | grep -q "is the current active version"; then

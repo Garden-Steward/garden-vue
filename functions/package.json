@@ -1,0 +1,13 @@
+{
+  "name": "functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dynamic OpenGraph/link-preview meta for Garden Steward plant pages.",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.0.0"
+  }
+}
