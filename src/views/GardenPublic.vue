@@ -8,6 +8,7 @@ import VolunteerActivity from '@/components/VolunteerActivity.vue';
 import LeafletMap from '@/components/LeafletMap.vue';
 import { approximateCenter, APPROX_AREA_RADIUS_M } from '@/helpers/location-privacy';
 import { truncatePlainText } from '@/helpers/safe-html';
+import { isProjectPubliclyVisible } from '@/_config/GardenConfig';
 import SunIcon from '@/components/icons/Sun.svg?raw';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import { RsvpPhoneModal } from '@/components/modals';
@@ -412,7 +413,7 @@ const gardenStartedAt = computed(() => {
 const gardenProjectsList = computed(() => {
   const list = projects.value;
   if (!list || !Array.isArray(list)) return [];
-  return list.filter((p) => p?.id);
+  return list.filter((p) => p?.id && isProjectPubliclyVisible(p));
 });
 
 /** Featured projects first, then most recent. */
