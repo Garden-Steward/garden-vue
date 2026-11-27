@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore, useAlertStore } from '@/stores';
-import ProjectForm from '@/components/form/ProjectForm.vue';
+import ProjectWizard from '@/components/form/ProjectWizard.vue';
 import TurnstileCaptcha from '@/components/TurnstileCaptcha.vue';
 
 const props = defineProps({
@@ -31,13 +31,17 @@ const blankForm = () => ({
   category: 'Community',
   garden: '',
   featured_gallery: [],
-  location: null
+  location: null,
+  goal: '',
+  volunteer_goal: null,
+  time_commitment: '',
+  physical_wellness: 'none'
 });
 
 const form = ref(blankForm());
 const errors = ref({ title: false });
 const isSubmitting = ref(false);
-const projectForm = ref(null);
+const showFinish = ref(false);
 const captchaToken = ref(null);
 const captchaRef = ref(null);
 const submitterEmail = ref('');
@@ -55,6 +59,9 @@ watch(
     if (open) {
       form.value = blankForm();
       errors.value = { title: false };
+      showFinish.value = false;
+      submitterEmail.value = '';
+      captchaToken.value = null;
     }
   }
 );
@@ -71,34 +78,39 @@ const submit = async () => {
   try {
     const gallery = form.value.featured_gallery;
     const payload = {
-          title: form.value.title.trim(),
-          short_description: form.value.short_description?.trim() || '',
-          category: form.value.category,
-          garden: form.value.garden || null,
-          created_by: user.value?.id ?? null,
-          featured_gallery: gallery,
-          hero_image: gallery[0] || null,
-          // Map the picker's { latitude, longitude } to the schema's flat fields.
-          latitude: form.value.location?.latitude ?? null,
-          longitude: form.value.location?.longitude ?? null,
-          submitter_email: submitterEmail.value || null
-        };
+      title: form.value.title.trim(),
+      short_description: form.value.short_description?.trim() || '',
+      category: form.value.category,
+      garden: form.value.garden || null,
+      created_by: user.value?.id ?? null,
+      featured_gallery: gallery,
+      hero_image: gallery[0] || null,
+      // Map the picker's { latitude, longitude } to the schema's flat fields.
+      latitude: form.value.location?.latitude ?? null,
+      longitude: form.value.location?.longitude ?? null,
+      // What-to-expect fields
+      goal: form.value.goal || null,
+      volunteer_goal: form.value.volunteer_goal ?? null,
+      time_commitment: form.value.time_commitment || null,
+      physical_wellness: form.value.physical_wellness || 'none',
+      submitter_email: submitterEmail.value || null
+    };
     const created = await projectsStore.register(payload);
     alertStore.success('Your project pitch was submitted!');
     emit('created', created);
     close();
   } catch (err) {
-      alertStore.error('Could not submit your pitch. Please try again.');
-      captchaRef.value?.reset();
-      captchaToken.value = null;
-    } finally {
-      isSubmitting.value = false;
-    }
-  };
-
-  function onCaptchaVerified(token) {
-    captchaToken.value = token;
+    alertStore.error('Could not submit your pitch. Please try again.');
+    captchaRef.value?.reset();
+    captchaToken.value = null;
+  } finally {
+    isSubmitting.value = false;
   }
+};
+
+function onCaptchaVerified(token) {
+  captchaToken.value = token;
+}
 </script>
 
 <template>
@@ -126,25 +138,37 @@ const submit = async () => {
           <h2 class="pitch-title mb-6">Pitch a Project</h2>
 
           <form @submit.prevent="submit">
-                      <ProjectForm ref="projectForm" v-model="form" :gardens="gardens" :errors="errors" />
+            <!-- Wizard: one question at a time, kept mounted so "Back" retains the step -->
+            <div v-show="!showFinish">
+              <ProjectWizard v-model="form" :gardens="gardens" @complete="showFinish = true" />
+            </div>
 
-                      <!-- Email for verification -->
-                      <div class="mb-4 mt-6">
-                        <label class="pf-label">Your email (for project verification)</label>
-                        <input v-model="submitterEmail" type="email" placeholder="you@example.com" class="pf-input" />
-                      </div>
+            <!-- Finalize: email + captcha + submit -->
+            <div v-if="showFinish">
+              <button type="button" class="pitch-cancel" @click="showFinish = false">← Back to your idea</button>
 
-                      <!-- Turnstile captcha -->
-                      <div class="mb-4">
-                        <TurnstileCaptcha ref="captchaRef" :site-key="siteKey" @verified="onCaptchaVerified" @error="captchaToken = null" @expired="captchaToken = null" />
-                      </div>
+              <p v-if="form.title" class="text-lg font-bold mt-4">“{{ form.title }}”</p>
 
-                      <!-- Footer -->
-            <div class="flex items-center justify-between mt-8">
-              <button type="button" class="pitch-cancel" @click="close">Cancel</button>
-              <button type="submit" class="pitch-submit" :disabled="isSubmitting || projectForm?.isUploading">
-                {{ isSubmitting ? 'Submitting…' : 'Submit Pitch' }}
-              </button>
+              <div class="mb-4 mt-6">
+                <label class="block text-sm font-semibold mb-1">Your email (for project verification)</label>
+                <input
+                  v-model="submitterEmail"
+                  type="email"
+                  placeholder="you@example.com"
+                  class="w-full px-3 py-3 rounded-lg border border-[#a8c49a] bg-white text-[#1a2617] outline-none dark:bg-[#1a1a1a]/40 dark:border-white/25 dark:text-[#f4f1e4]"
+                />
+              </div>
+
+              <div class="mb-4">
+                <TurnstileCaptcha ref="captchaRef" :site-key="siteKey" @verified="onCaptchaVerified" @error="captchaToken = null" @expired="captchaToken = null" />
+              </div>
+
+              <div class="flex items-center justify-between mt-8">
+                <button type="button" class="pitch-cancel" @click="close">Cancel</button>
+                <button type="submit" class="pitch-submit" :disabled="isSubmitting">
+                  {{ isSubmitting ? 'Submitting…' : 'Submit Pitch' }}
+                </button>
+              </div>
             </div>
           </form>
         </div>
