@@ -10,11 +10,15 @@ import SystemIcon from '@/components/icons/System.svg?raw';
 const authStore = useAuthStore();
 const route = useRoute();
 
-/** Public garden list + any /gardens/... page (not used under /manage — those paths start with /manage). */
-const isGardensNavActive = computed(() => {
-    const p = route.path;
-    return p === '/gardens' || p.startsWith('/gardens/');
-});
+// Which top-level nav section is active. Keyed by route *name* (not path prefix)
+// so pages that nest under another section's URL still map to the right tab —
+// e.g. a public project detail (/gardens/:garden/p/:project) highlights "Projects",
+// not "Gardens". Add new route names here as sections grow.
+const GARDEN_NAMES = ['gardens-public-list', 'garden-public', 'garden-tasks-public', 'task-detail-public'];
+const PROJECT_NAMES = ['projects-public-list', 'project-public'];
+
+const isGardensNavActive = computed(() => GARDEN_NAMES.includes(route.name));
+const isProjectsNavActive = computed(() => PROJECT_NAMES.includes(route.name));
 
 /** Any manager URL, e.g. /manage/gardens, /manage/gardens/:slug, /manage/home */
 const isManageNavActive = computed(() => route.path.startsWith('/manage'));
@@ -211,7 +215,12 @@ const handleEscape = (e) => {
                     :class="{ 'mobile-nav-section-active': isGardensNavActive }"
                     @click="toggleMobileMenu"
                 >Gardens</router-link>
-                <router-link to="/projects" class="nav-item nav-link" @click="toggleMobileMenu">Projects</router-link>
+                <router-link
+                    to="/projects"
+                    class="nav-item nav-link"
+                    :class="{ 'mobile-nav-section-active': isProjectsNavActive }"
+                    @click="toggleMobileMenu"
+                >Projects</router-link>
                 <router-link
                     to="/manage"
                     class="nav-item nav-link"
@@ -286,7 +295,11 @@ const handleEscape = (e) => {
                         class="nav-item nav-link"
                         :class="{ 'nav-link--section-active': isGardensNavActive }"
                     >Gardens</router-link>
-                    <router-link to="/projects" class="nav-item nav-link">Projects</router-link>
+                    <router-link
+                        to="/projects"
+                        class="nav-item nav-link"
+                        :class="{ 'nav-link--section-active': isProjectsNavActive }"
+                    >Projects</router-link>
                     <router-link to="/events" class="nav-item nav-link">Events</router-link>
 
                     <!-- About dropdown -->
