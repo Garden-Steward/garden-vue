@@ -210,6 +210,58 @@ defineExpose({ isUploading });
           @update:model-value="patch({ garden: $event })"
         />
       </div>
+
+      <!-- Goal timing -->
+      <div class="pf-field">
+        <label class="pf-label">Goal timing (optional)</label>
+        <input
+          :value="modelValue.goal"
+          type="text"
+          placeholder="e.g. by summer 2027, or once ~5 people are in"
+          class="pf-input"
+          @input="patch({ goal: $event.target.value })"
+        />
+      </div>
+
+      <!-- Volunteers needed to start -->
+      <div class="pf-field">
+        <label class="pf-label">Volunteers needed to start (optional)</label>
+        <input
+          :value="modelValue.volunteer_goal"
+          type="number"
+          min="0"
+          placeholder="e.g. 5"
+          class="pf-input"
+          @input="patch({ volunteer_goal: $event.target.value === '' ? null : Number($event.target.value) })"
+        />
+      </div>
+
+      <!-- Time commitment -->
+      <div class="pf-field">
+        <label class="pf-label">Time commitment (optional)</label>
+        <input
+          :value="modelValue.time_commitment"
+          type="text"
+          placeholder="e.g. ~2 weekend mornings"
+          class="pf-input"
+          @input="patch({ time_commitment: $event.target.value })"
+        />
+      </div>
+
+      <!-- Physical demand -->
+      <div class="pf-field pf-select">
+        <label class="pf-label">Physical demand</label>
+        <select
+          :value="modelValue.physical_wellness || 'none'"
+          class="pf-input"
+          @change="patch({ physical_wellness: $event.target.value })"
+        >
+          <option value="none">None</option>
+          <option value="light">Light</option>
+          <option value="moderate">Moderate</option>
+          <option value="heavy">Heavy</option>
+        </select>
+      </div>
     </div>
   </div>
 </template>

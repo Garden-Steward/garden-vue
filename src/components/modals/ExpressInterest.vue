@@ -1,13 +1,20 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useProjectsStore, useAlertStore } from '@/stores';
 import { fetchWrapper } from '@/helpers';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   projectId: { type: [String, Number], required: true },
-  projectTitle: { type: String, default: '' }
+  projectTitle: { type: String, default: '' },
+  goalLine: { type: String, default: '' },
+  timeCommitment: { type: String, default: '' },
+  physicalWellness: { type: String, default: '' }
 });
+
+const hasSummary = computed(() =>
+  !!(props.goalLine || props.timeCommitment || props.physicalWellness)
+);
 
 const emit = defineEmits(['update:modelValue', 'done']);
 
@@ -80,6 +87,12 @@ const submit = async () => {
           <form v-else @submit.prevent="submit">
             <h2 class="text-lg font-bold mb-1">I'm interested</h2>
             <p class="text-sm opacity-70 mb-4">{{ projectTitle }}</p>
+
+            <div v-if="hasSummary" class="text-xs leading-relaxed mb-3 px-3 py-2 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 space-y-1">
+              <div v-if="goalLine">🎯 {{ goalLine }}</div>
+              <div v-if="timeCommitment">⏱️ Time: {{ timeCommitment }}</div>
+              <div v-if="physicalWellness">💪 {{ physicalWellness }}</div>
+            </div>
 
             <div class="space-y-3">
               <input v-model="name" type="text" placeholder="Your name" class="int-input" />

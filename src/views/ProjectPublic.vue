@@ -271,6 +271,23 @@ const toggleInterest = async () => {
     togglingInterest.value = false;
   }
 };
+
+// ── What to expect ──
+const physicalWellnessLabel = computed(() => {
+  const v = project.value?.physical_wellness;
+  if (!v || v === 'none') return '';
+  return ({ light: 'Light physical work', moderate: 'Moderate physical work', heavy: 'Heavy physical work' })[v] || '';
+});
+
+const goalLine = computed(() => {
+  const vgoal = project.value?.volunteer_goal;
+  if (vgoal) return `Starts once ~${vgoal} people are in (${interestedCount.value} so far)`;
+  return project.value?.goal || '';
+});
+
+const hasExpectations = computed(() =>
+  !!(goalLine.value || project.value?.time_commitment || physicalWellnessLabel.value)
+);
 </script>
 
 <template>
@@ -330,6 +347,11 @@ const toggleInterest = async () => {
                 <div class="interest-info-tip">
                   Saying you're interested means you'll hear about future volunteer days for this project. If it's still in early planning, you may get invited to a WhatsApp group to coordinate.
                 </div>
+              </div>
+              <div v-if="hasExpectations" class="project-expectations">
+                <span v-if="goalLine" class="expectation-chip">🎯 {{ goalLine }}</span>
+                <span v-if="project.time_commitment" class="expectation-chip">⏱️ {{ project.time_commitment }}</span>
+                <span v-if="physicalWellnessLabel" class="expectation-chip">💪 {{ physicalWellnessLabel }}</span>
               </div>
             </div>
 
@@ -447,6 +469,9 @@ const toggleInterest = async () => {
           v-model="showInterestModal"
           :project-id="project?.id"
           :project-title="project?.title"
+          :goal-line="goalLine"
+          :time-commitment="project?.time_commitment"
+          :physical-wellness="physicalWellnessLabel"
         />
       </template>
 
@@ -1287,6 +1312,24 @@ const toggleInterest = async () => {
   .section-title {
     font-size: 1.5rem;
   }
+}
+
+.project-expectations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.expectation-chip {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: rgba(138, 163, 124, 0.18);
+  color: #1a2617;
+}
+html.dark .expectation-chip {
+  background: rgba(167, 192, 128, 0.15);
+  color: #f4f1e4;
 }
 </style>
 
