@@ -6,6 +6,7 @@ import { isProjectVisibleTo } from '@/_config/GardenConfig';
 import { computed, ref, onMounted } from 'vue';
 import { getImageOrDefault } from '@/helpers/image-utils';
 import Gallery from '@/components/Gallery.vue';
+import LeafletMap from '@/components/LeafletMap.vue';
 import { renderMarkdown } from '@/helpers/safe-html';
 import ExpressInterest from '@/components/modals/ExpressInterest.vue';
 
@@ -149,6 +150,30 @@ const hasGalleryImages = computed(() => {
     return url && url.trim() !== '';
   });
 });
+
+// ── Location map ──
+// Projects carry exact latitude/longitude (public right-of-way sites like
+// curb-cut bioswales), so we show a precise pin. Gardens may approximate their
+// location for privacy; projects do not.
+const projectCoordinates = computed(() => {
+  const lat = project.value?.latitude;
+  const lng = project.value?.longitude;
+  if (lat == null || lng == null) return null;
+  const la = parseFloat(lat);
+  const lo = parseFloat(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(lo)) return null;
+  return { latitude: la, longitude: lo };
+});
+
+const mapLocationTrackings = computed(() => {
+  const c = projectCoordinates.value;
+  if (!c) return [];
+  return [{ latitude: c.latitude, longitude: c.longitude, label: project.value?.title || 'Project Location' }];
+});
+
+const showProjectMap = computed(() =>
+  !!project.value?.id && !!projectCoordinates.value && mapLocationTrackings.value.length > 0
+);
 
 // Get related volunteer days/events
 const relatedVolunteerDays = computed(() => {
@@ -318,6 +343,17 @@ const toggleInterest = async () => {
         </div>
       </section>
 
+      <!-- Location Map -->
+      <section v-if="showProjectMap" class="project-section">
+        <h2 class="section-title">Location</h2>
+        <div class="project-map-container">
+          <LeafletMap
+            :location-trackings="mapLocationTrackings"
+            :center-coordinates="projectCoordinates"
+          />
+        </div>
+      </section>
+
       <!-- Volunteer Days Section -->
       <section v-if="relatedVolunteerDays.length > 0" class="project-section">
         <h2 class="section-title">Volunteer Days worked on:</h2>
@@ -482,6 +518,15 @@ const toggleInterest = async () => {
   max-width: 768px;
   margin: 0 auto;
   transition: all 0.3s ease;
+}
+
+/* Location map card */
+.project-map-container {
+  height: 280px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 /* Garden Header Section */
