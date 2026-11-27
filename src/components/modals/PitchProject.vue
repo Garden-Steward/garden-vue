@@ -1,9 +1,8 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProjectsStore, useAuthStore, useAlertStore } from '@/stores';
 import ProjectWizard from '@/components/form/ProjectWizard.vue';
-import TurnstileCaptcha from '@/components/TurnstileCaptcha.vue';
 
 const props = defineProps({
   // v-model: controls visibility
@@ -42,26 +41,50 @@ const form = ref(blankForm());
 const errors = ref({ title: false });
 const isSubmitting = ref(false);
 const showFinish = ref(false);
-const captchaToken = ref(null);
-const captchaRef = ref(null);
 const submitterEmail = ref('');
-// Falls back to Cloudflare's always-pass test key for local dev.
-const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+
+// ── Draft auto-save (per user, in localStorage) ──
+const draftKey = computed(() => (user.value?.id ? `pitch-draft-${user.value.id}` : null));
+
+let draftTimer = null;
+watch(
+  form,
+  (val) => {
+    if (!draftKey.value) return;
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey.value, JSON.stringify(val));
+      } catch (e) {
+        /* ignore quota / private-mode errors */
+      }
+    }, 400);
+  },
+  { deep: true }
+);
 
 const close = () => {
   emit('update:modelValue', false);
 };
 
-// Reset the form each time the modal opens.
+// Reset (or restore a saved draft) each time the modal opens.
 watch(
   () => props.modelValue,
   (open) => {
     if (open) {
-      form.value = blankForm();
+      let draft = null;
+      if (draftKey.value) {
+        try {
+          const raw = localStorage.getItem(draftKey.value);
+          if (raw) draft = JSON.parse(raw);
+        } catch (e) {
+          /* ignore malformed draft */
+        }
+      }
+      form.value = draft ? { ...blankForm(), ...draft } : blankForm();
       errors.value = { title: false };
       showFinish.value = false;
       submitterEmail.value = user.value?.email || '';
-      captchaToken.value = null;
     }
   }
 );
@@ -70,10 +93,6 @@ const submit = async () => {
   const valid = !!form.value.title.trim();
   errors.value = { title: !valid };
   if (!valid) return;
-  if (!captchaToken.value) {
-    alertStore.error('Please complete the captcha verification.');
-    return;
-  }
   isSubmitting.value = true;
   try {
     const gallery = form.value.featured_gallery;
@@ -96,21 +115,23 @@ const submit = async () => {
       submitter_email: submitterEmail.value || null
     };
     const created = await projectsStore.register(payload);
+    // Success — clear the saved draft.
+    if (draftKey.value) {
+      try {
+        localStorage.removeItem(draftKey.value);
+      } catch (e) {
+        /* ignore */
+      }
+    }
     alertStore.success('Your project pitch was submitted!');
     emit('created', created);
     close();
   } catch (err) {
     alertStore.error('Could not submit your pitch. Please try again.');
-    captchaRef.value?.reset();
-    captchaToken.value = null;
   } finally {
     isSubmitting.value = false;
   }
 };
-
-function onCaptchaVerified(token) {
-  captchaToken.value = token;
-}
 </script>
 
 <template>
@@ -143,7 +164,7 @@ function onCaptchaVerified(token) {
               <ProjectWizard v-model="form" :gardens="gardens" @complete="showFinish = true" />
             </div>
 
-            <!-- Finalize: email + captcha + submit -->
+            <!-- Finalize: email + submit -->
             <div v-if="showFinish">
               <button type="button" class="pitch-cancel" @click="showFinish = false">← Back to your idea</button>
 
@@ -157,10 +178,6 @@ function onCaptchaVerified(token) {
                   placeholder="you@example.com"
                   class="w-full px-3 py-3 rounded-lg border border-[#a8c49a] bg-white text-[#1a2617] outline-none dark:bg-[#1a1a1a]/40 dark:border-white/25 dark:text-[#f4f1e4]"
                 />
-              </div>
-
-              <div class="mb-4">
-                <TurnstileCaptcha ref="captchaRef" :site-key="siteKey" @verified="onCaptchaVerified" @error="captchaToken = null" @expired="captchaToken = null" />
               </div>
 
               <div class="flex items-center justify-between mt-8">
