@@ -60,7 +60,7 @@ watch(
       form.value = blankForm();
       errors.value = { title: false };
       showFinish.value = false;
-      submitterEmail.value = '';
+      submitterEmail.value = user.value?.email || '';
       captchaToken.value = null;
     }
   }
