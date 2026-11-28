@@ -29,7 +29,6 @@ const statusFilterOptions = [
     ...projectReviewOptions
 ];
 const togglingId = ref(null);
-const approvingId = ref(null);
 const showInterestModal = ref(false);
 const interestProject = ref({ id: null, title: '' });
 
@@ -44,24 +43,6 @@ const isProjectAdmin = computed(() => {
   const role = user.value?.role;
   return authStore.isAdmin || role?.type === 'manager';
 });
-
-const approveProject = async (id) => {
-  approvingId.value = id;
-  try {
-    await projectsStore.review(id, 'APPROVED');
-    await projectsStore.getAllProjects();
-  } catch { /* store surfaces error */ }
-  finally { approvingId.value = null; }
-};
-
-const rejectProject = async (id) => {
-  approvingId.value = id;
-  try {
-    await projectsStore.review(id, 'REJECTED');
-    await projectsStore.getAllProjects();
-  } catch { /* store surfaces error */ }
-  finally { approvingId.value = null; }
-};
 
 const relationIds = (rel) => {
     const arr = rel?.data || rel || [];
@@ -203,12 +184,7 @@ const handleInterest = (project) => {
                     <span class="cproj-pending__desc">{{ (p.short_description || '').slice(0, 120) }}</span>
                   </div>
                   <div class="cproj-pending__actions">
-                    <button @click="approveProject(p.id)" :disabled="approvingId === p.id" class="cproj-pending__approve">
-                      {{ approvingId === p.id ? '…' : 'Approve' }}
-                    </button>
-                    <button @click="rejectProject(p.id)" :disabled="approvingId === p.id" class="cproj-pending__reject">
-                      {{ approvingId === p.id ? '…' : 'Reject' }}
-                    </button>
+                    <RouterLink :to="projectLink(p)" class="cproj-pending__review">Review →</RouterLink>
                   </div>
                 </div>
               </div>
@@ -672,38 +648,22 @@ const handleInterest = (project) => {
   flex-shrink: 0;
 }
 
-.cproj-pending__approve,
-.cproj-pending__reject {
+.cproj-pending__review {
   padding: 0.4rem 1rem;
   border-radius: 6px;
   border: none;
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
-}
-
-.cproj-pending__approve {
   background: #86b153;
   color: #14250f;
+  text-decoration: none;
+  white-space: nowrap;
+  display: inline-block;
 }
 
-.cproj-pending__approve:hover:not(:disabled) {
+.cproj-pending__review:hover {
   background: #97c264;
-}
-
-.cproj-pending__reject {
-  background: #f87171;
-  color: #fff;
-}
-
-.cproj-pending__reject:hover:not(:disabled) {
-  background: #ef4444;
-}
-
-.cproj-pending__approve:disabled,
-.cproj-pending__reject:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* ── Have an idea card ── */
