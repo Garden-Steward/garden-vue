@@ -588,6 +588,14 @@ const hasExpectations = computed(() =>
 .project-manage-link:hover {
   background-color: rgba(138, 163, 124, 0.15);
 }
+.dark .project-manage-link {
+  color: #eaf2e6;
+  border-color: rgba(138, 163, 124, 0.7);
+}
+.dark .project-manage-link:hover {
+  background-color: rgba(138, 163, 124, 0.22);
+  color: #ffffff;
+}
 
 /* Garden Header Section */
 .garden-header-section {
