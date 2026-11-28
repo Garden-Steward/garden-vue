@@ -269,9 +269,9 @@ const handleInterest = (project) => {
         <!-- Have an idea? -->
         <button type="button" class="cproj-idea" @click="openPitch">
           <span class="cproj-idea__plus">+</span>
-          <span class="cproj-idea__title">Have an idea?</span>
+          <span class="cproj-idea__title">Pitch a project</span>
           <span class="cproj-idea__text">Pitch your vision to the community and find supporters.</span>
-          <span class="cproj-idea__cta">Create New Proposal</span>
+          <span class="cproj-idea__cta">Start →</span>
         </button>
       </div>
 
