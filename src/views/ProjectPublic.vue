@@ -24,6 +24,15 @@ const { user } = storeToRefs(authStore);
 // Signed-in stewards can still follow a link to a pending pitch.
 const viewerMaySee = computed(() => isProjectVisibleTo(project.value, user.value));
 
+// A "Manage" link for the people who can edit this project: admins, or a
+// manager of the parent garden (the garden is loaded via getSlug, which
+// populates `managers`).
+const isManager = computed(() => {
+  if (!garden.value?.managers || !user.value) return false;
+  return garden.value.managers.some((m) => (m.id || m) === user.value.id);
+});
+const canManage = computed(() => authStore.isAdmin || isManager.value);
+
 // Dark mode state - initialize from system preference
 const getSystemPreference = () => {
   if (typeof window !== 'undefined' && window.matchMedia) {
@@ -353,6 +362,13 @@ const hasExpectations = computed(() =>
                 <span v-if="project.time_commitment" class="expectation-chip">⏱️ {{ project.time_commitment }}</span>
                 <span v-if="physicalWellnessLabel" class="expectation-chip">💪 {{ physicalWellnessLabel }}</span>
               </div>
+              <router-link
+                v-if="canManage"
+                :to="`/manage/project/${project.documentId}`"
+                class="project-manage-link"
+              >
+                <i class="fas fa-pen"></i> Manage
+              </router-link>
             </div>
 
       <!-- Description -->
@@ -552,6 +568,25 @@ const hasExpectations = computed(() =>
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Discreet "Manage" link (admins + garden managers only) */
+.project-manage-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d4a2e;
+  text-decoration: none !important;
+  border: 1px solid rgba(138, 163, 124, 0.5);
+  border-radius: 8px;
+  padding: 6px 14px;
+  transition: background-color 0.15s ease;
+}
+.project-manage-link:hover {
+  background-color: rgba(138, 163, 124, 0.15);
 }
 
 /* Garden Header Section */
